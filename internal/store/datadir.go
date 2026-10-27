@@ -1,4 +1,4 @@
-// Package store keeps Vigie's data in a local SQLite database (ADR-0006). It is the only package
+// Package store keeps Vigie's data in a local SQLite database. It is the only package
 // that talks SQL.
 package store
 

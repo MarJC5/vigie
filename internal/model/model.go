@@ -9,7 +9,7 @@ import (
 )
 
 // ID identifies every record. Version 7 UUIDs sort by creation time and can be merged across
-// machines (ADR-0007).
+// machines.
 type ID = uuid.UUID
 
 // NoID marks an absent parent (a folder or host at the root).
@@ -167,5 +167,5 @@ type Subsite struct {
 	Archived bool
 	Spam     bool
 	Deleted  bool
-	Pinned   bool // checked over HTTP after updates (ADR-0009)
+	Pinned   bool // checked over HTTP after updates
 }
