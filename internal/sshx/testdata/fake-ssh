@@ -1,0 +1,10 @@
+#!/bin/sh
+# Stand-in for ssh in tests: prints its arguments, one per line, then acts on the remote command
+# (the last argument).
+for arg in "$@"; do last="$arg"; printf '%s\n' "$arg"; done
+case "$last" in
+	exit-3) echo "remote failed" >&2; exit 3 ;;
+	exit-255) echo "ssh: connect to host: Connection refused" >&2; exit 255 ;;
+	sleep) exec sleep 5 ;;
+esac
+exit 0
