@@ -156,3 +156,36 @@ func TestResolveErrors(t *testing.T) {
 		}
 	}
 }
+
+func TestLookupsByID(t *testing.T) {
+	tr, ids := sampleTree(t)
+	if f, ok := tr.Folder(ids["Clients"]); !ok || f.Name != "Clients" {
+		t.Errorf("Folder() = %+v, %v", f, ok)
+	}
+	if h, ok := tr.Host(ids["Infomaniak"]); !ok || h.Alias != "infomaniak" {
+		t.Errorf("Host() = %+v, %v", h, ok)
+	}
+	if s, ok := tr.Site(ids["misits.ch"]); !ok || s.Path != "~/sites/misits.ch" {
+		t.Errorf("Site() = %+v, %v", s, ok)
+	}
+	if _, ok := tr.Site(model.NewID()); ok {
+		t.Error("Site() with an unknown ID: want false")
+	}
+}
+
+func TestNamesEqual(t *testing.T) {
+	tests := []struct {
+		a, b string
+		want bool
+	}{
+		{"Clients", "clients", true},
+		{"Écoles", "écoles", true},
+		{" misits.ch ", "misits.ch", true},
+		{"misits.ch", "misits.com", false},
+	}
+	for _, tt := range tests {
+		if got := model.NamesEqual(tt.a, tt.b); got != tt.want {
+			t.Errorf("NamesEqual(%q, %q) = %v, want %v", tt.a, tt.b, got, tt.want)
+		}
+	}
+}

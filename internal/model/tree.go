@@ -91,7 +91,7 @@ func (t *Tree) AddSite(s Site) error {
 		return fmt.Errorf("host %s: %w", s.HostID, ErrNotFound)
 	}
 	for _, other := range t.sites {
-		if other.HostID == s.HostID && other.ID != s.ID && sameName(other.Name, s.Name) {
+		if other.HostID == s.HostID && other.ID != s.ID && NamesEqual(other.Name, s.Name) {
 			return fmt.Errorf("%q: %w", s.Name, ErrDuplicateName)
 		}
 	}
@@ -101,20 +101,39 @@ func (t *Tree) AddSite(s Site) error {
 
 func (t *Tree) nameTakenInFolder(folderID ID, name string, self ID) bool {
 	for _, f := range t.folders {
-		if f.ParentID == folderID && f.ID != self && sameName(f.Name, name) {
+		if f.ParentID == folderID && f.ID != self && NamesEqual(f.Name, name) {
 			return true
 		}
 	}
 	for _, h := range t.hosts {
-		if h.FolderID == folderID && h.ID != self && sameName(h.Name, name) {
+		if h.FolderID == folderID && h.ID != self && NamesEqual(h.Name, name) {
 			return true
 		}
 	}
 	return false
 }
 
-func sameName(a, b string) bool {
+// NamesEqual tells whether two names collide: case and surrounding spaces are ignored.
+func NamesEqual(a, b string) bool {
 	return strings.EqualFold(strings.TrimSpace(a), strings.TrimSpace(b))
+}
+
+// Folder returns the folder with the given ID.
+func (t *Tree) Folder(id ID) (Folder, bool) {
+	f, ok := t.folders[id]
+	return f, ok
+}
+
+// Host returns the host with the given ID.
+func (t *Tree) Host(id ID) (Host, bool) {
+	h, ok := t.hosts[id]
+	return h, ok
+}
+
+// Site returns the site with the given ID.
+func (t *Tree) Site(id ID) (Site, bool) {
+	s, ok := t.sites[id]
+	return s, ok
 }
 
 // EffectiveFolderColor returns the folder's color, or its nearest colored ancestor's.
@@ -228,7 +247,7 @@ func (t *Tree) PathOf(n Node) string {
 
 func (t *Tree) childFolder(parent ID, name string) (Folder, bool) {
 	for _, f := range t.folders {
-		if f.ParentID == parent && sameName(f.Name, name) {
+		if f.ParentID == parent && NamesEqual(f.Name, name) {
 			return f, true
 		}
 	}
@@ -237,7 +256,7 @@ func (t *Tree) childFolder(parent ID, name string) (Folder, bool) {
 
 func (t *Tree) childHost(folder ID, name string) (Host, bool) {
 	for _, h := range t.hosts {
-		if h.FolderID == folder && sameName(h.Name, name) {
+		if h.FolderID == folder && NamesEqual(h.Name, name) {
 			return h, true
 		}
 	}
@@ -246,7 +265,7 @@ func (t *Tree) childHost(folder ID, name string) (Host, bool) {
 
 func (t *Tree) childSite(host ID, name string) (Site, bool) {
 	for _, s := range t.sites {
-		if s.HostID == host && sameName(s.Name, name) {
+		if s.HostID == host && NamesEqual(s.Name, name) {
 			return s, true
 		}
 	}
