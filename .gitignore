@@ -1,0 +1,6 @@
+# Binaries and local data
+/vigie
+/dist/
+*.db
+*.db-*
+.DS_Store
