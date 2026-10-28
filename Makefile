@@ -4,7 +4,8 @@ WAILS := go run $(WAILS_MODULE)
 # The Wails tasks call wails3 by name: the pinned one is installed here, ahead of anything on PATH.
 WAILS_BIN := $(CURDIR)/.task/bin
 
-.PHONY: test vet fmt-check vuln go-check frontend-install frontend-browsers frontend-lint frontend-test frontend-build frontend-e2e bindings bindings-check app check
+# Container tests (Docker needed): make test-integration.
+.PHONY: test-integration test vet fmt-check vuln go-check frontend-install frontend-browsers frontend-lint frontend-test frontend-build frontend-e2e bindings bindings-check app check
 
 test:
 	go test -race ./...
@@ -14,6 +15,7 @@ GO_TESTDATA := ./cmd/vigie/testdata/seed
 
 vet:
 	go vet ./... $(GO_TESTDATA)
+	go vet -tags integration ./internal/integration
 
 # Only the module's packages: gofmt alone would also walk frontend/node_modules.
 fmt-check:
@@ -24,6 +26,9 @@ vuln:
 	go run $(GOVULNCHECK) ./...
 
 go-check: fmt-check vet test vuln
+
+test-integration:
+	go test -tags integration -count=1 -timeout 20m ./internal/integration
 
 frontend-install:
 	cd frontend && npm ci --no-audit --no-fund
