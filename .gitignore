@@ -13,3 +13,4 @@
 # Wails build output and task state
 /bin/
 /.task/
+/frontend/storybook-static/

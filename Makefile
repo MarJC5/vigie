@@ -1,7 +1,7 @@
 GOVULNCHECK := golang.org/x/vuln/cmd/govulncheck@v1.9.0
 WAILS := go run github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
 
-.PHONY: test vet fmt-check vuln go-check frontend-install frontend-lint frontend-test frontend-build bindings bindings-check app check
+.PHONY: test vet fmt-check vuln go-check frontend-install frontend-browsers frontend-lint frontend-test frontend-build bindings bindings-check app check
 
 test:
 	go test -race ./...
@@ -21,6 +21,10 @@ go-check: fmt-check vet test vuln
 
 frontend-install:
 	cd frontend && npm ci --no-audit --no-fund
+
+# Chromium and WebKit run the component stories; --with-deps adds their system libraries on Linux.
+frontend-browsers:
+	cd frontend && npx playwright install $(if $(CI),--with-deps,) chromium webkit
 
 frontend-lint:
 	cd frontend && npm run lint && npm run typecheck
