@@ -1,5 +1,8 @@
 GOVULNCHECK := golang.org/x/vuln/cmd/govulncheck@v1.9.0
-WAILS := go run github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
+WAILS_MODULE := github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
+WAILS := go run $(WAILS_MODULE)
+# The Wails tasks call wails3 by name: the pinned one is installed here, ahead of anything on PATH.
+WAILS_BIN := $(CURDIR)/.task/bin
 
 .PHONY: test vet fmt-check vuln go-check frontend-install frontend-browsers frontend-lint frontend-test frontend-build frontend-e2e bindings bindings-check app check
 
@@ -53,7 +56,8 @@ bindings-check:
 
 # Vigie.app (macOS, signed ad hoc) or the Linux build, with the Wails tasks.
 app:
-	$(WAILS) package
+	GOBIN="$(WAILS_BIN)" go install $(WAILS_MODULE)
+	PATH="$(WAILS_BIN):$$PATH" "$(WAILS_BIN)/wails3" package
 
 # The interface is built first: the Go binary embeds frontend/dist.
 check: frontend-build go-check bindings-check frontend-lint frontend-test frontend-e2e
