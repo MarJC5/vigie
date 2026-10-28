@@ -1,0 +1,66 @@
+{
+  "nav": {
+    "navigation": "Navigation",
+    "sites": "Sites",
+    "activity": "Activité",
+    "settings": "Réglages",
+    "help": "Aide"
+  },
+  "manager": {
+    "label": "Gestionnaire de sites",
+    "search": "Rechercher",
+    "collapse": "Masquer la liste des sites",
+    "noHosts": "Aucun hébergement pour le moment.",
+    "running_one": "{{count}} relevé en cours",
+    "running_many": "{{count}} relevés en cours",
+    "running_other": "{{count}} relevés en cours",
+    "stopAll": "Tout arrêter",
+    "subsites_one": "{{count}} sous-site",
+    "subsites_many": "{{count}} sous-sites",
+    "subsites_other": "{{count}} sous-sites"
+  },
+  "empty": {
+    "title": "Ajoutez votre premier hébergement",
+    "text": "Vigie se connecte à vos serveurs par SSH, avec les clés que vous utilisez déjà, et y lance WP-CLI. Rien n'est installé sur vos sites.",
+    "importFileZilla": "Importer depuis FileZilla"
+  },
+  "site": {
+    "openSite": "Ouvrir le site",
+    "terminal": "Terminal SSH",
+    "copySsh": "Copier la commande SSH",
+    "more": "Plus d'actions",
+    "lastScan": "Dernier relevé : {{when}}"
+  },
+  "tabs": {
+    "label": "Onglets du site",
+    "overview": "Aperçu",
+    "updates": "Mises à jour",
+    "security": "Sécurité",
+    "notes": "Notes",
+    "history": "Historique"
+  },
+  "action": {
+    "addHost": "Ajouter un hébergement",
+    "scanNow": "Relever",
+    "scanHost": "Relever l'hébergement",
+    "update": "Mettre à jour",
+    "details": "Détails",
+    "cancel": "Annuler"
+  },
+  "status": {
+    "ok": "À jour",
+    "warn": "À surveiller",
+    "danger": "Urgent",
+    "unknown": "Inconnu"
+  },
+  "color": {
+    "none": "Aucune",
+    "red": "Rouge",
+    "green": "Vert",
+    "blue": "Bleu",
+    "yellow": "Jaune",
+    "cyan": "Cyan",
+    "magenta": "Magenta",
+    "orange": "Orange"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "nav": {
+    "navigation": "Navigation",
+    "sites": "Sites",
+    "activity": "Activity",
+    "settings": "Settings",
+    "help": "Help"
+  },
+  "manager": {
+    "label": "Site manager",
+    "search": "Search",
+    "collapse": "Hide the site list",
+    "noHosts": "No hosts yet.",
+    "running_one": "{{count}} scan running",
+    "running_other": "{{count}} scans running",
+    "stopAll": "Stop all",
+    "subsites_one": "{{count}} subsite",
+    "subsites_other": "{{count}} subsites"
+  },
+  "empty": {
+    "title": "Add your first host",
+    "text": "Vigie connects to your servers over SSH with the keys you already use, and runs WP-CLI there. Nothing is installed on your sites.",
+    "importFileZilla": "Import from FileZilla"
+  },
+  "site": {
+    "openSite": "Open site",
+    "terminal": "SSH terminal",
+    "copySsh": "Copy SSH command",
+    "more": "More actions",
+    "lastScan": "Last scan: {{when}}"
+  },
+  "tabs": {
+    "label": "Site tabs",
+    "overview": "Overview",
+    "updates": "Updates",
+    "security": "Security",
+    "notes": "Notes",
+    "history": "History"
+  },
+  "action": {
+    "addHost": "Add a host",
+    "scanNow": "Scan now",
+    "scanHost": "Scan host",
+    "update": "Update",
+    "details": "Details",
+    "cancel": "Cancel"
+  },
+  "status": {
+    "ok": "Up to date",
+    "warn": "Needs attention",
+    "danger": "Urgent",
+    "unknown": "Unknown"
+  },
+  "color": {
+    "none": "None",
+    "red": "Red",
+    "green": "Green",
+    "blue": "Blue",
+    "yellow": "Yellow",
+    "cyan": "Cyan",
+    "magenta": "Magenta",
+    "orange": "Orange"
+  }
+}

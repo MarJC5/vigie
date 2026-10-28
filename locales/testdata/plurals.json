@@ -1,0 +1,5 @@
+{
+  "_comment": "Expected CLDR cardinal categories, shared by the Go and interface tests.",
+  "en": { "0": "other", "1": "one", "2": "other", "14": "other", "1000000": "other" },
+  "fr": { "0": "one", "1": "one", "2": "other", "14": "other", "1000000": "many" }
+}
