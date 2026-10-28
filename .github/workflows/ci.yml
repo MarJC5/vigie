@@ -13,12 +13,18 @@ concurrency:
 
 jobs:
   check:
-    name: Format, vet, tests, vulnerabilities
+    name: Format, vet, tests, vulnerabilities, front end
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: make frontend-install
       - run: make check
