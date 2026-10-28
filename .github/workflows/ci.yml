@@ -34,3 +34,15 @@ jobs:
       - run: make frontend-install
       - run: make frontend-browsers
       - run: make check
+
+  integration:
+    name: Container tests (WordPress, WP-CLI and SSH)
+    # Pinned like the job above; Docker is preinstalled on this image.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - run: make test-integration
