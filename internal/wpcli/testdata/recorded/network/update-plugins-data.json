@@ -1,0 +1,13 @@
+{
+  "args": [
+    "option",
+    "get",
+    "_site_transient_update_plugins",
+    "--format=json",
+    "--skip-plugins",
+    "--skip-themes"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error: Could not get '_site_transient_update_plugins' option. Does it exist?\n"
+}

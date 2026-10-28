@@ -1,0 +1,13 @@
+{
+  "args": [
+    "plugin",
+    "list",
+    "--format=json",
+    "--skip-plugins",
+    "--skip-themes",
+    "--fields=name,title,status,version,update,update_version,auto_update,wporg_status"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error: Error establishing a database connection.\n"
+}

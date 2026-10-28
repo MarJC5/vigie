@@ -1,0 +1,12 @@
+{
+  "args": [
+    "core",
+    "check-update",
+    "--format=json",
+    "--skip-plugins",
+    "--skip-themes"
+  ],
+  "exit": 0,
+  "stdout": "[{\"version\":\"7.1.4\",\"update_type\":\"minor\",\"package_url\":\"https:\\/\\/downloads.wordpress.org\\/release\\/wordpress-7.1.4-partial-3.zip\"}]",
+  "stderr": ""
+}

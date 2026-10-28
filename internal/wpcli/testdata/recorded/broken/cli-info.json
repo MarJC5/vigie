@@ -1,0 +1,10 @@
+{
+  "args": [
+    "cli",
+    "info",
+    "--format=json"
+  ],
+  "exit": 0,
+  "stdout": "{\"system_os\":\"Linux 7.0.14-linuxkit #1 SMP PREEMPT Fri Oct 16 11:55:50 UTC 2026 aarch64\",\"shell\":false,\"php_binary_path\":\"\\/usr\\/local\\/bin\\/php\",\"php_version\":\"8.4.27\",\"php_ini_used\":false,\"mysql_binary_path\":\"\\/usr\\/bin\\/mariadb\",\"mysql_version\":\"mariadb from 11.8.6-MariaDB, client 15.2 for debian-linux-gnu (aarch64) using  EditLine wrapper\",\"sql_modes\":[],\"wp_cli_dir_path\":\"phar:\\/\\/wp-cli.phar\\/vendor\\/wp-cli\\/wp-cli\",\"wp_cli_vendor_path\":\"phar:\\/\\/wp-cli.phar\\/vendor\",\"wp_cli_phar_path\":\"phar:\\/\\/\\/usr\\/local\\/bin\\/wp\",\"wp_cli_packages_dir_path\":null,\"wp_cli_cache_dir_path\":\"\\/home\\/vigie\\/.wp-cli\\/cache\",\"global_config_path\":false,\"project_config_path\":false,\"wp_cli_version\":\"2.12.0\"}\n",
+  "stderr": ""
+}

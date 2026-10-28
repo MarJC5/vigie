@@ -1,0 +1,12 @@
+{
+  "args": [
+    "core",
+    "is-installed",
+    "--network",
+    "--skip-plugins",
+    "--skip-themes"
+  ],
+  "exit": 0,
+  "stdout": "",
+  "stderr": ""
+}
