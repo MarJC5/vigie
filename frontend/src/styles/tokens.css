@@ -1,0 +1,155 @@
+/* Vigie design tokens: the only place with raw values. Dark theme by default, light theme when
+   the system asks for it or when data-theme="light" is set (data-theme also forces dark).
+   Built on WordPress's own palette: neutral greys and alert colors of @wordpress/base-styles,
+   the Blueberry family of the WordPress.org theme. A value marked "adjusted" differs from the
+   WordPress one only to reach WCAG AA on Vigie's surfaces.
+   Status and site colors are fills with a thin ring; meaning is carried by shape and label,
+   never by color alone. */
+
+:root,
+[data-theme="dark"] {
+	color-scheme: dark;
+
+	/* Surfaces: neutral greys in small steps; the site list is one step lighter than the detail,
+	   a selection one step darker */
+	--vg-surface-rail: #232323;
+	--vg-surface-main: #272727;
+	--vg-surface-pane: #2f2f2f;    /* WordPress gray-800 */
+	--vg-surface-row: #2b2b2b;
+	--vg-surface-sunken: #1e1e1e;  /* WordPress gray-900, Charcoal */
+	--vg-surface-raised: #333333;
+	--vg-border: #3c3c3c;
+	--vg-border-strong: #808080;
+
+	/* Text */
+	--vg-text: #f0f0f0;            /* WordPress gray-100 */
+	--vg-text-muted: #ababab;      /* adjusted: gray-600 #949494 is under 4.5:1 on the site list */
+	--vg-text-on-accent: #ffffff;
+
+	/* Blueberry: fills; Blueberry 2 for text, icons and focus on dark */
+	--vg-accent: #3858e9;          /* Blueberry */
+	--vg-accent-hover: #213fd4;    /* Deep Blueberry */
+	--vg-accent-text: #9fb1ff;     /* Blueberry 2 */
+	--vg-focus: #9fb1ff;
+
+	/* Site status (dots and shapes, next to a text label) */
+	--vg-status-ok: #4ab866;       /* WordPress alert green */
+	--vg-status-warn: #f0b849;     /* WordPress alert yellow */
+	--vg-status-danger: #e26f56;   /* Pomegranate (alert red #cc1818 is too dark on dark greys) */
+	--vg-status-unknown: #949494;  /* WordPress gray-600 */
+
+	/* Site manager colors (FileZilla order, none excluded) */
+	--vg-site-red: #f2555a;
+	--vg-site-green: #4ab866;
+	--vg-site-blue: #7b93ff;
+	--vg-site-yellow: #fff972;     /* Lemon */
+	--vg-site-cyan: #22c3e6;
+	--vg-site-magenta: #d7a7ff;    /* Purple 3 */
+	--vg-site-orange: #ff8a3d;
+
+	/* Thin ring around color fills, so they hold their edge on any surface */
+	--vg-swatch-ring: rgba(255, 255, 255, 0.15);  /* White 15% */
+}
+
+[data-theme="light"] {
+	color-scheme: light;
+	--vg-surface-rail: #f0f0f0;    /* WordPress gray-100 */
+	--vg-surface-main: #ffffff;
+	--vg-surface-pane: #f6f6f6;    /* Light Grey 2 */
+	--vg-surface-row: #f6f6f6;
+	--vg-surface-sunken: #e0e0e0;  /* WordPress gray-200 */
+	--vg-surface-raised: #ffffff;
+	--vg-border: #e0e0e0;          /* WordPress gray-200 */
+	--vg-border-strong: #8a8a8a;   /* adjusted: gray-600 #949494 is under 3:1 on the site list */
+	--vg-text: #1e1e1e;            /* WordPress gray-900 */
+	--vg-text-muted: #636363;      /* adjusted: gray-700 #757575 is under 4.5:1 on the site list and a selection */
+	--vg-text-on-accent: #ffffff;
+	--vg-accent: #3858e9;
+	--vg-accent-hover: #213fd4;
+	--vg-accent-text: #3858e9;
+	--vg-focus: #3858e9;
+	--vg-status-ok: #4ab866;
+	--vg-status-warn: #f0b849;
+	--vg-status-danger: #cc1818;   /* WordPress alert red */
+	--vg-status-unknown: #949494;
+	--vg-site-red: #cc1818;
+	--vg-site-green: #4ab866;
+	--vg-site-blue: #3858e9;
+	--vg-site-yellow: #f0b849;
+	--vg-site-cyan: #0891b2;
+	--vg-site-magenta: #7a00df;    /* Purple 2 */
+	--vg-site-orange: #e26f56;     /* Pomegranate */
+	--vg-swatch-ring: rgba(0, 0, 0, 0.15);  /* Black 15% */
+}
+
+@media (prefers-color-scheme: light) {
+	:root:not([data-theme]) {
+		color-scheme: light;
+		--vg-surface-rail: #f0f0f0;
+		--vg-surface-main: #ffffff;
+		--vg-surface-pane: #f6f6f6;
+		--vg-surface-row: #f6f6f6;
+		--vg-surface-sunken: #e0e0e0;
+		--vg-surface-raised: #ffffff;
+		--vg-border: #e0e0e0;
+		--vg-border-strong: #8a8a8a;
+		--vg-text: #1e1e1e;
+		--vg-text-muted: #636363;
+		--vg-text-on-accent: #ffffff;
+		--vg-accent: #3858e9;
+		--vg-accent-hover: #213fd4;
+		--vg-accent-text: #3858e9;
+		--vg-focus: #3858e9;
+		--vg-status-ok: #4ab866;
+		--vg-status-warn: #f0b849;
+		--vg-status-danger: #cc1818;
+		--vg-status-unknown: #949494;
+		--vg-site-red: #cc1818;
+		--vg-site-green: #4ab866;
+		--vg-site-blue: #3858e9;
+		--vg-site-yellow: #f0b849;
+		--vg-site-cyan: #0891b2;
+		--vg-site-magenta: #7a00df;
+		--vg-site-orange: #e26f56;
+		--vg-swatch-ring: rgba(0, 0, 0, 0.15);
+	}
+}
+
+:root {
+	/* Type: Instrument Sans, two weights; tabular figures for versions */
+	--vg-font: "Instrument Sans Variable", "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+	--vg-weight-regular: 400;
+	--vg-weight-strong: 600;
+	--vg-text-caption: 12px;
+	--vg-text-small: 13px;
+	--vg-text-body: 14px;
+	--vg-text-heading: 17px;
+	--vg-text-title: 22px;
+	--vg-text-display: 40px;
+	--vg-leading-tight: 1.15;
+	--vg-leading-body: 1.45;
+	--vg-tracking-caps: 0.06em;
+
+	/* Space: 4 px steps */
+	--vg-space-1: 4px;
+	--vg-space-2: 8px;
+	--vg-space-3: 12px;
+	--vg-space-4: 16px;
+	--vg-space-5: 24px;
+	--vg-space-6: 32px;
+	--vg-space-7: 48px;
+
+	/* Shape */
+	--vg-radius-control: 6px;
+	--vg-radius-panel: 10px;
+	--vg-radius-pill: 999px;
+	--vg-rail-width: 64px;
+	--vg-pane-width: 264px;
+	--vg-row-height: 44px;
+	--vg-control-height: 32px;
+
+	/* Motion */
+	--vg-duration-hover: 120ms;
+	--vg-duration-ui: 200ms;
+	--vg-ease: cubic-bezier(0.25, 1, 0.5, 1);
+}

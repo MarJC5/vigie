@@ -1,0 +1,29 @@
+/* Page-wide defaults, from the tokens only. */
+@import "@fontsource-variable/instrument-sans/wght.css";
+@import "./tokens.css";
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--vg-font);
+  font-size: var(--vg-text-body);
+  line-height: var(--vg-leading-body);
+  color: var(--vg-text);
+  background: var(--vg-surface-main);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
