@@ -1,0 +1,42 @@
+.labelled {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vg-space-2);
+}
+
+.dot {
+  display: inline-block;
+  flex: none;
+  box-shadow: inset 0 0 0 1px var(--vg-swatch-ring);
+}
+
+.ok {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--vg-radius-pill);
+  background: var(--vg-status-ok);
+}
+
+.warn {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--vg-status-warn);
+}
+
+.danger {
+  width: 10px;
+  height: 9px;
+  background: var(--vg-status-danger);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  box-shadow: none;
+}
+
+.unknown {
+  width: 8px;
+  height: 8px;
+  box-sizing: border-box;
+  border-radius: var(--vg-radius-pill);
+  border: 1.5px solid var(--vg-status-unknown);
+  box-shadow: none;
+}

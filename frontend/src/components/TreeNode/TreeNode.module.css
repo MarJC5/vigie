@@ -1,0 +1,65 @@
+.node {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 10px 0 calc(8px + var(--vg-node-indent, 0px));
+  border-radius: var(--vg-radius-control);
+  color: var(--vg-text);
+  cursor: default;
+}
+
+.node:hover {
+  background: var(--vg-surface-row);
+}
+
+.node[aria-selected="true"] {
+  background: var(--vg-surface-sunken);
+}
+
+.node[aria-selected="true"] .name,
+.node[aria-expanded] .name {
+  font-weight: var(--vg-weight-strong);
+}
+
+.node:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: -2px;
+}
+
+.caret,
+.icon {
+  display: inline-flex;
+  color: var(--vg-text-muted);
+}
+
+.colored {
+  display: inline-flex;
+  color: var(--vg-node-color);
+}
+
+.name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  margin-left: auto;
+  font-size: var(--vg-text-caption);
+  color: var(--vg-text-muted);
+  white-space: nowrap;
+}
+
+.tag {
+  margin-left: auto;
+  width: 4px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--vg-node-color);
+  box-shadow: inset 0 0 0 1px var(--vg-swatch-ring);
+}
+
+.meta + .tag {
+  margin-left: var(--vg-space-2);
+}

@@ -1,0 +1,31 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  align-items: center;
+  min-height: var(--vg-row-height);
+  padding: 0 var(--vg-space-3);
+  border-radius: var(--vg-radius-control);
+}
+
+.row:nth-child(odd) {
+  background: var(--vg-surface-row);
+}
+
+.label {
+  color: var(--vg-text-muted);
+}
+
+.value {
+  display: flex;
+  align-items: center;
+  gap: var(--vg-space-3);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+}
