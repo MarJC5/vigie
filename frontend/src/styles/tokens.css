@@ -143,7 +143,8 @@
 	--vg-radius-control: 6px;
 	--vg-radius-panel: 10px;
 	--vg-radius-pill: 999px;
-	--vg-rail-width: 64px;
+	/* Holds the macOS window buttons (x 9 to 69 in a hidden title bar) with 9 px on either side. */
+	--vg-rail-width: 78px;
 	--vg-pane-width: 264px;
 	--vg-row-height: 44px;
 	--vg-control-height: 32px;

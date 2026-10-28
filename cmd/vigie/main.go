@@ -68,8 +68,9 @@ func openWindow(opts cli.Options) error {
 		MinWidth:  960,
 		MinHeight: 600,
 		URL:       "/",
-		// The traffic lights sit over the navigation rail.
-		Mac: application.MacWindow{InvisibleTitleBarHeight: 44, TitleBar: application.MacTitleBarHiddenInset},
+		// The window buttons keep their standard place, on the navigation rail; the rail and the
+		// header of the site list move the window (--wails-draggable in their styles).
+		Mac: application.MacWindow{TitleBar: application.MacTitleBarHidden},
 	})
 	return wails.Run()
 }

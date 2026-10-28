@@ -2,13 +2,20 @@
   width: var(--vg-rail-width);
   flex: none;
   box-sizing: border-box;
-  /* Room for the native window controls above the first item. */
-  padding: 44px 0 var(--vg-space-4);
+  /* Room for the macOS window buttons (y 9 to 23) above the first item. */
+  padding: 40px 0 var(--vg-space-4);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 6px;
   background: var(--vg-surface-rail);
+  /* The rail moves the window, as a title bar would; its links and button do not. */
+  --wails-draggable: drag;
+}
+
+.item,
+.add {
+  --wails-draggable: no-drag;
 }
 
 .item {
