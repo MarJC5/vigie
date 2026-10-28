@@ -1,0 +1,60 @@
+.rail {
+  width: var(--vg-rail-width);
+  flex: none;
+  box-sizing: border-box;
+  /* Room for the native window controls above the first item. */
+  padding: 44px 0 var(--vg-space-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: var(--vg-surface-rail);
+}
+
+.item {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--vg-radius-panel);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--vg-text-muted);
+}
+
+.item:hover {
+  color: var(--vg-text);
+}
+
+.item[aria-current="page"] {
+  background: var(--vg-surface-sunken);
+  color: var(--vg-accent-text);
+}
+
+.item:focus-visible,
+.add:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 2px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.add {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--vg-radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--vg-accent);
+  color: var(--vg-text-on-accent);
+  cursor: pointer;
+}
+
+.add:disabled {
+  background: var(--vg-surface-raised);
+  color: var(--vg-text-muted);
+  cursor: default;
+}

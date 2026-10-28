@@ -10,6 +10,7 @@
     "label": "Site manager",
     "search": "Search",
     "collapse": "Hide the site list",
+    "expand": "Show the site list",
     "noHosts": "No hosts yet.",
     "running_one": "{{count}} scan running",
     "running_other": "{{count}} scans running",
@@ -60,5 +61,23 @@
     "cyan": "Cyan",
     "magenta": "Magenta",
     "orange": "Orange"
+  },
+  "detail": {
+    "select": "Select a folder, host or site.",
+    "kind": "Type",
+    "location": "Location in Vigie",
+    "subsites": "Subsites",
+    "lastScan": "Last scan",
+    "notScanned": "Not scanned yet"
+  },
+  "kind": {
+    "folder": "Folder",
+    "host": "Host",
+    "site": "Site",
+    "network": "Multisite network"
+  },
+  "bottom": {
+    "sites_one": "{{name}} · {{count}} site",
+    "sites_other": "{{name}} · {{count}} sites"
   }
 }

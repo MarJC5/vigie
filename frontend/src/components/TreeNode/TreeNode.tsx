@@ -21,9 +21,11 @@ export interface TreeNodeProps {
   meta?: string;
   onSelect: () => void;
   onToggle?: () => void;
+  /** Reachable with Tab; by default only the selected item is (roving focus). */
+  tabbable?: boolean;
 }
 
-export function TreeNode({ kind, name, depth, expanded, selected = false, status, color, meta, onSelect, onToggle }: TreeNodeProps) {
+export function TreeNode({ kind, name, depth, expanded, selected = false, status, color, meta, onSelect, onToggle, tabbable }: TreeNodeProps) {
   const branch = kind !== "site";
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Enter" || event.key === " ") {
@@ -45,7 +47,7 @@ export function TreeNode({ kind, name, depth, expanded, selected = false, status
       aria-level={depth + 1}
       aria-selected={selected}
       aria-expanded={branch ? Boolean(expanded) : undefined}
-      tabIndex={selected ? 0 : -1}
+      tabIndex={(tabbable ?? selected) ? 0 : -1}
       className={styles.node}
       style={style}
       onClick={onSelect}
@@ -54,6 +56,7 @@ export function TreeNode({ kind, name, depth, expanded, selected = false, status
       {branch && (
         <span
           className={styles.caret}
+          data-caret
           onClick={(event) => {
             event.stopPropagation();
             onToggle?.();

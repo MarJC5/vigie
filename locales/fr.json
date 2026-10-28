@@ -10,6 +10,7 @@
     "label": "Gestionnaire de sites",
     "search": "Rechercher",
     "collapse": "Masquer la liste des sites",
+    "expand": "Afficher la liste des sites",
     "noHosts": "Aucun hébergement pour le moment.",
     "running_one": "{{count}} relevé en cours",
     "running_many": "{{count}} relevés en cours",
@@ -62,5 +63,24 @@
     "cyan": "Cyan",
     "magenta": "Magenta",
     "orange": "Orange"
+  },
+  "detail": {
+    "select": "Choisissez un dossier, un hébergement ou un site.",
+    "kind": "Type",
+    "location": "Emplacement dans Vigie",
+    "subsites": "Sous-sites",
+    "lastScan": "Dernier relevé",
+    "notScanned": "Pas encore relevé"
+  },
+  "kind": {
+    "folder": "Dossier",
+    "host": "Hébergement",
+    "site": "Site",
+    "network": "Réseau multisite"
+  },
+  "bottom": {
+    "sites_one": "{{name}} · {{count}} site",
+    "sites_many": "{{name}} · {{count}} sites",
+    "sites_other": "{{name}} · {{count}} sites"
   }
 }
