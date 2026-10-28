@@ -31,7 +31,7 @@ export function NavRail({ current, onAddHost }: NavRailProps) {
           aria-current={id === current ? "page" : undefined}
           className={styles.item}
         >
-          <Icon name={icon} size={22} weight={id === current ? "fill" : "regular"} />
+          <Icon name={icon} size={22} />
         </a>
       ))}
       <span className={styles.spacer} />

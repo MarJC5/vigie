@@ -22,8 +22,6 @@ export const Labelled: Story = {
   },
 };
 
-export const Filled: Story = { args: { name: "sites", weight: "fill", size: 22 } };
-
 export const Gallery: Story = {
   render: () => (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
