@@ -1,17 +1,20 @@
 GOVULNCHECK := golang.org/x/vuln/cmd/govulncheck@v1.9.0
 WAILS := go run github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
 
-.PHONY: test vet fmt-check vuln go-check frontend-install frontend-browsers frontend-lint frontend-test frontend-build bindings bindings-check app check
+.PHONY: test vet fmt-check vuln go-check frontend-install frontend-browsers frontend-lint frontend-test frontend-build frontend-e2e bindings bindings-check app check
 
 test:
 	go test -race ./...
 
+# ./... skips testdata: the program that prepares the end-to-end test is named as well.
+GO_TESTDATA := ./cmd/vigie/testdata/seed
+
 vet:
-	go vet ./...
+	go vet ./... $(GO_TESTDATA)
 
 # Only the module's packages: gofmt alone would also walk frontend/node_modules.
 fmt-check:
-	@unformatted="$$(gofmt -l $$(go list -f '{{.Dir}}' ./...))"; \
+	@unformatted="$$(gofmt -l $$(go list -f '{{.Dir}}' ./... $(GO_TESTDATA)))"; \
 	if [ -n "$$unformatted" ]; then echo "Not formatted with gofmt:"; echo "$$unformatted"; exit 1; fi
 
 vuln:
@@ -35,6 +38,10 @@ frontend-test:
 frontend-build:
 	cd frontend && npm run build
 
+# The window end to end: the binary built in server mode, in Chromium and WebKit (needs frontend-build).
+frontend-e2e:
+	cd frontend && npx playwright test
+
 # TypeScript bindings generated from the Go services, committed; CI fails when they are stale.
 bindings:
 	$(WAILS) generate bindings -ts -i -clean=true ./cmd/vigie
@@ -49,4 +56,4 @@ app:
 	$(WAILS) package
 
 # The interface is built first: the Go binary embeds frontend/dist.
-check: frontend-build go-check bindings-check frontend-lint frontend-test
+check: frontend-build go-check bindings-check frontend-lint frontend-test frontend-e2e

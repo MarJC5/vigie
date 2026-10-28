@@ -14,3 +14,5 @@
 /bin/
 /.task/
 /frontend/storybook-static/
+/frontend/test-results/
+/frontend/playwright-report/
