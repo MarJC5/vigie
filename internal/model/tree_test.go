@@ -2,6 +2,7 @@ package model_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/MarJC5/vigie/internal/model"
@@ -187,5 +188,31 @@ func TestNamesEqual(t *testing.T) {
 		if got := model.NamesEqual(tt.a, tt.b); got != tt.want {
 			t.Errorf("NamesEqual(%q, %q) = %v, want %v", tt.a, tt.b, got, tt.want)
 		}
+	}
+}
+
+func TestWalkVisitsParentsFirstInOrder(t *testing.T) {
+	tr := model.NewTree()
+	b := model.Folder{ID: model.NewID(), Name: "B"}
+	a := model.Folder{ID: model.NewID(), Name: "a"}
+	sub := model.Folder{ID: model.NewID(), ParentID: a.ID, Name: "Sub", Position: 1}
+	first := model.Host{ID: model.NewID(), FolderID: a.ID, Name: "Zeta", Alias: "z", Position: 0}
+	site2 := model.Site{ID: model.NewID(), HostID: first.ID, Name: "two"}
+	site1 := model.Site{ID: model.NewID(), HostID: first.ID, Name: "one"}
+	root := model.Host{ID: model.NewID(), Name: "root-host", Alias: "r"}
+	for _, err := range []error{tr.AddFolder(b), tr.AddFolder(a), tr.AddFolder(sub), tr.AddHost(first),
+		tr.AddSite(site2), tr.AddSite(site1), tr.AddHost(root)} {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	var got []string
+	tr.Walk(func(n model.Node, depth int) {
+		got = append(got, strings.Repeat(" ", depth)+tr.PathOf(n))
+	})
+	// Within a folder: subfolders first, then hosts; siblings by position, then name without case.
+	want := []string{"a", " a/Sub", " a/Zeta", "  a/Zeta/one", "  a/Zeta/two", "B", "root-host"}
+	if strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Fatalf("Walk order =\n%q\nwant\n%q", got, want)
 	}
 }

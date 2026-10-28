@@ -1,7 +1,9 @@
 package model
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -270,4 +272,52 @@ func (t *Tree) childSite(host ID, name string) (Site, bool) {
 		}
 	}
 	return Site{}, false
+}
+
+// Walk visits every node depth first, parents before children: in a folder, its subfolders then
+// its hosts; under a host, its sites. Siblings are ordered by position, then by name without case.
+func (t *Tree) Walk(fn func(n Node, depth int)) {
+	t.walkFolder(NoID, 0, fn)
+}
+
+func (t *Tree) walkFolder(folder ID, depth int, fn func(Node, int)) {
+	var folders []Folder
+	for _, f := range t.folders {
+		if f.ParentID == folder {
+			folders = append(folders, f)
+		}
+	}
+	slices.SortFunc(folders, func(a, b Folder) int { return siblingOrder(a.Position, a.Name, b.Position, b.Name) })
+	for _, f := range folders {
+		fn(Node{Kind: KindFolder, ID: f.ID}, depth)
+		t.walkFolder(f.ID, depth+1, fn)
+	}
+
+	var hosts []Host
+	for _, h := range t.hosts {
+		if h.FolderID == folder {
+			hosts = append(hosts, h)
+		}
+	}
+	slices.SortFunc(hosts, func(a, b Host) int { return siblingOrder(a.Position, a.Name, b.Position, b.Name) })
+	for _, h := range hosts {
+		fn(Node{Kind: KindHost, ID: h.ID}, depth)
+		var sites []Site
+		for _, s := range t.sites {
+			if s.HostID == h.ID {
+				sites = append(sites, s)
+			}
+		}
+		slices.SortFunc(sites, func(a, b Site) int { return siblingOrder(a.Position, a.Name, b.Position, b.Name) })
+		for _, s := range sites {
+			fn(Node{Kind: KindSite, ID: s.ID}, depth+1)
+		}
+	}
+}
+
+func siblingOrder(posA int, nameA string, posB int, nameB string) int {
+	if posA != posB {
+		return cmp.Compare(posA, posB)
+	}
+	return cmp.Compare(strings.ToLower(nameA), strings.ToLower(nameB))
 }
