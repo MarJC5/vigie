@@ -15,6 +15,7 @@ import (
 	"github.com/MarJC5/vigie/internal/app"
 	"github.com/MarJC5/vigie/internal/buildinfo"
 	"github.com/MarJC5/vigie/internal/cli"
+	"github.com/MarJC5/vigie/internal/i18n"
 	"github.com/MarJC5/vigie/internal/store"
 )
 
@@ -52,10 +53,13 @@ func openWindow(opts cli.Options) error {
 	}
 
 	wails := application.New(application.Options{
-		Name:     "Vigie",
-		Services: []application.Service{application.NewService(app.NewSiteManager(db))},
-		Assets:   application.AssetOptions{Handler: application.AssetFileServerFS(frontend.Assets())},
-		Mac:      application.MacOptions{ApplicationShouldTerminateAfterLastWindowClosed: true},
+		Name: "Vigie",
+		Services: []application.Service{
+			application.NewService(app.NewSiteManager(db)),
+			application.NewService(app.NewPreferences(db, i18n.SystemLanguage)),
+		},
+		Assets: application.AssetOptions{Handler: application.AssetFileServerFS(frontend.Assets())},
+		Mac:    application.MacOptions{ApplicationShouldTerminateAfterLastWindowClosed: true},
 	})
 	wails.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:     "Vigie",
