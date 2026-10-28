@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=Vigie
+Comment=Monitor and update WordPress sites over SSH and WP-CLI
+# The Exec line includes %u to pass the URL to the application
+Exec=/usr/local/bin/Vigie %u
+Terminal=false
+Type=Application
+Icon=Vigie
+Categories=Utility;
+StartupWMClass=Vigie
+
+ 
