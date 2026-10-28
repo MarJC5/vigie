@@ -1,12 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
+import { App } from "./App";
 import "./styles/base.css";
-
-// The application shell comes with the design system components; this entry point only mounts it.
-function App() {
-  return null;
-}
 
 const root = document.getElementById("root");
 if (root) {
