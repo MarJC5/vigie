@@ -14,7 +14,8 @@ concurrency:
 jobs:
   check:
     name: Format, vet, tests, vulnerabilities, front end
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moves to a new Ubuntu release from time to time.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
