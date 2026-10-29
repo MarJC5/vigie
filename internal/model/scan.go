@@ -88,8 +88,9 @@ const (
 )
 
 // Status summarizes the scan: unknown when it did not complete; needs attention when an update is
-// pending or cannot be installed, a check did not reach wordpress.org, or a plugin's update
-// source is unknown; up to date otherwise.
+// pending or cannot be installed, or a check did not reach wordpress.org; up to date otherwise. A
+// plugin whose update source is unknown is shown as such but does not change the status: most
+// client sites have one, and "needs attention" must keep its meaning.
 func (s Scan) Status() SiteStatus {
 	if s.Outcome != ScanCompleted {
 		return StatusUnknown
@@ -98,10 +99,8 @@ func (s Scan) Status() SiteStatus {
 		return StatusAttention
 	}
 	for _, item := range s.Items {
-		switch {
-		case item.Update == UpdateAvailable, item.Update == UpdateUnavailable, item.Update == UpdateUnknown:
-			return StatusAttention
-		case item.UpdateSourceUnknown():
+		switch item.Update {
+		case UpdateAvailable, UpdateUnavailable, UpdateUnknown:
 			return StatusAttention
 		}
 	}

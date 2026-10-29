@@ -46,7 +46,8 @@ func TestSiteStatus(t *testing.T) {
 		{"plugin check failed", with(func(s *model.Scan) { s.PluginsChecked = false }), model.StatusAttention},
 		{"theme check failed", with(func(s *model.Scan) { s.ThemesChecked = false }), model.StatusAttention},
 		{"translation check failed", with(func(s *model.Scan) { s.LanguagesChecked = false }), model.StatusAttention},
-		{"plugin not on wordpress.org", with(func(s *model.Scan) { s.Items[1].OnWordPressOrg = false }), model.StatusAttention},
+		// Shown on the plugin, but most client sites have one: it would keep them all orange.
+		{"plugin not on wordpress.org", with(func(s *model.Scan) { s.Items[1].OnWordPressOrg = false }), model.StatusUpToDate},
 	} {
 		if got := tc.scan.Status(); got != tc.want {
 			t.Errorf("%s: Status() = %q, want %q", tc.name, got, tc.want)
