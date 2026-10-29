@@ -7,7 +7,6 @@ import { Button } from "../Button/Button";
 import { DetailHeader } from "../DetailHeader/DetailHeader";
 import { InfoList, InfoRow } from "../InfoList/InfoList";
 import { Notice } from "../Notice/Notice";
-import { Progress } from "../Progress/Progress";
 import { StatusDot } from "../StatusDot/StatusDot";
 import { TabBar } from "../TabBar/TabBar";
 
@@ -44,18 +43,11 @@ export function SiteOverview({ site, scanning, onScan, now }: SiteOverviewProps)
         panelId={panel}
       >
         <Button variant="primary" icon="refresh" onClick={onScan} disabled={scanning} aria-busy={scanning || undefined}>
-          {t("action.scanNow")}
+          {scanning ? t("overview.scanning") : t("action.scanNow")}
         </Button>
       </TabBar>
       <div role="tabpanel" id={panel} aria-labelledby={`${panel}-${tab}`}>
-        {scanning && <Progress label={t("overview.scanning")} />}
-        {scan?.problem && (
-          <Notice
-            title={t("overview.scanProblem")}
-            text={t(scan.problem.code, { message: scan.problem.detail })}
-            detail={scan.problem.detail}
-          />
-        )}
+        {scan?.problem && <ScanNotice code={scan.problem.code} detail={scan.problem.detail} />}
         {tab === "overview" ? <Overview site={site} /> : <Updates scan={scan} />}
       </div>
     </>
@@ -163,4 +155,11 @@ function updateName(t: T, u: UpdateView): string {
       return t("updates.languageOf", { language: u.language, item: u.slug || t("updates.core") });
   }
   return u.title || u.slug;
+}
+
+/** Why the last scan did not complete; the raw message only when the text does not already say it. */
+function ScanNotice({ code, detail }: { code: string; detail: string }) {
+  const { t } = useTranslation();
+  const text = t(code, { message: detail });
+  return <Notice title={t("overview.scanProblem")} text={text} detail={detail && !text.includes(detail) ? detail : undefined} />;
 }

@@ -4,7 +4,6 @@ import type { SiteRow } from "../../../bindings/github.com/MarJC5/vigie/internal
 import { Button } from "../Button/Button";
 import { Counts } from "../Counts/Counts";
 import { DetailHeader } from "../DetailHeader/DetailHeader";
-import { Progress } from "../Progress/Progress";
 import { SiteTable } from "../SiteTable/SiteTable";
 
 export interface SitesOverviewProps {
@@ -35,10 +34,9 @@ export function SitesOverview({ title, icon, subtitle, rows, scanLabel, scanning
         ]}
       >
         <Button variant="primary" icon="refresh" onClick={onScan} disabled={scanning} aria-busy={scanning || undefined}>
-          {scanLabel}
+          {scanning ? t("overview.scanning") : scanLabel}
         </Button>
       </Counts>
-      {scanning && <Progress label={t("overview.scanning")} />}
       <SiteTable
         label={t("host.table", { name: title })}
         columns={{

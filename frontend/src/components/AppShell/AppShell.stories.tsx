@@ -107,8 +107,8 @@ export const ScansRunning: Story = {
     await expect(pane).toHaveTextContent("2 scans running");
     await userEvent.click(within(pane!).getByRole("button", { name: "Stop all" }));
     await expect(args.onStopAll).toHaveBeenCalled();
-    // The host being scanned says so.
-    await expect(canvas.getAllByRole("button", { name: "Scan host" })[0]).toHaveAttribute("aria-busy", "true");
+    // The host being scanned says so, in its button.
+    await expect((await canvas.findAllByRole("button", { name: "Scanning…" }))[0]).toHaveAttribute("aria-busy", "true");
   },
 };
 

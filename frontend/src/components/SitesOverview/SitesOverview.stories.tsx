@@ -44,3 +44,11 @@ export const Folder: Story = {
     await expect(canvas.getAllByRole("table", { name: "Sites of Clients" })).toHaveLength(2);
   },
 };
+
+export const Scanning: Story = {
+  args: { scanning: true },
+  play: async ({ canvas }) => {
+    await expect(canvas.getAllByRole("button", { name: "Scanning…" })[0]).toHaveAttribute("aria-busy", "true");
+    await expect(canvas.queryAllByRole("progressbar")).toHaveLength(0);
+  },
+};

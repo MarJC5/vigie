@@ -62,6 +62,25 @@ export const ScanFailed: Story = {
   play: async ({ canvas }) => {
     const [alert] = canvas.getAllByRole("alert");
     await expect(alert).toHaveTextContent("allow yours in the host's control panel");
+    // The raw message, once.
+    await expect(alert!.textContent!.split("Operation timed out").length - 1).toBe(1);
+  },
+};
+
+export const UnreadableAnswer: Story = {
+  args: {
+    site: {
+      ...failedSite,
+      scan: {
+        ...failedSite.scan!,
+        problem: { code: "failure.unreadable", detail: "plugin list: unexpected WP-CLI output: json: cannot unmarshal bool" },
+      },
+    },
+  },
+  play: async ({ canvas }) => {
+    const [alert] = canvas.getAllByRole("alert");
+    await expect(alert).toHaveTextContent("Vigie could not read the answer of WP-CLI");
+    await expect(alert!.textContent!.split("cannot unmarshal bool").length - 1).toBe(1);
   },
 };
 
@@ -72,12 +91,13 @@ export const NeverScanned: Story = {
   },
 };
 
+// A scan running shows in its button, not as a block of its own above the content.
 export const Scanning: Story = {
   args: { scanning: true },
   play: async ({ canvas }) => {
-    const [scan] = canvas.getAllByRole("button", { name: "Scan now" });
+    const [scan] = canvas.getAllByRole("button", { name: "Scanning…" });
     await expect(scan).toHaveAttribute("aria-busy", "true");
-    await expect(canvas.getAllByRole("progressbar", { name: "Scanning…" })).toHaveLength(2);
+    await expect(canvas.queryAllByRole("progressbar")).toHaveLength(0);
   },
 };
 
