@@ -235,7 +235,7 @@ export function HostDialog({ api, hostId, sites, onClose, onSaved }: HostDialogP
           </>
         )}
         <Column span={alias ? 6 : 3}>
-          <TextField label={t("wizard.field.wpCli")} value={form.wpCli} onChange={set("wpCli")} hint={t("wizard.field.wpCliHint")} />
+          <TextField label={t("wizard.field.wpCli")} value={form.wpCli} onChange={set("wpCli")} placeholder="wp" hint={t("wizard.field.wpCliHint")} />
         </Column>
         <Column span={6}>
           <TextField

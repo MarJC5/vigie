@@ -52,9 +52,10 @@ func TestTreeListsNodesParentsFirstWithEffectiveColors(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []app.Node{
-		{ID: clients.ID.String(), Kind: "folder", Name: "Clients", Color: "blue", Path: "Clients"},
-		{ID: host.ID.String(), ParentID: clients.ID.String(), Kind: "host", Name: "Shared hosting", Color: "blue", Path: "Clients/Shared hosting"},
-		{ID: site.ID.String(), ParentID: host.ID.String(), Kind: "site", Name: "atelier-exemple.ch", Color: "blue",
+		{ID: clients.ID.String(), Kind: "folder", Name: "Clients", Color: "blue", OwnColor: "blue", Path: "Clients"},
+		{ID: host.ID.String(), ParentID: clients.ID.String(), Kind: "host", Name: "Shared hosting", Color: "blue", OwnColor: "none",
+			Path: "Clients/Shared hosting"},
+		{ID: site.ID.String(), ParentID: host.ID.String(), Kind: "site", Name: "atelier-exemple.ch", Color: "blue", OwnColor: "none",
 			Path: "Clients/Shared hosting/atelier-exemple.ch", Multisite: true, Subsites: 2},
 	}
 	if len(tree.Nodes) != len(want) {

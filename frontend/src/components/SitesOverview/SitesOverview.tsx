@@ -5,6 +5,7 @@ import { Button } from "../Button/Button";
 import { Counts } from "../Counts/Counts";
 import { DetailHeader } from "../DetailHeader/DetailHeader";
 import { SiteTable } from "../SiteTable/SiteTable";
+import styles from "./SitesOverview.module.css";
 
 export interface SitesOverviewProps {
   title: string;
@@ -16,14 +17,28 @@ export interface SitesOverviewProps {
   scanning: boolean;
   onScan: () => void;
   onSelect: (siteId: string) => void;
+  /** Opens the host's or folder's menu under the point given. */
+  onMore?: (point: { x: number; y: number }) => void;
 }
 
 /** A host or a folder: counts over its sites, then the table of their latest scans. */
-export function SitesOverview({ title, icon, subtitle, rows, scanLabel, scanning, onScan, onSelect }: SitesOverviewProps) {
+export function SitesOverview({ title, icon, subtitle, rows, scanLabel, scanning, onScan, onSelect, onMore }: SitesOverviewProps) {
   const { t } = useTranslation();
   return (
     <>
-      <DetailHeader title={title} icon={icon} subtitle={subtitle} />
+      <DetailHeader title={title} icon={icon} subtitle={subtitle}>
+        {onMore && (
+          <Button
+            variant="icon"
+            icon="dots"
+            label={t("edit.more")}
+            onClick={(event) => {
+              const r = event.currentTarget.getBoundingClientRect();
+              onMore({ x: r.left, y: r.bottom + 4 });
+            }}
+          />
+        )}
+      </DetailHeader>
       <Counts
         label={t("host.summary")}
         items={[
@@ -37,19 +52,23 @@ export function SitesOverview({ title, icon, subtitle, rows, scanLabel, scanning
           {scanning ? t("overview.scanning") : scanLabel}
         </Button>
       </Counts>
-      <SiteTable
-        label={t("host.table", { name: title })}
-        columns={{
-          site: t("host.col.site"),
-          status: t("host.col.status"),
-          wordpress: t("host.col.wordpress"),
-          php: t("host.col.php"),
-          updates: t("host.col.updates"),
-        }}
-        notScanned={t("detail.notScanned")}
-        rows={rows.map((r) => ({ id: r.id, name: r.name, status: r.status, wordpress: r.wordpress, php: r.phpCli, pending: r.pending }))}
-        onSelect={onSelect}
-      />
+      {rows.length === 0 ? (
+        <p className={styles.empty}>{t(icon === "host" ? "edit.emptyHost" : "edit.emptyFolder")}</p>
+      ) : (
+        <SiteTable
+          label={t("host.table", { name: title })}
+          columns={{
+            site: t("host.col.site"),
+            status: t("host.col.status"),
+            wordpress: t("host.col.wordpress"),
+            php: t("host.col.php"),
+            updates: t("host.col.updates"),
+          }}
+          notScanned={t("detail.notScanned")}
+          rows={rows.map((r) => ({ id: r.id, name: r.name, status: r.status, wordpress: r.wordpress, php: r.phpCli, pending: r.pending }))}
+          onSelect={onSelect}
+        />
+      )}
     </>
   );
 }

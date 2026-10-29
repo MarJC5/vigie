@@ -102,12 +102,15 @@ export function SiteTree({
       }
       return nodes.filter((n) => shown.has(n.id)).map((n) => ({ node: n, depth: depthOf(n) }));
     }
+    // The item being named shows, even in a folded folder.
+    const unfolded = new Set<string>();
+    for (let p = editingId ? byId.get(byId.get(editingId)?.parentId ?? "") : undefined; p; p = byId.get(p.parentId)) unfolded.add(p.id);
     const hidden = (n: Node): boolean => {
-      for (let p = byId.get(n.parentId); p; p = byId.get(p.parentId)) if (collapsed.has(p.id)) return true;
+      for (let p = byId.get(n.parentId); p; p = byId.get(p.parentId)) if (collapsed.has(p.id) && !unfolded.has(p.id)) return true;
       return false;
     };
     return nodes.filter((n) => !hidden(n)).map((n) => ({ node: n, depth: depthOf(n) }));
-  }, [nodes, collapsed, filter]);
+  }, [nodes, collapsed, filter, editingId]);
 
   const toggle = (id: string) =>
     setCollapsed((current) => {

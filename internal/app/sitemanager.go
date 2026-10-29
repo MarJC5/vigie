@@ -15,8 +15,9 @@ type Node struct {
 	ParentID  string `json:"parentId"` // empty at the root
 	Kind      string `json:"kind"`     // "folder", "host" or "site"
 	Name      string `json:"name"`
-	Color     string `json:"color"` // effective color: its own, else inherited
-	Path      string `json:"path"`  // command line path, for example "Clients/Shared hosting/atelier-exemple.ch"
+	Color     string `json:"color"`    // effective color: its own, else inherited
+	OwnColor  string `json:"ownColor"` // its own color, "none" when it inherits
+	Path      string `json:"path"`     // command line path, for example "Clients/Shared hosting/atelier-exemple.ch"
 	Multisite bool   `json:"multisite"`
 	Subsites  int    `json:"subsites"`
 	Status    string `json:"status"` // sites: ok, warn or unknown from the latest scan; empty when never scanned
@@ -59,15 +60,15 @@ func (s *SiteManager) Tree(ctx context.Context) (Tree, error) {
 		switch n.Kind {
 		case model.KindFolder:
 			f, _ := tree.Folder(n.ID)
-			node.Name, node.Color = f.Name, tree.EffectiveFolderColor(f.ID).String()
+			node.Name, node.Color, node.OwnColor = f.Name, tree.EffectiveFolderColor(f.ID).String(), f.Color.String()
 			node.ParentID = idOrEmpty(f.ParentID)
 		case model.KindHost:
 			h, _ := tree.Host(n.ID)
-			node.Name, node.Color = h.Name, tree.EffectiveHostColor(h.ID).String()
+			node.Name, node.Color, node.OwnColor = h.Name, tree.EffectiveHostColor(h.ID).String(), h.Color.String()
 			node.ParentID = idOrEmpty(h.FolderID)
 		case model.KindSite:
 			site, _ := tree.Site(n.ID)
-			node.Name, node.Color = site.Name, tree.EffectiveSiteColor(site.ID).String()
+			node.Name, node.Color, node.OwnColor = site.Name, tree.EffectiveSiteColor(site.ID).String(), site.Color.String()
 			node.ParentID = site.HostID.String()
 			node.Multisite, node.Subsites = site.Multisite, len(site.Subsites)
 			if scan, ok := latest[site.ID]; ok {

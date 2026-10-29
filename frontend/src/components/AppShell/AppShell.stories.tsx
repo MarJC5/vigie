@@ -3,7 +3,7 @@ import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 
 import { hostRows, outdatedSite, sharedHost } from "../../fixtures/scans";
 import { sampleTree } from "../../fixtures/tree";
-import { AppShell } from "./AppShell";
+import { AppShell, type EditApi } from "./AppShell";
 
 // Each story renders once per theme, so the window landmarks repeat by construction;
 // the end-to-end test checks that the window has one of each.
@@ -148,5 +148,95 @@ export const MenuCommands: Story = {
     await waitFor(() => expect(fields.at(-1)).toHaveFocus());
     menu.send("scan");
     await expect(args.onScan).toHaveBeenCalledWith("shared");
+  },
+};
+
+// A fake of the editing services: every edit is accepted, except a rename to "Clients".
+function fakeEdit(): EditApi {
+  return {
+    CreateFolder: fn(async () => ({ id: "new", problem: null })),
+    Rename: fn(async (_id: string, name: string) =>
+      name === "Clients" ? { code: "problem.duplicateName", detail: "" } : null,
+    ),
+    Move: fn(async () => null),
+    SetColor: fn(async () => null),
+    Delete: fn(async () => null),
+    Host: fn(async () => ({ name: "Managed VPS", alias: "", hostname: "vps.example.test", port: 2222, user: "deploy", keyPath: "", wpCli: "wp", folderId: "personal", maxConcurrent: 0 })),
+    EditHost: fn(async () => ({ keyCleared: false, problem: null })),
+    HostKeys: fn(async () => ({ name: "", keys: [], problem: null })),
+    Trust: fn(async () => null),
+    KeepKey: fn(async () => null),
+    DiscoverHost: fn(async () => ({ installs: [], truncated: false, problem: null })),
+    AddSites: fn(async () => null),
+  };
+}
+
+// The first of the two themes: a menu or a dialog opens in the window it came from.
+const firstWindow = (canvas: { getAllByRole: (role: string, options?: object) => HTMLElement[] }) =>
+  canvas.getAllByRole("complementary", { name: "Site manager" })[0]!.parentElement!;
+
+// A right click opens the menu of a host; "Move to..." opens its dialog, the rest of the window
+// out of reach meanwhile.
+export const MoveFromTheMenu: Story = {
+  args: { edit: fakeEdit(), onChanged: fn() },
+  play: async ({ canvas, args }) => {
+    const shell = within(firstWindow(canvas));
+    await userEvent.pointer({ keys: "[MouseRight]", target: shell.getByRole("treeitem", { name: /Managed VPS/ }) });
+    const menu = shell.getByRole("menu", { name: "Actions on Managed VPS" });
+    await expect(within(menu).getAllByRole("menuitem").map((i) => i.textContent)).toEqual([
+      "Scan⌘R", "Rename↩", "Move to…", "Edit the connection…", "Find new sites…", "Delete the host…⌘⌫",
+    ]);
+    await userEvent.click(within(menu).getByRole("menuitem", { name: "Move to…" }));
+    const dialog = shell.getByRole("dialog", { name: 'Move "Managed VPS"' });
+    await expect(firstWindow(canvas).querySelector("nav")).toHaveAttribute("inert");
+    await userEvent.click(within(dialog).getByRole("radio", { name: /Clients/ }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Move" }));
+    await waitFor(() => expect(args.edit!.Move).toHaveBeenCalledWith("vps", "clients"));
+    await waitFor(() => expect(args.onChanged).toHaveBeenCalled());
+    await expect(shell.queryByRole("dialog")).toBeNull();
+  },
+};
+
+// File > New Folder: a folder in the selected folder, named in place.
+export const NewFolderFromTheMenuBar: Story = {
+  args: {
+    edit: fakeEdit(),
+    onChanged: fn(),
+    initialSelectedId: "shared",
+    commands: (handler: (action: string) => void) => {
+      setTimeout(() => handler("new-folder"), 0);
+      return () => {};
+    },
+  },
+  play: async ({ args }) => {
+    await waitFor(() => expect(args.edit!.CreateFolder).toHaveBeenCalledWith("clients", "New folder"));
+  },
+};
+
+// A refused rename says why in the pane's footer.
+export const RenameRefused: Story = {
+  args: { edit: fakeEdit(), onChanged: fn(), initialSelectedId: "personal" },
+  play: async ({ canvas, args }) => {
+    const shell = within(firstWindow(canvas));
+    shell.getByRole("treeitem", { name: /Personal/ }).focus();
+    await userEvent.keyboard("{Enter}");
+    const field = shell.getByRole("textbox", { name: "Name of Personal" });
+    await userEvent.clear(field);
+    await userEvent.type(field, "Clients{Enter}");
+    await waitFor(() => expect(shell.getByRole("alert")).toHaveTextContent("This name is already used here."));
+    await expect(args.edit!.Rename).toHaveBeenCalledWith("personal", "Clients");
+  },
+};
+
+// The "..." next to the title opens the same menu; deleting a host asks first.
+export const DeleteFromTheTitleMenu: Story = {
+  args: { edit: fakeEdit(), onChanged: fn(), initialSelectedId: "shared", data: { site: async () => outdatedSite, host: async () => sharedHost, sites: async () => hostRows } },
+  play: async ({ canvas, args }) => {
+    const shell = within(firstWindow(canvas));
+    await userEvent.click(await shell.findByRole("button", { name: "More actions" }));
+    await userEvent.click(shell.getByRole("menuitem", { name: "Delete the host…" }));
+    const dialog = shell.getByRole("dialog", { name: 'Delete "Shared hosting"?' });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Delete the host" }));
+    await waitFor(() => expect(args.edit!.Delete).toHaveBeenCalledWith("shared"));
   },
 };

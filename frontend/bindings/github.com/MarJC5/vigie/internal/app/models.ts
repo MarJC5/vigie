@@ -185,6 +185,11 @@ export interface Node {
     "color": string;
 
     /**
+     * its own color, "none" when it inherits
+     */
+    "ownColor": string;
+
+    /**
      * command line path, for example "Clients/Shared hosting/atelier-exemple.ch"
      */
     "path": string;

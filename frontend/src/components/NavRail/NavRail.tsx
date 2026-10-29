@@ -16,13 +16,15 @@ export interface NavRailProps {
   current: Section;
   /** Opens the "add a host" wizard; the button is disabled while it is not available. */
   onAddHost?: () => void;
+  /** Under a dialog: out of reach of the focus and the pointer. */
+  inert?: boolean;
 }
 
 /** The narrow navigation rail; the native window controls sit above it. */
-export function NavRail({ current, onAddHost }: NavRailProps) {
+export function NavRail({ current, onAddHost, inert }: NavRailProps) {
   const { t } = useTranslation();
   return (
-    <nav aria-label={t("nav.navigation")} className={styles.rail}>
+    <nav aria-label={t("nav.navigation")} className={styles.rail} inert={inert}>
       {sections.map(({ id, icon }) => (
         <a
           key={id}

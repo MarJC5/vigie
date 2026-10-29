@@ -3,10 +3,10 @@ import { useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
 
 import { VigieDiscovery, VigieMenu, VigieScans } from "../bindings/events";
-import { HostWizard, Preferences, Scanner, SiteManager } from "../bindings/github.com/MarJC5/vigie/internal/app";
+import { Editor, HostWizard, Preferences, Scanner, SiteManager } from "../bindings/github.com/MarJC5/vigie/internal/app";
 import type { Node, ScansState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { AddHostWizard, type WizardApi } from "./components/AddHostWizard/AddHostWizard";
-import { AppShell, type ShellData } from "./components/AppShell/AppShell";
+import { AppShell, type EditApi, type ShellData } from "./components/AppShell/AppShell";
 import { createI18n } from "./i18n";
 
 // The wizard's service, with the progress of discovery as the Go side sends it.
@@ -20,6 +20,23 @@ const shellData: ShellData = {
   site: (id) => SiteManager.SiteDetail(id),
   host: (id) => SiteManager.HostDetail(id),
   sites: (id) => SiteManager.Sites(id).then((rows) => rows ?? []),
+};
+
+// What edits the site manager: the editor, and the wizard's services for a stored host.
+const editApi: EditApi = {
+  CreateFolder: Editor.CreateFolder,
+  Rename: Editor.Rename,
+  Move: Editor.Move,
+  SetColor: Editor.SetColor,
+  Delete: Editor.Delete,
+  Host: Editor.Host,
+  EditHost: Editor.EditHost,
+  HostKeys: HostWizard.HostKeys,
+  Trust: HostWizard.Trust,
+  KeepKey: HostWizard.KeepKey,
+  DiscoverHost: HostWizard.DiscoverHost,
+  AddSites: HostWizard.AddSites,
+  onDiscovery: (listener) => Events.On(VigieDiscovery, (event) => listener(event.data)),
 };
 
 // The commands of the native menu bar.
@@ -54,9 +71,14 @@ export function App() {
     void SiteManager.Tree().then((tree) => setLoaded((l) => l && { ...l, nodes: tree.nodes ?? [] }));
   }, [scans.completed]);
 
-  const hostAdded = async (hostId: string) => {
+  // Reads the tree again, after an edit or a host added.
+  const reload = async () => {
     const tree = await SiteManager.Tree();
     setLoaded((l) => l && { ...l, nodes: tree.nodes ?? [] });
+  };
+
+  const hostAdded = async (hostId: string) => {
+    await reload();
     setAdded(hostId);
     setAdding(false);
   };
@@ -79,6 +101,8 @@ export function App() {
           onScan={(nodeId) => void Scanner.Scan(nodeId)}
           onStopAll={() => void Scanner.CancelAll()}
           commands={menuCommands}
+          edit={editApi}
+          onChanged={reload}
         />
       )}
     </I18nextProvider>

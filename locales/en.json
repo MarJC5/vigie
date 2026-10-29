@@ -289,6 +289,7 @@
     "quit": "Quit {{app}}",
     "file": "File",
     "newHost": "New Host…",
+    "newFolder": "New Folder",
     "closeWindow": "Close Window",
     "edit": "Edit",
     "undo": "Undo",
@@ -357,6 +358,36 @@
       "add_one": "Add {{count}} site",
       "add_other": "Add {{count}} sites",
       "close": "Close"
-    }
+    },
+    "newFolder": "New folder",
+    "menu": {
+      "label": "Actions on {{name}}",
+      "scan": "Scan",
+      "newFolder": "New folder",
+      "rename": "Rename",
+      "move": "Move to…",
+      "color": "Color",
+      "edit": "Edit the connection…",
+      "find": "Find new sites…",
+      "deleteFolder": "Delete the folder…",
+      "deleteHost": "Delete the host…",
+      "deleteSite": "Delete the site…",
+      "colors": {
+        "none": "None",
+        "red": "Red",
+        "green": "Green",
+        "blue": "Blue",
+        "yellow": "Yellow",
+        "cyan": "Cyan",
+        "magenta": "Magenta",
+        "orange": "Orange"
+      }
+    },
+    "more": "More actions",
+    "dropInto": "Drop to move {{name}} into {{folder}}",
+    "dropAtRoot": "Drop to move {{name}} to the top level",
+    "renameHint": "Enter keeps the name, Escape cancels",
+    "emptyFolder": "No site in this folder yet.",
+    "emptyHost": "No site on this host yet: \"Find new sites…\" in its menu searches the account."
   }
 }

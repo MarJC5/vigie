@@ -300,6 +300,7 @@
     "quit": "Quitter {{app}}",
     "file": "Fichier",
     "newHost": "Nouvel hébergement…",
+    "newFolder": "Nouveau dossier",
     "closeWindow": "Fermer la fenêtre",
     "edit": "Édition",
     "undo": "Annuler",
@@ -371,6 +372,36 @@
       "add_other": "Ajouter {{count}} sites",
       "add_many": "Ajouter {{count}} sites",
       "close": "Fermer"
-    }
+    },
+    "newFolder": "Nouveau dossier",
+    "menu": {
+      "label": "Actions sur {{name}}",
+      "scan": "Relever",
+      "newFolder": "Nouveau dossier",
+      "rename": "Renommer",
+      "move": "Déplacer vers…",
+      "color": "Couleur",
+      "edit": "Modifier la connexion…",
+      "find": "Chercher de nouveaux sites…",
+      "deleteFolder": "Supprimer le dossier…",
+      "deleteHost": "Supprimer l'hébergement…",
+      "deleteSite": "Supprimer le site…",
+      "colors": {
+        "none": "Aucune",
+        "red": "Rouge",
+        "green": "Vert",
+        "blue": "Bleu",
+        "yellow": "Jaune",
+        "cyan": "Cyan",
+        "magenta": "Magenta",
+        "orange": "Orange"
+      }
+    },
+    "more": "Plus d'actions",
+    "dropInto": "Relâchez pour déplacer {{name}} dans {{folder}}",
+    "dropAtRoot": "Relâchez pour déplacer {{name}} à la racine",
+    "renameHint": "Entrée garde le nom, Échap annule",
+    "emptyFolder": "Aucun site dans ce dossier pour le moment.",
+    "emptyHost": "Aucun site sur cet hébergement pour le moment : « Chercher de nouveaux sites… » dans son menu cherche sur le compte."
   }
 }

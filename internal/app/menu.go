@@ -5,10 +5,11 @@ const MenuEvent = "vigie:menu"
 
 // The actions of the menu bar, carried out by the window.
 const (
-	ActionNewHost = "new-host" // opens the "add a host" wizard
-	ActionSearch  = "search"   // focuses the search of the site list
-	ActionScan    = "scan"     // scans the selected folder, host or site
-	ActionScanAll = "scan-all" // scans every site
+	ActionNewHost   = "new-host"   // opens the "add a host" wizard
+	ActionNewFolder = "new-folder" // creates a folder next to the selection and names it in place
+	ActionSearch    = "search"     // focuses the search of the site list
+	ActionScan      = "scan"       // scans the selected folder, host or site
+	ActionScanAll   = "scan-all"   // scans every site
 )
 
 // MenuCommand is what the window receives with MenuEvent.
@@ -47,6 +48,7 @@ var MenuBar = []MenuSection{
 	}},
 	{Key: "menu.file", Items: []MenuEntry{
 		{Key: "menu.newHost", Accelerator: "CmdOrCtrl+N", Action: ActionNewHost},
+		{Key: "menu.newFolder", Accelerator: "CmdOrCtrl+Shift+N", Action: ActionNewFolder},
 		separator,
 		{Key: "menu.closeWindow", Role: "closeWindow"},
 	}},

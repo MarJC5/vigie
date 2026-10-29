@@ -17,10 +17,12 @@ export interface SiteOverviewProps {
   onScan: () => void;
   /** The clock of "3 minutes ago"; the current time by default. */
   now?: Date;
+  /** Opens the site's menu under the point given. */
+  onMore?: (point: { x: number; y: number }) => void;
 }
 
 /** A site with its latest scan: an overview, and the updates waiting. */
-export function SiteOverview({ site, scanning, onScan, now }: SiteOverviewProps) {
+export function SiteOverview({ site, scanning, onScan, now, onMore }: SiteOverviewProps) {
   const { t, i18n } = useTranslation();
   const [tab, setTab] = useState("overview");
   const panel = useId();
@@ -32,7 +34,19 @@ export function SiteOverview({ site, scanning, onScan, now }: SiteOverviewProps)
       <DetailHeader
         title={site.name}
         meta={scan ? t("site.lastScan", { when: since(scan.finished, i18n.language, now) }) : undefined}
-      />
+      >
+        {onMore && (
+          <Button
+            variant="icon"
+            icon="dots"
+            label={t("edit.more")}
+            onClick={(event) => {
+              const r = event.currentTarget.getBoundingClientRect();
+              onMore({ x: r.left, y: r.bottom + 4 });
+            }}
+          />
+        )}
+      </DetailHeader>
       <TabBar
         label={t("tabs.label")}
         tabs={[
