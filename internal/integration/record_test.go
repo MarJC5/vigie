@@ -43,9 +43,9 @@ var recordings = []struct {
 	{"language-theme", []string{"language", "theme", "list", "--all", "--update=available", "--format=json", "--skip-plugins", "--skip-themes"}},
 	{"site-list", []string{"site", "list", "--format=json", "--skip-plugins", "--skip-themes",
 		"--fields=blog_id,url,registered,last_updated,public,archived,spam,deleted"}},
-	{"update-core-data", []string{"option", "get", "_site_transient_update_core", "--format=json", "--skip-plugins", "--skip-themes"}},
-	{"update-plugins-data", []string{"option", "get", "_site_transient_update_plugins", "--format=json", "--skip-plugins", "--skip-themes"}},
-	{"update-themes-data", []string{"option", "get", "_site_transient_update_themes", "--format=json", "--skip-plugins", "--skip-themes"}},
+	{"update-core-data", []string{"transient", "get", "update_core", "--network", "--format=json", "--skip-plugins", "--skip-themes"}},
+	{"update-plugins-data", []string{"transient", "get", "update_plugins", "--network", "--format=json", "--skip-plugins", "--skip-themes"}},
+	{"update-themes-data", []string{"transient", "get", "update_themes", "--network", "--format=json", "--skip-plugins", "--skip-themes"}},
 }
 
 var fixtureRoots = map[string]string{
@@ -53,6 +53,7 @@ var fixtureRoots = map[string]string{
 	"parent-config": sites + "/parent-config/public",
 	"network":       sites + "/network",
 	"outdated":      sites + "/outdated",
+	"offline":       sites + "/offline",
 	"broken":        sites + "/broken",
 }
 

@@ -1,0 +1,14 @@
+{
+  "args": [
+    "transient",
+    "get",
+    "update_core",
+    "--network",
+    "--format=json",
+    "--skip-plugins",
+    "--skip-themes"
+  ],
+  "exit": 0,
+  "stdout": "{\"updates\":[],\"version_checked\":\"7.1.3\",\"last_checked\":1793255712}\n",
+  "stderr": ""
+}

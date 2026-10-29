@@ -1,8 +1,9 @@
 {
   "args": [
-    "option",
+    "transient",
     "get",
-    "_site_transient_update_themes",
+    "update_themes",
+    "--network",
     "--format=json",
     "--skip-plugins",
     "--skip-themes"

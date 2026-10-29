@@ -1,0 +1,14 @@
+{
+  "args": [
+    "transient",
+    "get",
+    "update_plugins",
+    "--network",
+    "--format=json",
+    "--skip-plugins",
+    "--skip-themes"
+  ],
+  "exit": 0,
+  "stdout": "{\"last_checked\":1793255714}\n",
+  "stderr": ""
+}

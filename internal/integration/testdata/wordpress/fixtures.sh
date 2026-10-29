@@ -55,6 +55,12 @@ wp language plugin install akismet fr_FR --path="$SITES/outdated" --quiet
 find "$SITES/outdated/wp-content/languages" -name '*.po' \
 	-exec sed -i 's/^"PO-Revision-Date: .*\\n"$/"PO-Revision-Date: 2001-01-01 00:00:00+0000\\n"/' {} +
 
+# A server without outbound HTTP, like hosts that block it: every update check fails.
+new_site "$SITES/offline" fixture_offline
+wp db create --path="$SITES/offline" --quiet
+wp core install --path="$SITES/offline" --url=https://offline.example.test --title=Offline $ADMIN
+wp config set WP_HTTP_BLOCK_EXTERNAL true --raw --path="$SITES/offline" --quiet
+
 # WordPress files whose database cannot be reached: WP-CLI cannot load WordPress.
 new_site "$SITES/broken" fixture_broken
 sed -i "s/define( 'DB_PASSWORD', '[^']*' );/define( 'DB_PASSWORD', 'wrong-password' );/" "$SITES/broken/wp-config.php"

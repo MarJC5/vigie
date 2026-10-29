@@ -1,0 +1,13 @@
+{
+  "args": [
+    "site",
+    "list",
+    "--format=json",
+    "--skip-plugins",
+    "--skip-themes",
+    "--fields=blog_id,url,registered,last_updated,public,archived,spam,deleted"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error: This is not a multisite installation.\n"
+}

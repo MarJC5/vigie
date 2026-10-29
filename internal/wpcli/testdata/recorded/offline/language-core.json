@@ -1,0 +1,14 @@
+{
+  "args": [
+    "language",
+    "core",
+    "list",
+    "--update=available",
+    "--format=json",
+    "--skip-plugins",
+    "--skip-themes"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error: An unexpected error occurred. Something may be wrong with WordPress.org or this server\u0026#8217;s configuration. If you continue to have problems, please try the \u003ca href=\"https://wordpress.org/support/forums/\"\u003esupport forums\u003c/a\u003e. \"User has blocked requests through HTTP to the URL: http://api.wordpress.org/translations/core/1.0/.\"\n"
+}

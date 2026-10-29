@@ -1,0 +1,12 @@
+{
+  "args": [
+    "core",
+    "check-update",
+    "--format=json",
+    "--skip-plugins",
+    "--skip-themes"
+  ],
+  "exit": 0,
+  "stdout": "[]",
+  "stderr": ""
+}
