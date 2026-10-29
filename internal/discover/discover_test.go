@@ -183,3 +183,20 @@ func mustRemote(t *testing.T, cmd wpcli.Command, path string) string {
 	}
 	return remote
 }
+
+func TestDiscoverReportsProgress(t *testing.T) {
+	var calls [][2]int
+	d := discover.Discoverer{Runner: bench(t), Limiter: sshx.NewLimiter(), Progress: func(checked, total int) {
+		calls = append(calls, [2]int{checked, total})
+	}}
+	if _, _, err := d.Host(context.Background(), discover.Account{
+		Target: sshx.Target{Alias: "bench"}, HostKey: "host-1", Max: 2, WPCLI: "wp",
+	}, nil); err != nil {
+		t.Fatal(err)
+	}
+	// Once the search is done: nothing checked yet, then one more for each install.
+	want := [][2]int{{0, 6}, {1, 6}, {2, 6}, {3, 6}, {4, 6}, {5, 6}, {6, 6}}
+	if !reflect.DeepEqual(calls, want) {
+		t.Fatalf("progress = %v, want %v", calls, want)
+	}
+}

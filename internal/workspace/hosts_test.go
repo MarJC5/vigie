@@ -125,9 +125,15 @@ func TestDiscoverAnUnsavedHost(t *testing.T) {
 	ws, _, fake, _ := newHosts(t)
 	fake.Set(discover.FindCommand(), sshx.Result{Stdout: []byte("./sites/plain/wp-includes/version.php\n")})
 	wpclitest.Replay(t, fake, "plain", "~/sites/plain", "wp")
-	found, _, err := ws.DiscoverAccount(context.Background(), model.Host{Alias: "shared"})
+	var last [2]int
+	found, _, err := ws.DiscoverAccount(context.Background(), model.Host{Alias: "shared"}, func(checked, total int) {
+		last = [2]int{checked, total}
+	})
 	if err != nil || len(found) != 1 || found[0].State != discover.StateNew || found[0].Name != "plain.example.test" {
 		t.Fatalf("DiscoverAccount() = %+v, %v", found, err)
+	}
+	if last != [2]int{1, 1} {
+		t.Fatalf("last progress = %v, want 1 of 1", last)
 	}
 }
 

@@ -24,6 +24,7 @@ import (
 // The events the window listens to, typed in its bindings.
 func init() {
 	application.RegisterEvent[app.ScansState](app.ScansEvent)
+	application.RegisterEvent[app.DiscoveryProgress](app.DiscoveryEvent)
 }
 
 func main() {
@@ -88,7 +89,7 @@ func openWindow(opts cli.Options) error {
 		Services: []application.Service{
 			application.NewService(app.NewSiteManager(db)),
 			application.NewService(app.NewPreferences(db, i18n.SystemLanguage)),
-			application.NewService(app.NewHostWizard(ws)),
+			application.NewService(app.NewHostWizard(ws, emit)),
 			application.NewService(scanner),
 		},
 		Assets: application.AssetOptions{Handler: application.AssetFileServerFS(frontend.Assets())},

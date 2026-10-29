@@ -104,6 +104,9 @@ type Account struct {
 type Discoverer struct {
 	Runner  sshx.Runner
 	Limiter *sshx.Limiter
+	// Progress, when set, is told how many installs were checked out of those found: once the
+	// search is done (0 of n), then after each one.
+	Progress func(checked, total int)
 }
 
 // Host searches an account; existing are the sites of that host already in Vigie.
@@ -125,16 +128,18 @@ func (d Discoverer) Host(ctx context.Context, account Account, existing []model.
 		added[cleanPath(s.Path)] = s.Name
 	}
 	found := make([]Found, 0, len(roots))
+	d.report(0, len(roots))
 	for _, root := range roots {
 		if name, ok := added[cleanPath(root)]; ok {
 			found = append(found, Found{Path: root, State: StateAlreadyAdded, Name: name})
-			continue
+		} else {
+			f, err := d.check(ctx, account, root)
+			if err != nil {
+				return found, truncated, err
+			}
+			found = append(found, f)
 		}
-		f, err := d.check(ctx, account, root)
-		if err != nil {
-			return found, truncated, err
-		}
-		found = append(found, f)
+		d.report(len(found), len(roots))
 	}
 	return found, truncated, nil
 }
@@ -215,4 +220,10 @@ func cleanPath(p string) string {
 		return "~/" + path.Clean(rest)
 	}
 	return path.Clean(p)
+}
+
+func (d Discoverer) report(checked, total int) {
+	if d.Progress != nil {
+		d.Progress(checked, total)
+	}
 }

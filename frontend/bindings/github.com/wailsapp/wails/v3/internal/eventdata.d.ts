@@ -12,6 +12,7 @@ import type * as app$0 from "../../../../MarJC5/vigie/internal/app/models.js";
 declare module "@wailsio/runtime" {
     namespace Events {
         interface CustomEvents {
+            "vigie:discovery": app$0.DiscoveryProgress;
             "vigie:scans": app$0.ScansState;
         }
     }

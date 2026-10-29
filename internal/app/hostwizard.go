@@ -134,6 +134,15 @@ type Choice struct {
 	Multisite bool   `json:"multisite"`
 }
 
+// DiscoveryEvent carries a DiscoveryProgress to the window while Discover checks the installs found.
+const DiscoveryEvent = "vigie:discovery"
+
+// DiscoveryProgress tells how many installs were checked out of those found.
+type DiscoveryProgress struct {
+	Checked int `json:"checked"`
+	Total   int `json:"total"`
+}
+
 // AddResult is the answer of Add.
 type AddResult struct {
 	HostID  string   `json:"hostId"`
@@ -144,16 +153,17 @@ type AddResult struct {
 // with it, when the server presented that key during this session: the interface cannot make
 // Vigie trust a key of its own.
 type HostWizard struct {
-	ws *workspace.Workspace
+	ws   *workspace.Workspace
+	emit func(name string, data any)
 
 	mu       sync.Mutex
 	received map[string]sshx.HostKey // by fingerprint, as the server presented them
 	trusted  map[string]bool         // fingerprints the user trusted
 }
 
-// NewHostWizard returns the service over the workspace.
-func NewHostWizard(ws *workspace.Workspace) *HostWizard {
-	return &HostWizard{ws: ws, received: map[string]sshx.HostKey{}, trusted: map[string]bool{}}
+// NewHostWizard returns the service over the workspace; emit sends an event to the window.
+func NewHostWizard(ws *workspace.Workspace, emit func(name string, data any)) *HostWizard {
+	return &HostWizard{ws: ws, emit: emit, received: map[string]sshx.HostKey{}, trusted: map[string]bool{}}
 }
 
 // Check validates the details: required fields, port, and a name free in the chosen folder.
@@ -229,13 +239,16 @@ func (w *HostWizard) TestConnection(ctx context.Context, d HostDetails) TestResu
 	return result
 }
 
-// Discover searches the account for WordPress installs; it adds nothing.
+// Discover searches the account for WordPress installs, sending DiscoveryEvent as it checks
+// them; it adds nothing.
 func (w *HostWizard) Discover(ctx context.Context, d HostDetails) DiscoverResult {
 	h, err := d.host()
 	if err != nil {
 		return DiscoverResult{Problem: ProblemOf(err)}
 	}
-	found, truncated, err := w.ws.DiscoverAccount(ctx, h)
+	found, truncated, err := w.ws.DiscoverAccount(ctx, h, func(checked, total int) {
+		w.emit(DiscoveryEvent, DiscoveryProgress{Checked: checked, Total: total})
+	})
 	if err != nil {
 		return DiscoverResult{Problem: ProblemOf(err)}
 	}

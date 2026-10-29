@@ -39,6 +39,14 @@ export interface DiscoverResult {
 }
 
 /**
+ * DiscoveryProgress tells how many installs were checked out of those found.
+ */
+export interface DiscoveryProgress {
+    "checked": number;
+    "total": number;
+}
+
+/**
  * HostDetails is what the user enters in the first step of the wizard.
  */
 export interface HostDetails {

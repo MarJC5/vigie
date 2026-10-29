@@ -211,12 +211,12 @@ func (w *Workspace) Discover(ctx context.Context, path string) ([]discover.Found
 		return nil, false, fmt.Errorf("%q: %w", path, ErrNotAHost)
 	}
 	host, _ := tree.Host(node.ID)
-	return w.discoverAccount(ctx, host, tree.SitesUnder(node))
+	return w.discoverAccount(ctx, host, tree.SitesUnder(node), nil)
 }
 
 // discoverAccount searches the account of a host, stored or not; existing are its sites in Vigie.
-func (w *Workspace) discoverAccount(ctx context.Context, host model.Host, existing []model.Site) ([]discover.Found, bool, error) {
-	d := discover.Discoverer{Runner: w.deps.Runner, Limiter: w.limiter}
+func (w *Workspace) discoverAccount(ctx context.Context, host model.Host, existing []model.Site, progress func(checked, total int)) ([]discover.Found, bool, error) {
+	d := discover.Discoverer{Runner: w.deps.Runner, Limiter: w.limiter, Progress: progress}
 	return d.Host(ctx, discover.Account{
 		Target: sshx.TargetFor(host), HostKey: host.ID.String(), Max: maxConcurrent(host), WPCLI: hostWPCLI(host),
 	}, existing)

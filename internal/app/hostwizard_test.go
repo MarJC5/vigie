@@ -48,13 +48,24 @@ func (noAliases) Resolve(context.Context, string) (sshx.Resolved, error) {
 }
 
 func wizard(t *testing.T) (*app.HostWizard, *sshxtest.Fake, string, *workspace.Workspace) {
+	w, fake, knownHosts, ws, _ := wizardWithEvents(t)
+	return w, fake, knownHosts, ws
+}
+
+func wizardWithEvents(t *testing.T) (*app.HostWizard, *sshxtest.Fake, string, *workspace.Workspace, *[]app.DiscoveryProgress) {
 	t.Helper()
 	fake := sshxtest.NewFake()
 	knownHosts := filepath.Join(t.TempDir(), "known_hosts")
 	ws := workspace.New(repository(t), workspace.Deps{
 		Runner: fake, KeyScanner: keyScanner{benchKeys(t)}, Resolver: noAliases{}, KnownHosts: knownHosts, Now: time.Now,
 	})
-	return app.NewHostWizard(ws), fake, knownHosts, ws
+	var progress []app.DiscoveryProgress
+	emit := func(name string, data any) {
+		if name == app.DiscoveryEvent {
+			progress = append(progress, data.(app.DiscoveryProgress))
+		}
+	}
+	return app.NewHostWizard(ws, emit), fake, knownHosts, ws, &progress
 }
 
 var details = app.HostDetails{Name: "Bench", Hostname: "ssh.example.test", Port: 2222, User: "u12ab"}
@@ -147,13 +158,17 @@ func TestConnectionFailureUsesTheFailureText(t *testing.T) {
 }
 
 func TestDiscoverAndAdd(t *testing.T) {
-	w, fake, _, ws := wizard(t)
+	w, fake, _, ws, progress := wizardWithEvents(t)
 	fake.Set(discover.FindCommand(), sshx.Result{Stdout: []byte("./sites/plain/wp-includes/version.php\n./sites/network/wp-includes/version.php\n")})
 	wpclitest.Replay(t, fake, "plain", "~/sites/plain", "wp")
 	wpclitest.Replay(t, fake, "network", "~/sites/network", "wp")
 	found := w.Discover(context.Background(), details)
 	if found.Problem != nil || len(found.Installs) != 2 {
 		t.Fatalf("Discover() = %+v", found)
+	}
+	// The window follows the checks of the installs found.
+	if n := len(*progress); n != 3 || (*progress)[n-1] != (app.DiscoveryProgress{Checked: 2, Total: 2}) {
+		t.Fatalf("progress events = %+v, want 0, 1 then 2 of 2", *progress)
 	}
 
 	keys := w.HostKeys(context.Background(), details)

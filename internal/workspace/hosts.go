@@ -44,9 +44,10 @@ func (w *Workspace) TestConnection(ctx context.Context, h model.Host) (hostcheck
 	return hostcheck.Check(ctx, w.deps.Runner, sshx.TargetFor(h), h.WPCLI)
 }
 
-// DiscoverAccount searches the account of a host that is not stored yet.
-func (w *Workspace) DiscoverAccount(ctx context.Context, h model.Host) ([]discover.Found, bool, error) {
-	return w.discoverAccount(ctx, h, nil)
+// DiscoverAccount searches the account of a host that is not stored yet; progress, when set, is
+// told how many installs were checked out of those found.
+func (w *Workspace) DiscoverAccount(ctx context.Context, h model.Host, progress func(checked, total int)) ([]discover.Found, bool, error) {
+	return w.discoverAccount(ctx, h, nil, progress)
 }
 
 // AddHost stores a new host and the sites chosen, all or nothing.

@@ -31,7 +31,8 @@ export function Check(d: $models.HostDetails): $CancellablePromise<$models.Probl
 }
 
 /**
- * Discover searches the account for WordPress installs; it adds nothing.
+ * Discover searches the account for WordPress installs, sending DiscoveryEvent as it checks
+ * them; it adds nothing.
  */
 export function Discover(d: $models.HostDetails): $CancellablePromise<$models.DiscoverResult> {
     return $Call.ByID(2742943797, d);
