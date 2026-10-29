@@ -65,7 +65,7 @@ func benchWorkspace(t *testing.T) *workspace.Workspace {
 			wpclitest.Replay(t, fake, filepath.Base(s.Path), s.Path, "wp")
 		}
 	}
-	return workspace.New(db, byHost{bench: fake}, time.Now)
+	return workspace.New(db, workspace.Deps{Runner: byHost{bench: fake}, Now: time.Now})
 }
 
 // byHost sends the bench's commands to the fake; every other host refuses the connection.

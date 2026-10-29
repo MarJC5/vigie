@@ -34,7 +34,8 @@ func benchFake(t *testing.T) (*workspace.Workspace, *sshxtest.Fake) {
 	return ws, fake
 }
 
-func setup(t *testing.T) (*workspace.Workspace, *store.DB, *sshxtest.Fake) {
+// emptyDB is a migrated database in a temporary directory.
+func emptyDB(t *testing.T) *store.DB {
 	t.Helper()
 	ctx := context.Background()
 	db, err := store.Open(ctx, filepath.Join(t.TempDir(), "vigie.db"))
@@ -45,6 +46,13 @@ func setup(t *testing.T) (*workspace.Workspace, *store.DB, *sshxtest.Fake) {
 	if err := db.Migrate(ctx, store.Migrations(), "test"); err != nil {
 		t.Fatal(err)
 	}
+	return db
+}
+
+func setup(t *testing.T) (*workspace.Workspace, *store.DB, *sshxtest.Fake) {
+	t.Helper()
+	ctx := context.Background()
+	db := emptyDB(t)
 	clients := model.Folder{ID: model.NewID(), Name: "Clients"}
 	host := model.Host{ID: model.NewID(), FolderID: clients.ID, Name: "Bench", Alias: "bench"}
 	sites := []model.Site{
@@ -64,7 +72,7 @@ func setup(t *testing.T) (*workspace.Workspace, *store.DB, *sshxtest.Fake) {
 		}
 		wpclitest.Replay(t, fake, filepath.Base(s.Path), s.Path, "wp")
 	}
-	return workspace.New(db, fake, time.Now), db, fake
+	return workspace.New(db, workspace.Deps{Runner: fake, Now: time.Now}), db, fake
 }
 
 func TestScanAFolderStoresEveryScan(t *testing.T) {

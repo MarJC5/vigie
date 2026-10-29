@@ -35,12 +35,30 @@ var sshOptions = sshx.Options{
 // commandTimeout bounds one WP-CLI command; a plugin list asks wordpress.org about each plugin.
 const commandTimeout = 2 * time.Minute
 
-// Workspace holds the database and the SSH runner.
+// KeyScanner asks a server for its host keys (sshx.KeyScanner).
+type KeyScanner interface {
+	Scan(ctx context.Context, host string, port int) ([]sshx.HostKey, error)
+}
+
+// Resolver reads the configuration of an alias of ~/.ssh/config (sshx.ExecRunner).
+type Resolver interface {
+	Resolve(ctx context.Context, alias string) (sshx.Resolved, error)
+}
+
+// Deps are the means to reach servers; Open sets the real ones, tests replace them.
+type Deps struct {
+	Runner     sshx.Runner
+	KeyScanner KeyScanner
+	Resolver   Resolver
+	KnownHosts string // Vigie's own known_hosts file
+	Now        func() time.Time
+}
+
+// Workspace holds the database and the means to reach servers.
 type Workspace struct {
 	db      *store.DB
-	runner  sshx.Runner
+	deps    Deps
 	limiter *sshx.Limiter
-	now     func() time.Time
 	close   func() error
 }
 
@@ -63,7 +81,11 @@ func Open(ctx context.Context, dataDir, version string) (*Workspace, error) {
 		db.Close()
 		return nil, err
 	}
-	ws := New(db, sshx.ExecRunner{Options: options, Timeout: commandTimeout}, time.Now)
+	runner := sshx.ExecRunner{Options: options, Timeout: commandTimeout}
+	ws := New(db, Deps{
+		Runner: runner, KeyScanner: sshx.KeyScanner{}, Resolver: runner,
+		KnownHosts: options.KnownHostsFile, Now: time.Now,
+	})
 	ws.close = db.Close
 	return ws, nil
 }
@@ -84,9 +106,9 @@ func sshSettings(dataDir string) (sshx.Options, error) {
 	return options, err
 }
 
-// New returns a workspace over an open database and a runner (tests use a fake runner).
-func New(db *store.DB, runner sshx.Runner, now func() time.Time) *Workspace {
-	return &Workspace{db: db, runner: runner, limiter: sshx.NewLimiter(), now: now}
+// New returns a workspace over an open database.
+func New(db *store.DB, deps Deps) *Workspace {
+	return &Workspace{db: db, deps: deps, limiter: sshx.NewLimiter()}
 }
 
 // DB is the workspace's database.
@@ -112,18 +134,27 @@ type Scanned struct {
 // stores each scan (also a failed or cancelled one) and the subsites of networks, and returns the
 // scans in tree order.
 func (w *Workspace) Scan(ctx context.Context, path string, progress func(scan.Progress)) ([]Scanned, error) {
-	tree, err := w.db.LoadTree(ctx)
-	if err != nil {
-		return nil, err
-	}
 	node := model.Root
 	if path != "" {
+		tree, err := w.db.LoadTree(ctx)
+		if err != nil {
+			return nil, err
+		}
 		if node, err = tree.Resolve(path); err != nil {
 			return nil, err
 		}
 	}
+	return w.ScanNode(ctx, node, progress)
+}
+
+// ScanNode is Scan for a node of the tree (model.Root for all).
+func (w *Workspace) ScanNode(ctx context.Context, node model.Node, progress func(scan.Progress)) ([]Scanned, error) {
+	tree, err := w.db.LoadTree(ctx)
+	if err != nil {
+		return nil, err
+	}
 	sites := tree.SitesUnder(node)
-	scanner := scan.Scanner{Runner: w.runner, Limiter: w.limiter, Now: w.now}
+	scanner := scan.Scanner{Runner: w.deps.Runner, Limiter: w.limiter, Now: w.deps.Now}
 
 	var mu sync.Mutex // progress comes from several scans at once
 	report := func(p scan.Progress) {
@@ -180,14 +211,23 @@ func (w *Workspace) Discover(ctx context.Context, path string) ([]discover.Found
 		return nil, false, fmt.Errorf("%q: %w", path, ErrNotAHost)
 	}
 	host, _ := tree.Host(node.ID)
-	d := discover.Discoverer{Runner: w.runner, Limiter: w.limiter}
-	wpcli := host.WPCLI
-	if wpcli == "" {
-		wpcli = "wp"
-	}
+	return w.discoverAccount(ctx, host, tree.SitesUnder(node))
+}
+
+// discoverAccount searches the account of a host, stored or not; existing are its sites in Vigie.
+func (w *Workspace) discoverAccount(ctx context.Context, host model.Host, existing []model.Site) ([]discover.Found, bool, error) {
+	d := discover.Discoverer{Runner: w.deps.Runner, Limiter: w.limiter}
 	return d.Host(ctx, discover.Account{
-		Target: sshx.TargetFor(host), HostKey: host.ID.String(), Max: maxConcurrent(host), WPCLI: wpcli,
-	}, tree.SitesUnder(node))
+		Target: sshx.TargetFor(host), HostKey: host.ID.String(), Max: maxConcurrent(host), WPCLI: hostWPCLI(host),
+	}, existing)
+}
+
+// hostWPCLI is the host's WP-CLI command, "wp" by default.
+func hostWPCLI(h model.Host) string {
+	if h.WPCLI != "" {
+		return h.WPCLI
+	}
+	return "wp"
 }
 
 // maxConcurrent is the host's limit of commands at a time, 2 by default.
