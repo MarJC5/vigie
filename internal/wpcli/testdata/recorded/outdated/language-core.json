@@ -9,6 +9,6 @@
     "--skip-themes"
   ],
   "exit": 0,
-  "stdout": "[]",
+  "stdout": "[{\"language\":\"fr_FR\",\"english_name\":\"French (France)\",\"native_name\":\"Fran\\u00e7ais\",\"status\":\"installed\",\"update\":\"available\",\"updated\":\"2026-10-22 11:29:54\"}]",
   "stderr": ""
 }

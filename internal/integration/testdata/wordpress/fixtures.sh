@@ -48,6 +48,12 @@ mkdir -p "$SITES/outdated/wp-content/plugins/fixture-premium"
 printf '%s\n' '<?php' '/**' ' * Plugin Name: Fixture Premium' ' * Version: 1.0.0' ' */' \
 	> "$SITES/outdated/wp-content/plugins/fixture-premium/fixture-premium.php"
 wp plugin activate fixture-premium --path="$SITES/outdated" --quiet
+# French translations made to look old, so translation updates are pending: WordPress compares
+# the PO-Revision-Date of the installed .po files with wordpress.org.
+wp language core install fr_FR --path="$SITES/outdated" --quiet
+wp language plugin install akismet fr_FR --path="$SITES/outdated" --quiet
+find "$SITES/outdated/wp-content/languages" -name '*.po' \
+	-exec sed -i 's/^"PO-Revision-Date: .*\\n"$/"PO-Revision-Date: 2001-01-01 00:00:00+0000\\n"/' {} +
 
 # WordPress files whose database cannot be reached: WP-CLI cannot load WordPress.
 new_site "$SITES/broken" fixture_broken
