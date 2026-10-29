@@ -1,0 +1,268 @@
+package wpcli
+
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/url"
+	"regexp"
+	"strconv"
+	"strings"
+
+	"github.com/MarJC5/vigie/internal/model"
+	"github.com/MarJC5/vigie/internal/sshx"
+)
+
+// ErrCannotLoad is returned when WP-CLI could not load WordPress (database unreachable, fatal
+// error in the configuration); the error carries WP-CLI's message.
+var ErrCannotLoad = errors.New("WordPress cannot be loaded")
+
+// Check turns a failed WP-CLI command into ErrCannotLoad with its message; a success gives nil.
+func Check(res sshx.Result) error {
+	if res.ExitCode == 0 {
+		return nil
+	}
+	msg := strings.TrimSpace(string(res.Stderr))
+	if msg == "" {
+		msg = "exit status " + strconv.Itoa(res.ExitCode)
+	}
+	return fmt.Errorf("%w: %s", ErrCannotLoad, msg)
+}
+
+// IsInstalled reads `core is-installed`, which answers with its exit code only: 1 with nothing
+// on stderr means "no" (not installed, or not a network with --network), 1 with an error means
+// WordPress could not be loaded.
+func IsInstalled(res sshx.Result) (bool, error) {
+	switch {
+	case res.ExitCode == 0:
+		return true, nil
+	case res.ExitCode == 1 && len(bytes.TrimSpace(res.Stderr)) == 0:
+		return false, nil
+	}
+	return false, Check(res)
+}
+
+// CoreCheckUpdate lists the available WordPress releases; "[]" when none (or when the check could
+// not reach wordpress.org, which the scan verifies separately).
+func CoreCheckUpdate() Command {
+	return Command{args: []string{"core", "check-update", "--format=json"}, read: true}
+}
+
+// PluginList lists the installed plugins with their update state and whether wordpress.org knows
+// them. Not wporg_last_updated: WP-CLI reads it from Trac, one request per plugin.
+func PluginList() Command {
+	return Command{args: []string{"plugin", "list", "--format=json",
+		"--fields=name,title,status,version,update,update_version,auto_update,wporg_status"}, read: true}
+}
+
+// ThemeList lists the installed themes with their update state.
+func ThemeList() Command {
+	return Command{args: []string{"theme", "list", "--format=json",
+		"--fields=name,title,status,version,update,update_version,auto_update"}, read: true}
+}
+
+// Languages is what a translation list is about.
+type Languages string
+
+const (
+	LanguagesOfCore    Languages = "core"
+	LanguagesOfPlugins Languages = "plugin"
+	LanguagesOfThemes  Languages = "theme"
+)
+
+// LanguageUpdates lists the installed translations that have an update.
+func LanguageUpdates(of Languages) Command {
+	args := []string{"language", string(of), "list"}
+	switch of {
+	case LanguagesOfCore:
+	case LanguagesOfPlugins, LanguagesOfThemes:
+		args = append(args, "--all")
+	default:
+		return Command{err: fmt.Errorf("languages of %q: %w", of, ErrBadArgument)}
+	}
+	return Command{args: append(args, "--update=available", "--format=json"), read: true}
+}
+
+// SiteList lists the sites of a multisite network.
+func SiteList() Command {
+	return Command{args: []string{"site", "list", "--format=json",
+		"--fields=blog_id,url,registered,last_updated,public,archived,spam,deleted"}, read: true}
+}
+
+var version = regexp.MustCompile(`^[0-9]+(\.[0-9]+)*(-[A-Za-z0-9.]+)?$`)
+
+// ParseCoreVersion reads `core version`: one version number.
+func ParseCoreVersion(out []byte) (string, error) {
+	v := strings.TrimSpace(string(out))
+	if !version.MatchString(v) {
+		return "", fmt.Errorf("core version %q: %w", v, ErrUnexpectedOutput)
+	}
+	return v, nil
+}
+
+// ParseHome reads `option get home`: an http or https address.
+func ParseHome(out []byte) (string, error) {
+	home := strings.TrimSpace(string(out))
+	u, err := url.Parse(home)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return "", fmt.Errorf("home %q: %w", home, ErrUnexpectedOutput)
+	}
+	return home, nil
+}
+
+// CoreUpdate is an available WordPress release.
+type CoreUpdate struct {
+	Version string
+	Type    string // "major" or "minor"
+}
+
+// ParseCoreUpdates reads `core check-update --format=json`.
+func ParseCoreUpdates(out []byte) ([]CoreUpdate, error) {
+	var raw []struct {
+		Version    string `json:"version"`
+		UpdateType string `json:"update_type"`
+	}
+	if err := decode(out, &raw); err != nil {
+		return nil, fmt.Errorf("core check-update: %w", err)
+	}
+	updates := []CoreUpdate{}
+	for _, r := range raw {
+		if !version.MatchString(r.Version) {
+			return nil, fmt.Errorf("core check-update: version %q: %w", r.Version, ErrUnexpectedOutput)
+		}
+		updates = append(updates, CoreUpdate{Version: r.Version, Type: r.UpdateType})
+	}
+	return updates, nil
+}
+
+// UpdateState is the "update" field of `plugin list` and `theme list`.
+type UpdateState string
+
+const (
+	UpdateNone        UpdateState = "none"
+	UpdateAvailable   UpdateState = "available"
+	UpdateUnavailable UpdateState = "unavailable" // a newer version needs another PHP or WordPress
+	// UpdateNewerThanSource: the installed version is newer than wordpress.org's.
+	UpdateNewerThanSource UpdateState = "version higher than expected"
+	UpdateUnknown         UpdateState = "unknown" // a value this version of Vigie does not know
+)
+
+// Extension is an installed plugin or theme.
+type Extension struct {
+	Name           string // slug
+	Title          string
+	Status         string // plugins: active, active-network, inactive, must-use, dropin; themes: active, parent, inactive
+	Version        string
+	Update         UpdateState
+	UpdateVersion  string
+	AutoUpdate     bool
+	OnWordPressOrg bool // plugins only: wordpress.org knows the plugin (wporg_status "active")
+}
+
+type rawExtension struct {
+	Name          string `json:"name"`
+	Title         string `json:"title"`
+	Status        string `json:"status"`
+	Version       string `json:"version"`
+	Update        string `json:"update"`
+	UpdateVersion string `json:"update_version"`
+	AutoUpdate    string `json:"auto_update"`
+	WPOrgStatus   string `json:"wporg_status"`
+}
+
+func parseExtensions(what string, out []byte) ([]Extension, error) {
+	var raw []rawExtension
+	if err := decode(out, &raw); err != nil {
+		return nil, fmt.Errorf("%s list: %w", what, err)
+	}
+	list := []Extension{}
+	for _, r := range raw {
+		if r.Name == "" || r.Status == "" {
+			return nil, fmt.Errorf("%s list: entry without name or status: %w", what, ErrUnexpectedOutput)
+		}
+		state := UpdateState(r.Update)
+		switch state {
+		case UpdateNone, UpdateAvailable, UpdateUnavailable, UpdateNewerThanSource:
+		default:
+			state = UpdateUnknown
+		}
+		list = append(list, Extension{
+			Name: r.Name, Title: r.Title, Status: r.Status, Version: r.Version,
+			Update: state, UpdateVersion: r.UpdateVersion,
+			AutoUpdate: r.AutoUpdate == "on", OnWordPressOrg: r.WPOrgStatus == "active",
+		})
+	}
+	return list, nil
+}
+
+// ParsePlugins reads PluginList's output.
+func ParsePlugins(out []byte) ([]Extension, error) { return parseExtensions("plugin", out) }
+
+// ParseThemes reads ThemeList's output.
+func ParseThemes(out []byte) ([]Extension, error) { return parseExtensions("theme", out) }
+
+// LanguageUpdate is an installed translation with an update.
+type LanguageUpdate struct {
+	Item     string // plugin or theme slug; empty for WordPress itself
+	Language string // for example "fr_FR"
+}
+
+// ParseLanguageUpdates reads LanguageUpdates's output.
+func ParseLanguageUpdates(out []byte) ([]LanguageUpdate, error) {
+	var raw []struct {
+		Plugin   string `json:"plugin"`
+		Theme    string `json:"theme"`
+		Language string `json:"language"`
+	}
+	if err := decode(out, &raw); err != nil {
+		return nil, fmt.Errorf("language list: %w", err)
+	}
+	list := []LanguageUpdate{}
+	for _, r := range raw {
+		if r.Language == "" {
+			return nil, fmt.Errorf("language list: entry without language: %w", ErrUnexpectedOutput)
+		}
+		list = append(list, LanguageUpdate{Item: r.Plugin + r.Theme, Language: r.Language})
+	}
+	return list, nil
+}
+
+// ParseSites reads SiteList's output; WP-CLI prints the numbers and flags as strings.
+func ParseSites(out []byte) ([]model.Subsite, error) {
+	var raw []struct {
+		BlogID   string `json:"blog_id"`
+		URL      string `json:"url"`
+		Public   string `json:"public"`
+		Archived string `json:"archived"`
+		Spam     string `json:"spam"`
+		Deleted  string `json:"deleted"`
+	}
+	if err := decode(out, &raw); err != nil {
+		return nil, fmt.Errorf("site list: %w", err)
+	}
+	sites := []model.Subsite{}
+	for _, r := range raw {
+		id, err := strconv.Atoi(r.BlogID)
+		if err != nil || id <= 0 || r.URL == "" {
+			return nil, fmt.Errorf("site list: blog %q at %q: %w", r.BlogID, r.URL, ErrUnexpectedOutput)
+		}
+		sites = append(sites, model.Subsite{
+			BlogID: id, URL: r.URL,
+			Public: r.Public == "1", Archived: r.Archived == "1", Spam: r.Spam == "1", Deleted: r.Deleted == "1",
+		})
+	}
+	return sites, nil
+}
+
+// decode reads a JSON array; anything else is ErrUnexpectedOutput.
+func decode(out []byte, v any) error {
+	trimmed := bytes.TrimSpace(out)
+	if len(trimmed) == 0 || trimmed[0] != '[' {
+		return ErrUnexpectedOutput
+	}
+	if err := json.Unmarshal(trimmed, v); err != nil {
+		return fmt.Errorf("%w: %v", ErrUnexpectedOutput, err)
+	}
+	return nil
+}
