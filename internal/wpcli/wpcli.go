@@ -19,9 +19,10 @@ var (
 
 // Command is a WP-CLI command with its arguments.
 type Command struct {
-	args []string
-	read bool // read commands skip loading plugins and themes, so a broken plugin does not break them
-	err  error
+	args   []string
+	read   bool // read commands skip loading plugins and themes, so a broken plugin does not break them
+	global bool // about WP-CLI itself: no WordPress, so no path
+	err    error
 }
 
 // CoreVersion returns the installed WordPress version.
@@ -58,9 +59,13 @@ func (c Command) Remote(wpcli, path string) (string, error) {
 	if len(words) == 0 {
 		return "", ErrNoCommand
 	}
-	for i, w := range words {
-		// "php ~/wp-cli.phar": a quoted "~" is not expanded, use the path relative to the home.
-		words[i] = strings.TrimPrefix(w, "~/")
+	// "php ~/wp-cli.phar": a quoted "~" is not expanded, use the path relative to the home.
+	words = trimHome(words)
+	if c.global {
+		if path != "" {
+			return "", fmt.Errorf("%q for a command about WP-CLI itself: %w", path, ErrBadPath)
+		}
+		return sshx.Quote(append(words, c.args...)...)
 	}
 	path, err := serverPath(path)
 	if err != nil {
@@ -86,4 +91,14 @@ func serverPath(path string) (string, error) {
 		return "", fmt.Errorf("%q (another user's home): %w", path, ErrBadPath)
 	}
 	return path, nil
+}
+
+// trimHome turns "~/x" words into "x": the remote shell starts in the home directory and a quoted
+// "~" would not be expanded.
+func trimHome(words []string) []string {
+	out := make([]string, len(words))
+	for i, w := range words {
+		out[i] = strings.TrimPrefix(w, "~/")
+	}
+	return out
 }
