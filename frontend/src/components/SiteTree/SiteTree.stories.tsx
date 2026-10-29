@@ -63,3 +63,13 @@ export const Collapse: Story = {
     await expect(canvas.queryAllByRole("treeitem", { name: /atelier-exemple.ch/ })).toHaveLength(1);
   },
 };
+
+// A network just added: its subsites are read at its first scan, so no count is shown yet.
+export const NetworkNotScannedYet: Story = {
+  args: {
+    nodes: sampleTree.map((n) => (n.id === "ecoles" ? { ...n, subsites: 0 } : n)),
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.queryAllByText(/subsites/)).toHaveLength(0);
+  },
+};

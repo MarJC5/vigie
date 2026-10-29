@@ -73,7 +73,8 @@ function Detail({ node }: { node: Node }) {
       <InfoList>
         <InfoRow label={t("detail.kind")}>{t(node.multisite ? "kind.network" : `kind.${node.kind}`)}</InfoRow>
         <InfoRow label={t("detail.location")}>{node.path}</InfoRow>
-        {node.multisite && <InfoRow label={t("detail.subsites")}>{node.subsites}</InfoRow>}
+        {/* Subsites are read at the first scan of a network. */}
+        {node.multisite && node.subsites > 0 && <InfoRow label={t("detail.subsites")}>{node.subsites}</InfoRow>}
         {node.kind === "site" && <InfoRow label={t("detail.lastScan")}>{t("detail.notScanned")}</InfoRow>}
       </InfoList>
     </section>

@@ -62,7 +62,7 @@ export function SiteTree({ label, nodes, selectedId, onSelect }: SiteTreeProps) 
           tabbable={hasSelection ? undefined : index === 0}
           status={node.kind === "site" ? "unknown" : undefined}
           color={node.color === "none" ? undefined : (node.color as SiteColor)}
-          meta={node.multisite ? t("manager.subsites", { count: node.subsites }) : undefined}
+          meta={node.multisite && node.subsites > 0 ? t("manager.subsites", { count: node.subsites }) : undefined}
           onSelect={() => onSelect(node.id)}
           onToggle={() => toggle(node.id)}
         />
