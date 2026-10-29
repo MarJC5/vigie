@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -68,4 +69,68 @@ func (r ExecRunner) Run(ctx context.Context, target Target, remote string) (Resu
 		return res, nil
 	}
 	return res, err
+}
+
+// Resolved is the effective configuration ssh uses for an alias of ~/.ssh/config.
+type Resolved struct {
+	Hostname     string
+	Port         int
+	User         string
+	HostKeyAlias string
+}
+
+// KnownHostsName is the name ssh looks the host key up by: the host key alias as is when set
+// (OpenSSH adds no port to it), else the host name with its port.
+func (r Resolved) KnownHostsName() string {
+	if r.HostKeyAlias != "" {
+		return r.HostKeyAlias
+	}
+	return KnownHostsName(r.Hostname, r.Port)
+}
+
+// Resolve asks ssh for the configuration of alias (ssh -G), so Include and Match blocks are read
+// by OpenSSH itself.
+func (r ExecRunner) Resolve(ctx context.Context, alias string) (Resolved, error) {
+	if err := checkHostName(alias); err != nil {
+		return Resolved{}, err
+	}
+	binary := r.SSH
+	if binary == "" {
+		binary = "ssh"
+	}
+	timeout := r.Timeout
+	if timeout <= 0 {
+		timeout = 10 * time.Second
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, binary, "-G", "--", alias)
+	cmd.WaitDelay = time.Second
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout, cmd.Stderr = &stdout, &stderr
+	if err := cmd.Run(); err != nil {
+		return Resolved{}, fmt.Errorf("ssh -G %s: %w: %s", alias, err, strings.TrimSpace(stderr.String()))
+	}
+	var res Resolved
+	for line := range strings.Lines(stdout.String()) {
+		key, value, _ := strings.Cut(strings.TrimSpace(line), " ")
+		switch key {
+		case "hostname":
+			res.Hostname = value
+		case "user":
+			res.User = value
+		case "hostkeyalias":
+			res.HostKeyAlias = value
+		case "port":
+			port, err := strconv.Atoi(value)
+			if err != nil {
+				return Resolved{}, fmt.Errorf("ssh -G %s: port %q: %w", alias, value, err)
+			}
+			res.Port = port
+		}
+	}
+	if res.Hostname == "" {
+		return Resolved{}, fmt.Errorf("ssh -G %s: no host name", alias)
+	}
+	return res, nil
 }

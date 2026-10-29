@@ -1,0 +1,6 @@
+# ssh.example.test:2222 SSH-2.0-OpenSSH_10.0p2 Debian-7+deb13u4
+[ssh.example.test]:2222 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDCrQbi0YIlfE6ogTWv2fvcDEOi2hBGXWsLtrYEirV9HuWeSYK4WtIcTjmfynvdI3CxqmwDs0i+MwJBjhaIlW9zQf+c14YCD6Qd+DI1tVHL6iHVzT47Gg/AN8Mel5Ugl+xeXKAXIJExDmzDluvq6Rm+9lU5eNMzCsZ22hLr/YV+zZn4QSYkryV0hYsxXmiSzVV1K5e3xsP4wTm7WhNt6DVjsrlzkY+avThfHQUWOlzNCmvSLX7VwqpBrL8BIBZz3Fr02ETHhS+KfwjGAgM2w5PrvltkIRxM+Aw+c5uM7fb1wbMdfd+VEIvQMfn/mmN2Jm/4tMIwSPj9+vYKk7nNz0IKWEX0oRtM8Fw2JkaYxf45GXW3+6yrH9Hx4dYqF66JsChaa5Ov4l30IhrPE28J5utZEQcqcATZ+QQoWl5ypxdXntTOzN4YFEsVFjOgNfR/oZM6eehXkVViIDuN7Elktsug9XwleOFTQebxZ/fgAN0yaHjjPsEBNuTKithz9q4wups=
+# ssh.example.test:2222 SSH-2.0-OpenSSH_10.0p2 Debian-7+deb13u4
+[ssh.example.test]:2222 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBAwbF8fAGH/BD4IqKP5zecIkvEc7XP7iA0w5ZAeNyXbL90hxyvnVmceMT02mFc+TSBxXTWzdY+ip48aTTFispLE=
+# ssh.example.test:2222 SSH-2.0-OpenSSH_10.0p2 Debian-7+deb13u4
+[ssh.example.test]:2222 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINIno5axTixjU51Gfx+sgPSAp5I0qdKK+13SrXDTKX4f

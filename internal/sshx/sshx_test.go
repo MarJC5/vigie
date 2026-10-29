@@ -127,3 +127,13 @@ func FuzzQuoteThroughShell(f *testing.F) {
 		}
 	})
 }
+
+func TestArgsReadVigiesKnownHostsFirst(t *testing.T) {
+	o := opts
+	o.KnownHostsFile = "/Users/a/Library/Application Support/Vigie/known_hosts"
+	args := sshx.Args(sshx.Target{Alias: "shared"}, o, "true")
+	want := `UserKnownHostsFile="/Users/a/Library/Application Support/Vigie/known_hosts" ~/.ssh/known_hosts`
+	if !slices.Contains(args, want) {
+		t.Fatalf("Args() = %q, want %q", args, want)
+	}
+}

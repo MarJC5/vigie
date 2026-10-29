@@ -40,6 +40,9 @@ type Options struct {
 	ConnectTimeout      time.Duration
 	ServerAliveInterval time.Duration
 	ControlPersist      time.Duration
+	// KnownHostsFile is Vigie's own known_hosts (KnownHostsFile), read before the user's; empty
+	// leaves ssh's default.
+	KnownHostsFile string
 }
 
 // Args returns the arguments for the system ssh: no prompt (a missing key or an unknown host key
@@ -54,6 +57,10 @@ func Args(t Target, o Options, remote string) []string {
 		"-o", "ControlMaster=auto",
 		"-o", "ControlPath=" + filepath.Join(o.ControlDir, "%C"),
 		"-o", "ControlPersist=" + seconds(o.ControlPersist),
+	}
+	if o.KnownHostsFile != "" {
+		// Quoted: the macOS data directory contains a space ("Application Support").
+		args = append(args, "-o", `UserKnownHostsFile="`+o.KnownHostsFile+`" ~/.ssh/known_hosts`)
 	}
 	if t.KeyPath != "" {
 		// Only this key: some hosts close the connection after a few refused keys.

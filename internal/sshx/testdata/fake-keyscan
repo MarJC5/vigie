@@ -1,0 +1,9 @@
+#!/bin/sh
+# Stand-in for ssh-keyscan in tests: answers with the recorded keys, prints nothing for
+# silent.example.test, and echoes its arguments on stderr with exit 1 for args.example.test.
+for arg in "$@"; do last="$arg"; done
+case "$last" in
+	silent.example.test) exit 0 ;;
+	args.example.test) echo "$*" >&2; exit 1 ;;
+esac
+cat "$(dirname "$0")/keyscan.txt"

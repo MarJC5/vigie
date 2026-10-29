@@ -1,6 +1,12 @@
 #!/bin/sh
 # Stand-in for ssh in tests: prints its arguments, one per line, then acts on the remote command
 # (the last argument).
+if [ "$1" = "-G" ]; then
+	# The effective configuration of the alias "shared", as ssh -G prints it (extract).
+	printf '%s\n' 'user u12ab' 'hostname ssh.example.test' 'port 2222' 'hostkeyalias shared-key' \
+		'identityfile ~/.ssh/id_ed25519'
+	exit 0
+fi
 for arg in "$@"; do last="$arg"; printf '%s\n' "$arg"; done
 case "$last" in
 	exit-3) echo "remote failed" >&2; exit 3 ;;
