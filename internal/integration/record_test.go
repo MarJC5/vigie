@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/MarJC5/vigie/internal/discover"
 )
 
 var record = flag.Bool("record", false, "write the WP-CLI outputs of the fixtures to internal/wpcli/testdata/recorded")
@@ -62,6 +64,14 @@ func TestRecord(t *testing.T) {
 	if !*record {
 		t.Skip("run with -record to refresh the recorded outputs")
 	}
+	// The search of the account by discovery, from the home directory as sshd starts it.
+	find, err := runAs(context.Background(), "sh", "-c", discover.FindCommand())
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeRecording(t, filepath.Join("..", "discover", "testdata", "recorded", "find.json"),
+		recorded{Args: []string{discover.FindCommand()}, Exit: find.exit, Stdout: find.stdout, Stderr: find.stderr})
+
 	dir := filepath.Join("..", "wpcli", "testdata", "recorded")
 	for fixture, root := range fixtureRoots {
 		if err := os.MkdirAll(filepath.Join(dir, fixture), 0o755); err != nil {
@@ -72,16 +82,25 @@ func TestRecord(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if strings.Contains(res.stdout+res.stderr, dbPassword) {
-				t.Fatalf("%s/%s: output contains the database password", fixture, r.name)
-			}
-			data, err := json.MarshalIndent(recorded{Args: r.args, Exit: res.exit, Stdout: res.stdout, Stderr: res.stderr}, "", "  ")
-			if err != nil {
-				t.Fatal(err)
-			}
-			if err := os.WriteFile(filepath.Join(dir, fixture, r.name+".json"), append(data, '\n'), 0o644); err != nil {
-				t.Fatal(err)
-			}
+			writeRecording(t, filepath.Join(dir, fixture, r.name+".json"),
+				recorded{Args: r.args, Exit: res.exit, Stdout: res.stdout, Stderr: res.stderr})
 		}
+	}
+}
+
+func writeRecording(t *testing.T, file string, r recorded) {
+	t.Helper()
+	if strings.Contains(r.Stdout+r.Stderr, dbPassword) {
+		t.Fatalf("%s: output contains the database password", file)
+	}
+	data, err := json.MarshalIndent(r, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(file, append(data, '\n'), 0o644); err != nil {
+		t.Fatal(err)
 	}
 }
