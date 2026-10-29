@@ -33,9 +33,10 @@ var slugName = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]*$`)
 // A constant of wp-config.php.
 var constantName = regexp.MustCompile(`^[A-Z][A-Z0-9_]*$`)
 
-// A database dump in Vigie's backups folder, relative to the account's home directory; each name
-// starts with a letter or digit, so ".." cannot climb out.
-var backupFile = regexp.MustCompile(`^\.vigie/backups/[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*\.sql$`)
+// A database dump in Vigie's backups folder, relative to the account's home directory, for
+// example .vigie/backups/<site>/<time>/database.sql; each name starts with a letter or digit, so
+// ".." cannot climb out.
+var backupFile = regexp.MustCompile(`^\.vigie/backups/(?:[A-Za-z0-9][A-Za-z0-9._-]*/)+[A-Za-z0-9][A-Za-z0-9._-]*\.sql$`)
 
 // load sets what an update command loads: plugins run their own updaters (premium plugins), and
 // for themes the active theme's updater too (premium themes).

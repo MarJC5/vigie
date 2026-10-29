@@ -82,7 +82,7 @@ func (c Command) Remote(wpcli, path string) (string, error) {
 		}
 		return sshx.Quote(append(words, c.args...)...)
 	}
-	path, err := serverPath(path)
+	path, err := ServerPath(path)
 	if err != nil {
 		return "", err
 	}
@@ -97,9 +97,9 @@ func (c Command) Remote(wpcli, path string) (string, error) {
 	return sshx.Quote(args...)
 }
 
-// serverPath turns "~/x" into "x": the remote shell starts in the home directory (sshd changes to
+// ServerPath turns "~/x" into "x": the remote shell starts in the home directory (sshd changes to
 // it), and a quoted "~" would not be expanded.
-func serverPath(path string) (string, error) {
+func ServerPath(path string) (string, error) {
 	switch {
 	case path == "" || path == "~":
 		return "", fmt.Errorf("%q: %w", path, ErrBadPath)

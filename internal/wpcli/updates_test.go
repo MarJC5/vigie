@@ -24,6 +24,7 @@ func TestUpdateCommandLines(t *testing.T) {
 		{wpcli.UpdateLanguages(wpcli.LanguagesOfPlugins), "'wp' 'language' 'plugin' 'update' '--all' '--path=site' '--skip-plugins' '--skip-themes'"},
 		{wpcli.Maintenance(true), "'wp' 'maintenance-mode' 'activate' '--path=site' '--skip-plugins' '--skip-themes'"},
 		{wpcli.DatabaseExport(".vigie/backups/a/1.sql"), "'wp' 'db' 'export' '.vigie/backups/a/1.sql' '--porcelain' '--path=site' '--skip-plugins' '--skip-themes'"},
+		{wpcli.DatabaseImport(".vigie/backups/a/20261029-141200/database.sql"), "'wp' 'db' 'import' '.vigie/backups/a/20261029-141200/database.sql' '--path=site' '--skip-plugins' '--skip-themes'"},
 		// A theme can live in a plugin's folder.
 		{wpcli.ExtensionDir(wpcli.ExtensionThemes, "gutheme"), "'wp' 'theme' 'path' 'gutheme' '--dir' '--path=site' '--skip-themes'"},
 		{wpcli.ConfigConstant("WP_DEBUG_LOG"), "'wp' 'config' 'get' 'WP_DEBUG_LOG' '--type=constant' '--format=json' '--path=site' '--skip-plugins' '--skip-themes'"},
@@ -44,6 +45,8 @@ func TestUpdateCommandsRefuseBadArguments(t *testing.T) {
 		"version as text":        wpcli.UpdateCore("latest"),
 		"dump out of backups":    wpcli.DatabaseExport("/tmp/x.sql"),
 		"dump going up":          wpcli.DatabaseExport(".vigie/backups/../x.sql"),
+		"dump going up deeper":   wpcli.DatabaseExport(".vigie/backups/a/../../x.sql"),
+		"dump in the folder":     wpcli.DatabaseExport(".vigie/backups/x.sql"),
 		"constant in lower case": wpcli.ConfigConstant("wp_debug"),
 		"path of a slug option":  wpcli.ExtensionDir(wpcli.ExtensionThemes, "-x"),
 	} {
