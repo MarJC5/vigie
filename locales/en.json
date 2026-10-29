@@ -223,6 +223,57 @@
       "adding": "Adding the host and its sites…"
     }
   },
+  "overview": {
+    "wordpress": "WordPress",
+    "phpCli": "PHP on the command line",
+    "wpCli": "WP-CLI",
+    "plugins": "Plugins",
+    "themes": "Themes",
+    "translations": "Translations",
+    "address": "Address",
+    "path": "Path on the server",
+    "subsites": "Subsites",
+    "upToDate": "up to date",
+    "coreUpdate": "{{version}} available",
+    "installedUpToDate": "{{installed}} · up to date",
+    "installedUpdates_one": "{{installed}} · {{count}} update",
+    "installedUpdates_other": "{{installed}} · {{count}} updates",
+    "updates_one": "{{count}} update",
+    "updates_other": "{{count}} updates",
+    "unchecked": "not checked: wordpress.org could not be reached",
+    "sourceUnknown": "Updates not visible",
+    "sourceUnknownHint": "Not on wordpress.org; their own updater does not run during a scan.",
+    "neverScanned": "This site has not been scanned yet.",
+    "scanning": "Scanning…",
+    "scanProblem": "The last scan did not complete"
+  },
+  "updates": {
+    "label": "Pending updates",
+    "none": "Everything is up to date.",
+    "change": "{{from}} → {{to}}",
+    "unavailable": "needs a newer PHP or WordPress",
+    "unknown": "state unknown",
+    "core": "WordPress",
+    "languageOf": "{{language}} translation of {{item}}",
+    "available": "update available"
+  },
+  "host": {
+    "connection": "{{account}} · port {{port}} · {{wpCli}}",
+    "alias": "alias {{alias}} · {{wpCli}}",
+    "summary": "Summary",
+    "sites": "Sites",
+    "pending": "Pending updates",
+    "attention": "Need attention",
+    "notScanned": "Not scanned",
+    "table": "Sites of {{name}}",
+    "col": {
+      "site": "Site",
+      "status": "Status",
+      "wordpress": "WordPress",
+      "php": "PHP",
+      "updates": "Updates"
+    }
+  },
   "menu": {
     "about": "About {{app}}",
     "hide": "Hide {{app}}",

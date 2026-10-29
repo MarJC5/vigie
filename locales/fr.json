@@ -232,6 +232,59 @@
       "adding": "Ajout de l'hébergement et de ses sites…"
     }
   },
+  "overview": {
+    "wordpress": "WordPress",
+    "phpCli": "PHP en ligne de commande",
+    "wpCli": "WP-CLI",
+    "plugins": "Extensions",
+    "themes": "Thèmes",
+    "translations": "Traductions",
+    "address": "Adresse",
+    "path": "Chemin sur le serveur",
+    "subsites": "Sous-sites",
+    "upToDate": "à jour",
+    "coreUpdate": "{{version}} disponible",
+    "installedUpToDate": "{{installed}} · à jour",
+    "installedUpdates_one": "{{installed}} · {{count}} mise à jour",
+    "installedUpdates_many": "{{installed}} · {{count}} mises à jour",
+    "installedUpdates_other": "{{installed}} · {{count}} mises à jour",
+    "updates_one": "{{count}} mise à jour",
+    "updates_many": "{{count}} mises à jour",
+    "updates_other": "{{count}} mises à jour",
+    "unchecked": "non vérifié : wordpress.org est injoignable",
+    "sourceUnknown": "Mises à jour invisibles",
+    "sourceUnknownHint": "Absentes de wordpress.org ; leur propre outil de mise à jour ne tourne pas pendant un relevé.",
+    "neverScanned": "Ce site n'a pas encore été relevé.",
+    "scanning": "Relevé en cours…",
+    "scanProblem": "Le dernier relevé n'a pas abouti"
+  },
+  "updates": {
+    "label": "Mises à jour en attente",
+    "none": "Tout est à jour.",
+    "change": "{{from}} → {{to}}",
+    "unavailable": "demande une version plus récente de PHP ou de WordPress",
+    "unknown": "état inconnu",
+    "core": "WordPress",
+    "languageOf": "traduction {{language}} de {{item}}",
+    "available": "mise à jour disponible"
+  },
+  "host": {
+    "connection": "{{account}} · port {{port}} · {{wpCli}}",
+    "alias": "alias {{alias}} · {{wpCli}}",
+    "summary": "Résumé",
+    "sites": "Sites",
+    "pending": "Mises à jour en attente",
+    "attention": "À surveiller",
+    "notScanned": "Non relevés",
+    "table": "Sites de {{name}}",
+    "col": {
+      "site": "Site",
+      "status": "État",
+      "wordpress": "WordPress",
+      "php": "PHP",
+      "updates": "Mises à jour"
+    }
+  },
   "menu": {
     "about": "À propos de {{app}}",
     "hide": "Masquer {{app}}",

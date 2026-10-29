@@ -45,6 +45,7 @@
 }
 
 .paneFooter {
+  gap: var(--vg-space-2);
   height: 44px;
   flex: none;
   box-sizing: border-box;
@@ -89,4 +90,12 @@
   margin: var(--vg-space-2);
   font-size: var(--vg-text-small);
   color: var(--vg-text-muted);
+}
+
+.running {
+  flex: 1;
+}
+
+.search {
+  padding: 0 var(--vg-space-3) var(--vg-space-2);
 }

@@ -2,11 +2,11 @@ import { Events } from "@wailsio/runtime";
 import { useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
 
-import { VigieDiscovery } from "../bindings/events";
-import { HostWizard, Preferences, SiteManager } from "../bindings/github.com/MarJC5/vigie/internal/app";
-import type { Node } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { VigieDiscovery, VigieMenu, VigieScans } from "../bindings/events";
+import { HostWizard, Preferences, Scanner, SiteManager } from "../bindings/github.com/MarJC5/vigie/internal/app";
+import type { Node, ScansState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { AddHostWizard, type WizardApi } from "./components/AddHostWizard/AddHostWizard";
-import { AppShell } from "./components/AppShell/AppShell";
+import { AppShell, type ShellData } from "./components/AppShell/AppShell";
 import { createI18n } from "./i18n";
 
 // The wizard's service, with the progress of discovery as the Go side sends it.
@@ -14,6 +14,16 @@ const wizardApi: WizardApi = {
   ...HostWizard,
   onDiscovery: (listener) => Events.On(VigieDiscovery, (event) => listener(event.data)),
 };
+
+// What the detail pane reads, from the site manager service.
+const shellData: ShellData = {
+  site: (id) => SiteManager.SiteDetail(id),
+  host: (id) => SiteManager.HostDetail(id),
+  sites: (id) => SiteManager.Sites(id).then((rows) => rows ?? []),
+};
+
+// The commands of the native menu bar.
+const menuCommands = (handler: (action: string) => void) => Events.On(VigieMenu, (event) => handler(event.data.action));
 
 interface Loaded {
   i18n: ReturnType<typeof createI18n>;
@@ -26,6 +36,7 @@ export function App() {
   const [adding, setAdding] = useState(false);
   // A host just added: selected when the shell opens again.
   const [added, setAdded] = useState<string>();
+  const [scans, setScans] = useState<ScansState>({ running: [], completed: 0 });
 
   useEffect(() => {
     void Promise.all([Preferences.Language(), SiteManager.Tree()]).then(([lang, tree]) => {
@@ -33,7 +44,15 @@ export function App() {
       document.documentElement.lang = i18n.language;
       setLoaded({ i18n, nodes: tree.nodes ?? [] });
     });
+    void Scanner.State().then(setScans);
+    return Events.On(VigieScans, (event) => setScans(event.data));
   }, []);
+
+  // A scan stored: the statuses of the tree change.
+  useEffect(() => {
+    if (scans.completed === 0) return;
+    void SiteManager.Tree().then((tree) => setLoaded((l) => l && { ...l, nodes: tree.nodes ?? [] }));
+  }, [scans.completed]);
 
   const hostAdded = async (hostId: string) => {
     const tree = await SiteManager.Tree();
@@ -50,7 +69,17 @@ export function App() {
       {adding ? (
         <AddHostWizard api={wizardApi} folders={folders} onClose={() => setAdding(false)} onAdded={hostAdded} />
       ) : (
-        <AppShell key={added} nodes={loaded.nodes} onAddHost={() => setAdding(true)} initialSelectedId={added} />
+        <AppShell
+          key={added}
+          nodes={loaded.nodes}
+          onAddHost={() => setAdding(true)}
+          initialSelectedId={added}
+          data={shellData}
+          scans={scans}
+          onScan={(nodeId) => void Scanner.Scan(nodeId)}
+          onStopAll={() => void Scanner.CancelAll()}
+          commands={menuCommands}
+        />
       )}
     </I18nextProvider>
   );

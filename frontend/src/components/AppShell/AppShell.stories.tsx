@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fn, userEvent } from "storybook/test";
+import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 
+import { hostRows, outdatedSite, sharedHost } from "../../fixtures/scans";
 import { sampleTree } from "../../fixtures/tree";
 import { AppShell } from "./AppShell";
 
@@ -66,5 +67,86 @@ export const HostJustAdded: Story = {
   args: { initialSelectedId: "shared" },
   play: async ({ canvas }) => {
     await expect(canvas.getAllByRole("heading", { level: 1, name: "Shared hosting" })).toHaveLength(2);
+  },
+};
+
+// The data of the window, as the Go side serves it.
+const data = {
+  site: async () => outdatedSite,
+  host: async () => sharedHost,
+  sites: async () => hostRows,
+};
+
+export const SiteWithItsScan: Story = {
+  args: { data, initialSelectedId: "boulangerie", onScan: fn() },
+  play: async ({ canvas, args }) => {
+    await expect((await canvas.findAllByRole("heading", { level: 1, name: "boulangerie-exemple.ch" }))[0]).toBeInTheDocument();
+    await expect(canvas.getAllByRole("tabpanel")[0]).toHaveTextContent("7.1.3 · 7.1.4 available");
+    await userEvent.click(canvas.getAllByRole("button", { name: "Scan now" })[0]!);
+    await expect(args.onScan).toHaveBeenCalledWith("boulangerie");
+  },
+};
+
+export const HostWithItsSites: Story = {
+  args: { data, initialSelectedId: "shared", onScan: fn() },
+  play: async ({ canvas }) => {
+    await expect((await canvas.findAllByText("u12ab@ssh.example-host.ch · port 22 · wp-cli"))[0]).toBeInTheDocument();
+    await expect(canvas.getAllByRole("table", { name: "Sites of Shared hosting" })).toHaveLength(2);
+  },
+};
+
+export const ScansRunning: Story = {
+  args: {
+    data,
+    initialSelectedId: "shared",
+    scans: { running: [{ nodeId: "shared", sites: 3, done: 1 }], completed: 0 },
+    onStopAll: fn(),
+  },
+  play: async ({ canvas, args }) => {
+    const [pane] = canvas.getAllByRole("complementary", { name: "Site manager" });
+    await expect(pane).toHaveTextContent("2 scans running");
+    await userEvent.click(within(pane!).getByRole("button", { name: "Stop all" }));
+    await expect(args.onStopAll).toHaveBeenCalled();
+    // The host being scanned says so.
+    await expect(canvas.getAllByRole("button", { name: "Scan host" })[0]).toHaveAttribute("aria-busy", "true");
+  },
+};
+
+export const StatusDotsInTheTree: Story = {
+  play: async ({ canvas }) => {
+    const [tree] = canvas.getAllByRole("tree");
+    await expect(within(tree!).getAllByRole("img", { name: "Needs attention" })).toHaveLength(1);
+    await expect(within(tree!).getAllByRole("img", { name: "Up to date" })).toHaveLength(1);
+  },
+};
+
+// The menu bar's commands, as the Go side sends them.
+function commands() {
+  let handler: ((action: string) => void) | undefined;
+  return {
+    subscribe: (h: (action: string) => void) => {
+      handler = h;
+      return () => {
+        handler = undefined;
+      };
+    },
+    send: (action: string) => handler?.(action),
+    subscribed: () => handler !== undefined,
+  };
+}
+
+const menu = commands();
+
+export const MenuCommands: Story = {
+  args: { data, initialSelectedId: "shared", onScan: fn(), commands: menu.subscribe },
+  play: async ({ canvas, args }) => {
+    // Rendered twice (one per theme): the last subscriber is the second render. The menu only
+    // reaches a window that has subscribed.
+    await waitFor(() => expect(menu.subscribed()).toBe(true));
+    menu.send("search");
+    const fields = await canvas.findAllByRole("searchbox", { name: "Search" });
+    await waitFor(() => expect(fields.at(-1)).toHaveFocus());
+    menu.send("scan");
+    await expect(args.onScan).toHaveBeenCalledWith("shared");
   },
 };

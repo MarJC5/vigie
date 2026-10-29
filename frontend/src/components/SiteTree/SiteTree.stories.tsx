@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { expect, userEvent } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 
 import { sampleTree } from "../../fixtures/tree";
 import { SiteTree } from "./SiteTree";
@@ -71,5 +71,16 @@ export const NetworkNotScannedYet: Story = {
   },
   play: async ({ canvas }) => {
     await expect(canvas.queryAllByText(/subsites/)).toHaveLength(0);
+  },
+};
+
+// The search keeps what matches and the folders and hosts that lead to it, accents ignored.
+export const Filtered: Story = {
+  args: { filter: "ECOLES" },
+  play: async ({ canvas }) => {
+    const [tree] = canvas.getAllByRole("tree");
+    const names = within(tree!).getAllByRole("treeitem").map((i) => i.textContent);
+    await expect(names).toHaveLength(3);
+    await expect(names[2]).toContain("reseau-ecoles.ch");
   },
 };
