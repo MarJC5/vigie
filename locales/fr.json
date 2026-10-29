@@ -142,5 +142,94 @@
     "noWpCli": "WP-CLI est introuvable sur ce compte (essayé : {{message}}).",
     "findFailed": "La recherche des installations WordPress a échoué : {{message}}",
     "error": "Une erreur s'est produite : {{message}}"
+  },
+  "wizard": {
+    "close": "Fermer",
+    "back": "Revenir",
+    "stepsLabel": "Étapes",
+    "done": "terminée",
+    "steps": {
+      "connection": "Connexion",
+      "key": "Clé du serveur",
+      "test": "Test",
+      "sites": "Sites"
+    },
+    "title": {
+      "connection": "Ajouter un hébergement",
+      "key": "Vérifiez la clé du serveur",
+      "test": "Testez la connexion",
+      "sites": "Choisissez les sites à ajouter"
+    },
+    "lead": {
+      "connection": "Un hébergement est un compte SSH. Vigie utilise les clés de votre agent SSH et ne demande jamais de mot de passe.",
+      "key": "Première connexion à {{host}}. Comparez cette empreinte avec celle publiée par votre hébergeur avant de l'approuver.",
+      "test": "Vigie vérifie la connexion, PHP en ligne de commande et WP-CLI. Rien n'est écrit sur le serveur.",
+      "sites_one": "{{count}} installation WordPress trouvée sur le compte. Vigie n'ajoute que celles que vous cochez.",
+      "sites_many": "{{count}} installations WordPress trouvées sur le compte. Vigie n'ajoute que celles que vous cochez.",
+      "sites_other": "{{count}} installations WordPress trouvées sur le compte. Vigie n'ajoute que celles que vous cochez."
+    },
+    "mode": {
+      "host": "Nom d'hôte et utilisateur",
+      "hostText": "Tels que votre hébergeur les donne, par exemple dans son panneau.",
+      "alias": "Alias de ~/.ssh/config",
+      "aliasText": "Une entrée que vous utilisez déjà dans le terminal."
+    },
+    "field": {
+      "name": "Nom dans Vigie",
+      "folder": "Dossier",
+      "root": "(premier niveau)",
+      "alias": "Alias SSH",
+      "aliasHint": "Comme dans ssh <alias>",
+      "hostname": "Nom d'hôte",
+      "port": "Port",
+      "user": "Utilisateur",
+      "keyPath": "Fichier de clé",
+      "keyPathHint": "Facultatif : seule cette clé est proposée",
+      "keyPathPlaceholder": "Les clés de mon agent SSH",
+      "wpCli": "Commande WP-CLI",
+      "wpCliHint": "Infomaniak : wp-cli"
+    },
+    "keyOf": "Clé de {{host}}",
+    "otherKeys": "Le serveur présente aussi :",
+    "compared": "J'ai comparé cette empreinte avec celle de mon hébergeur",
+    "keyWhere": "Vigie la garde dans son propre known_hosts ; vos fichiers SSH ne sont pas modifiés.",
+    "checks": "Contrôles",
+    "check": {
+      "ssh": "Connexion SSH",
+      "php": "PHP en ligne de commande",
+      "wpCli": "WP-CLI",
+      "connected": "Connecté"
+    },
+    "state": {
+      "ok": "Réussi",
+      "failed": "Échec",
+      "waiting": "Pas encore lancé",
+      "running": "En cours"
+    },
+    "testFailed": "Le test de connexion a échoué",
+    "retry": "Réessayer",
+    "found": "Installations trouvées",
+    "network": "Nouveau réseau multisite",
+    "col": {
+      "add": "Ajouter",
+      "name": "Nom",
+      "path": "Chemin sur le serveur",
+      "state": "État"
+    },
+    "action": {
+      "continue": "Continuer",
+      "trust": "Approuver et continuer",
+      "search": "Chercher les sites",
+      "add_one": "Ajouter l'hébergement et {{count}} site",
+      "add_many": "Ajouter l'hébergement et {{count}} sites",
+      "add_other": "Ajouter l'hébergement et {{count}} sites",
+      "addHostOnly": "Ajouter l'hébergement"
+    },
+    "progress": {
+      "keys": "Demande des clés au serveur…",
+      "search": "Recherche des installations WordPress sur le compte…",
+      "checking": "Vérification des installations trouvées : {{checked}} sur {{total}}",
+      "adding": "Ajout de l'hébergement et de ses sites…"
+    }
   }
 }

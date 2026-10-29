@@ -135,5 +135,92 @@
     "noWpCli": "WP-CLI was not found on this account (tried: {{message}}).",
     "findFailed": "The search for WordPress installs failed: {{message}}",
     "error": "Something went wrong: {{message}}"
+  },
+  "wizard": {
+    "close": "Close",
+    "back": "Go back",
+    "stepsLabel": "Steps",
+    "done": "done",
+    "steps": {
+      "connection": "Connection",
+      "key": "Server key",
+      "test": "Test",
+      "sites": "Sites"
+    },
+    "title": {
+      "connection": "Add a host",
+      "key": "Check the server's key",
+      "test": "Test the connection",
+      "sites": "Choose the sites to add"
+    },
+    "lead": {
+      "connection": "A host is one SSH account. Vigie uses the keys of your SSH agent and never asks for a password.",
+      "key": "First connection to {{host}}. Compare this fingerprint with the one your host publishes before trusting it.",
+      "test": "Vigie checks the connection, PHP on the command line and WP-CLI. Nothing is written on the server.",
+      "sites_one": "{{count}} WordPress install found in the account. Vigie adds only the ones you check.",
+      "sites_other": "{{count}} WordPress installs found in the account. Vigie adds only the ones you check."
+    },
+    "mode": {
+      "host": "Host name and user",
+      "hostText": "As your host gives them, for example in its control panel.",
+      "alias": "Alias from ~/.ssh/config",
+      "aliasText": "An entry you already use in the terminal."
+    },
+    "field": {
+      "name": "Name in Vigie",
+      "folder": "Folder",
+      "root": "(top level)",
+      "alias": "SSH alias",
+      "aliasHint": "As in ssh <alias>",
+      "hostname": "Host name",
+      "port": "Port",
+      "user": "User",
+      "keyPath": "Key file",
+      "keyPathHint": "Optional: only this key is offered",
+      "keyPathPlaceholder": "The keys of my SSH agent",
+      "wpCli": "WP-CLI command",
+      "wpCliHint": "Infomaniak: wp-cli"
+    },
+    "keyOf": "Key of {{host}}",
+    "otherKeys": "The server also presents:",
+    "compared": "I compared this fingerprint with the one of my host",
+    "keyWhere": "Vigie keeps it in its own known_hosts; your SSH files are not changed.",
+    "checks": "Checks",
+    "check": {
+      "ssh": "SSH connection",
+      "php": "PHP on the command line",
+      "wpCli": "WP-CLI",
+      "connected": "Connected"
+    },
+    "state": {
+      "ok": "Passed",
+      "failed": "Failed",
+      "waiting": "Not run yet",
+      "running": "In progress"
+    },
+    "testFailed": "The connection test failed",
+    "retry": "Try again",
+    "found": "Installs found",
+    "network": "New multisite network",
+    "col": {
+      "add": "Add",
+      "name": "Name",
+      "path": "Path on the server",
+      "state": "State"
+    },
+    "action": {
+      "continue": "Continue",
+      "trust": "Trust and continue",
+      "search": "Search for sites",
+      "add_one": "Add the host and {{count}} site",
+      "add_other": "Add the host and {{count}} sites",
+      "addHostOnly": "Add the host"
+    },
+    "progress": {
+      "keys": "Asking the server for its keys…",
+      "search": "Searching the account for WordPress installs…",
+      "checking": "Checking the installs found: {{checked}} of {{total}}",
+      "adding": "Adding the host and its sites…"
+    }
   }
 }

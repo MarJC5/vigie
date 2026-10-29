@@ -12,18 +12,22 @@ import styles from "./AppShell.module.css";
 export interface AppShellProps {
   /** The site manager, depth first, as SiteManager.Tree returns it. */
   nodes: Node[];
+  /** Opens the "add a host" wizard. */
+  onAddHost?: () => void;
+  /** Selected when the shell opens, for example a host just added. */
+  initialSelectedId?: string;
 }
 
 /** The main window: navigation rail, site manager pane and the detail of the selected item. */
-export function AppShell({ nodes }: AppShellProps) {
+export function AppShell({ nodes, onAddHost, initialSelectedId }: AppShellProps) {
   const { t } = useTranslation();
-  const [selectedId, setSelectedId] = useState<string>();
+  const [selectedId, setSelectedId] = useState<string | undefined>(initialSelectedId);
   const [paneOpen, setPaneOpen] = useState(true);
   const selected = nodes.find((n) => n.id === selectedId);
 
   return (
     <div className={styles.shell}>
-      <NavRail current="sites" />
+      <NavRail current="sites" onAddHost={onAddHost} />
       {paneOpen && (
         <aside aria-label={t("manager.label")} className={styles.pane}>
           <div className={styles.paneHeader}>
@@ -47,8 +51,7 @@ export function AppShell({ nodes }: AppShellProps) {
         )}
         {nodes.length === 0 ? (
           <EmptyState title={t("empty.title")} text={t("empty.text")}>
-            {/* Adding a host comes with the "add a host" wizard. */}
-            <Button variant="primary" icon="plus" disabled>
+            <Button variant="primary" icon="plus" disabled={!onAddHost} onClick={onAddHost}>
               {t("action.addHost")}
             </Button>
           </EmptyState>

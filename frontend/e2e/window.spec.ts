@@ -39,3 +39,13 @@ test("a first launch invites to add a host, in the stored language", async ({ pa
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Ajoutez votre premier hébergement");
   await expect(page.getByText("Aucun hébergement pour le moment.")).toBeVisible();
 });
+
+test("the rail opens the add-a-host wizard, which closes back to the tree", async ({ page }) => {
+  await page.goto(seeded);
+  await page.getByRole("navigation", { name: "Navigation" }).getByRole("button", { name: "Add a host" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Add a host");
+  await expect(page.getByRole("main")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
+  await page.getByRole("button", { name: "Close" }).click();
+  await expect(page.getByRole("tree", { name: "Site manager" })).toBeVisible();
+});

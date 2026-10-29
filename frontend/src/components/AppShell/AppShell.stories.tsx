@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent } from "storybook/test";
+import { expect, fn, userEvent } from "storybook/test";
 
 import { sampleTree } from "../../fixtures/tree";
 import { AppShell } from "./AppShell";
@@ -48,11 +48,23 @@ export const WithSites: Story = {
 };
 
 export const FirstLaunch: Story = {
-  args: { nodes: [] },
-  play: async ({ canvas }) => {
+  args: { nodes: [], onAddHost: fn() },
+  play: async ({ canvas, args }) => {
     await expect(canvas.getAllByRole("heading", { level: 1, name: "Add your first host" })).toHaveLength(2);
-    // Adding a host comes with the next step; the button is shown but not active yet.
-    const [add] = canvas.getAllByRole("button", { name: "Add a host" }).filter((b) => b.textContent);
-    await expect(add).toBeDisabled();
+    // The button of the empty state and the "+" of the rail both open the wizard.
+    const [add, plus] = [
+      canvas.getAllByRole("button", { name: "Add a host" }).find((b) => b.textContent),
+      canvas.getAllByRole("button", { name: "Add a host" }).find((b) => !b.textContent),
+    ];
+    await userEvent.click(add!);
+    await userEvent.click(plus!);
+    await expect(args.onAddHost).toHaveBeenCalledTimes(2);
+  },
+};
+
+export const HostJustAdded: Story = {
+  args: { initialSelectedId: "shared" },
+  play: async ({ canvas }) => {
+    await expect(canvas.getAllByRole("heading", { level: 1, name: "Shared hosting" })).toHaveLength(2);
   },
 };

@@ -1,0 +1,59 @@
+.progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: var(--vg-space-4) 0;
+}
+
+.label {
+  color: var(--vg-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  position: relative;
+  width: min(360px, 100%);
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--vg-radius-pill);
+  background: var(--vg-surface-raised);
+}
+
+.fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--share);
+  border-radius: inherit;
+  background: var(--vg-accent);
+  transition: width var(--vg-duration-ui) var(--vg-ease);
+}
+
+/* A short segment crossing the track. */
+.moving {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 30%;
+  border-radius: inherit;
+  background: var(--vg-accent);
+  animation: cross 1.4s var(--vg-ease) infinite;
+}
+
+@keyframes cross {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(340%);
+  }
+}
+
+/* Without motion, a full, quiet bar: the sentence says what happens. */
+@media (prefers-reduced-motion: reduce) {
+  .moving {
+    width: 100%;
+    opacity: 0.5;
+    animation: none;
+  }
+}
