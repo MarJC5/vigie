@@ -1,6 +1,6 @@
 // Command seed prepares a data directory for the end-to-end test of the window: the interface
 // language when -lang is given, and unless -empty a fictional site manager that mirrors the fixture of the interface
-// stories (never real hosts or sites).
+// stories, with fictional scans of two of its sites (never real hosts or sites).
 //
 // Usage: seed [-lang en|fr] [-empty] <data-dir>
 package main
@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/MarJC5/vigie/internal/app"
 	"github.com/MarJC5/vigie/internal/model"
@@ -68,10 +69,39 @@ func seed(ctx context.Context, dir, lang string, empty bool) error {
 	for _, s := range sites {
 		errs = append(errs, db.SaveSite(ctx, s))
 	}
+	for _, scan := range scans(sites[0].ID, sites[1].ID) {
+		errs = append(errs, db.SaveScan(ctx, scan))
+	}
 	for _, err := range errs {
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// scans are the latest scans of the first site (up to date) and the second (updates pending);
+// the network is left never scanned.
+func scans(upToDate, outdated model.ID) []model.Scan {
+	finished := time.Now().Add(-3 * time.Minute)
+	base := model.Scan{
+		Started: finished.Add(-4 * time.Second), Finished: finished, Outcome: model.ScanCompleted,
+		WordPress: "7.1.3", PHPCLI: "8.4.27", WPCLI: "2.12.0",
+		CoreChecked: true, PluginsChecked: true, ThemesChecked: true, LanguagesChecked: true,
+	}
+	ok := base
+	ok.ID, ok.SiteID, ok.Home = model.NewID(), upToDate, "https://atelier-exemple.ch"
+	ok.Items = []model.ScanItem{
+		{Kind: model.ItemCore, Version: "7.1.3", Update: model.UpdateNone},
+		{Kind: model.ItemPlugin, Slug: "akismet", Title: "Akismet Anti-spam", Status: "active", Version: "5.7.2", Update: model.UpdateNone, OnWordPressOrg: true},
+	}
+	warn := base
+	warn.ID, warn.SiteID, warn.Home = model.NewID(), outdated, "https://boulangerie-exemple.ch"
+	warn.Items = []model.ScanItem{
+		{Kind: model.ItemCore, Status: "minor", Version: "7.1.3", Update: model.UpdateAvailable, UpdateVersion: "7.1.4"},
+		{Kind: model.ItemPlugin, Slug: "akismet", Title: "Akismet Anti-spam", Status: "active", Version: "5.3",
+			Update: model.UpdateAvailable, UpdateVersion: "5.7.2", OnWordPressOrg: true},
+		{Kind: model.ItemLanguage, Slug: "akismet", Language: "fr_FR", Update: model.UpdateAvailable},
+	}
+	return []model.Scan{ok, warn}
 }

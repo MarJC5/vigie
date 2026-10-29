@@ -12,8 +12,8 @@ test("the site manager comes from the Go side, and selecting an item shows its d
 
   await tree.getByRole("treeitem", { name: /reseau-ecoles\.ch/ }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("reseau-ecoles.ch");
-  await expect(page.getByRole("main")).toContainText("Multisite network");
-  await expect(page.getByRole("main")).toContainText("Clients/Shared hosting/reseau-ecoles.ch");
+  await expect(page.getByRole("tabpanel")).toContainText("Multisite network");
+  await expect(page.getByRole("tabpanel")).toContainText("This site has not been scanned yet.");
 });
 
 test("the window has one of each landmark", async ({ page }) => {
@@ -48,4 +48,38 @@ test("the rail opens the add-a-host wizard, which closes back to the tree", asyn
   await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
   await page.getByRole("button", { name: "Close" }).click();
   await expect(page.getByRole("tree", { name: "Site manager" })).toBeVisible();
+});
+
+test("the tree shows the latest scans, a site its overview and its updates", async ({ page }) => {
+  await page.goto(seeded);
+  const tree = page.getByRole("tree", { name: "Site manager" });
+  await expect(tree.getByRole("img", { name: "Needs attention" })).toHaveCount(1);
+  await expect(tree.getByRole("img", { name: "Up to date" })).toHaveCount(1);
+
+  await tree.getByRole("treeitem", { name: /boulangerie-exemple\.ch/ }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("boulangerie-exemple.ch");
+  await expect(page.getByText("Last scan: 3 minutes ago")).toBeVisible();
+  await expect(page.getByRole("tabpanel")).toContainText("7.1.3 · 7.1.4 available");
+  await page.getByRole("tab", { name: /Updates/ }).click();
+  await expect(page.getByRole("tabpanel")).toContainText("5.3 → 5.7.2");
+});
+
+test("a host shows the table of its sites", async ({ page }) => {
+  await page.goto(seeded);
+  await page.getByRole("tree", { name: "Site manager" }).getByRole("treeitem", { name: /^Shared hosting/ }).click();
+  await expect(page.getByText("alias shared · wp")).toBeVisible();
+  const table = page.getByRole("table", { name: "Sites of Shared hosting" });
+  await expect(table.getByRole("row")).toHaveCount(4);
+  await expect(page.getByRole("list", { name: "Summary" })).toContainText("Not scanned1");
+});
+
+test("the search keeps what matches", async ({ page }) => {
+  await page.goto(seeded);
+  await page.getByRole("button", { name: "Search" }).click();
+  await page.getByRole("searchbox", { name: "Search" }).fill("boul");
+  await expect(page.getByRole("tree", { name: "Site manager" }).getByRole("treeitem")).toHaveCount(3);
+  await page.getByRole("searchbox", { name: "Search" }).press("Escape");
+  await page.getByRole("searchbox", { name: "Search" }).press("Escape");
+  await expect(page.getByRole("searchbox")).toHaveCount(0);
+  await expect(page.getByRole("tree", { name: "Site manager" }).getByRole("treeitem")).toHaveCount(7);
 });
