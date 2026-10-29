@@ -44,6 +44,10 @@ func (f *fakeUpdates) Run(_ context.Context, job update.Job, _ update.Preview, _
 	return op, nil
 }
 
+func (f *fakeUpdates) Rollback(context.Context, update.Job, model.Operation) (model.Operation, error) {
+	return model.Operation{}, nil
+}
+
 var akismet = update.Preview{DumpTool: true,
 	Core:    &update.Item{Kind: model.ItemCore, From: "7.1.3", To: "7.1.4"},
 	Plugins: []update.Item{{Kind: model.ItemPlugin, Slug: "akismet", From: "5.3", To: "5.7.2"}}}
@@ -73,7 +77,7 @@ func updateEnv(t *testing.T, f *fakeUpdates) func(context.Context) (*workspace.W
 		// The scan after an update answers as the plain site of the bench.
 		wpclitest.Replay(t, fake, "plain", site.Path, "wp")
 	}
-	ws := workspace.New(db, workspace.Deps{Runner: fake, Now: time.Now, Updates: f})
+	ws := workspace.New(db, workspace.Deps{Runner: fake, Now: time.Now, Updates: func(func(model.Operation, model.OperationStep)) workspace.Updates { return f }})
 	return func(context.Context) (*workspace.Workspace, error) { return ws, nil }
 }
 

@@ -62,6 +62,13 @@ func (u *updates) Run(_ context.Context, job update.Job, _ update.Preview, _ upd
 	return model.Operation{ID: model.NewID(), SiteID: job.Site.ID, Kind: model.OperationUpdate, Outcome: outcome}, nil
 }
 
+func (u *updates) Rollback(_ context.Context, job update.Job, failed model.Operation) (model.Operation, error) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	u.runs = append(u.runs, "rollback "+job.Site.Name+" "+failed.ID.String())
+	return model.Operation{ID: model.NewID(), SiteID: job.Site.ID, Kind: model.OperationRollback, Outcome: model.OperationCompleted}, nil
+}
+
 var pending = update.Preview{DumpTool: true, Plugins: []update.Item{{Kind: model.ItemPlugin, Slug: "akismet", From: "5.3", To: "5.7.2"}}}
 
 // twoHosts stores host A with sites a1, a2, a3 and host B with b1, all on the plain fixture's
@@ -92,7 +99,7 @@ func twoHosts(t *testing.T) (*workspace.Workspace, *updates) {
 			u.hostOf[name] = host.ID
 		}
 	}
-	ws := workspace.New(db, workspace.Deps{Runner: fake, Now: time.Now, Updates: u})
+	ws := workspace.New(db, workspace.Deps{Runner: fake, Now: time.Now, Updates: func(func(model.Operation, model.OperationStep)) workspace.Updates { return u }})
 	return ws, u
 }
 
@@ -119,7 +126,7 @@ func TestUpdateSitesHostByHost(t *testing.T) {
 	if len(previews) != 4 || previews[0].Path != "A/a1" {
 		t.Fatalf("previews = %+v", previews)
 	}
-	results := ws.UpdateSites(context.Background(), workspace.Everything(previews), nil)
+	results := ws.UpdateSites(context.Background(), workspace.Everything(previews), workspace.Follow{})
 	want := map[string]workspace.SiteOutcome{"a1": workspace.SiteUpdated, "a2": workspace.SiteUpdated, "a3": workspace.SiteUpdated, "b1": workspace.SiteUpdated}
 	if got := outcomes(results); !maps.Equal(got, want) {
 		t.Errorf("outcomes = %v", got)
@@ -139,7 +146,7 @@ func TestUpdateSitesHostByHost(t *testing.T) {
 func TestFirstFailureStopsTheHost(t *testing.T) {
 	ws, u := twoHosts(t)
 	u.outcomes["a1"] = model.OperationFailed
-	results := ws.UpdateSites(context.Background(), workspace.Everything(previewAll(t, ws)), nil)
+	results := ws.UpdateSites(context.Background(), workspace.Everything(previewAll(t, ws)), workspace.Follow{})
 	want := map[string]workspace.SiteOutcome{"a1": workspace.SiteFailed, "a2": workspace.SiteNotStarted, "a3": workspace.SiteNotStarted, "b1": workspace.SiteUpdated}
 	if got := outcomes(results); !maps.Equal(got, want) {
 		t.Errorf("outcomes = %v", got)
@@ -150,7 +157,7 @@ func TestFirstFailureStopsTheHost(t *testing.T) {
 func TestRefusalDoesNotStopTheHost(t *testing.T) {
 	ws, u := twoHosts(t)
 	u.refusals["a1"] = wpcli.ErrNoDumpTool
-	results := ws.UpdateSites(context.Background(), workspace.Everything(previewAll(t, ws)), nil)
+	results := ws.UpdateSites(context.Background(), workspace.Everything(previewAll(t, ws)), workspace.Follow{})
 	if got := outcomes(results); got["a1"] != workspace.SiteRefused || got["a2"] != workspace.SiteUpdated {
 		t.Errorf("outcomes = %v", got)
 	}
@@ -168,7 +175,7 @@ func TestNothingToUpdateAndUnreadablePreviews(t *testing.T) {
 	if !errors.Is(previews[1].Err, wpcli.ErrCannotLoad) {
 		t.Fatalf("a2 preview = %+v", previews[1])
 	}
-	results := ws.UpdateSites(context.Background(), workspace.Everything(previews), nil)
+	results := ws.UpdateSites(context.Background(), workspace.Everything(previews), workspace.Follow{})
 	if got := outcomes(results); got["a1"] != workspace.SiteNothing || got["a2"] != workspace.SiteRefused || got["a3"] != workspace.SiteUpdated {
 		t.Errorf("outcomes = %v", got)
 	}
@@ -184,9 +191,9 @@ func TestCancelLeavesTheRestNotStarted(t *testing.T) {
 	ws, _ := twoHosts(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	var once sync.Once
-	results := ws.UpdateSites(ctx, workspace.Everything(previewAll(t, ws)), func(r workspace.SiteUpdate) {
+	results := ws.UpdateSites(ctx, workspace.Everything(previewAll(t, ws)), workspace.Follow{OnSite: func(workspace.SiteUpdate) {
 		once.Do(cancel)
-	})
+	}})
 	notStarted := 0
 	for _, r := range results {
 		if r.Outcome == workspace.SiteNotStarted {
@@ -195,5 +202,36 @@ func TestCancelLeavesTheRestNotStarted(t *testing.T) {
 	}
 	if notStarted == 0 {
 		t.Errorf("outcomes = %v, want some not started", outcomes(results))
+	}
+}
+
+// A rollback finds the site and its failed operation in the database.
+func TestRollbackOfAStoredOperation(t *testing.T) {
+	ctx := context.Background()
+	ws, u := twoHosts(t)
+	tree, err := ws.DB().LoadTree(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	node, err := tree.Resolve("A/a1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	failed := model.Operation{ID: model.NewID(), SiteID: node.ID, Kind: model.OperationUpdate, Started: time.Now(), PID: 1}
+	if err := ws.DB().StartOperation(ctx, failed); err != nil {
+		t.Fatal(err)
+	}
+	if err := ws.DB().FinishOperation(ctx, failed.ID, model.OperationFailed, time.Now(), ""); err != nil {
+		t.Fatal(err)
+	}
+	op, err := ws.Rollback(ctx, node.ID, failed.ID, nil)
+	if err != nil || op.Kind != model.OperationRollback {
+		t.Fatalf("Rollback() = %+v, %v", op, err)
+	}
+	if len(u.runs) != 1 || u.runs[0] != "rollback a1 "+failed.ID.String() {
+		t.Errorf("runs = %v", u.runs)
+	}
+	if _, err := ws.Rollback(ctx, node.ID, model.NewID(), nil); !errors.Is(err, model.ErrNotFound) {
+		t.Errorf("an unknown operation: %v, want ErrNotFound", err)
 	}
 }

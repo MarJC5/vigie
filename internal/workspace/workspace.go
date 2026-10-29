@@ -53,11 +53,10 @@ type Deps struct {
 	Resolver   Resolver
 	KnownHosts string // Vigie's own known_hosts file
 	Now        func() time.Time
-	// Updates replaces the real updater, in tests of the bulk runs; Checker its checks.
-	Updates Updates
+	// Updates makes an updater that reports its steps to onStep, replacing the real one in tests;
+	// Checker replaces the real one's checks.
+	Updates func(onStep func(model.Operation, model.OperationStep)) Updates
 	Checker update.Checker
-	// OnStep follows the steps of updates, for the window.
-	OnStep func(op model.Operation, step model.OperationStep)
 }
 
 // Workspace holds the database and the means to reach servers.

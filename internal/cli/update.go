@@ -92,11 +92,11 @@ func updatePath(ctx context.Context, env Env, ws *workspace.Workspace, path stri
 		return exitAttention
 	}
 
-	done := ws.UpdateSites(ctx, planned, func(r workspace.SiteUpdate) {
+	done := ws.UpdateSites(ctx, planned, workspace.Follow{OnSite: func(r workspace.SiteUpdate) {
 		if !asJSON {
 			fmt.Fprintf(env.Out, "%s  %s\n", r.Path, outcomeText(env, r))
 		}
-	})
+	}})
 	for _, r := range done {
 		if r.Outcome == workspace.SiteNotStarted && !asJSON {
 			fmt.Fprintf(env.Out, "%s  %s\n", r.Path, outcomeText(env, r))

@@ -2,7 +2,9 @@ package workspace
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"slices"
 	"sync"
 	"time"
 
@@ -13,27 +15,36 @@ import (
 	"github.com/MarJC5/vigie/internal/update"
 )
 
-// Updates previews and runs the update of one site (update.Updater).
+// Updates previews, runs and rolls back the update of one site (update.Updater).
 type Updates interface {
 	Preview(ctx context.Context, job update.Job) (update.Preview, error)
 	Run(ctx context.Context, job update.Job, preview update.Preview, sel update.Selection) (model.Operation, error)
+	Rollback(ctx context.Context, job update.Job, failed model.Operation) (model.Operation, error)
+}
+
+// Follow is what a caller hears of updates as they go: each site as it ends, each step as it
+// starts and ends.
+type Follow struct {
+	OnSite func(SiteUpdate)
+	OnStep func(op model.Operation, step model.OperationStep)
 }
 
 // checks is how Vigie watches a site after a change: OPcache checks the files every 2 s by
 // default, so the first round comes after 3 s, then a round each second for 3 s.
 var checks = httpcheck.Checker{Settle: 3 * time.Second, Window: 3 * time.Second, Interval: time.Second}
 
-// updater is the deps' Updates, else the real one over the workspace's runner, limiter and database.
-func (w *Workspace) updater() Updates {
+// updater is the deps' Updates, else the real one over the workspace's runner, limiter and
+// database; onStep, when set, hears of its steps.
+func (w *Workspace) updater(onStep func(model.Operation, model.OperationStep)) Updates {
 	if w.deps.Updates != nil {
-		return w.deps.Updates
+		return w.deps.Updates(onStep)
 	}
 	checker := w.deps.Checker
 	if checker == nil {
 		checker = checks
 	}
 	return update.Updater{Runner: w.deps.Runner, Limiter: w.limiter, Store: w.db, Checker: checker, Now: w.deps.Now,
-		PID: os.Getpid(), OnStep: w.deps.OnStep}
+		PID: os.Getpid(), OnStep: onStep}
 }
 
 // SitePreview is what an update of one site would change; Err when it could not be read.
@@ -54,7 +65,7 @@ func (w *Workspace) PreviewNode(ctx context.Context, node model.Node) ([]SitePre
 	}
 	sites := tree.SitesUnder(node)
 	previews := make([]SitePreview, len(sites))
-	u := w.updater()
+	u := w.updater(nil)
 	slots := make(chan struct{}, parallelSites)
 	var wg sync.WaitGroup
 	for i, site := range sites {
@@ -112,8 +123,8 @@ type SiteUpdate struct {
 
 // UpdateSites updates the sites planned: hosts at once, the sites of a host one after another,
 // each host stopping at its first failure; a cancel lets the current site end. Every site updated
-// is scanned again. onSite, when set, hears of each site as it ends.
-func (w *Workspace) UpdateSites(ctx context.Context, planned []Planned, onSite func(SiteUpdate)) []SiteUpdate {
+// is scanned again.
+func (w *Workspace) UpdateSites(ctx context.Context, planned []Planned, follow Follow) []SiteUpdate {
 	results := make([]SiteUpdate, len(planned))
 	byHost := map[string][]int{}
 	var hosts []string
@@ -124,8 +135,8 @@ func (w *Workspace) UpdateSites(ctx context.Context, planned []Planned, onSite f
 		}
 		byHost[p.Job.HostKey] = append(byHost[p.Job.HostKey], i)
 	}
-	u := w.updater()
-	var mu sync.Mutex // onSite hears of the hosts one at a time
+	u := w.updater(follow.OnStep)
+	var mu sync.Mutex // OnSite hears of the hosts one at a time
 	var wg sync.WaitGroup
 	for _, host := range hosts {
 		wg.Go(func() {
@@ -134,9 +145,9 @@ func (w *Workspace) UpdateSites(ctx context.Context, planned []Planned, onSite f
 					return
 				}
 				results[i] = w.updateSite(ctx, u, planned[i])
-				if onSite != nil {
+				if follow.OnSite != nil {
 					mu.Lock()
-					onSite(results[i])
+					follow.OnSite(results[i])
 					mu.Unlock()
 				}
 				if results[i].Outcome == SiteFailed {
@@ -177,6 +188,36 @@ func (w *Workspace) updateSite(ctx context.Context, u Updates, p Planned) SiteUp
 	// The scan shows the new versions, or what the failure left; kept even after a cancel.
 	w.rescan(context.WithoutCancel(ctx), p.Job)
 	return r
+}
+
+// Rollback undoes the item that failed in an update of a site, from the operation stored, then
+// scans the site again.
+func (w *Workspace) Rollback(ctx context.Context, siteID, operationID model.ID, onStep func(model.Operation, model.OperationStep)) (model.Operation, error) {
+	tree, err := w.db.LoadTree(ctx)
+	if err != nil {
+		return model.Operation{}, err
+	}
+	site, ok := tree.Site(siteID)
+	if !ok {
+		return model.Operation{}, fmt.Errorf("site %s: %w", siteID, model.ErrNotFound)
+	}
+	ops, err := w.db.Operations(ctx, siteID)
+	if err != nil {
+		return model.Operation{}, err
+	}
+	i := slices.IndexFunc(ops, func(op model.Operation) bool { return op.ID == operationID })
+	if i < 0 {
+		return model.Operation{}, fmt.Errorf("operation %s: %w", operationID, model.ErrNotFound)
+	}
+	host, _ := tree.Host(site.HostID)
+	job := update.Job{Site: site, Target: sshx.TargetFor(host), HostKey: host.ID.String(), Max: maxConcurrent(host),
+		WPCLI: tree.EffectiveWPCLI(site.ID)}
+	op, err := w.updater(onStep).Rollback(ctx, job, ops[i])
+	if err != nil {
+		return op, err
+	}
+	w.rescan(context.WithoutCancel(ctx), job)
+	return op, nil
 }
 
 func empty(sel update.Selection) bool {
