@@ -55,7 +55,7 @@ func NewTree() *Tree {
 
 // AddFolder adds a folder under its parent (or at the root).
 func (t *Tree) AddFolder(f Folder) error {
-	if err := ValidateName(f.Name); err != nil {
+	if err := f.Validate(); err != nil {
 		return err
 	}
 	if f.ParentID != NoID {
@@ -89,7 +89,7 @@ func (t *Tree) AddHost(h Host) error {
 
 // AddSite adds a site to a host.
 func (t *Tree) AddSite(s Site) error {
-	if err := ValidateName(s.Name); err != nil {
+	if err := s.Validate(); err != nil {
 		return err
 	}
 	if _, ok := t.hosts[s.HostID]; !ok {

@@ -161,33 +161,92 @@ func TestFolderCannotMoveIntoItself(t *testing.T) {
 	}
 }
 
-func TestDeleteOnlyEmptyNodes(t *testing.T) {
+func TestDeleteFolderOnlyWhenEmpty(t *testing.T) {
 	ctx := context.Background()
 	db := migrated(t)
 	folder := model.Folder{ID: model.NewID(), Name: "F"}
 	host := model.Host{ID: model.NewID(), FolderID: folder.ID, Name: "h", Alias: "h"}
-	site := model.Site{ID: model.NewID(), HostID: host.ID, Name: "s", Tags: []string{"t"},
-		Subsites: []model.Subsite{{BlogID: 1, URL: "https://s"}}}
 	must(t, db.SaveFolder(ctx, folder))
 	must(t, db.SaveHost(ctx, host))
-	must(t, db.SaveSite(ctx, site))
 
 	if err := db.DeleteFolder(ctx, folder.ID); !errors.Is(err, store.ErrNotEmpty) {
 		t.Errorf("delete folder with a host: %v, want ErrNotEmpty", err)
 	}
-	if err := db.DeleteHost(ctx, host.ID); !errors.Is(err, store.ErrNotEmpty) {
-		t.Errorf("delete host with a site: %v, want ErrNotEmpty", err)
-	}
-	must(t, db.DeleteSite(ctx, site.ID)) // tags and subsites go with it
 	must(t, db.DeleteHost(ctx, host.ID))
 	must(t, db.DeleteFolder(ctx, folder.ID))
-	if err := db.DeleteSite(ctx, site.ID); !errors.Is(err, model.ErrNotFound) {
-		t.Errorf("delete a missing site: %v, want ErrNotFound", err)
+	if err := db.DeleteFolder(ctx, folder.ID); !errors.Is(err, model.ErrNotFound) {
+		t.Errorf("delete a missing folder: %v, want ErrNotFound", err)
 	}
+}
+
+// Deleting a host removes its sites, with their tags, subsites and scans.
+func TestDeleteHostTakesItsSites(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	host := model.Host{ID: model.NewID(), Name: "h", Alias: "h"}
+	site := model.Site{ID: model.NewID(), HostID: host.ID, Name: "s", Tags: []string{"t"},
+		Subsites: []model.Subsite{{BlogID: 1, URL: "https://s"}}}
+	other := model.Host{ID: model.NewID(), Name: "other", Alias: "other"}
+	kept := model.Site{ID: model.NewID(), HostID: other.ID, Name: "kept"}
+	must(t, db.SaveHost(ctx, host))
+	must(t, db.SaveSite(ctx, site))
+	must(t, db.SaveHost(ctx, other))
+	must(t, db.SaveSite(ctx, kept))
+	must(t, db.SaveScan(ctx, model.Scan{ID: model.NewID(), SiteID: site.ID, Outcome: model.ScanCompleted}))
+
+	must(t, db.DeleteHost(ctx, host.ID))
 	tree, err := db.LoadTree(ctx)
 	must(t, err)
-	if _, ok := tree.Folder(folder.ID); ok {
-		t.Error("folder still in the tree after delete")
+	if _, ok := tree.Site(site.ID); ok {
+		t.Error("site still in the tree after its host was deleted")
+	}
+	if _, ok := tree.Site(kept.ID); !ok {
+		t.Error("the site of another host was deleted")
+	}
+	if n, err := db.ScanCount(ctx, site.ID); err != nil || n != 0 {
+		t.Errorf("scans of the deleted site = %d, %v; want 0", n, err)
+	}
+	if err := db.DeleteHost(ctx, host.ID); !errors.Is(err, model.ErrNotFound) {
+		t.Errorf("delete a missing host: %v, want ErrNotFound", err)
+	}
+	must(t, db.DeleteSite(ctx, kept.ID))
+	if err := db.DeleteSite(ctx, kept.ID); !errors.Is(err, model.ErrNotFound) {
+		t.Errorf("delete a missing site: %v, want ErrNotFound", err)
+	}
+}
+
+// A site moved to another account is removed and found again: its path and scans belong to its host.
+func TestSiteStaysUnderItsHost(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	a := model.Host{ID: model.NewID(), Name: "a", Alias: "a"}
+	b := model.Host{ID: model.NewID(), Name: "b", Alias: "b"}
+	site := model.Site{ID: model.NewID(), HostID: a.ID, Name: "s"}
+	must(t, db.SaveHost(ctx, a))
+	must(t, db.SaveHost(ctx, b))
+	must(t, db.SaveSite(ctx, site))
+
+	site.HostID = b.ID
+	if err := db.SaveSite(ctx, site); !errors.Is(err, model.ErrSiteMoved) {
+		t.Fatalf("save the site under another host: %v, want ErrSiteMoved", err)
+	}
+	site.HostID, site.Name = a.ID, "renamed"
+	must(t, db.SaveSite(ctx, site))
+}
+
+func TestSaveRejectsUnknownColors(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	host := model.Host{ID: model.NewID(), Name: "h", Alias: "h"}
+	must(t, db.SaveHost(ctx, host))
+	for name, err := range map[string]error{
+		"folder": db.SaveFolder(ctx, model.Folder{ID: model.NewID(), Name: "f", Color: 8}),
+		"host":   db.SaveHost(ctx, model.Host{ID: model.NewID(), Name: "g", Alias: "g", Color: -1}),
+		"site":   db.SaveSite(ctx, model.Site{ID: model.NewID(), HostID: host.ID, Name: "s", Color: 9}),
+	} {
+		if !errors.Is(err, model.ErrUnknownColor) {
+			t.Errorf("%s with an unknown color: %v, want ErrUnknownColor", name, err)
+		}
 	}
 }
 

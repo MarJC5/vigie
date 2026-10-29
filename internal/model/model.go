@@ -29,6 +29,8 @@ var (
 	ErrNoUser        = errors.New("host with a hostname needs a user")
 	ErrInvalidPort   = errors.New("port must be between 1 and 65535")
 	ErrUnknownColor  = errors.New("unknown color")
+	// ErrSiteMoved: a site belongs to its host for good; its path and scans are the host's.
+	ErrSiteMoved = errors.New("a site stays under its host")
 )
 
 // ValidateName checks a folder, host or site name. Names are used in command line paths
@@ -75,6 +77,14 @@ func (c Color) String() string {
 	return colorNames[c]
 }
 
+// Validate checks that the color is one of the eight.
+func (c Color) Validate() error {
+	if c < 0 || int(c) >= len(colorNames) {
+		return fmt.Errorf("%w: %d", ErrUnknownColor, int(c))
+	}
+	return nil
+}
+
 // ParseColor returns the color with the given name.
 func ParseColor(name string) (Color, error) {
 	for i, n := range colorNames {
@@ -93,6 +103,14 @@ type Folder struct {
 	Color    Color
 	Notes    string // Markdown
 	Position int
+}
+
+// Validate checks the name and the color.
+func (f Folder) Validate() error {
+	if err := ValidateName(f.Name); err != nil {
+		return err
+	}
+	return f.Color.Validate()
 }
 
 // Host is one SSH account; its sites inherit its connection.
@@ -116,7 +134,7 @@ type Host struct {
 	Position           int
 }
 
-// Validate checks the name and the connection details.
+// Validate checks the name, the connection details and the color.
 func (h Host) Validate() error {
 	if err := ValidateName(h.Name); err != nil {
 		return err
@@ -131,7 +149,7 @@ func (h Host) Validate() error {
 	if h.Port < 0 || h.Port > 65535 {
 		return ErrInvalidPort
 	}
-	return nil
+	return h.Color.Validate()
 }
 
 // EffectivePort returns the SSH port, 22 by default.
@@ -157,6 +175,14 @@ type Site struct {
 
 	Multisite bool
 	Subsites  []Subsite
+}
+
+// Validate checks the name and the color.
+func (s Site) Validate() error {
+	if err := ValidateName(s.Name); err != nil {
+		return err
+	}
+	return s.Color.Validate()
 }
 
 // Subsite is a site of a multisite network, read at each scan.

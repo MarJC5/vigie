@@ -101,7 +101,7 @@ const folderNamespace = `SELECT name FROM folders WHERE parent_id IS ?1 AND id <
 
 // SaveFolder creates or updates a folder.
 func (db *DB) SaveFolder(ctx context.Context, f model.Folder) error {
-	if err := model.ValidateName(f.Name); err != nil {
+	if err := f.Validate(); err != nil {
 		return err
 	}
 	return db.withTx(ctx, func(tx *sql.Tx) error {
@@ -207,7 +207,7 @@ func (db *DB) SaveSite(ctx context.Context, s model.Site) error {
 }
 
 func saveSite(ctx context.Context, tx *sql.Tx, s model.Site) error {
-	if err := model.ValidateName(s.Name); err != nil {
+	if err := s.Validate(); err != nil {
 		return err
 	}
 	ok, err := exists(ctx, tx, "hosts", s.HostID)
@@ -216,6 +216,15 @@ func saveSite(ctx context.Context, tx *sql.Tx, s model.Site) error {
 	}
 	if !ok {
 		return fmt.Errorf("host %s: %w", s.HostID, model.ErrNotFound)
+	}
+	var host string
+	err = tx.QueryRowContext(ctx, "SELECT host_id FROM sites WHERE id = ?", s.ID.String()).Scan(&host)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+	case err != nil:
+		return err
+	case host != s.HostID.String():
+		return fmt.Errorf("site %q: %w", s.Name, model.ErrSiteMoved)
 	}
 	taken, err := nameTaken(ctx, tx, "SELECT name FROM sites WHERE host_id = ?1 AND id <> ?2",
 		s.HostID.String(), s.ID, s.Name)
@@ -273,12 +282,25 @@ func (db *DB) DeleteFolder(ctx context.Context, id model.ID) error {
 		"SELECT (SELECT count(*) FROM folders WHERE parent_id = ?1) + (SELECT count(*) FROM hosts WHERE folder_id = ?1)")
 }
 
-// DeleteHost deletes a host without sites.
+// DeleteHost deletes a host with its sites, and their tags, subsites and scans.
 func (db *DB) DeleteHost(ctx context.Context, id model.ID) error {
-	return db.deleteNode(ctx, "hosts", id, "SELECT count(*) FROM sites WHERE host_id = ?1")
+	return db.withTx(ctx, func(tx *sql.Tx) error {
+		ok, err := exists(ctx, tx, "hosts", id)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return fmt.Errorf("hosts %s: %w", id, model.ErrNotFound)
+		}
+		if _, err := tx.ExecContext(ctx, "DELETE FROM sites WHERE host_id = ?", id.String()); err != nil {
+			return err
+		}
+		_, err = tx.ExecContext(ctx, "DELETE FROM hosts WHERE id = ?", id.String())
+		return err
+	})
 }
 
-// DeleteSite deletes a site with its tags and subsites.
+// DeleteSite deletes a site with its tags, subsites and scans.
 func (db *DB) DeleteSite(ctx context.Context, id model.ID) error {
 	return db.deleteNode(ctx, "sites", id, "")
 }

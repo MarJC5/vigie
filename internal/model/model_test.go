@@ -86,3 +86,16 @@ func TestHostPortDefaultsTo22(t *testing.T) {
 		t.Fatalf("EffectivePort() = %d, want 18765", got)
 	}
 }
+
+func TestColorValid(t *testing.T) {
+	for _, c := range model.Colors() {
+		if err := c.Validate(); err != nil {
+			t.Errorf("%s: %v", c, err)
+		}
+	}
+	for _, c := range []model.Color{-1, 8} {
+		if err := c.Validate(); !errors.Is(err, model.ErrUnknownColor) {
+			t.Errorf("Color(%d).Validate() = %v, want ErrUnknownColor", int(c), err)
+		}
+	}
+}
