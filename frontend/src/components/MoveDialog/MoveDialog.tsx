@@ -48,26 +48,28 @@ export function MoveDialog({ node, nodes, onMove, onClose }: MoveDialogProps) {
         </>
       }
     >
-      <fieldset className={styles.list}>
+      <fieldset className={styles.group}>
         <legend className={styles.legend}>{t("edit.move.destination")}</legend>
-        {destinations.map((d) => {
-          const current = d.id === node.parentId;
-          return (
-            <label key={d.id || "root"} className={styles.row} style={{ paddingLeft: 12 + d.depth * 22 }} data-current={current || undefined}>
-              <input
-                type="radio"
-                name="destination"
-                className={styles.radio}
-                checked={choice === d.id}
-                disabled={current}
-                onChange={() => setChoice(d.id)}
-              />
-              <Icon name="folder" size={16} />
-              <span className={styles.name}>{d.name}</span>
-              {current && <span className={styles.note}>{t("edit.move.current")}</span>}
-            </label>
-          );
-        })}
+        <div className={styles.list}>
+          {destinations.map((d) => {
+            const current = d.id === node.parentId;
+            return (
+              <label key={d.id || "root"} className={styles.row} style={{ paddingLeft: 12 + d.depth * 22 }} data-current={current || undefined}>
+                <input
+                  type="radio"
+                  name="destination"
+                  className={styles.radio}
+                  checked={choice === d.id}
+                  disabled={current}
+                  onChange={() => setChoice(d.id)}
+                />
+                <Icon name="folder" size={16} />
+                <span className={styles.name}>{d.name}</span>
+                {current && <span className={styles.note}>{t("edit.move.current")}</span>}
+              </label>
+            );
+          })}
+        </div>
       </fieldset>
     </Dialog>
   );

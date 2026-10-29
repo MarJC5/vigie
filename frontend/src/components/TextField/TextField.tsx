@@ -39,9 +39,12 @@ export function TextField({ label, value, onChange, hint, error, placeholder, in
         className={styles.input}
         onChange={(event) => onChange(event.target.value)}
       />
-      <span id={`${id}-note`} className={error ? styles.error : styles.hint}>
-        {note}
-      </span>
+      {/* Only when there is something to say: an empty line would space the fields unevenly. */}
+      {note && (
+        <span id={`${id}-note`} className={error ? styles.error : styles.hint}>
+          {note}
+        </span>
+      )}
     </div>
   );
 }

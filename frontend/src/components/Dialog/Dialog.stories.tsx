@@ -64,3 +64,12 @@ export const KeepsTheFocus: Story = {
     await expect(within(dialog).getByRole("button", { name: "Save" })).toHaveFocus();
   },
 };
+
+// WebKit leaves the focus on the body when a radio or a button is clicked: Escape still closes.
+export const EscapeFromTheBody: Story = {
+  play: async ({ args }) => {
+    (document.activeElement as HTMLElement | null)?.blur();
+    await userEvent.keyboard("{Escape}");
+    await expect(args.onClose).toHaveBeenCalledOnce();
+  },
+};
