@@ -19,24 +19,30 @@ var (
 
 // Command is a WP-CLI command with its arguments.
 type Command struct {
-	args    []string
-	read    bool // read commands skip loading plugins and themes, so a broken plugin does not break them
-	plugins bool // a read command that loads the plugins all the same
-	global  bool // about WP-CLI itself: no WordPress, so no path
-	err     error
+	args []string
+	// Most commands load neither plugins nor themes, so a broken one does not break them.
+	skipPlugins bool
+	skipThemes  bool
+	global      bool // about WP-CLI itself: no WordPress, so no path
+	err         error
 }
 
-// WithPlugins makes a read command load the plugins, still not the themes: a theme can live in a
-// plugin's folder, registered with register_theme_directory, and WordPress only sees it once
-// that plugin is loaded.
+// WithPlugins makes a command load the plugins: a theme can live in a plugin's folder, registered
+// with register_theme_directory, and a premium plugin offers its update from its own code.
 func (c Command) WithPlugins() Command {
-	c.plugins = true
+	c.skipPlugins = false
+	return c
+}
+
+// WithThemes makes a command load the themes: a premium theme offers its update from its own code.
+func (c Command) WithThemes() Command {
+	c.skipThemes = false
 	return c
 }
 
 // CoreVersion returns the installed WordPress version.
 func CoreVersion() Command {
-	return Command{args: []string{"core", "version"}, read: true}
+	return Command{args: []string{"core", "version"}, skipPlugins: true, skipThemes: true}
 }
 
 // CoreIsInstalled answers through its exit code; network checks for a multisite network.
@@ -45,7 +51,7 @@ func CoreIsInstalled(network bool) Command {
 	if network {
 		args = append(args, "--network")
 	}
-	return Command{args: args, read: true}
+	return Command{args: args, skipPlugins: true, skipThemes: true}
 }
 
 var optionName = regexp.MustCompile(`^[a-z0-9_][a-z0-9_-]*$`)
@@ -55,7 +61,7 @@ func OptionGet(name string) Command {
 	if !optionName.MatchString(name) {
 		return Command{err: fmt.Errorf("option name %q: %w", name, ErrBadArgument)}
 	}
-	return Command{args: []string{"option", "get", name}, read: true}
+	return Command{args: []string{"option", "get", name}, skipPlugins: true, skipThemes: true}
 }
 
 // Remote returns the quoted command line for the server. wpcli is the configured command, split
@@ -82,10 +88,10 @@ func (c Command) Remote(wpcli, path string) (string, error) {
 	}
 	args := append(words, c.args...)
 	args = append(args, "--path="+path)
-	if c.read && !c.plugins {
+	if c.skipPlugins {
 		args = append(args, "--skip-plugins")
 	}
-	if c.read {
+	if c.skipThemes {
 		args = append(args, "--skip-themes")
 	}
 	return sshx.Quote(args...)

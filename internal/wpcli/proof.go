@@ -22,7 +22,7 @@ func UpdateData(of Updates) Command {
 	default:
 		return Command{err: fmt.Errorf("update data of %q: %w", of, ErrBadArgument)}
 	}
-	return Command{args: []string{"transient", "get", string(of), "--network", "--format=json"}, read: true}
+	return Command{args: []string{"transient", "get", string(of), "--network", "--format=json"}, skipPlugins: true, skipThemes: true}
 }
 
 // CoreCheckProven tells whether WordPress's last version check reached wordpress.org for the

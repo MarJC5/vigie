@@ -47,20 +47,20 @@ func IsInstalled(res sshx.Result) (bool, error) {
 // CoreCheckUpdate lists the available WordPress releases; "[]" when none (or when the check could
 // not reach wordpress.org, which the scan verifies separately).
 func CoreCheckUpdate() Command {
-	return Command{args: []string{"core", "check-update", "--format=json"}, read: true}
+	return Command{args: []string{"core", "check-update", "--format=json"}, skipPlugins: true, skipThemes: true}
 }
 
 // PluginList lists the installed plugins with their update state and whether wordpress.org knows
 // them. Not wporg_last_updated: WP-CLI reads it from Trac, one request per plugin.
 func PluginList() Command {
 	return Command{args: []string{"plugin", "list", "--format=json",
-		"--fields=name,title,status,version,update,update_version,auto_update,wporg_status"}, read: true}
+		"--fields=name,title,status,version,update,update_version,auto_update,wporg_status"}, skipPlugins: true, skipThemes: true}
 }
 
 // ThemeList lists the installed themes with their update state.
 func ThemeList() Command {
 	return Command{args: []string{"theme", "list", "--format=json",
-		"--fields=name,title,status,version,update,update_version,auto_update"}, read: true}
+		"--fields=name,title,status,version,update,update_version,auto_update"}, skipPlugins: true, skipThemes: true}
 }
 
 // Languages is what a translation list is about.
@@ -82,13 +82,13 @@ func LanguageUpdates(of Languages) Command {
 	default:
 		return Command{err: fmt.Errorf("languages of %q: %w", of, ErrBadArgument)}
 	}
-	return Command{args: append(args, "--update=available", "--format=json"), read: true}
+	return Command{args: append(args, "--update=available", "--format=json"), skipPlugins: true, skipThemes: true}
 }
 
 // SiteList lists the sites of a multisite network.
 func SiteList() Command {
 	return Command{args: []string{"site", "list", "--format=json",
-		"--fields=blog_id,url,registered,last_updated,public,archived,spam,deleted"}, read: true}
+		"--fields=blog_id,url,registered,last_updated,public,archived,spam,deleted"}, skipPlugins: true, skipThemes: true}
 }
 
 var version = regexp.MustCompile(`^[0-9]+(\.[0-9]+)*(-[A-Za-z0-9.]+)?$`)
