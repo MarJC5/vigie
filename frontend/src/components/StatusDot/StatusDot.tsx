@@ -11,11 +11,13 @@ export interface StatusDotProps {
   status: Status;
   /** Shows the status name next to the dot; without it the dot is announced on its own. */
   withLabel?: boolean;
+  /** Replaces the status name, for example "Passed" for the result of a check. */
+  label?: string;
 }
 
-export function StatusDot({ status, withLabel = false }: StatusDotProps) {
+export function StatusDot({ status, withLabel = false, label: own }: StatusDotProps) {
   const { t } = useTranslation();
-  const label = t(`status.${status}`);
+  const label = own ?? t(`status.${status}`);
   const dot = (
     <span
       className={`${styles.dot} ${styles[status]}`}

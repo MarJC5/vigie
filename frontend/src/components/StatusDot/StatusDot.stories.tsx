@@ -31,3 +31,11 @@ export const DotAlone: Story = {
     await expect(canvas.getAllByRole("img", { name: "Urgent" })).toHaveLength(2);
   },
 };
+
+export const OwnLabel: Story = {
+  args: { status: "danger", label: "Failed" },
+  play: async ({ canvas }) => {
+    // A check result says what happened, not a site status.
+    await expect(canvas.getAllByRole("img", { name: "Failed" })).toHaveLength(2);
+  },
+};

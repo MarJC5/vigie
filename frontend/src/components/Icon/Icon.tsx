@@ -3,6 +3,7 @@ import {
   ArrowSquareOutIcon,
   CaretDownIcon,
   CaretRightIcon,
+  CheckIcon,
   CheckCircleIcon,
   ClockCounterClockwiseIcon,
   CopyIcon,
@@ -20,6 +21,7 @@ import {
   SidebarSimpleIcon,
   TerminalWindowIcon,
   WarningCircleIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 
 // The only door to the icon set: names and sizes are decided here, always in the regular weight.
@@ -27,6 +29,8 @@ const icons = {
   activity: ClockCounterClockwiseIcon,
   caretDown: CaretDownIcon,
   caretRight: CaretRightIcon,
+  check: CheckIcon,
+  close: XIcon,
   copy: CopyIcon,
   external: ArrowSquareOutIcon,
   folder: FolderIcon,
