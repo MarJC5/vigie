@@ -105,6 +105,11 @@ type Folder struct {
 	Position int
 }
 
+// Node points to the folder in the tree.
+func (f Folder) Node() Node {
+	return Node{Kind: KindFolder, ID: f.ID}
+}
+
 // Validate checks the name and the color.
 func (f Folder) Validate() error {
 	if err := ValidateName(f.Name); err != nil {

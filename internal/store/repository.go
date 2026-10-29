@@ -168,6 +168,18 @@ func (db *DB) AddHostWithSites(ctx context.Context, h model.Host, sites []model.
 	})
 }
 
+// AddSites stores new sites in one transaction: if one is refused, none is stored.
+func (db *DB) AddSites(ctx context.Context, sites []model.Site) error {
+	return db.withTx(ctx, func(tx *sql.Tx) error {
+		for _, s := range sites {
+			if err := saveSite(ctx, tx, s); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 func saveHost(ctx context.Context, tx *sql.Tx, h model.Host) error {
 	if err := h.Validate(); err != nil {
 		return err
