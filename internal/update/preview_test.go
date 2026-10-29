@@ -104,3 +104,20 @@ func TestPreviewWhenWordPressCannotLoad(t *testing.T) {
 		t.Fatalf("Preview() = %v, want ErrCannotLoad", err)
 	}
 }
+
+// A bulk run updates everything the preview offers.
+func TestAll(t *testing.T) {
+	got, err := updater(bench(t)).Preview(context.Background(), job("updates"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	sel := update.All(got)
+	want := update.Selection{Core: true, Plugins: []string{"akismet", "fixture-breaks", "fixture-missing", "fixture-pro"},
+		Themes: []string{"twentytwentyfour"}, Languages: true}
+	if !reflect.DeepEqual(sel, want) {
+		t.Errorf("All() = %+v", sel)
+	}
+	if empty := update.All(update.Preview{}); !reflect.DeepEqual(empty, update.Selection{}) {
+		t.Errorf("All(nothing) = %+v", empty)
+	}
+}

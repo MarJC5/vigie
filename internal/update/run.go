@@ -449,6 +449,7 @@ func (r *run) step(ctx context.Context, st model.OperationStep, fn func() (strin
 		r.op.Steps[st.Position] = st
 		return false
 	}
+	r.report(st)
 	msg, err := fn()
 	st.Finished, st.Outcome, st.Message = r.s.u.Now(), model.StepDone, msg
 	if err != nil {
@@ -458,7 +459,15 @@ func (r *run) step(ctx context.Context, st model.OperationStep, fn func() (strin
 	if saveErr := r.s.u.Store.SaveOperationStep(context.WithoutCancel(ctx), r.op.ID, st); saveErr != nil {
 		return false
 	}
+	r.report(st)
 	return err == nil
+}
+
+// report tells OnStep about a step, when it is set.
+func (r *run) report(st model.OperationStep) {
+	if r.s.u.OnStep != nil {
+		r.s.u.OnStep(*r.op, st)
+	}
 }
 
 // fail records a step that failed before it could start.

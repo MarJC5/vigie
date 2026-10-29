@@ -31,6 +31,8 @@ type Updater struct {
 	Checker Checker // watches the pages after each item
 	Now     func() time.Time
 	PID     int // this process, so an operation left by a process that ended is told apart
+	// OnStep, when set, follows the steps as they start and end, for example in the window.
+	OnStep func(op model.Operation, step model.OperationStep)
 }
 
 // Item is one thing an update changes: WordPress, a plugin, a theme or a translation.
@@ -49,6 +51,20 @@ type Preview struct {
 	Languages []Item
 	// DumpTool tells whether the server can dump the database; without it, nothing is updated.
 	DumpTool bool
+}
+
+// All selects everything the preview offers, as a bulk run does.
+func All(p Preview) Selection {
+	var sel Selection
+	sel.Core = p.Core != nil
+	for _, it := range p.Plugins {
+		sel.Plugins = append(sel.Plugins, it.Slug)
+	}
+	for _, it := range p.Themes {
+		sel.Themes = append(sel.Themes, it.Slug)
+	}
+	sel.Languages = len(p.Languages) > 0
+	return sel
 }
 
 // Pending counts the items to update.

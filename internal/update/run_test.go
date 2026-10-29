@@ -131,12 +131,19 @@ func index(calls []string, line string) int {
 func TestRunUpdatesWithBackupsFirst(t *testing.T) {
 	b := newRun(t)
 	sel := update.Selection{Core: true, Plugins: []string{"akismet"}, Themes: []string{"twentytwentyfour"}, Languages: true}
-	op, err := b.updater().Run(context.Background(), b.job, b.preview, sel)
+	u := b.updater()
+	var reported []model.OperationStep
+	u.OnStep = func(_ model.Operation, st model.OperationStep) { reported = append(reported, st) }
+	op, err := u.Run(context.Background(), b.job, b.preview, sel)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if op.Outcome != model.OperationCompleted || op.BackupDir != b.dir {
 		t.Fatalf("operation = %+v", op)
+	}
+	// Each step is reported as it starts and as it ends.
+	if len(reported) != 2*len(op.Steps) || reported[0].Outcome != model.StepRunning || reported[1].Outcome != model.StepDone {
+		t.Errorf("%d steps reported for %d steps", len(reported), len(op.Steps))
 	}
 	calls := b.fake.Calls()
 	export := index(calls, wp(t, wpcli.DatabaseExport(b.dir+"/database.sql")))
