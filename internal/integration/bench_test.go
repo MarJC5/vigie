@@ -41,7 +41,11 @@ func run(m *testing.M) int {
 		fmt.Fprintln(os.Stderr, "integration bench:", err)
 		return 1
 	}
-	return m.Run()
+	code := m.Run()
+	if accessVal.dir != "" {
+		_ = os.RemoveAll(accessVal.dir)
+	}
+	return code
 }
 
 // start brings the bench up; stop removes whatever was created, even after an error.
