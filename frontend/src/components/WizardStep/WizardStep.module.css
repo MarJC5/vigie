@@ -31,6 +31,11 @@
   padding: var(--vg-space-2) var(--vg-space-7) var(--vg-space-6);
 }
 
+.main:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: -2px;
+}
+
 .content {
   width: 100%;
   max-width: 760px;

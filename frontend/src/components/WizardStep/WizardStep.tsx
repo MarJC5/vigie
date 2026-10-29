@@ -48,7 +48,8 @@ export function WizardStep({
       <div className={styles.top}>
         <Button variant="icon" icon="close" label={closeLabel} onClick={onClose} />
       </div>
-      <main className={styles.main}>
+      {/* Focusable, so a step taller than the window scrolls from the keyboard too. */}
+      <main className={styles.main} tabIndex={0}>
         <div className={styles.content} data-width={width}>
           <div className={styles.heading}>
             <h1 className={styles.title}>{title}</h1>
