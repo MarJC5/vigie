@@ -17,12 +17,13 @@ import { Checkbox } from "../Checkbox/Checkbox";
 import { ChoiceCard } from "../ChoiceCard/ChoiceCard";
 import { Column, Columns } from "../Columns/Columns";
 import { Fingerprint } from "../Fingerprint/Fingerprint";
-import { type InstallItem, InstallList } from "../InstallList/InstallList";
+import { InstallList } from "../InstallList/InstallList";
 import { Notice } from "../Notice/Notice";
 import { Progress } from "../Progress/Progress";
 import { SelectField } from "../SelectField/SelectField";
 import { TextField } from "../TextField/TextField";
 import { WizardStep } from "../WizardStep/WizardStep";
+import { installItem, keyType } from "../../lib/hosts";
 
 /** The Go service the wizard calls (app.HostWizard); stories and tests give a fake. */
 export interface WizardApi {
@@ -381,12 +382,6 @@ export function AddHostWizard({ api, folders, onClose, onAdded }: AddHostWizardP
 
 type T = (key: string, vars?: Record<string, unknown>) => string;
 
-// Key types by the names people know: "ssh-ed25519" is ED25519, "ecdsa-sha2-nistp256" is ECDSA.
-function keyType(type: string): string {
-  if (type.startsWith("ecdsa-")) return "ECDSA";
-  return type.replace(/^ssh-/, "").toUpperCase();
-}
-
 // The three checks of the test, from its result: what failed stops the ones after it.
 function checkItems(test: TestResult | null, running: boolean, t: T): CheckItem[] {
   const labels = [t("wizard.check.ssh"), t("wizard.check.php"), t("wizard.check.wpCli")];
@@ -413,23 +408,4 @@ function checkItems(test: TestResult | null, running: boolean, t: T): CheckItem[
         ? { label: labels[2]!, value: failedText, state: "failed" }
         : { label: labels[2]!, value: `${test.wpCliVersion} (${test.wpCli})`, state: "ok" },
   ];
-}
-
-function installItem(i: Install & { checked: boolean }, t: T): InstallItem {
-  const state = {
-    new: i.multisite ? t("wizard.network") : t("found.new"),
-    "already-added": t("found.alreadyAdded"),
-    "not-installed": t("found.notInstalled"),
-    "cannot-load": t("found.cannotLoad"),
-  }[i.state] ?? i.state;
-  const detail = i.state === "cannot-load" ? i.message : i.multisite ? t("manager.subsites", { count: i.subsites }) : i.url;
-  return {
-    path: i.path,
-    name: i.name,
-    state,
-    detail,
-    checked: i.checked,
-    selectable: i.state === "new",
-    problem: i.state === "cannot-load",
-  };
 }
