@@ -120,5 +120,20 @@
     "alreadyAdded": "Already in Vigie",
     "notInstalled": "Not installed",
     "cannotLoad": "Cannot be loaded"
+  },
+  "problem": {
+    "emptyName": "Give the host a name.",
+    "slashInName": "A name cannot contain a slash.",
+    "noConnection": "Enter an SSH alias, or a host name and a user.",
+    "noUser": "Enter the SSH user.",
+    "invalidPort": "The port must be between 1 and 65535.",
+    "duplicateName": "This name is already used in this folder.",
+    "folderNotFound": "This folder no longer exists.",
+    "noHostKey": "The server presented no key: {{message}}",
+    "keyNotReceived": "This key was not received from the server. Ask for the keys again.",
+    "noPhp": "PHP does not run on the command line of this account: {{message}}",
+    "noWpCli": "WP-CLI was not found on this account (tried: {{message}}).",
+    "findFailed": "The search for WordPress installs failed: {{message}}",
+    "error": "Something went wrong: {{message}}"
   }
 }

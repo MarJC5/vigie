@@ -127,5 +127,20 @@
     "alreadyAdded": "Déjà dans Vigie",
     "notInstalled": "Non installé",
     "cannotLoad": "Ne se charge pas"
+  },
+  "problem": {
+    "emptyName": "Donnez un nom à l'hébergement.",
+    "slashInName": "Un nom ne peut pas contenir de barre oblique.",
+    "noConnection": "Indiquez un alias SSH, ou un nom d'hôte et un utilisateur.",
+    "noUser": "Indiquez l'utilisateur SSH.",
+    "invalidPort": "Le port doit être compris entre 1 et 65535.",
+    "duplicateName": "Ce nom est déjà utilisé dans ce dossier.",
+    "folderNotFound": "Ce dossier n'existe plus.",
+    "noHostKey": "Le serveur n'a présenté aucune clé : {{message}}",
+    "keyNotReceived": "Cette clé n'a pas été reçue du serveur. Demandez à nouveau les clés.",
+    "noPhp": "PHP ne fonctionne pas en ligne de commande sur ce compte : {{message}}",
+    "noWpCli": "WP-CLI est introuvable sur ce compte (essayé : {{message}}).",
+    "findFailed": "La recherche des installations WordPress a échoué : {{message}}",
+    "error": "Une erreur s'est produite : {{message}}"
   }
 }
