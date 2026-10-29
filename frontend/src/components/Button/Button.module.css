@@ -36,6 +36,15 @@
   color: var(--vg-text-muted);
 }
 
+.danger {
+  background: var(--vg-status-danger);
+  color: var(--vg-text-on-danger);
+}
+
+.danger:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
 .outline {
   padding: 0 var(--vg-space-3);
   box-shadow: inset 0 0 0 1.5px var(--vg-border-strong);

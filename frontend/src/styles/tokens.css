@@ -36,6 +36,7 @@
 	--vg-status-ok: #4ab866;       /* WordPress alert green */
 	--vg-status-warn: #f0b849;     /* WordPress alert yellow */
 	--vg-status-danger: #e26f56;   /* Pomegranate (alert red #cc1818 is too dark on dark greys) */
+	--vg-text-on-danger: #1e1e1e;  /* white is under 4.5:1 on Pomegranate; gray-900 gives 5.3:1 */
 	--vg-status-unknown: #949494;  /* WordPress gray-600 */
 
 	/* Site manager colors (FileZilla order, none excluded) */
@@ -71,6 +72,7 @@
 	--vg-status-ok: #4ab866;
 	--vg-status-warn: #f0b849;
 	--vg-status-danger: #cc1818;   /* WordPress alert red */
+	--vg-text-on-danger: #ffffff;
 	--vg-status-unknown: #949494;
 	--vg-site-red: #cc1818;
 	--vg-site-green: #4ab866;
@@ -103,6 +105,7 @@
 		--vg-status-ok: #4ab866;
 		--vg-status-warn: #f0b849;
 		--vg-status-danger: #cc1818;
+		--vg-text-on-danger: #ffffff;
 		--vg-status-unknown: #949494;
 		--vg-site-red: #cc1818;
 		--vg-site-green: #4ab866;
@@ -148,6 +151,11 @@
 	--vg-pane-width: 264px;
 	--vg-row-height: 44px;
 	--vg-control-height: 32px;
+
+	/* Elevation: menus and dialogs above the window, the window dimmed under a dialog */
+	--vg-shadow-raised: 0 12px 32px rgb(0 0 0 / 32%);
+	--vg-shadow-dialog: 0 24px 64px rgb(0 0 0 / 40%);
+	--vg-scrim: rgb(0 0 0 / 45%);
 
 	/* Motion */
 	--vg-duration-hover: 120ms;

@@ -1,0 +1,56 @@
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--vg-space-6);
+  background: var(--vg-scrim);
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-4);
+  width: 520px;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: auto;
+  padding: var(--vg-space-5);
+  box-sizing: border-box;
+  border-radius: var(--vg-radius-panel);
+  background: var(--vg-surface-raised);
+  box-shadow: var(--vg-shadow-dialog), 0 0 0 1px var(--vg-border);
+}
+
+.wide {
+  width: 680px;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-2);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--vg-text-title);
+  line-height: var(--vg-leading-tight);
+  font-weight: var(--vg-weight-strong);
+  text-wrap: balance;
+}
+
+.lead {
+  margin: 0;
+  color: var(--vg-text-muted);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--vg-space-3);
+  margin-top: var(--vg-space-1);
+}

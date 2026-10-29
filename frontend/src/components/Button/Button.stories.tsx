@@ -19,6 +19,8 @@ export const Primary: Story = {
   },
 };
 
+export const Danger: Story = { args: { variant: "danger", children: "Delete the host" } };
+
 export const Outline: Story = { args: { variant: "outline", children: "wp-admin", trailingIcon: "external" } };
 
 export const Text: Story = { args: { variant: "text", children: "Details", trailingIcon: "external" } };
