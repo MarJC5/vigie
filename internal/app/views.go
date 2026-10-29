@@ -180,3 +180,43 @@ func (s *SiteManager) Sites(ctx context.Context, nodeID string) ([]SiteRow, erro
 	}
 	return rows, nil
 }
+
+// HostView is a host with its connection and the table of its sites.
+type HostView struct {
+	ID       string    `json:"id"`
+	Name     string    `json:"name"`
+	Alias    string    `json:"alias"`
+	Hostname string    `json:"hostname"`
+	Port     int       `json:"port"`
+	User     string    `json:"user"`
+	WPCLI    string    `json:"wpCli"` // the effective command
+	Sites    []SiteRow `json:"sites"`
+}
+
+// HostDetail returns a host with its connection and its sites.
+func (s *SiteManager) HostDetail(ctx context.Context, hostID string) (HostView, error) {
+	id, err := uuid.Parse(hostID)
+	if err != nil {
+		return HostView{}, fmt.Errorf("host %q: %w", hostID, err)
+	}
+	tree, err := s.repo.LoadTree(ctx)
+	if err != nil {
+		return HostView{}, err
+	}
+	h, ok := tree.Host(id)
+	if !ok {
+		return HostView{}, fmt.Errorf("host %s: %w", hostID, model.ErrNotFound)
+	}
+	sites, err := s.Sites(ctx, hostID)
+	if err != nil {
+		return HostView{}, err
+	}
+	wp := h.WPCLI
+	if wp == "" {
+		wp = "wp"
+	}
+	return HostView{
+		ID: hostID, Name: h.Name, Alias: h.Alias, Hostname: h.Hostname, Port: h.EffectivePort(), User: h.User,
+		WPCLI: wp, Sites: sites,
+	}, nil
+}

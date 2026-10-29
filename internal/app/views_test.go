@@ -113,3 +113,20 @@ func TestSitesOfAHost(t *testing.T) {
 		t.Fatalf("Sites() = %+v", rows)
 	}
 }
+
+func TestHostDetail(t *testing.T) {
+	m, host, outdated, _ := scanned(t)
+	got, err := m.HostDetail(context.Background(), host.ID.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Name != "Bench" || got.Alias != "bench" || got.WPCLI != "wp" || got.Port != 22 {
+		t.Fatalf("HostDetail() = %+v", got)
+	}
+	if len(got.Sites) != 2 || got.Sites[0].ID != outdated.ID.String() {
+		t.Fatalf("sites = %+v", got.Sites)
+	}
+	if _, err := m.HostDetail(context.Background(), outdated.ID.String()); err == nil {
+		t.Fatal("HostDetail(a site) succeeded, want an error")
+	}
+}
