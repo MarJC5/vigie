@@ -224,3 +224,39 @@ func TestUpdateAHostAndRollBack(t *testing.T) {
 		t.Fatalf("History() after the rollback = %+v, %v", history, err)
 	}
 }
+
+// A site in a run is listed in the state until the run ends, and refused at once by another update.
+func TestASiteInARunIsBusy(t *testing.T) {
+	gate := make(chan struct{})
+	u, ev, ids := updatesService(t, nil, gate)
+	if _, err := u.Preview(context.Background(), ids["host"]); err != nil {
+		t.Fatal(err)
+	}
+	if p := u.Update(ids["a1"], app.SelectionView{Plugins: []string{"akismet"}}); p != nil {
+		t.Fatal(p)
+	}
+	if state := u.State(); len(state.Sites) != 1 || state.Sites[0] != ids["a1"] {
+		t.Fatalf("sites = %v", state.Sites)
+	}
+	if p := u.Update(ids["a1"], app.SelectionView{Plugins: []string{"akismet"}}); code(p) != "problem.busy" {
+		t.Errorf("second Update() = %+v", p)
+	}
+	if p := u.Rollback(ids["a1"], ids["a1"]); code(p) != "problem.busy" {
+		t.Errorf("Rollback() during the update = %+v", p)
+	}
+	close(gate)
+	if state := ev.done(t, 1); len(state.Sites) != 0 {
+		t.Errorf("sites after the run = %v", state.Sites)
+	}
+}
+
+// A site whose preview could not be read is refused before anything starts.
+func TestUpdateOfAPreviewInError(t *testing.T) {
+	u, _, ids := updatesService(t, nil, nil)
+	if _, err := u.Preview(context.Background(), ids["broken"]); err != nil {
+		t.Fatal(err)
+	}
+	if p := u.Update(ids["broken"], app.SelectionView{}); code(p) != "problem.cannotLoad" {
+		t.Errorf("Update() of a preview in error = %+v", p)
+	}
+}

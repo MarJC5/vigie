@@ -9,8 +9,10 @@ import (
 	"uuid"
 
 	"github.com/MarJC5/vigie/internal/model"
+	"github.com/MarJC5/vigie/internal/store"
 	"github.com/MarJC5/vigie/internal/update"
 	"github.com/MarJC5/vigie/internal/workspace"
+	"github.com/MarJC5/vigie/internal/wpcli"
 )
 
 // UpdatesEvent carries an UpdatesState to the interface whenever an update starts, takes a step
@@ -98,6 +100,9 @@ type UpdatesState struct {
 	Active    int              `json:"active"`
 	Bulk      []SiteResultView `json:"bulk"`
 	Completed int              `json:"completed"`
+	// Sites lists the sites of the runs not over yet, waiting or updating: none can be scanned or
+	// updated again until it leaves the list.
+	Sites []string `json:"sites"`
 }
 
 // Updates serves the updates of sites to the window: previews, runs in the background, rollbacks
@@ -114,12 +119,13 @@ type Updates struct {
 	completed int
 	cancels   map[int]context.CancelFunc
 	next      int
+	busy      map[model.ID]bool // the sites of the runs not over yet
 }
 
 // NewUpdates returns the service; emit sends an event to the interface.
 func NewUpdates(ws *workspace.Workspace, emit func(name string, data any)) *Updates {
 	return &Updates{ws: ws, emit: emit, previews: map[model.ID]workspace.SitePreview{},
-		running: map[model.ID]*OperationView{}, cancels: map[int]context.CancelFunc{}}
+		running: map[model.ID]*OperationView{}, cancels: map[int]context.CancelFunc{}, busy: map[model.ID]bool{}}
 }
 
 // Preview reads what an update of a site, or of the sites of a host or folder, would change.
@@ -180,14 +186,18 @@ func (u *Updates) Update(siteID string, sel SelectionView) *Problem {
 	u.mu.Lock()
 	p, ok := u.previews[id]
 	u.mu.Unlock()
-	if !ok {
+	switch {
+	case !ok:
 		return ProblemOf(errPreviewFirst)
+	case p.Err != nil:
+		return ProblemOf(p.Err)
+	case !p.Preview.DumpTool:
+		return ProblemOf(wpcli.ErrNoDumpTool)
 	}
 	planned := []workspace.Planned{{SitePreview: p, Selection: update.Selection{
 		Core: sel.Core, Plugins: sel.Plugins, Themes: sel.Themes, Languages: sel.Languages,
 	}}}
-	u.start(planned, false)
-	return nil
+	return u.start(planned, false)
 }
 
 // UpdateAll starts updating every site previewed under a host or folder with all its items, and
@@ -212,22 +222,49 @@ func (u *Updates) UpdateAll(nodeID string) *Problem {
 	if len(previews) == 0 {
 		return ProblemOf(errPreviewFirst)
 	}
-	u.start(workspace.Everything(previews), true)
-	return nil
+	return u.start(workspace.Everything(previews), true)
 }
 
-// start runs the planned updates in the background.
-func (u *Updates) start(planned []workspace.Planned, bulk bool) {
+// start runs the planned updates in the background. A site already in a run refuses the update of
+// one site; in a bulk run, it is refused when its turn comes.
+func (u *Updates) start(planned []workspace.Planned, bulk bool) *Problem {
 	ctx, cancel := context.WithCancel(context.Background())
 	u.mu.Lock()
+	if !bulk && u.busy[planned[0].Site.ID] {
+		u.mu.Unlock()
+		cancel()
+		return ProblemOf(store.ErrBusy)
+	}
+	mine := map[model.ID]bool{}
+	for _, p := range planned {
+		if !u.busy[p.Site.ID] {
+			u.busy[p.Site.ID], mine[p.Site.ID] = true, true
+		}
+	}
 	key := u.next
 	u.next++
 	u.cancels[key] = cancel
 	u.mu.Unlock()
+	u.send()
+	// A site leaves the busy ones as soon as it ends, the others when the run does.
+	release := func(id model.ID) {
+		if mine[id] {
+			delete(u.busy, id)
+			delete(mine, id)
+		}
+	}
 	go func() {
 		defer cancel()
-		results := u.ws.UpdateSites(ctx, planned, workspace.Follow{OnStep: u.step, OnSite: u.ended})
+		results := u.ws.UpdateSites(ctx, planned, workspace.Follow{OnStep: u.step, OnSite: func(r workspace.SiteUpdate) {
+			u.mu.Lock()
+			release(r.Site.ID)
+			u.mu.Unlock()
+			u.ended(r)
+		}})
 		u.mu.Lock()
+		for id := range mine {
+			release(id)
+		}
 		delete(u.cancels, key)
 		if bulk {
 			u.bulk = make([]SiteResultView, len(results))
@@ -238,6 +275,7 @@ func (u *Updates) start(planned []workspace.Planned, bulk bool) {
 		u.mu.Unlock()
 		u.send()
 	}()
+	return nil
 }
 
 // Rollback starts undoing the item that failed in an operation of a site, and returns at once.
@@ -252,15 +290,23 @@ func (u *Updates) Rollback(siteID, operationID string) *Problem {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	u.mu.Lock()
+	if u.busy[site] {
+		u.mu.Unlock()
+		cancel()
+		return ProblemOf(store.ErrBusy)
+	}
+	u.busy[site] = true
 	key := u.next
 	u.next++
 	u.cancels[key] = cancel
 	u.mu.Unlock()
+	u.send()
 	go func() {
 		defer cancel()
 		done, err := u.ws.Rollback(ctx, site, op, u.step)
 		u.mu.Lock()
 		delete(u.cancels, key)
+		delete(u.busy, site)
 		u.mu.Unlock()
 		if err == nil || done.ID != model.NoID {
 			u.finish(done.ID)
@@ -284,7 +330,11 @@ func (u *Updates) State() UpdatesState {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 	state := UpdatesState{Running: []OperationView{}, Active: len(u.cancels), Bulk: append([]SiteResultView{}, u.bulk...),
-		Completed: u.completed}
+		Completed: u.completed, Sites: []string{}}
+	for id := range u.busy {
+		state.Sites = append(state.Sites, id.String())
+	}
+	slices.Sort(state.Sites)
 	for _, id := range u.order {
 		op := *u.running[id]
 		op.Steps = append([]StepView{}, op.Steps...)

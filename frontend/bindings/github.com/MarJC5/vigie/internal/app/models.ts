@@ -492,4 +492,10 @@ export interface UpdatesState {
     "active": number;
     "bulk": SiteResultView[] | null;
     "completed": number;
+
+    /**
+     * Sites lists the sites of the runs not over yet, waiting or updating: none can be scanned or
+     * updated again until it leaves the list.
+     */
+    "sites": string[] | null;
 }
