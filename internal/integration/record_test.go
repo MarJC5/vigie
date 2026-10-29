@@ -63,6 +63,7 @@ var fixtureRoots = map[string]string{
 	"offline":       sites + "/offline",
 	"broken":        sites + "/broken",
 	"plugin-theme":  sites + "/plugin-theme",
+	"updates":       sites + "/updates",
 }
 
 // TestRecord refreshes the recorded outputs; it only runs with -record (make record).

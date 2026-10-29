@@ -45,7 +45,7 @@ func TestParseFindOnTheBenchAccount(t *testing.T) {
 	roots, truncated := discover.ParseFind([]byte(read(t, "testdata/recorded/find.json").Stdout))
 	want := []string{
 		"~/sites/broken", "~/sites/network", "~/sites/offline", "~/sites/outdated",
-		"~/sites/parent-config/public", "~/sites/plain", "~/sites/plugin-theme",
+		"~/sites/parent-config/public", "~/sites/plain", "~/sites/plugin-theme", "~/sites/updates",
 	}
 	if !reflect.DeepEqual(roots, want) || truncated {
 		t.Fatalf("ParseFind() = %q, %v; want %q (the copy under node_modules pruned)", roots, truncated, want)
@@ -101,7 +101,7 @@ func bench(t *testing.T) *sshxtest.Fake {
 	for fixture, root := range map[string]string{
 		"plain": "~/sites/plain", "parent-config": "~/sites/parent-config/public", "network": "~/sites/network",
 		"outdated": "~/sites/outdated", "offline": "~/sites/offline", "broken": "~/sites/broken",
-		"plugin-theme": "~/sites/plugin-theme",
+		"plugin-theme": "~/sites/plugin-theme", "updates": "~/sites/updates",
 	} {
 		for name, cmd := range map[string]wpcli.Command{
 			"core-is-installed":         wpcli.CoreIsInstalled(false),
@@ -151,8 +151,8 @@ func TestDiscoverTheBenchAccount(t *testing.T) {
 	if broken.State != discover.StateCannotLoad || !strings.Contains(broken.Message, "database") || broken.Name != "broken" {
 		t.Errorf("broken = %+v, want cannot-load with WP-CLI's message", broken)
 	}
-	if len(found) != 7 {
-		t.Errorf("Host() found %d installs, want 7", len(found))
+	if len(found) != 8 {
+		t.Errorf("Host() found %d installs, want 8", len(found))
 	}
 }
 
@@ -198,7 +198,7 @@ func TestDiscoverReportsProgress(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Once the search is done: nothing checked yet, then one more for each install.
-	want := [][2]int{{0, 7}, {1, 7}, {2, 7}, {3, 7}, {4, 7}, {5, 7}, {6, 7}, {7, 7}}
+	want := [][2]int{{0, 8}, {1, 8}, {2, 8}, {3, 8}, {4, 8}, {5, 8}, {6, 8}, {7, 8}, {8, 8}}
 	if !reflect.DeepEqual(calls, want) {
 		t.Fatalf("progress = %v, want %v", calls, want)
 	}

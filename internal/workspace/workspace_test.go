@@ -139,9 +139,9 @@ func TestDiscoverAHost(t *testing.T) {
 	for _, f := range found {
 		states[f.Path] = f.State
 	}
-	if len(found) != 7 || states["~/sites/outdated"] != discover.StateAlreadyAdded ||
+	if len(found) != 8 || states["~/sites/outdated"] != discover.StateAlreadyAdded ||
 		states["~/sites/plain"] != discover.StateNew || states["~/sites/broken"] != discover.StateAlreadyAdded {
-		t.Fatalf("Discover() = %v, want seven installs, those in Vigie marked", states)
+		t.Fatalf("Discover() = %v, want eight installs, those in Vigie marked", states)
 	}
 }
 

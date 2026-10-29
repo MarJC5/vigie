@@ -75,6 +75,70 @@ find "$SITES/plugin-theme/wp-content/themes" -mindepth 1 -maxdepth 1 -type d -ex
 wp plugin activate fixture-themes --path="$SITES/plugin-theme" --quiet
 wp theme activate fixture-theme --path="$SITES/plugin-theme" --quiet
 
+# Updates, served over HTTP as http://updates.example.test: older versions from wordpress.org, and
+# two plugins offering their own updates as premium plugins do (WordPress sees an offer only with
+# the plugin loaded), their packages served by this container: fixture-pro 1.1.0 installs fine,
+# fixture-breaks 2.0.0 throws a fatal error, logged in debug.log, on every page.
+new_site "$SITES/updates" fixture_updates
+wp db create --path="$SITES/updates" --quiet
+wp core install --path="$SITES/updates" --url=http://updates.example.test --title=Updates $ADMIN
+for name in WP_DEBUG WP_DEBUG_LOG; do wp config set $name true --raw --path="$SITES/updates" --quiet; done
+wp config set WP_DEBUG_DISPLAY false --raw --path="$SITES/updates" --quiet
+wp plugin install akismet --version=5.3 --force --activate --path="$SITES/updates" --quiet
+wp theme install twentytwentyfour --version=1.0 --force --path="$SITES/updates" --quiet
+wp language core install fr_FR --path="$SITES/updates" --quiet
+wp language plugin install akismet fr_FR --path="$SITES/updates" --quiet
+find "$SITES/updates/wp-content/languages" -name '*.po' \
+	-exec sed -i 's/^"PO-Revision-Date: .*\\n"$/"PO-Revision-Date: 2001-01-01 00:00:00+0000\\n"/' {} +
+
+# In the web root of the default site: a volume of the image, so made here rather than at build.
+PACKAGES=/var/www/html/fixture-packages
+mkdir -p "$PACKAGES"
+# plugin_file <file> <slug> <name> <version> [<offered version>]: the main file of a fixture plugin;
+# with an offered version, it offers that update, its package at $PACKAGES.
+plugin_file() {
+	printf '%s\n' '<?php' '/**' " * Plugin Name: $3" " * Version: $4" ' */' > "$1"
+	[ -n "${5:-}" ] || return 0
+	sed -e "s/__SLUG__/$2/g" -e "s/__VERSION__/$5/g" >> "$1" <<'PHP'
+// Offers its own update, as premium plugins do: WordPress sees it only with the plugin loaded.
+add_filter( 'site_transient_update_plugins', function ( $data ) {
+	$data = is_object( $data ) ? $data : new stdClass();
+	$data->response['__SLUG__/__SLUG__.php'] = (object) array(
+		'slug'        => '__SLUG__',
+		'plugin'      => '__SLUG__/__SLUG__.php',
+		'new_version' => '__VERSION__',
+		'package'     => 'http://127.0.0.1/fixture-packages/__SLUG__-__VERSION__.zip',
+	);
+	return $data;
+} );
+// The package comes from this container, which WordPress refuses by default.
+add_filter( 'http_request_host_is_external', function ( $external, $host ) {
+	return $external || '127.0.0.1' === $host;
+}, 10, 2 );
+PHP
+}
+# package <slug> <version> <main file>: the zip of a plugin version, as WordPress installs it.
+package() {
+	php -r '$z = new ZipArchive(); $z->open($argv[1], ZipArchive::CREATE | ZipArchive::OVERWRITE);
+		$z->addFile($argv[3], $argv[2] . "/" . $argv[2] . ".php"); exit($z->close() ? 0 : 1);' \
+		"$PACKAGES/$1-$2.zip" "$1" "$3"
+}
+WORK=$(mktemp -d)
+plugin_file "$WORK/pro-1.1.0.php" fixture-pro "Fixture Pro" 1.1.0
+package fixture-pro 1.1.0 "$WORK/pro-1.1.0.php"
+plugin_file "$WORK/breaks-2.0.0.php" fixture-breaks "Fixture Breaks" 2.0.0
+echo 'fixture_breaks_missing_function();' >> "$WORK/breaks-2.0.0.php"
+package fixture-breaks 2.0.0 "$WORK/breaks-2.0.0.php"
+for slug in fixture-pro fixture-breaks; do
+	mkdir -p "$SITES/updates/wp-content/plugins/$slug"
+done
+plugin_file "$SITES/updates/wp-content/plugins/fixture-pro/fixture-pro.php" fixture-pro "Fixture Pro" 1.0.0 1.1.0
+plugin_file "$SITES/updates/wp-content/plugins/fixture-breaks/fixture-breaks.php" fixture-breaks "Fixture Breaks" 1.0.0 2.0.0
+# Version 1.0.0 of fixture-breaks, to put it back after a test broke the site.
+package fixture-breaks 1.0.0 "$SITES/updates/wp-content/plugins/fixture-breaks/fixture-breaks.php"
+rm -r "$WORK"
+wp plugin activate fixture-pro fixture-breaks --path="$SITES/updates" --quiet
+
 # A server without outbound HTTP, like hosts that block it: every update check fails.
 new_site "$SITES/offline" fixture_offline
 wp db create --path="$SITES/offline" --quiet

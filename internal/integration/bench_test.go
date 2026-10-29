@@ -81,8 +81,9 @@ func start(ctx context.Context) (stop func(), err error) {
 			KeepImage: true,
 		}),
 		network.WithNetwork([]string{"account"}, nw),
-		testcontainers.WithExposedPorts("22/tcp"),
-		testcontainers.WithWaitStrategy(wait.ForListeningPort("22/tcp")))
+		testcontainers.WithExposedPorts("22/tcp", "80/tcp"),
+		// Apache listens once the image's entrypoint has set up its files.
+		testcontainers.WithWaitStrategy(wait.ForListeningPort("22/tcp"), wait.ForListeningPort("80/tcp")))
 	cleanups = append(cleanups, func() { _ = testcontainers.TerminateContainer(wp) })
 	if err != nil {
 		return stop, err

@@ -1,0 +1,15 @@
+{
+  "args": [
+    "language",
+    "plugin",
+    "list",
+    "--all",
+    "--update=available",
+    "--format=json",
+    "--skip-plugins",
+    "--skip-themes"
+  ],
+  "exit": 0,
+  "stdout": "[{\"plugin\":\"akismet\",\"language\":\"fr_FR\",\"english_name\":\"French (France)\",\"native_name\":\"Fran\\u00e7ais\",\"status\":\"installed\",\"update\":\"available\",\"updated\":\"2023-12-19 14:25:00\"}]",
+  "stderr": ""
+}

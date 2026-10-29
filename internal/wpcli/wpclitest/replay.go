@@ -15,7 +15,7 @@ import (
 )
 
 // Fixtures are the recorded sites of the bench.
-var Fixtures = []string{"plain", "parent-config", "network", "outdated", "offline", "broken", "plugin-theme"}
+var Fixtures = []string{"plain", "parent-config", "network", "outdated", "offline", "broken", "plugin-theme", "updates"}
 
 // commands are the read commands Vigie runs, by the name of their recording.
 var commands = map[string]wpcli.Command{
