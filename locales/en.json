@@ -113,7 +113,8 @@
     "hostKeyChanged": "The server's key has changed since it was trusted. It can be a server change or an attack: check with the host before trusting the new key.",
     "authRefused": "The server refused the key. Is it loaded in your SSH agent (Bitwarden, 1Password, ssh-agent)?",
     "keyFileMissing": "The key file set for this host does not exist.",
-    "other": "SSH failed: {{message}}"
+    "other": "SSH failed: {{message}}",
+    "unreadable": "Vigie could not read the answer of WP-CLI: this WordPress or WP-CLI answers in a way Vigie does not know yet."
   },
   "found": {
     "new": "New",

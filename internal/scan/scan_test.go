@@ -11,6 +11,7 @@ import (
 	"github.com/MarJC5/vigie/internal/scan"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/sshx/sshxtest"
+	"github.com/MarJC5/vigie/internal/wpcli"
 	"github.com/MarJC5/vigie/internal/wpcli/wpclitest"
 )
 
@@ -151,4 +152,17 @@ type failing struct{ err error }
 
 func (f failing) Run(context.Context, sshx.Target, string) (sshx.Result, error) {
 	return sshx.Result{}, f.err
+}
+
+func TestUnreadableOutputIsClassified(t *testing.T) {
+	fake := replay(t, "plain")
+	remote, err := wpcli.PluginList().Remote("wp", "~/sites/plain")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fake.Set(remote, sshx.Result{Stdout: []byte(`{"not":"a list"}`)})
+	got, _ := scanner(fake).Site(context.Background(), job("plain"), nil)
+	if got.Outcome != model.ScanFailed || got.Failure != scan.FailureUnreadable || !strings.Contains(got.Error, "plugin list") {
+		t.Fatalf("scan = %q, failure %q, %q; want failed, unreadable, with the message", got.Outcome, got.Failure, got.Error)
+	}
 }

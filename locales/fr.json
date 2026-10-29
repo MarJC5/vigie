@@ -120,7 +120,8 @@
     "hostKeyChanged": "La clé du serveur a changé depuis qu'elle a été approuvée. Cela peut être un changement de serveur ou une attaque : vérifiez auprès de l'hébergeur avant d'approuver la nouvelle clé.",
     "authRefused": "Le serveur refuse la clé. Est-elle chargée dans votre agent SSH (Bitwarden, 1Password, ssh-agent) ?",
     "keyFileMissing": "Le fichier de clé indiqué pour cet hébergement n'existe pas.",
-    "other": "Échec de SSH : {{message}}"
+    "other": "Échec de SSH : {{message}}",
+    "unreadable": "Vigie n'a pas pu lire la réponse de WP-CLI : ce WordPress ou ce WP-CLI répond d'une façon que Vigie ne connaît pas encore."
   },
   "found": {
     "new": "Nouveau",
