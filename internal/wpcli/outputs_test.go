@@ -283,3 +283,26 @@ func FuzzParsers(f *testing.F) {
 		}
 	})
 }
+
+// Must-use plugins and dropins have no update of their own: WP-CLI lists them with "update": false.
+func TestParsePluginsWithMustUseAndDropins(t *testing.T) {
+	plugins, err := wpcli.ParsePlugins([]byte(load(t, "outdated", "plugin-list").Stdout))
+	if err != nil {
+		t.Fatal(err)
+	}
+	byName := map[string]wpcli.Extension{}
+	for _, p := range plugins {
+		byName[p.Name] = p
+	}
+	for name, status := range map[string]string{"fixture-must-use": "must-use", "advanced-cache.php": "dropin"} {
+		p := byName[name]
+		if p.Status != status || p.Update != wpcli.UpdateNone || p.OnWordPressOrg {
+			t.Errorf("%s = %+v, want %s with no update and not on wordpress.org", name, p, status)
+		}
+	}
+	// The shape of WP-CLI's source, before its formatter: null and false.
+	raw := `[{"name":"object-cache.php","title":"","status":"dropin","version":"","update":false,"update_version":null,"auto_update":false,"wporg_status":""}]`
+	if list, err := wpcli.ParsePlugins([]byte(raw)); err != nil || len(list) != 1 || list[0].Update != wpcli.UpdateNone || list[0].AutoUpdate {
+		t.Fatalf("ParsePlugins(raw dropin) = %+v, %v", list, err)
+	}
+}

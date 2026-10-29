@@ -48,6 +48,11 @@ mkdir -p "$SITES/outdated/wp-content/plugins/fixture-premium"
 printf '%s\n' '<?php' '/**' ' * Plugin Name: Fixture Premium' ' * Version: 1.0.0' ' */' \
 	> "$SITES/outdated/wp-content/plugins/fixture-premium/fixture-premium.php"
 wp plugin activate fixture-premium --path="$SITES/outdated" --quiet
+# A must-use plugin and a dropin: WP-CLI lists them with "update": false, a boolean.
+mkdir -p "$SITES/outdated/wp-content/mu-plugins"
+printf '%s\n' '<?php' '/**' ' * Plugin Name: Fixture Must-Use' ' * Version: 1.0.0' ' */' \
+	> "$SITES/outdated/wp-content/mu-plugins/fixture-must-use.php"
+printf '%s\n' '<?php' '// Fixture dropin: a page cache that does nothing.' > "$SITES/outdated/wp-content/advanced-cache.php"
 # French translations made to look old, so translation updates are pending: WordPress compares
 # the PO-Revision-Date of the installed .po files with wordpress.org.
 wp language core install fr_FR --path="$SITES/outdated" --quiet

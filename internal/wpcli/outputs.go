@@ -162,13 +162,36 @@ type Extension struct {
 
 type rawExtension struct {
 	Name          string `json:"name"`
-	Title         string `json:"title"`
+	Title         loose  `json:"title"`
 	Status        string `json:"status"`
-	Version       string `json:"version"`
-	Update        string `json:"update"`
-	UpdateVersion string `json:"update_version"`
-	AutoUpdate    string `json:"auto_update"`
-	WPOrgStatus   string `json:"wporg_status"`
+	Version       loose  `json:"version"`
+	Update        loose  `json:"update"`
+	UpdateVersion loose  `json:"update_version"`
+	AutoUpdate    loose  `json:"auto_update"`
+	WPOrgStatus   loose  `json:"wporg_status"`
+}
+
+// loose reads a field WP-CLI writes as a string for ordinary plugins, and as false or null for
+// must-use plugins and dropins, which have no update of their own (extension-command
+// Plugin_Command::get_all_items). false and null read as "", true as "on".
+type loose string
+
+func (l *loose) UnmarshalJSON(data []byte) error {
+	var text string
+	if err := json.Unmarshal(data, &text); err == nil {
+		*l = loose(text) // null leaves text empty
+		return nil
+	}
+	var flag bool
+	if err := json.Unmarshal(data, &flag); err != nil {
+		return err
+	}
+	if flag {
+		*l = "on"
+	} else {
+		*l = ""
+	}
+	return nil
 }
 
 func parseExtensions(what string, out []byte) ([]Extension, error) {
@@ -184,12 +207,14 @@ func parseExtensions(what string, out []byte) ([]Extension, error) {
 		state := UpdateState(r.Update)
 		switch state {
 		case UpdateNone, UpdateAvailable, UpdateUnavailable, UpdateNewerThanSource:
+		case "": // must-use plugins and dropins: WordPress does not update them
+			state = UpdateNone
 		default:
 			state = UpdateUnknown
 		}
 		list = append(list, Extension{
-			Name: r.Name, Title: r.Title, Status: r.Status, Version: r.Version,
-			Update: state, UpdateVersion: r.UpdateVersion,
+			Name: r.Name, Title: string(r.Title), Status: r.Status, Version: string(r.Version),
+			Update: state, UpdateVersion: string(r.UpdateVersion),
 			AutoUpdate: r.AutoUpdate == "on", OnWordPressOrg: r.WPOrgStatus == "active",
 		})
 	}

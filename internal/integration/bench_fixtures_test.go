@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/MarJC5/vigie/internal/wpcli"
 )
 
 const sites = "/home/vigie/sites"
@@ -92,16 +94,20 @@ func TestNetworkHasThreeSubsitesOneArchived(t *testing.T) {
 	}
 }
 
+// Read with Vigie's own parsers: the fixture also has a must-use plugin and a dropin, which WP-CLI
+// lists with "update": false.
 func TestOutdatedSiteHasPendingUpdates(t *testing.T) {
-	for _, kind := range []string{"plugin", "theme"} {
-		res := wp(t, sites+"/outdated", kind, "list", "--format=json", "--fields=name,update")
-		var list []struct{ Name, Update string }
-		if err := json.Unmarshal([]byte(res.stdout), &list); err != nil {
+	for kind, parse := range map[string]func([]byte) ([]wpcli.Extension, error){
+		"plugin": wpcli.ParsePlugins, "theme": wpcli.ParseThemes,
+	} {
+		res := wp(t, sites+"/outdated", kind, "list", "--format=json", "--fields=name,status,update")
+		list, err := parse([]byte(res.stdout))
+		if err != nil {
 			t.Fatalf("%s list: %v\n%s%s", kind, err, res.stdout, res.stderr)
 		}
 		pending := false
 		for _, item := range list {
-			pending = pending || (item.Update == "available" && (item.Name == "akismet" || item.Name == "twentytwentyfour"))
+			pending = pending || (item.Update == wpcli.UpdateAvailable && (item.Name == "akismet" || item.Name == "twentytwentyfour"))
 		}
 		if !pending {
 			t.Errorf("%s list = %+v, want an update available for the older version", kind, list)
