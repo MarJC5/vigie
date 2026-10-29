@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, userEvent } from "storybook/test";
 
+import { Button } from "../Button/Button";
 import { TabBar, type Tab } from "./TabBar";
 
 const tabs: Tab[] = [
@@ -37,7 +38,8 @@ export const SiteTabs: Story = {
 };
 
 export const WithAction: Story = {
-  args: { children: <button type="button">Scan now</button> },
+  // Vigie's own button: the browser's default one has no contrast guarantee in the dark theme.
+  args: { children: <Button variant="primary">Scan now</Button> },
   play: async ({ canvas }) => {
     // The action sits in the bar, outside the tab list.
     const [action] = canvas.getAllByRole("button", { name: "Scan now" });

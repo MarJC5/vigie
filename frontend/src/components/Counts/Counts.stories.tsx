@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
 
+import { Button } from "../Button/Button";
 import { Counts } from "./Counts";
 
 const meta = {
@@ -27,7 +28,8 @@ export const HostSummary: StoryObj<typeof meta> = {
 };
 
 export const WithAction: StoryObj<typeof meta> = {
-  args: { children: <button type="button">Scan host</button> },
+  // Vigie's own button: the browser's default one has no contrast guarantee in the dark theme.
+  args: { children: <Button variant="primary">Scan host</Button> },
   play: async ({ canvas }) => {
     const [action] = canvas.getAllByRole("button", { name: "Scan host" });
     // In the row, outside the list of counts.
