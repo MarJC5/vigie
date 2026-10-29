@@ -198,3 +198,12 @@ func FuzzParseKeyScan(f *testing.F) {
 		}
 	})
 }
+
+func TestKeyScannerClassifiesItsFailures(t *testing.T) {
+	scanner := sshx.KeyScanner{Binary: fakeTool(t, "fake-keyscan")}
+	_, err := scanner.Scan(t.Context(), "refused.example.test", 22)
+	var connErr *sshx.ConnectionError
+	if !errors.As(err, &connErr) || connErr.Failure != sshx.FailureRefused {
+		t.Fatalf("Scan() = %v, want a ConnectionError classified as refused", err)
+	}
+}

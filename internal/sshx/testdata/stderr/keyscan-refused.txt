@@ -1,0 +1,2 @@
+write (ssh.example.test): Broken pipe
+write (ssh.example.test): Broken pipe

@@ -19,6 +19,9 @@ func TestClassifyOpenSSHMessages(t *testing.T) {
 		"auth-refused":     sshx.FailureAuthRefused,
 		"key-file-missing": sshx.FailureKeyFileMissing,
 		"other":            sshx.FailureOther,
+		// ssh-keyscan's own wording (OpenSSH 10.3 on macOS).
+		"keyscan-refused":    sshx.FailureRefused,
+		"keyscan-unresolved": sshx.FailureUnresolved,
 	} {
 		stderr, err := os.ReadFile("testdata/stderr/" + file + ".txt")
 		if err != nil {

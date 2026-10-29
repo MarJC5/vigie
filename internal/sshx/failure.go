@@ -32,9 +32,11 @@ func Classify(stderr []byte) Failure {
 		return FailureHostKeyChanged
 	case strings.Contains(msg, "Host key verification failed"):
 		return FailureHostKeyUnknown
-	case strings.Contains(msg, "Could not resolve hostname"):
+	case strings.Contains(msg, "Could not resolve hostname"),
+		strings.Contains(msg, "getaddrinfo"): // ssh-keyscan
 		return FailureUnresolved
-	case strings.Contains(msg, "Connection refused"):
+	case strings.Contains(msg, "Connection refused"),
+		strings.Contains(msg, "Broken pipe"): // ssh-keyscan, when nothing accepts the connection
 		return FailureRefused
 	case strings.Contains(msg, "timed out"):
 		return FailureTimedOut

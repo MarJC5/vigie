@@ -207,15 +207,20 @@ func (s KeyScanner) Scan(ctx context.Context, host string, port int) ([]HostKey,
 	cmd.WaitDelay = time.Second
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
-	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("ssh-keyscan: %w: %s", err, strings.TrimSpace(stderr.String()))
-	}
+	runErr := cmd.Run()
 	keys, err := ParseKeyScan(stdout.Bytes())
 	if err != nil {
 		return nil, err
 	}
-	if len(keys) == 0 {
-		return nil, fmt.Errorf("%w from %s: %s", ErrNoHostKey, KnownHostsName(host, port), strings.TrimSpace(stderr.String()))
+	if len(keys) > 0 {
+		return keys, nil
 	}
-	return keys, nil
+	// No key: why, read from ssh-keyscan's messages like ssh's; silence is ErrNoHostKey.
+	if msg := strings.TrimSpace(stderr.String()); msg != "" {
+		return nil, &ConnectionError{Failure: Classify(stderr.Bytes()), Message: msg}
+	}
+	if runErr != nil {
+		return nil, fmt.Errorf("ssh-keyscan: %w", runErr)
+	}
+	return nil, fmt.Errorf("%w from %s", ErrNoHostKey, KnownHostsName(host, port))
 }

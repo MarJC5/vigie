@@ -4,6 +4,7 @@
 for arg in "$@"; do last="$arg"; done
 case "$last" in
 	silent.example.test) exit 0 ;;
+	refused.example.test) cat "$(dirname "$0")/stderr/keyscan-refused.txt" >&2; exit 1 ;;
 	args.example.test) echo "$*" >&2; exit 1 ;;
 esac
 cat "$(dirname "$0")/keyscan.txt"
