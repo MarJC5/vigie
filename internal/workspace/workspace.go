@@ -16,6 +16,7 @@ import (
 	"github.com/MarJC5/vigie/internal/scan"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/store"
+	"github.com/MarJC5/vigie/internal/update"
 )
 
 // ErrNotAHost is returned when discovery is asked for a folder or a site.
@@ -52,6 +53,11 @@ type Deps struct {
 	Resolver   Resolver
 	KnownHosts string // Vigie's own known_hosts file
 	Now        func() time.Time
+	// Updates replaces the real updater, in tests of the bulk runs; Checker its checks.
+	Updates Updates
+	Checker update.Checker
+	// OnStep follows the steps of updates, for the window.
+	OnStep func(op model.Operation, step model.OperationStep)
 }
 
 // Workspace holds the database and the means to reach servers.
