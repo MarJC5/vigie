@@ -19,6 +19,7 @@ type Node struct {
 	Path      string `json:"path"`  // command line path, for example "Clients/Shared hosting/atelier-exemple.ch"
 	Multisite bool   `json:"multisite"`
 	Subsites  int    `json:"subsites"`
+	Status    string `json:"status"` // sites: ok, warn or unknown from the latest scan; empty when never scanned
 }
 
 // Tree lists the nodes depth first, parents before their children.
@@ -26,19 +27,29 @@ type Tree struct {
 	Nodes []Node `json:"nodes"`
 }
 
-// SiteManager serves the site manager to the interface.
-type SiteManager struct {
-	repo store.Repository
+// siteData is what the site manager reads: the tree and the scans.
+type siteData interface {
+	store.Repository
+	store.ScanRepository
 }
 
-// NewSiteManager returns the service over a repository.
-func NewSiteManager(repo store.Repository) *SiteManager {
+// SiteManager serves the site manager to the interface.
+type SiteManager struct {
+	repo siteData
+}
+
+// NewSiteManager returns the service over the stored data.
+func NewSiteManager(repo siteData) *SiteManager {
 	return &SiteManager{repo: repo}
 }
 
 // Tree returns the whole site manager.
 func (s *SiteManager) Tree(ctx context.Context) (Tree, error) {
 	tree, err := s.repo.LoadTree(ctx)
+	if err != nil {
+		return Tree{}, err
+	}
+	latest, err := s.repo.LatestScans(ctx)
 	if err != nil {
 		return Tree{}, err
 	}
@@ -59,6 +70,9 @@ func (s *SiteManager) Tree(ctx context.Context) (Tree, error) {
 			node.Name, node.Color = site.Name, tree.EffectiveSiteColor(site.ID).String()
 			node.ParentID = site.HostID.String()
 			node.Multisite, node.Subsites = site.Multisite, len(site.Subsites)
+			if scan, ok := latest[site.ID]; ok {
+				node.Status = string(scan.Status())
+			}
 		}
 		nodes = append(nodes, node)
 	})
