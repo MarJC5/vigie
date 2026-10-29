@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/moby/moby/api/pkg/stdcopy"
 	"github.com/testcontainers/testcontainers-go"
@@ -116,3 +117,6 @@ func runAs(ctx context.Context, cmd ...string) (output, error) {
 	}
 	return output{stdout: stdout.String(), stderr: stderr.String(), exit: exit}, nil
 }
+
+// timeNow is the clock of the scans in these tests.
+func timeNow() time.Time { return time.Now() }

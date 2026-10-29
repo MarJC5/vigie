@@ -104,24 +104,36 @@ func (a access) runner(t *testing.T, knownHosts string) sshx.ExecRunner {
 	}}
 }
 
-// trusted scans the account's keys and trusts its ed25519 key in a new known_hosts file.
+var (
+	serverKeyOnce sync.Once
+	serverKey     sshx.HostKey
+	serverKeyErr  error
+)
+
+// trusted trusts the account's ed25519 key in a new known_hosts file. The key is scanned once:
+// sshd drops unauthenticated connections beyond its MaxStartups limit.
 func (a access) trusted(t *testing.T) string {
 	t.Helper()
-	keys, err := sshx.KeyScanner{}.Scan(context.Background(), a.host, a.port)
-	if err != nil {
-		t.Fatal(err)
+	serverKeyOnce.Do(func() {
+		keys, err := sshx.KeyScanner{}.Scan(context.Background(), a.host, a.port)
+		serverKeyErr = err
+		for _, k := range keys {
+			if k.Type == "ssh-ed25519" {
+				serverKey = k
+			}
+		}
+		if err == nil && serverKey.Key == "" {
+			serverKeyErr = errors.New("no ed25519 host key")
+		}
+	})
+	if serverKeyErr != nil {
+		t.Fatal(serverKeyErr)
 	}
 	file := filepath.Join(t.TempDir(), "known_hosts")
-	for _, k := range keys {
-		if k.Type == "ssh-ed25519" {
-			if err := sshx.Trust(file, sshx.KnownHostsName(a.host, a.port), k); err != nil {
-				t.Fatal(err)
-			}
-			return file
-		}
+	if err := sshx.Trust(file, sshx.KnownHostsName(a.host, a.port), serverKey); err != nil {
+		t.Fatal(err)
 	}
-	t.Fatalf("no ed25519 key in %+v", keys)
-	return ""
+	return file
 }
 
 func TestKeyScanFingerprintsMatchTheServer(t *testing.T) {
