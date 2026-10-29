@@ -32,6 +32,7 @@ func TestDiscoverOverSSH(t *testing.T) {
 		"~/sites/outdated":             discover.StateNew,
 		"~/sites/offline":              discover.StateNew,
 		"~/sites/broken":               discover.StateCannotLoad,
+		"~/sites/plugin-theme":         discover.StateNew,
 	}
 	if len(states) != len(want) {
 		t.Fatalf("found %v, want %v (nothing under node_modules)", states, want)

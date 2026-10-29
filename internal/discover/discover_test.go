@@ -45,7 +45,7 @@ func TestParseFindOnTheBenchAccount(t *testing.T) {
 	roots, truncated := discover.ParseFind([]byte(read(t, "testdata/recorded/find.json").Stdout))
 	want := []string{
 		"~/sites/broken", "~/sites/network", "~/sites/offline", "~/sites/outdated",
-		"~/sites/parent-config/public", "~/sites/plain",
+		"~/sites/parent-config/public", "~/sites/plain", "~/sites/plugin-theme",
 	}
 	if !reflect.DeepEqual(roots, want) || truncated {
 		t.Fatalf("ParseFind() = %q, %v; want %q (the copy under node_modules pruned)", roots, truncated, want)
@@ -101,6 +101,7 @@ func bench(t *testing.T) *sshxtest.Fake {
 	for fixture, root := range map[string]string{
 		"plain": "~/sites/plain", "parent-config": "~/sites/parent-config/public", "network": "~/sites/network",
 		"outdated": "~/sites/outdated", "offline": "~/sites/offline", "broken": "~/sites/broken",
+		"plugin-theme": "~/sites/plugin-theme",
 	} {
 		for name, cmd := range map[string]wpcli.Command{
 			"core-is-installed":         wpcli.CoreIsInstalled(false),
@@ -138,6 +139,8 @@ func TestDiscoverTheBenchAccount(t *testing.T) {
 			URL: "https://network.example.test", Multisite: true, Subsites: 4},
 		"~/sites/offline":  {Path: "~/sites/offline", State: discover.StateNew, Name: "offline.example.test", URL: "https://offline.example.test"},
 		"~/sites/outdated": {Path: "~/sites/outdated", State: discover.StateAlreadyAdded, Name: "outdated"},
+		"~/sites/plugin-theme": {Path: "~/sites/plugin-theme", State: discover.StateNew, Name: "plugin-theme.example.test",
+			URL: "https://plugin-theme.example.test"},
 	}
 	for path, w := range want {
 		if got := byPath[path]; got != w {
@@ -148,8 +151,8 @@ func TestDiscoverTheBenchAccount(t *testing.T) {
 	if broken.State != discover.StateCannotLoad || !strings.Contains(broken.Message, "database") || broken.Name != "broken" {
 		t.Errorf("broken = %+v, want cannot-load with WP-CLI's message", broken)
 	}
-	if len(found) != 6 {
-		t.Errorf("Host() found %d installs, want 6", len(found))
+	if len(found) != 7 {
+		t.Errorf("Host() found %d installs, want 7", len(found))
 	}
 }
 
@@ -195,7 +198,7 @@ func TestDiscoverReportsProgress(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Once the search is done: nothing checked yet, then one more for each install.
-	want := [][2]int{{0, 6}, {1, 6}, {2, 6}, {3, 6}, {4, 6}, {5, 6}, {6, 6}}
+	want := [][2]int{{0, 7}, {1, 7}, {2, 7}, {3, 7}, {4, 7}, {5, 7}, {6, 7}, {7, 7}}
 	if !reflect.DeepEqual(calls, want) {
 		t.Fatalf("progress = %v, want %v", calls, want)
 	}

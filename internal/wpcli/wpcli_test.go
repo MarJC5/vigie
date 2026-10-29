@@ -35,6 +35,11 @@ func TestRemoteCommands(t *testing.T) {
 			wpcli.OptionGet("home"), "wp", "sites/a b",
 			"'wp' 'option' 'get' 'home' '--path=sites/a b' '--skip-plugins' '--skip-themes'",
 		},
+		{
+			"theme list with the plugins, which can hold themes",
+			wpcli.ThemeList().WithPlugins(), "wp", "~/site",
+			"'wp' 'theme' 'list' '--format=json' '--fields=name,title,status,version,update,update_version,auto_update' '--path=site' '--skip-themes'",
+		},
 	}
 	for _, tt := range tests {
 		got, err := tt.cmd.Remote(tt.wpcli, tt.path)

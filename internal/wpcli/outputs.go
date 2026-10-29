@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -109,6 +110,16 @@ func ParseHome(out []byte) (string, error) {
 		return "", fmt.Errorf("home %q: %w", home, ErrUnexpectedOutput)
 	}
 	return home, nil
+}
+
+// ParseActiveTheme reads `option get stylesheet`: the folder name of the active theme, on one
+// line; empty when the option is.
+func ParseActiveTheme(out []byte) (string, error) {
+	name := strings.TrimSpace(string(out))
+	if strings.ContainsAny(name, "\n/") {
+		return "", fmt.Errorf("stylesheet %q: %w", name, ErrUnexpectedOutput)
+	}
+	return name, nil
 }
 
 // CoreUpdate is an available WordPress release.
@@ -233,8 +244,15 @@ type LanguageUpdate struct {
 	Language string // for example "fr_FR"
 }
 
+// noneInstalled are what LanguageUpdates prints instead of a list when WordPress sees no theme or
+// no plugin (language-command, Theme_Language_Command and Plugin_Language_Command).
+var noneInstalled = []string{"Success: No themes installed.", "Success: No plugins installed."}
+
 // ParseLanguageUpdates reads LanguageUpdates's output.
 func ParseLanguageUpdates(out []byte) ([]LanguageUpdate, error) {
+	if slices.Contains(noneInstalled, string(bytes.TrimSpace(out))) {
+		return []LanguageUpdate{}, nil
+	}
 	var raw []struct {
 		Plugin   string `json:"plugin"`
 		Theme    string `json:"theme"`

@@ -1,0 +1,14 @@
+{
+  "args": [
+    "language",
+    "theme",
+    "list",
+    "--all",
+    "--update=available",
+    "--format=json",
+    "--skip-themes"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error: Error establishing a database connection.\n"
+}

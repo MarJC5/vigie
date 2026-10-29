@@ -1,0 +1,12 @@
+{
+  "args": [
+    "option",
+    "get",
+    "stylesheet",
+    "--skip-plugins",
+    "--skip-themes"
+  ],
+  "exit": 0,
+  "stdout": "twentytwentyfive\n",
+  "stderr": ""
+}

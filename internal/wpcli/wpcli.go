@@ -19,10 +19,19 @@ var (
 
 // Command is a WP-CLI command with its arguments.
 type Command struct {
-	args   []string
-	read   bool // read commands skip loading plugins and themes, so a broken plugin does not break them
-	global bool // about WP-CLI itself: no WordPress, so no path
-	err    error
+	args    []string
+	read    bool // read commands skip loading plugins and themes, so a broken plugin does not break them
+	plugins bool // a read command that loads the plugins all the same
+	global  bool // about WP-CLI itself: no WordPress, so no path
+	err     error
+}
+
+// WithPlugins makes a read command load the plugins, still not the themes: a theme can live in a
+// plugin's folder, registered with register_theme_directory, and WordPress only sees it once
+// that plugin is loaded.
+func (c Command) WithPlugins() Command {
+	c.plugins = true
+	return c
 }
 
 // CoreVersion returns the installed WordPress version.
@@ -73,8 +82,11 @@ func (c Command) Remote(wpcli, path string) (string, error) {
 	}
 	args := append(words, c.args...)
 	args = append(args, "--path="+path)
+	if c.read && !c.plugins {
+		args = append(args, "--skip-plugins")
+	}
 	if c.read {
-		args = append(args, "--skip-plugins", "--skip-themes")
+		args = append(args, "--skip-themes")
 	}
 	return sshx.Quote(args...)
 }

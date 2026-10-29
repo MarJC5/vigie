@@ -56,4 +56,17 @@ func TestScanOverSSH(t *testing.T) {
 	if parent.Outcome != model.ScanCompleted || parent.Home != "https://parent.example.test" {
 		t.Errorf("wp-config.php one level up: %q (%s), home %q", parent.Outcome, parent.Error, parent.Home)
 	}
+
+	// The only theme lives in a plugin's folder: read again with the plugins.
+	pluginTheme, _ := scanFixture(t, "~/sites/plugin-theme", false)
+	themes := 0
+	for _, i := range pluginTheme.Items {
+		if i.Kind == model.ItemTheme && i.Slug == "fixture-theme" && i.Status == "active" {
+			themes++
+		}
+	}
+	if pluginTheme.Outcome != model.ScanCompleted || themes != 1 || !pluginTheme.LanguagesChecked {
+		t.Errorf("theme in a plugin: %q (%s), %d active fixture-theme, languages checked %v",
+			pluginTheme.Outcome, pluginTheme.Error, themes, pluginTheme.LanguagesChecked)
+	}
 }

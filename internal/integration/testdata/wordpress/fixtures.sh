@@ -60,6 +60,21 @@ wp language plugin install akismet fr_FR --path="$SITES/outdated" --quiet
 find "$SITES/outdated/wp-content/languages" -name '*.po' \
 	-exec sed -i 's/^"PO-Revision-Date: .*\\n"$/"PO-Revision-Date: 2001-01-01 00:00:00+0000\\n"/' {} +
 
+# The only theme lives in a plugin's folder, registered with register_theme_directory, and
+# wp-content/themes is empty: without the plugins, WordPress sees no theme.
+new_site "$SITES/plugin-theme" fixture_plugin_theme
+wp db create --path="$SITES/plugin-theme" --quiet
+wp core install --path="$SITES/plugin-theme" --url=https://plugin-theme.example.test --title="Plugin theme" $ADMIN
+FIXTURE_THEMES="$SITES/plugin-theme/wp-content/plugins/fixture-themes"
+mkdir -p "$FIXTURE_THEMES/themes/fixture-theme"
+printf '%s\n' '<?php' '/**' ' * Plugin Name: Fixture Themes' ' * Version: 1.0.0' ' */' \
+	"register_theme_directory( __DIR__ . '/themes' );" > "$FIXTURE_THEMES/fixture-themes.php"
+printf '%s\n' '/*' 'Theme Name: Fixture Theme' 'Version: 1.0.0' '*/' > "$FIXTURE_THEMES/themes/fixture-theme/style.css"
+printf '%s\n' '<?php' > "$FIXTURE_THEMES/themes/fixture-theme/index.php"
+find "$SITES/plugin-theme/wp-content/themes" -mindepth 1 -maxdepth 1 -type d -exec rm -r {} +
+wp plugin activate fixture-themes --path="$SITES/plugin-theme" --quiet
+wp theme activate fixture-theme --path="$SITES/plugin-theme" --quiet
+
 # A server without outbound HTTP, like hosts that block it: every update check fails.
 new_site "$SITES/offline" fixture_offline
 wp db create --path="$SITES/offline" --quiet

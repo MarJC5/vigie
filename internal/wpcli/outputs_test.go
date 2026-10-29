@@ -209,6 +209,34 @@ func TestParseLanguageUpdates(t *testing.T) {
 	}
 }
 
+// Without a theme it can see, WP-CLI prints a message instead of the JSON list (language-command
+// Theme_Language_Command, and Plugin_Language_Command for plugins).
+func TestParseLanguageUpdatesWithoutThemesOrPlugins(t *testing.T) {
+	for _, out := range []string{
+		load(t, "plugin-theme", "language-theme").Stdout,
+		"Success: No themes installed.\n",
+		"Success: No plugins installed.\n",
+	} {
+		got, err := wpcli.ParseLanguageUpdates([]byte(out))
+		if err != nil || len(got) != 0 {
+			t.Errorf("ParseLanguageUpdates(%q) = %+v, %v; want none", out, got, err)
+		}
+	}
+	if _, err := wpcli.ParseLanguageUpdates([]byte("Success: Translations updated.\n")); !errors.Is(err, wpcli.ErrUnexpectedOutput) {
+		t.Errorf("another message: err = %v, want ErrUnexpectedOutput", err)
+	}
+}
+
+func TestParseActiveTheme(t *testing.T) {
+	got, err := wpcli.ParseActiveTheme([]byte(load(t, "plugin-theme", "option-stylesheet").Stdout))
+	if err != nil || got != "fixture-theme" {
+		t.Fatalf("ParseActiveTheme() = %q, %v; want fixture-theme", got, err)
+	}
+	if _, err := wpcli.ParseActiveTheme([]byte("one\ntwo\n")); !errors.Is(err, wpcli.ErrUnexpectedOutput) {
+		t.Errorf("two lines: err = %v, want ErrUnexpectedOutput", err)
+	}
+}
+
 func TestParseSites(t *testing.T) {
 	sites, err := wpcli.ParseSites([]byte(load(t, "network", "site-list").Stdout))
 	if err != nil {

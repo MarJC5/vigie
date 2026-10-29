@@ -15,7 +15,7 @@ import (
 )
 
 // Fixtures are the recorded sites of the bench.
-var Fixtures = []string{"plain", "parent-config", "network", "outdated", "offline", "broken"}
+var Fixtures = []string{"plain", "parent-config", "network", "outdated", "offline", "broken", "plugin-theme"}
 
 // commands are the read commands Vigie runs, by the name of their recording.
 var commands = map[string]wpcli.Command{
@@ -23,15 +23,18 @@ var commands = map[string]wpcli.Command{
 	"core-is-installed-network": wpcli.CoreIsInstalled(true),
 	"core-version":              wpcli.CoreVersion(),
 	"option-home":               wpcli.OptionGet("home"),
+	"option-stylesheet":         wpcli.OptionGet("stylesheet"),
 	"core-check-update":         wpcli.CoreCheckUpdate(),
 	"update-core-data":          wpcli.UpdateData(wpcli.UpdatesOfCore),
 	"plugin-list":               wpcli.PluginList(),
 	"update-plugins-data":       wpcli.UpdateData(wpcli.UpdatesOfPlugins),
 	"theme-list":                wpcli.ThemeList(),
+	"theme-list-plugins":        wpcli.ThemeList().WithPlugins(),
 	"update-themes-data":        wpcli.UpdateData(wpcli.UpdatesOfThemes),
 	"language-core":             wpcli.LanguageUpdates(wpcli.LanguagesOfCore),
 	"language-plugin":           wpcli.LanguageUpdates(wpcli.LanguagesOfPlugins),
 	"language-theme":            wpcli.LanguageUpdates(wpcli.LanguagesOfThemes),
+	"language-theme-plugins":    wpcli.LanguageUpdates(wpcli.LanguagesOfThemes).WithPlugins(),
 	"site-list":                 wpcli.SiteList(),
 }
 

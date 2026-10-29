@@ -1,0 +1,12 @@
+{
+  "args": [
+    "theme",
+    "list",
+    "--format=json",
+    "--skip-themes",
+    "--fields=name,title,status,version,update,update_version,auto_update"
+  ],
+  "exit": 0,
+  "stdout": "[{\"name\":\"fixture-theme\",\"title\":\"Fixture Theme\",\"status\":\"active\",\"version\":\"1.0.0\",\"update\":\"none\",\"update_version\":\"\",\"auto_update\":\"off\"}]",
+  "stderr": ""
+}

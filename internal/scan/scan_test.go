@@ -139,8 +139,8 @@ func TestProgressCountsTheSteps(t *testing.T) {
 		t.Fatal("no progress reported")
 	}
 	last := steps[len(steps)-1]
-	if last.Total != 13 || len(steps) != 14 { // each command, then the end
-		t.Errorf("progress = %d reports, total %d; want 13 commands and the end", len(steps), last.Total)
+	if last.Total != 14 || len(steps) != 15 { // each command, then the end
+		t.Errorf("progress = %d reports, total %d; want 14 commands and the end", len(steps), last.Total)
 	}
 	if last.Done != last.Total || !slices.IsSortedFunc(steps, func(a, b scan.Progress) int { return a.Done - b.Done }) {
 		t.Fatalf("progress = %+v, want increasing up to the total", steps)
@@ -164,5 +164,46 @@ func TestUnreadableOutputIsClassified(t *testing.T) {
 	got, _ := scanner(fake).Site(context.Background(), job("plain"), nil)
 	if got.Outcome != model.ScanFailed || got.Failure != scan.FailureUnreadable || !strings.Contains(got.Error, "plugin list") {
 		t.Fatalf("scan = %q, failure %q, %q; want failed, unreadable, with the message", got.Outcome, got.Failure, got.Error)
+	}
+}
+
+// A theme can live in a plugin's folder (register_theme_directory): read without the plugins,
+// WordPress sees no theme. The scan reads the themes again with the plugins.
+func TestScanOfAThemeInAPlugin(t *testing.T) {
+	got, _ := scanner(replay(t, "plugin-theme")).Site(context.Background(), job("plugin-theme"), nil)
+	if got.Outcome != model.ScanCompleted {
+		t.Fatalf("scan = %q (%s), want completed", got.Outcome, got.Error)
+	}
+	theme, ok := item(got, model.ItemTheme, "fixture-theme")
+	if !ok || theme.Status != "active" || theme.Version != "1.0.0" {
+		t.Errorf("fixture-theme = %+v, %v; want the active theme read with the plugins", theme, ok)
+	}
+	if !got.ThemesChecked || !got.LanguagesChecked {
+		t.Errorf("checks: themes %v, languages %v; want both proven", got.ThemesChecked, got.LanguagesChecked)
+	}
+}
+
+// When loading the plugins fails, the active theme is listed with an unknown state and the theme
+// check stays unproven; the rest of the scan completes.
+func TestScanOfAThemeInABrokenPlugin(t *testing.T) {
+	fake := replay(t, "plugin-theme")
+	broken := sshx.Result{ExitCode: 255, Stderr: []byte("PHP Fatal error: Uncaught Error in fixture-themes.php")}
+	for _, cmd := range []wpcli.Command{wpcli.ThemeList().WithPlugins(), wpcli.LanguageUpdates(wpcli.LanguagesOfThemes).WithPlugins()} {
+		remote, err := cmd.Remote("wp", "~/sites/plugin-theme")
+		if err != nil {
+			t.Fatal(err)
+		}
+		fake.Set(remote, broken)
+	}
+	got, _ := scanner(fake).Site(context.Background(), job("plugin-theme"), nil)
+	if got.Outcome != model.ScanCompleted {
+		t.Fatalf("scan = %q (%s), want completed", got.Outcome, got.Error)
+	}
+	theme, ok := item(got, model.ItemTheme, "fixture-theme")
+	if !ok || theme.Status != "active" || theme.Update != model.UpdateUnknown {
+		t.Errorf("fixture-theme = %+v, %v; want the active theme with an unknown state", theme, ok)
+	}
+	if got.ThemesChecked || !got.PluginsChecked {
+		t.Errorf("checks: themes %v, plugins %v; want themes unproven only", got.ThemesChecked, got.PluginsChecked)
 	}
 }

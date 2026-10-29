@@ -5,6 +5,7 @@ package scan
 import (
 	"context"
 	"errors"
+	"slices"
 	"time"
 
 	"github.com/MarJC5/vigie/internal/model"
@@ -34,12 +35,13 @@ type Scanner struct {
 	Now     func() time.Time
 }
 
-// steps is the number of commands of a scan, for the progress: 13, and the subsites of a network.
+// steps is the number of commands of a scan, for the progress: 14, and the subsites of a network.
+// A theme in a plugin's folder takes two more, read again with the plugins.
 func (j Job) steps() int {
 	if j.Site.Multisite {
-		return 14
+		return 15
 	}
-	return 13
+	return 14
 }
 
 // Site scans one site. The scan is always returned, also when it failed or was cancelled; for a
@@ -82,6 +84,9 @@ type run struct {
 	job      Job
 	progress func(Progress)
 	done     int
+	// themesInPlugins: the active theme lives in a plugin's folder, so the theme reads load the
+	// plugins.
+	themesInPlugins bool
 }
 
 // exec runs one WP-CLI command within the host's limit and reports the progress.
@@ -213,27 +218,23 @@ func (r *run) core(ctx context.Context, result *model.Scan) error {
 // extensions reads the plugins and themes, each list followed by the proof of its check.
 func (r *run) extensions(ctx context.Context, result *model.Scan) error {
 	for _, kind := range []struct {
-		list    wpcli.Command
-		parse   func([]byte) ([]wpcli.Extension, error)
+		list    func(context.Context) ([]wpcli.Extension, bool, error)
 		data    wpcli.Updates
 		item    model.ItemKind
 		checked *bool
 	}{
-		{wpcli.PluginList(), wpcli.ParsePlugins, wpcli.UpdatesOfPlugins, model.ItemPlugin, &result.PluginsChecked},
-		{wpcli.ThemeList(), wpcli.ParseThemes, wpcli.UpdatesOfThemes, model.ItemTheme, &result.ThemesChecked},
+		{r.plugins, wpcli.UpdatesOfPlugins, model.ItemPlugin, &result.PluginsChecked},
+		{r.themes, wpcli.UpdatesOfThemes, model.ItemTheme, &result.ThemesChecked},
 	} {
-		out, err := r.read(ctx, kind.list)
+		list, complete, err := kind.list(ctx)
 		if err != nil {
 			return err
 		}
-		list, err := kind.parse(out)
+		out, err := r.read(ctx, wpcli.UpdateData(kind.data))
 		if err != nil {
 			return err
 		}
-		if out, err = r.read(ctx, wpcli.UpdateData(kind.data)); err != nil {
-			return err
-		}
-		*kind.checked = wpcli.ExtensionsCheckProven(out)
+		*kind.checked = complete && wpcli.ExtensionsCheckProven(out)
 		for _, e := range list {
 			result.Items = append(result.Items, model.ScanItem{
 				Kind: kind.item, Slug: e.Name, Title: e.Title, Status: e.Status, Version: e.Version,
@@ -245,12 +246,60 @@ func (r *run) extensions(ctx context.Context, result *model.Scan) error {
 	return nil
 }
 
+// plugins reads the plugin list; it is always complete.
+func (r *run) plugins(ctx context.Context) ([]wpcli.Extension, bool, error) {
+	out, err := r.read(ctx, wpcli.PluginList())
+	if err != nil {
+		return nil, false, err
+	}
+	list, err := wpcli.ParsePlugins(out)
+	return list, true, err
+}
+
+// themes reads the theme list without the plugins, then with them when the active theme is
+// missing: it lives in a plugin's folder. When the plugins cannot be loaded, the list is
+// incomplete and holds the active theme with an unknown state.
+func (r *run) themes(ctx context.Context) ([]wpcli.Extension, bool, error) {
+	out, err := r.read(ctx, wpcli.ThemeList())
+	if err != nil {
+		return nil, false, err
+	}
+	list, err := wpcli.ParseThemes(out)
+	if err != nil {
+		return nil, false, err
+	}
+	if out, err = r.read(ctx, wpcli.OptionGet("stylesheet")); err != nil {
+		return nil, false, err
+	}
+	active, err := wpcli.ParseActiveTheme(out)
+	if err != nil {
+		return nil, false, err
+	}
+	if active == "" || slices.ContainsFunc(list, func(e wpcli.Extension) bool { return e.Name == active }) {
+		return list, true, nil
+	}
+	r.themesInPlugins = true
+	out, err = r.read(ctx, wpcli.ThemeList().WithPlugins())
+	if errors.Is(err, wpcli.ErrCannotLoad) {
+		return append(list, wpcli.Extension{Name: active, Status: "active", Update: wpcli.UpdateUnknown}), false, nil
+	}
+	if err != nil {
+		return nil, false, err
+	}
+	list, err = wpcli.ParseThemes(out)
+	return list, true, err
+}
+
 // languages reads the translation updates; WP-CLI fails when wordpress.org cannot be reached,
 // which leaves the check unproven rather than stopping the scan.
 func (r *run) languages(ctx context.Context, result *model.Scan) error {
 	result.LanguagesChecked = true
 	for _, of := range []wpcli.Languages{wpcli.LanguagesOfCore, wpcli.LanguagesOfPlugins, wpcli.LanguagesOfThemes} {
-		out, err := r.read(ctx, wpcli.LanguageUpdates(of))
+		cmd := wpcli.LanguageUpdates(of)
+		if of == wpcli.LanguagesOfThemes && r.themesInPlugins {
+			cmd = cmd.WithPlugins()
+		}
+		out, err := r.read(ctx, cmd)
 		if errors.Is(err, wpcli.ErrCannotLoad) {
 			result.LanguagesChecked = false
 			continue

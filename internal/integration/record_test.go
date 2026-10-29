@@ -34,6 +34,7 @@ var recordings = []struct {
 	{"core-is-installed", []string{"core", "is-installed", "--skip-plugins", "--skip-themes"}},
 	{"core-is-installed-network", []string{"core", "is-installed", "--network", "--skip-plugins", "--skip-themes"}},
 	{"option-home", []string{"option", "get", "home", "--skip-plugins", "--skip-themes"}},
+	{"option-stylesheet", []string{"option", "get", "stylesheet", "--skip-plugins", "--skip-themes"}},
 	{"core-check-update", []string{"core", "check-update", "--format=json", "--skip-plugins", "--skip-themes"}},
 	{"plugin-list", []string{"plugin", "list", "--format=json", "--skip-plugins", "--skip-themes",
 		// Not wporg_last_updated: WP-CLI reads it from Trac, one request per plugin.
@@ -43,6 +44,10 @@ var recordings = []struct {
 	{"language-core", []string{"language", "core", "list", "--update=available", "--format=json", "--skip-plugins", "--skip-themes"}},
 	{"language-plugin", []string{"language", "plugin", "list", "--all", "--update=available", "--format=json", "--skip-plugins", "--skip-themes"}},
 	{"language-theme", []string{"language", "theme", "list", "--all", "--update=available", "--format=json", "--skip-plugins", "--skip-themes"}},
+	// With the plugins: a theme can live in a plugin's folder.
+	{"theme-list-plugins", []string{"theme", "list", "--format=json", "--skip-themes",
+		"--fields=name,title,status,version,update,update_version,auto_update"}},
+	{"language-theme-plugins", []string{"language", "theme", "list", "--all", "--update=available", "--format=json", "--skip-themes"}},
 	{"site-list", []string{"site", "list", "--format=json", "--skip-plugins", "--skip-themes",
 		"--fields=blog_id,url,registered,last_updated,public,archived,spam,deleted"}},
 	{"update-core-data", []string{"transient", "get", "update_core", "--network", "--format=json", "--skip-plugins", "--skip-themes"}},
@@ -57,6 +62,7 @@ var fixtureRoots = map[string]string{
 	"outdated":      sites + "/outdated",
 	"offline":       sites + "/offline",
 	"broken":        sites + "/broken",
+	"plugin-theme":  sites + "/plugin-theme",
 }
 
 // TestRecord refreshes the recorded outputs; it only runs with -record (make record).

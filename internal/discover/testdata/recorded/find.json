@@ -3,6 +3,6 @@
     "'find' '.' '-maxdepth' '6' '(' '-name' 'node_modules' '-o' '-name' '.git' '-o' '-name' 'cache' '-o' '-name' 'backup*' '-o' '-path' '*/wp-content/uploads' ')' '-prune' '-o' '-type' 'f' '-path' '*/wp-includes/version.php' '-print'"
   ],
   "exit": 0,
-  "stdout": "./sites/network/wp-includes/version.php\n./sites/outdated/wp-includes/version.php\n./sites/offline/wp-includes/version.php\n./sites/plain/wp-includes/version.php\n./sites/broken/wp-includes/version.php\n./sites/parent-config/public/wp-includes/version.php\n",
+  "stdout": "./sites/plugin-theme/wp-includes/version.php\n./sites/network/wp-includes/version.php\n./sites/outdated/wp-includes/version.php\n./sites/offline/wp-includes/version.php\n./sites/plain/wp-includes/version.php\n./sites/broken/wp-includes/version.php\n./sites/parent-config/public/wp-includes/version.php\n",
   "stderr": ""
 }
