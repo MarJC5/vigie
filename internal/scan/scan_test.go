@@ -2,9 +2,6 @@ package scan_test
 
 import (
 	"context"
-	"encoding/json"
-	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -14,52 +11,14 @@ import (
 	"github.com/MarJC5/vigie/internal/scan"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/sshx/sshxtest"
-	"github.com/MarJC5/vigie/internal/wpcli"
+	"github.com/MarJC5/vigie/internal/wpcli/wpclitest"
 )
-
-// The commands of a scan, by the name of their recording (internal/wpcli/testdata/recorded).
-var commands = map[string]wpcli.Command{
-	"core-is-installed":   wpcli.CoreIsInstalled(false),
-	"core-version":        wpcli.CoreVersion(),
-	"option-home":         wpcli.OptionGet("home"),
-	"core-check-update":   wpcli.CoreCheckUpdate(),
-	"update-core-data":    wpcli.UpdateData(wpcli.UpdatesOfCore),
-	"plugin-list":         wpcli.PluginList(),
-	"update-plugins-data": wpcli.UpdateData(wpcli.UpdatesOfPlugins),
-	"theme-list":          wpcli.ThemeList(),
-	"update-themes-data":  wpcli.UpdateData(wpcli.UpdatesOfThemes),
-	"language-core":       wpcli.LanguageUpdates(wpcli.LanguagesOfCore),
-	"language-plugin":     wpcli.LanguageUpdates(wpcli.LanguagesOfPlugins),
-	"language-theme":      wpcli.LanguageUpdates(wpcli.LanguagesOfThemes),
-	"site-list":           wpcli.SiteList(),
-}
 
 // replay answers every command of a scan of fixture with its recorded output.
 func replay(t *testing.T, fixture string) *sshxtest.Fake {
 	t.Helper()
 	fake := sshxtest.NewFake()
-	set := func(name string, cmd wpcli.Command, path string) {
-		data, err := os.ReadFile(filepath.Join("..", "wpcli", "testdata", "recorded", fixture, name+".json"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		var r struct {
-			Exit           int
-			Stdout, Stderr string
-		}
-		if err := json.Unmarshal(data, &r); err != nil {
-			t.Fatal(err)
-		}
-		remote, err := cmd.Remote("wp", path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		fake.Set(remote, sshx.Result{Stdout: []byte(r.Stdout), Stderr: []byte(r.Stderr), ExitCode: r.Exit})
-	}
-	for name, cmd := range commands {
-		set(name, cmd, "~/sites/"+fixture)
-	}
-	set("cli-info", wpcli.CLIInfo(), "")
+	wpclitest.Replay(t, fake, fixture, "~/sites/"+fixture, "wp")
 	return fake
 }
 
