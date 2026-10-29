@@ -64,6 +64,13 @@ export const ScanFailed: Story = {
     await expect(alert).toHaveTextContent("allow yours in the host's control panel");
     // The raw message, once.
     await expect(alert!.textContent!.split("Operation timed out").length - 1).toBe(1);
+    // The notice stands apart from the tabs above it and the rows below it.
+    const [panel] = canvas.getAllByRole("tabpanel");
+    const tabs = canvas.getAllByRole("tablist")[0]!.getBoundingClientRect();
+    const box = alert!.getBoundingClientRect();
+    const firstRow = panel!.querySelector("dl > div")!.getBoundingClientRect();
+    await expect(box.top - tabs.bottom).toBeGreaterThanOrEqual(16);
+    await expect(firstRow.top - box.bottom).toBeGreaterThanOrEqual(16);
   },
 };
 

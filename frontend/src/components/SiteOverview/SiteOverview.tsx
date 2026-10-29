@@ -9,6 +9,7 @@ import { InfoList, InfoRow } from "../InfoList/InfoList";
 import { Notice } from "../Notice/Notice";
 import { StatusDot } from "../StatusDot/StatusDot";
 import { TabBar } from "../TabBar/TabBar";
+import styles from "./SiteOverview.module.css";
 
 export interface SiteOverviewProps {
   site: SiteView;
@@ -27,7 +28,7 @@ export function SiteOverview({ site, scanning, onScan, now }: SiteOverviewProps)
   const pending = scan ? scan.pending.core + scan.pending.plugins + scan.pending.themes + scan.pending.languages : 0;
 
   return (
-    <>
+    <div className={styles.overview}>
       <DetailHeader
         title={site.name}
         meta={scan ? t("site.lastScan", { when: since(scan.finished, i18n.language, now) }) : undefined}
@@ -46,11 +47,11 @@ export function SiteOverview({ site, scanning, onScan, now }: SiteOverviewProps)
           {scanning ? t("overview.scanning") : t("action.scanNow")}
         </Button>
       </TabBar>
-      <div role="tabpanel" id={panel} aria-labelledby={`${panel}-${tab}`}>
+      <div role="tabpanel" id={panel} aria-labelledby={`${panel}-${tab}`} className={styles.panel}>
         {scan?.problem && <ScanNotice code={scan.problem.code} detail={scan.problem.detail} />}
         {tab === "overview" ? <Overview site={site} /> : <Updates scan={scan} />}
       </div>
-    </>
+    </div>
   );
 }
 

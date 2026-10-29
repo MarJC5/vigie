@@ -1,0 +1,12 @@
+.overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-5);
+}
+
+/* A notice and the rows under it stand apart. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-4);
+}
