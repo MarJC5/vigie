@@ -7,6 +7,10 @@
   box-shadow: inset 0 0 0 1.5px var(--vg-status-danger);
 }
 
+.notice[data-tone="warn"] {
+  box-shadow: inset 0 0 0 1.5px var(--vg-status-warn);
+}
+
 .title {
   font-weight: var(--vg-weight-strong);
 }
