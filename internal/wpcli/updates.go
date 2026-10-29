@@ -257,6 +257,16 @@ func Done(res sshx.Result) error {
 	return fmt.Errorf("%w: %s", ErrFailed, msg)
 }
 
+// MaintenanceSet reads Maintenance's result: already in the state asked is no failure, as
+// WordPress removes the maintenance mode it sets during its own update.
+func MaintenanceSet(res sshx.Result) error {
+	msg := string(res.Stderr)
+	if res.ExitCode != 0 && (strings.Contains(msg, "Maintenance mode already activated") || strings.Contains(msg, "Maintenance mode already deactivated")) {
+		return nil
+	}
+	return Done(res)
+}
+
 // MaintenanceIsActive reads MaintenanceActive's exit code.
 func MaintenanceIsActive(res sshx.Result) (bool, error) {
 	switch {

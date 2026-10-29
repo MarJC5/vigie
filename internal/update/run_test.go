@@ -162,6 +162,11 @@ func TestRunUpdatesWithBackupsFirst(t *testing.T) {
 		}
 		last = i
 	}
+	// WordPress removes the maintenance file of its own update: on again for the database.
+	on := wp(t, wpcli.Maintenance(true))
+	if again := slices.Index(calls[index(calls, wp(t, wpcli.UpdateCore("7.1.4"))):], on); again < 0 {
+		t.Error("maintenance mode not turned on again after the update of WordPress's files")
+	}
 	if export < 0 || index(calls, b.line(remote.MakeDir(b.dir))) > export {
 		t.Error("the backups folder is made before the dump")
 	}

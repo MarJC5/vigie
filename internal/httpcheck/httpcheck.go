@@ -33,8 +33,10 @@ type Result struct {
 // page, or does not answer; 3xx are followed, 4xx pass (security plugins hide wp-login.php).
 type Checker struct {
 	Client *http.Client // a client with a timeout by default
-	// Watch probes every page each Interval for Window: PHP's OPcache can serve the code before an
-	// update for a moment (opcache.revalidate_freq), so a page must stay healthy all along.
+	// PHP's OPcache can serve the code from before a change for a moment (opcache.revalidate_freq,
+	// 2 s by default): Watch waits Settle, then probes every page each Interval for Window, and a
+	// page must stay healthy all along.
+	Settle   time.Duration
 	Window   time.Duration
 	Interval time.Duration
 	Sleep    func(ctx context.Context, d time.Duration) error // time passing; a timer by default
@@ -73,9 +75,14 @@ func (c Checker) Probe(ctx context.Context, url string) Result {
 	return r
 }
 
-// Watch probes the pages in rounds, Interval apart, until Window has passed: the first failure is
-// returned, else a healthy result.
+// Watch waits Settle, then probes the pages in rounds, Interval apart, until Window has passed: the
+// first failure is returned, else a healthy result.
 func (c Checker) Watch(ctx context.Context, urls []string) Result {
+	if c.Settle > 0 {
+		if err := c.sleep(ctx, c.Settle); err != nil {
+			return Result{Problem: ProblemCancelled, Detail: err.Error()}
+		}
+	}
 	for elapsed := time.Duration(0); ; elapsed += c.Interval {
 		for _, url := range urls {
 			if r := c.Probe(ctx, url); r.Problem != ProblemNone {

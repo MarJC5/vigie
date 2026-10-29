@@ -16,7 +16,8 @@ const criticalPage = `<!DOCTYPE html><html><body id="error-page"><div class="wp-
 	`<p>Il y a eu une erreur critique sur ce site.</p></div></body></html>`
 
 func checker() httpcheck.Checker {
-	return httpcheck.Checker{Window: 3 * time.Second, Interval: time.Second, Sleep: func(context.Context, time.Duration) error { return nil }}
+	return httpcheck.Checker{Settle: 2 * time.Second, Window: 3 * time.Second, Interval: time.Second,
+		Sleep: func(context.Context, time.Duration) error { return nil }}
 }
 
 func TestProbe(t *testing.T) {
@@ -74,8 +75,8 @@ func TestWatchCatchesALateFailure(t *testing.T) {
 	if got.Problem != httpcheck.ProblemServerError || got.URL != server.URL+"/" {
 		t.Fatalf("Watch() = %+v, want the home page failing", got)
 	}
-	if slept != time.Second {
-		t.Errorf("slept %v, want one interval before the second round", slept)
+	if slept != 3*time.Second {
+		t.Errorf("slept %v, want the settling time, then one interval before the second round", slept)
 	}
 }
 
@@ -87,7 +88,7 @@ func TestWatchHealthyForTheWholeWindow(t *testing.T) {
 	if got.Problem != httpcheck.ProblemNone {
 		t.Fatalf("Watch() = %+v", got)
 	}
-	// Three rounds over 3 seconds, one second apart: at 0, 1 and 2 s, then the window ends at 3 s.
+	// After 2 s of settling, three rounds over 3 seconds, one second apart: at 2, 3 and 4 s.
 	if calls.Load() != 6 {
 		t.Errorf("%d requests, want 2 pages × 3 rounds", calls.Load())
 	}

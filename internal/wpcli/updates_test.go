@@ -213,3 +213,21 @@ func FuzzUpdateParsers(f *testing.F) {
 		_, _ = wpcli.ParseDebugLog(res, res)
 	})
 }
+
+// WordPress removes the maintenance mode it sets during its own update: turning it off again, or
+// on twice, is no failure.
+func TestMaintenanceSet(t *testing.T) {
+	for _, name := range []string{"maintenance-on", "maintenance-off"} {
+		if err := wpcli.MaintenanceSet(result(load(t, "updates", name))); err != nil {
+			t.Errorf("%s: %v", name, err)
+		}
+	}
+	for _, msg := range []string{"Error: Maintenance mode already deactivated.\n", "Error: Maintenance mode already activated.\n"} {
+		if err := wpcli.MaintenanceSet(sshx.Result{ExitCode: 1, Stderr: []byte(msg)}); err != nil {
+			t.Errorf("%q: %v", msg, err)
+		}
+	}
+	if err := wpcli.MaintenanceSet(sshx.Result{ExitCode: 1, Stderr: []byte("Error: Could not write the file.\n")}); !errors.Is(err, wpcli.ErrFailed) {
+		t.Errorf("a real failure: %v, want ErrFailed", err)
+	}
+}

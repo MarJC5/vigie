@@ -246,43 +246,52 @@ func (r *run) folder(ctx context.Context, it Item) (string, error) {
 // item updates one item and checks the site; false when either failed.
 func (r *run) item(ctx context.Context, it Item) bool {
 	offset := r.logSize(ctx)
-	updated := r.step(ctx, model.OperationStep{Step: model.StepUpdate, ItemKind: it.Kind, Slug: it.Slug,
-		VersionBefore: it.From, VersionAfter: it.To}, func() (string, error) {
-		if it.Kind == model.ItemCore {
-			return "", r.core(ctx, it)
+	if it.Kind == model.ItemCore {
+		if !r.core(ctx, it) {
+			return false
 		}
-		return r.extension(ctx, it)
-	})
-	if !updated {
+		return r.check(ctx, it, offset)
+	}
+	if !r.step(ctx, model.OperationStep{Step: model.StepUpdate, ItemKind: it.Kind, Slug: it.Slug,
+		VersionBefore: it.From, VersionAfter: it.To}, func() (string, error) { return r.extension(ctx, it) }) {
 		return false
 	}
 	return r.check(ctx, it, offset)
 }
 
-// core updates WordPress and its database in maintenance mode, always turned off at the end.
-func (r *run) core(ctx context.Context, it Item) (err error) {
-	if !r.step(ctx, model.OperationStep{Step: model.StepMaintenanceOn}, func() (string, error) {
-		return "", r.wpDone(ctx, wpcli.Maintenance(true))
-	}) {
-		return errors.New("maintenance mode could not be turned on")
+// core updates WordPress, then its database, in maintenance mode, always turned off at the end.
+// WordPress's own update removes the maintenance file it writes while copying: the mode is turned
+// on again for the database.
+func (r *run) core(ctx context.Context, it Item) (ok bool) {
+	if !r.maintenance(ctx, true) {
+		return false
 	}
-	defer func() {
-		off := r.step(ctx, model.OperationStep{Step: model.StepMaintenanceOff}, func() (string, error) {
-			return "", r.wpDone(ctx, wpcli.Maintenance(false))
-		})
-		if err == nil && !off {
-			err = errors.New("maintenance mode could not be turned off")
-		}
-	}()
-	if err := r.wpDone(ctx, wpcli.UpdateCore(it.To)); err != nil {
-		return err
+	defer func() { ok = r.maintenance(ctx, false) && ok }()
+	if !r.step(ctx, model.OperationStep{Step: model.StepUpdate, ItemKind: model.ItemCore, VersionBefore: it.From, VersionAfter: it.To},
+		func() (string, error) { return "", r.wpDone(ctx, wpcli.UpdateCore(it.To)) }) {
+		return false
 	}
-	if !r.step(ctx, model.OperationStep{Step: model.StepUpdateDatabase}, func() (string, error) {
+	if !r.maintenance(ctx, true) {
+		return false
+	}
+	return r.step(ctx, model.OperationStep{Step: model.StepUpdateDatabase}, func() (string, error) {
 		return "", r.wpDone(ctx, wpcli.UpdateDatabase(r.s.job.Site.Multisite))
-	}) {
-		return errors.New("the database of WordPress could not be upgraded")
+	})
+}
+
+// maintenance turns the maintenance mode on or off; already so is no failure.
+func (r *run) maintenance(ctx context.Context, on bool) bool {
+	st := model.OperationStep{Step: model.StepMaintenanceOff}
+	if on {
+		st.Step = model.StepMaintenanceOn
 	}
-	return nil
+	return r.step(ctx, st, func() (string, error) {
+		res, err := r.s.run(ctx, wpcli.Maintenance(on))
+		if err != nil {
+			return "", err
+		}
+		return "", wpcli.MaintenanceSet(res)
+	})
 }
 
 // extension updates one plugin or theme.
@@ -321,7 +330,9 @@ func (r *run) translations(ctx context.Context) bool {
 	return true
 }
 
-// check watches the site after an item: its pages, WordPress still installed, no new fatal error.
+// check watches the site after an item: its pages, WordPress still installed, and no new fatal
+// error in debug.log since offset; a negative offset skips the log (after a rollback, requests to
+// the code still in OPcache may log errors of the version just removed).
 func (r *run) check(ctx context.Context, it Item, offset int64) bool {
 	return r.step(ctx, model.OperationStep{Step: model.StepCheck, ItemKind: it.Kind, Slug: it.Slug}, func() (string, error) {
 		if res := r.s.u.Checker.Watch(ctx, r.urls()); res.Problem != httpcheck.ProblemNone {
@@ -335,6 +346,9 @@ func (r *run) check(ctx context.Context, it Item, offset int64) bool {
 			if installed, err := wpcli.IsInstalled(res); err != nil || !installed {
 				return "", errors.Join(errors.New("WordPress no longer answers as installed"), err)
 			}
+		}
+		if offset < 0 {
+			return "", nil
 		}
 		if fatals := r.fatalsSince(ctx, offset); len(fatals) > 0 {
 			return "", fmt.Errorf("new fatal error in debug.log: %s", strings.Join(fatals, "\n"))
