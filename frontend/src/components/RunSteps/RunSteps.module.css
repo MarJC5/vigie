@@ -1,0 +1,71 @@
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1.1fr) minmax(0, 1.3fr) 72px;
+  align-items: center;
+  gap: var(--vg-space-3);
+  min-height: 38px;
+  padding: var(--vg-space-1) 14px;
+  border-radius: var(--vg-radius-control);
+}
+
+.step:nth-child(odd) {
+  background: var(--vg-surface-row);
+}
+
+.step[data-state="waiting"] {
+  color: var(--vg-text-muted);
+}
+
+.icon {
+  display: inline-flex;
+  justify-self: center;
+}
+
+.step[data-state="done"] .icon {
+  color: var(--vg-status-ok);
+}
+
+.step[data-state="running"] .icon {
+  color: var(--vg-accent-text);
+}
+
+.step[data-state="failed"] .icon {
+  color: var(--vg-status-danger);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .step[data-state="running"] .icon svg {
+    animation: turn 1s linear infinite;
+  }
+}
+
+@keyframes turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.label {
+  font-weight: var(--vg-weight-strong);
+  overflow-wrap: anywhere;
+}
+
+.detail,
+.time {
+  font-size: var(--vg-text-small);
+  color: var(--vg-text-muted);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.time {
+  text-align: right;
+}

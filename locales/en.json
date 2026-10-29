@@ -415,5 +415,159 @@
     "renameHint": "Enter keeps the name, Escape cancels",
     "emptyFolder": "No site in this folder yet.",
     "emptyHost": "No site on this host yet: \"Find new sites…\" in its menu searches the account."
+  },
+  "update": {
+    "group": {
+      "core": "WordPress",
+      "plugin": "Plugins",
+      "theme": "Themes",
+      "language": "Translations"
+    },
+    "upToDate": "All up to date",
+    "notOffered": {
+      "unavailable": "Not offered: needs a newer PHP or WordPress",
+      "unknown": "Not offered: state unknown"
+    },
+    "languages": "{{languages}}: {{items}}",
+    "and": " and ",
+    "selected": "{{count}} of {{total}} selected",
+    "updateSelected": "Update ({{count}})",
+    "steps": {
+      "preview": "Preview",
+      "run": "Update",
+      "result": "Result"
+    },
+    "preview": {
+      "title": "Update {{name}}",
+      "lead": "Vigie backs up first, then updates one item at a time and checks the site after each one. It stops at the first problem.",
+      "loading": "Vigie reads on the server what will change.",
+      "whatChanges": "What changes",
+      "backupsFirst": "Backed up first, on the server",
+      "kind": {
+        "core": "WordPress",
+        "plugin": "Plugin",
+        "theme": "Theme",
+        "language": "Translations"
+      },
+      "database": "Database",
+      "plugins_one": "Folder of 1 plugin",
+      "plugins_other": "Folders of {{count}} plugins",
+      "themes_one": "Folder of 1 theme",
+      "themes_other": "Folders of {{count}} themes",
+      "coreFiles": "WordPress files, without wp-content",
+      "where": "Kept with the last 3 updates of this site, in a folder outside the web root:",
+      "coreTitle": "WordPress itself is updated",
+      "coreText": "The site shows the maintenance page of WordPress for about a minute. If you roll back afterwards, the database returns to its state before the update: orders or comments written in between are lost.",
+      "nothing": "Nothing you chose is offered any more: the site may have been updated in the meantime.",
+      "cannot": "This update cannot start",
+      "confirm": "Back up and update"
+    },
+    "run": {
+      "title": "Updating {{name}}",
+      "lead": "You can close this window: the update goes on, and the site list shows it.",
+      "stopAfter": "Stop after this item",
+      "stopping": "Stopping after this item…",
+      "running": "Updating…",
+      "rollbackTitle": "Rolling back {{name}}",
+      "stepsLabel": "Steps of the update"
+    },
+    "result": {
+      "doneTitle": "{{name}} is up to date",
+      "doneLead": "Each item was checked after its update.",
+      "failedTitle": "The update broke the site",
+      "failedLead": "Vigie stopped at the first problem: nothing else was started.",
+      "failedOn": "{{item}}: the site no longer passes the checks",
+      "failedStep": "The step “{{step}}” failed",
+      "rollbackFiles": "Roll back puts the folder of {{item}} back as it was, then checks the site again. The database is not touched: only a WordPress update restores it.",
+      "rollbackCore": "Roll back puts the WordPress files and the database back as they were before the update, then checks the site again.",
+      "nothingToRollBack": "No item was changed: there is nothing to put back.",
+      "cancelledTitle": "Update stopped",
+      "cancelledLead": "The items already updated stay so; the next ones were not started.",
+      "interruptedTitle": "Update interrupted",
+      "interruptedLead": "Vigie was closed during the update. Scan the site to see where it stands.",
+      "rolledBackTitle": "{{name}} is rolled back",
+      "rolledBackLead": "{{item}} is back to its earlier version, and the site passes the checks again.",
+      "rollbackFailedTitle": "The rollback failed",
+      "rollbackFailedLead": "The site is not as it was. The backup stays on the server:",
+      "keep": "Keep as is",
+      "rollback": "Roll back",
+      "close": "Close"
+    },
+    "state": {
+      "done": "Done",
+      "running": "In progress",
+      "failed": "Failed",
+      "waiting": "Not run"
+    },
+    "step": {
+      "backup-database": "Database backup",
+      "backup-files": "Archive of {{item}}",
+      "backup-core": "Archive of the WordPress files",
+      "maintenance-on": "Maintenance mode on",
+      "maintenance-off": "Maintenance mode off",
+      "update": "{{item}} {{from}} → {{to}}",
+      "languagesOf": {
+        "core": "Translations of WordPress",
+        "plugin": "Translations of the plugins",
+        "theme": "Translations of the themes"
+      },
+      "languages": "Translations",
+      "update-database": "WordPress database upgraded",
+      "check": "Checks",
+      "checksOk": "public pages and login answer, no new fatal error",
+      "restore-files": "{{item}} back to {{version}}",
+      "restore-database": "Database restored",
+      "notStarted": "not started"
+    },
+    "duration": {
+      "seconds": "{{s}} s",
+      "minutes": "{{m}} min {{s}} s"
+    },
+    "bulk": {
+      "summary": "Summary",
+      "count": {
+        "updated": "Updated",
+        "failed": "Failed",
+        "not-started": "Not started",
+        "refused": "Refused",
+        "nothing": "Up to date",
+        "cancelled": "Stopped"
+      },
+      "outcome": {
+        "updated": "Updated",
+        "failed": "Failed",
+        "not-started": "Not started",
+        "refused": "Refused",
+        "nothing": "Up to date",
+        "cancelled": "Stopped"
+      },
+      "table": "Result by site",
+      "col": {
+        "site": "Site",
+        "result": "Result",
+        "detail": "Detail"
+      },
+      "stoppedTitle": "The update stopped at {{site}}",
+      "stoppedText": "An item broke this site: open it to roll back or keep the new version. The next sites of the same host were not started.",
+      "open": "Open {{site}}",
+      "notStarted": "An earlier site of the same host failed, or the update was stopped"
+    },
+    "history": {
+      "label": "History of updates",
+      "empty": "No update yet.",
+      "update_one": "Update of 1 item",
+      "update_other": "Update of {{count}} items",
+      "rollback": "{{item}} back to {{version}}",
+      "outcome": {
+        "completed": "Done",
+        "failed": "Failed",
+        "cancelled": "Stopped",
+        "interrupted": "Interrupted",
+        "running": "In progress"
+      },
+      "rolledBack": "Rolled back",
+      "backupKept": "Backup kept on the server:",
+      "show": "Show the steps"
+    }
   }
 }
