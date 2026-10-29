@@ -1,0 +1,34 @@
+.field {
+  display: flex;
+  align-items: center;
+  gap: var(--vg-space-2);
+  height: var(--vg-control-height);
+  padding: 0 10px;
+  border-radius: var(--vg-radius-control);
+  background: var(--vg-surface-sunken);
+  color: var(--vg-text-muted);
+}
+
+.field:focus-within {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 1px;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--vg-text);
+  font: var(--vg-text-small) var(--vg-font);
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--vg-text-muted);
+}
+
+/* The field has its own way to clear: Escape. */
+.input::-webkit-search-cancel-button {
+  appearance: none;
+}

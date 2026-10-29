@@ -35,3 +35,12 @@ export const SiteTabs: Story = {
     await expect(overview).toHaveAttribute("tabindex", "-1");
   },
 };
+
+export const WithAction: Story = {
+  args: { children: <button type="button">Scan now</button> },
+  play: async ({ canvas }) => {
+    // The action sits in the bar, outside the tab list.
+    const [action] = canvas.getAllByRole("button", { name: "Scan now" });
+    await expect(action!.closest("[role=tablist]")).toBeNull();
+  },
+};
