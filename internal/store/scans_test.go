@@ -1,0 +1,110 @@
+package store_test
+
+import (
+	"context"
+	"errors"
+	"reflect"
+	"testing"
+	"time"
+
+	"github.com/MarJC5/vigie/internal/model"
+	"github.com/MarJC5/vigie/internal/store"
+)
+
+// siteOnHost stores a host and one site, and returns the site.
+func siteOnHost(t *testing.T, db *store.DB, name string) model.Site {
+	t.Helper()
+	ctx := context.Background()
+	host := model.Host{ID: model.NewID(), Name: "Host " + name, Alias: "h-" + name}
+	site := model.Site{ID: model.NewID(), HostID: host.ID, Name: name, Path: "~/sites/" + name}
+	must(t, db.SaveHost(ctx, host))
+	must(t, db.SaveSite(ctx, site))
+	return site
+}
+
+func scanOf(site model.Site, started time.Time, wp string) model.Scan {
+	return model.Scan{
+		ID: model.NewID(), SiteID: site.ID,
+		Started: started, Finished: started.Add(3 * time.Second),
+		Outcome:   model.ScanCompleted,
+		WordPress: wp, PHPCLI: "8.4.27", WPCLI: "2.12.0", Home: "https://" + site.Name,
+		CoreChecked: true, PluginsChecked: true, ThemesChecked: false, LanguagesChecked: true,
+		Items: []model.ScanItem{
+			{Kind: model.ItemCore, Status: "minor", Version: wp, Update: model.UpdateAvailable, UpdateVersion: "7.1.4"},
+			{Kind: model.ItemPlugin, Slug: "akismet", Title: "Akismet", Status: "active", Version: "5.3",
+				Update: model.UpdateAvailable, UpdateVersion: "5.7.2", AutoUpdate: true, OnWordPressOrg: true},
+			{Kind: model.ItemLanguage, Slug: "akismet", Language: "fr_FR", Update: model.UpdateAvailable},
+		},
+	}
+}
+
+func TestScansAreKeptAndTheLatestIsRead(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	a, b := siteOnHost(t, db, "a.example.test"), siteOnHost(t, db, "b.example.test")
+	start := time.Date(2026, 10, 29, 9, 0, 0, 0, time.UTC)
+	first, second := scanOf(a, start, "7.1.2"), scanOf(a, start.Add(time.Hour), "7.1.3")
+	other := scanOf(b, start, "7.0")
+	other.Outcome, other.Failure, other.Error, other.Items = model.ScanFailed, "timed-out", "ssh: connect to host: Operation timed out", nil
+	for _, s := range []model.Scan{first, second, other} {
+		must(t, db.SaveScan(ctx, s))
+	}
+
+	latest, err := db.LatestScans(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(latest) != 2 || !reflect.DeepEqual(latest[a.ID], second) || !reflect.DeepEqual(latest[b.ID], other) {
+		t.Fatalf("LatestScans() =\n%+v\nwant the second scan of a and the failed scan of b", latest)
+	}
+	count, err := db.ScanCount(ctx, a.ID)
+	if err != nil || count != 2 {
+		t.Fatalf("ScanCount() = %d, %v; want both scans kept", count, err)
+	}
+}
+
+func TestScanOfUnknownSiteIsRefused(t *testing.T) {
+	db := migrated(t)
+	s := scanOf(model.Site{ID: model.NewID(), Name: "ghost"}, time.Now(), "7.1.3")
+	if err := db.SaveScan(context.Background(), s); !errors.Is(err, model.ErrNotFound) {
+		t.Fatalf("SaveScan() for a missing site = %v, want ErrNotFound", err)
+	}
+}
+
+func TestDeletingASiteDeletesItsScans(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	site := siteOnHost(t, db, "gone.example.test")
+	must(t, db.SaveScan(ctx, scanOf(site, time.Now(), "7.1.3")))
+	must(t, db.DeleteSite(ctx, site.ID))
+	if latest, err := db.LatestScans(ctx); err != nil || len(latest) != 0 {
+		t.Fatalf("LatestScans() after deleting the site = %v, %v", latest, err)
+	}
+}
+
+func TestSubsitesReadByAScanKeepTheirPins(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	site := siteOnHost(t, db, "network.example.test")
+	site.Multisite = true
+	site.Subsites = []model.Subsite{{BlogID: 1, URL: "https://network.example.test/", Public: true, Pinned: true}}
+	must(t, db.SaveSite(ctx, site))
+
+	read := []model.Subsite{
+		{BlogID: 1, URL: "https://network.example.test/", Public: true},
+		{BlogID: 4, URL: "https://network.example.test/gamma/", Public: true, Archived: true},
+	}
+	must(t, db.SaveSubsites(ctx, site.ID, read))
+
+	tree, err := db.LoadTree(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stored, _ := tree.Site(site.ID)
+	got := stored.Subsites
+	want := []model.Subsite{read[0], read[1]}
+	want[0].Pinned = true
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("subsites = %+v, want %+v (pins kept, new subsites added)", got, want)
+	}
+}
