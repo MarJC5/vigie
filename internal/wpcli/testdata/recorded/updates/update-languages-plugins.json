@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'language' 'plugin' 'update' '--all' '--path=sites/updates' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "Updating 'French (France)' translation for Akismet Anti-spam: Spam Protection 5.7.2...\nDownloading translation from https://downloads.wordpress.org/translation/plugin/akismet/5.7.2/fr_FR.zip...\nUnpacking the update...\nInstalling the latest version...\nRemoving the old version of the translation...\nTranslation updated successfully.\nSuccess: Updated 1/1 translation.\n",
+  "stderr": ""
+}

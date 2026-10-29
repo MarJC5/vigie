@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'plugin' 'path' 'akismet' '--dir' '--path=sites/updates' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "/home/vigie/sites/updates/wp-content/plugins/akismet\n",
+  "stderr": ""
+}

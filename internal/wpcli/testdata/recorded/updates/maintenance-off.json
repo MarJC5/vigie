@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'maintenance-mode' 'deactivate' '--path=sites/updates' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "Disabling Maintenance mode...\nSuccess: Deactivated Maintenance mode.\n",
+  "stderr": ""
+}

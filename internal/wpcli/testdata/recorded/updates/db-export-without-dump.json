@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'db' 'export' '.vigie/backups/updates/nodump.sql' '--porcelain' '--path=sites/updates' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 127,
+  "stdout": "",
+  "stderr": "env: 'mariadb-dump': No such file or directory\nenv: 'mariadb-dump': No such file or directory\n"
+}

@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'db' 'import' '.vigie/backups/updates/before.sql' '--path=sites/updates' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "Success: Imported from '.vigie/backups/updates/before.sql'.\n",
+  "stderr": ""
+}

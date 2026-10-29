@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'language' 'core' 'update' '--path=sites/updates' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "Updating 'French (France)' translation for WordPress 7.1.3...\nUsing cached file '/home/vigie/.wp-cli/cache/translation/core-default-7.1.3-fr_FR-1792668594.zip'...\nUnpacking the update...\nInstalling the latest version...\nRemoving the old version of the translation...\nTranslation updated successfully.\nSuccess: Updated 1/1 translation.\n",
+  "stderr": ""
+}

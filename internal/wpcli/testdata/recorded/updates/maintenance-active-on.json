@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'maintenance-mode' 'is-active' '--path=sites/updates' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "",
+  "stderr": ""
+}

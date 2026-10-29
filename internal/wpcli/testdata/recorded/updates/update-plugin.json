@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'plugin' 'update' 'akismet' '--format=json' '--path=sites/updates' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "[{\"name\":\"akismet\",\"old_version\":\"5.3\",\"new_version\":\"5.7.2\",\"status\":\"Updated\"}]",
+  "stderr": ""
+}

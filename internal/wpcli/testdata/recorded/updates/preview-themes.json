@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'theme' 'update' '--all' '--dry-run' '--format=json' '--path=sites/updates'"
+  ],
+  "exit": 0,
+  "stdout": "[{\"name\":\"twentytwentyfour\",\"status\":\"inactive\",\"version\":\"1.0\",\"update_version\":\"1.6\"}]",
+  "stderr": ""
+}

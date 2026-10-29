@@ -76,9 +76,10 @@ wp plugin activate fixture-themes --path="$SITES/plugin-theme" --quiet
 wp theme activate fixture-theme --path="$SITES/plugin-theme" --quiet
 
 # Updates, served over HTTP as http://updates.example.test: older versions from wordpress.org, and
-# two plugins offering their own updates as premium plugins do (WordPress sees an offer only with
-# the plugin loaded), their packages served by this container: fixture-pro 1.1.0 installs fine,
-# fixture-breaks 2.0.0 throws a fatal error, logged in debug.log, on every page.
+# plugins offering their own updates as premium plugins do (WordPress sees an offer only with the
+# plugin loaded), their packages served by this container: fixture-pro 1.1.0 installs fine,
+# fixture-breaks 2.0.0 throws a fatal error, logged in debug.log, on every page, and the package of
+# fixture-missing 9.9.9 does not exist.
 new_site "$SITES/updates" fixture_updates
 wp db create --path="$SITES/updates" --quiet
 wp core install --path="$SITES/updates" --url=http://updates.example.test --title=Updates $ADMIN
@@ -129,15 +130,17 @@ package fixture-pro 1.1.0 "$WORK/pro-1.1.0.php"
 plugin_file "$WORK/breaks-2.0.0.php" fixture-breaks "Fixture Breaks" 2.0.0
 echo 'fixture_breaks_missing_function();' >> "$WORK/breaks-2.0.0.php"
 package fixture-breaks 2.0.0 "$WORK/breaks-2.0.0.php"
-for slug in fixture-pro fixture-breaks; do
+for slug in fixture-pro fixture-breaks fixture-missing; do
 	mkdir -p "$SITES/updates/wp-content/plugins/$slug"
 done
 plugin_file "$SITES/updates/wp-content/plugins/fixture-pro/fixture-pro.php" fixture-pro "Fixture Pro" 1.0.0 1.1.0
 plugin_file "$SITES/updates/wp-content/plugins/fixture-breaks/fixture-breaks.php" fixture-breaks "Fixture Breaks" 1.0.0 2.0.0
+# Offers a version whose package does not exist: the update fails to download.
+plugin_file "$SITES/updates/wp-content/plugins/fixture-missing/fixture-missing.php" fixture-missing "Fixture Missing" 1.0.0 9.9.9
 # Version 1.0.0 of fixture-breaks, to put it back after a test broke the site.
 package fixture-breaks 1.0.0 "$SITES/updates/wp-content/plugins/fixture-breaks/fixture-breaks.php"
 rm -r "$WORK"
-wp plugin activate fixture-pro fixture-breaks --path="$SITES/updates" --quiet
+wp plugin activate fixture-pro fixture-breaks fixture-missing --path="$SITES/updates" --quiet
 
 # A server without outbound HTTP, like hosts that block it: every update check fails.
 new_site "$SITES/offline" fixture_offline

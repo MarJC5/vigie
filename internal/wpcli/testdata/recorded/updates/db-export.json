@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'db' 'export' '.vigie/backups/updates/before.sql' '--porcelain' '--path=sites/updates' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": ".vigie/backups/updates/before.sql\n",
+  "stderr": ""
+}

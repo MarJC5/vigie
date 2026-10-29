@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'maintenance-mode' 'activate' '--path=sites/updates' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "Enabling Maintenance mode...\nSuccess: Activated Maintenance mode.\n",
+  "stderr": ""
+}

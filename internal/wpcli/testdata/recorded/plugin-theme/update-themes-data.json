@@ -9,6 +9,6 @@
     "--skip-themes"
   ],
   "exit": 0,
-  "stdout": "{\"last_checked\":1793284370,\"checked\":{\"fixture-theme\":\"1.0.0\"},\"response\":[],\"no_update\":[],\"translations\":[]}\n",
+  "stdout": "{\"last_checked\":1793285448,\"checked\":{\"fixture-theme\":\"1.0.0\"},\"response\":[],\"no_update\":[],\"translations\":[]}\n",
   "stderr": ""
 }

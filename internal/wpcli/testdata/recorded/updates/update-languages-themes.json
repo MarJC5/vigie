@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'language' 'theme' 'update' '--all' '--path=sites/updates' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "Success: Translations are up to date.\n",
+  "stderr": ""
+}

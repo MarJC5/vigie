@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'plugin' 'update' 'fixture-pro' '--format=json' '--path=sites/updates' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "[{\"name\":\"fixture-pro\",\"old_version\":\"1.0.0\",\"new_version\":\"1.1.0\",\"status\":\"Updated\"}]",
+  "stderr": ""
+}

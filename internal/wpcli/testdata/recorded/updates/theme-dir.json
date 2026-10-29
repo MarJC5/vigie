@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'theme' 'path' 'twentytwentyfour' '--dir' '--path=sites/updates' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "/home/vigie/sites/updates/wp-content/themes/twentytwentyfour\n",
+  "stderr": ""
+}

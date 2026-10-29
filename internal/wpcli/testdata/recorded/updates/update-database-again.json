@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'core' 'update-db' '--path=sites/updates' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "Success: WordPress database already at latest db version 61833.\n",
+  "stderr": ""
+}

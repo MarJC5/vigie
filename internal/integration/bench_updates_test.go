@@ -22,7 +22,7 @@ func TestUpdateBench(t *testing.T) {
 	t.Run("an update offered by the plugin itself shows only with the plugins loaded", func(t *testing.T) {
 		without := previewPlugins(t, "--skip-plugins", "--skip-themes")
 		with := previewPlugins(t, "--skip-themes")
-		if !slices.Equal(without, []string{"akismet"}) || !slices.Equal(with, []string{"akismet", "fixture-breaks", "fixture-pro"}) {
+		if !slices.Equal(without, []string{"akismet"}) || !slices.Equal(with, []string{"akismet", "fixture-breaks", "fixture-missing", "fixture-pro"}) {
 			t.Fatalf("updates without the plugins %v, with them %v", without, with)
 		}
 	})

@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'config' 'get' 'WP_CONTENT_DIR' '--type=constant' '--format=json' '--path=sites/updates' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error: The constant 'WP_CONTENT_DIR' is not defined in the 'wp-config.php' file.\n"
+}

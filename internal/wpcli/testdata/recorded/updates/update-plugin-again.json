@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'plugin' 'update' 'akismet' '--format=json' '--path=sites/updates' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "",
+  "stderr": ""
+}

@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'plugin' 'update' 'fixture-missing' '--format=json' '--path=sites/updates' '--skip-themes'"
+  ],
+  "exit": 1,
+  "stdout": "[{\"name\":\"fixture-missing\",\"old_version\":\"1.0.0\",\"new_version\":\"9.9.9\",\"status\":\"Error\"}]",
+  "stderr": "Error: No plugins updated (1 failed).\n"
+}
