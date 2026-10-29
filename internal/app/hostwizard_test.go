@@ -204,3 +204,67 @@ func TestDiscoverAndAdd(t *testing.T) {
 		t.Fatalf("Add() twice = %+v, want duplicateName", again)
 	}
 }
+
+func TestFindAndAddSitesOfAStoredHost(t *testing.T) {
+	ctx := context.Background()
+	w, fake, _, ws := wizard(t)
+	host := model.Host{ID: model.NewID(), Name: "Bench", Hostname: "ssh.example.test", Port: 2222, User: "u12ab"}
+	existing := model.Site{ID: model.NewID(), HostID: host.ID, Name: "network", Path: "~/sites/network", Multisite: true}
+	if err := ws.AddHost(ctx, host, []model.Site{existing}); err != nil {
+		t.Fatal(err)
+	}
+	fake.Set(discover.FindCommand(), sshx.Result{Stdout: []byte("./sites/plain/wp-includes/version.php\n./sites/network/wp-includes/version.php\n")})
+	wpclitest.Replay(t, fake, "plain", "~/sites/plain", "wp")
+	wpclitest.Replay(t, fake, "network", "~/sites/network", "wp")
+
+	found := w.DiscoverHost(ctx, host.ID.String())
+	states := map[string]string{}
+	for _, i := range found.Installs {
+		states[i.Path] = i.State
+	}
+	if found.Problem != nil || states["~/sites/plain"] != "new" || states["~/sites/network"] != "already-added" {
+		t.Fatalf("DiscoverHost() = %+v", found)
+	}
+	if p := w.AddSites(ctx, host.ID.String(), []app.Choice{{Path: "~/sites/network", Name: "Network"}}); code(p) != "problem.duplicateName" {
+		t.Fatalf("AddSites(a name taken) = %+v, want duplicateName", p)
+	}
+	if p := w.AddSites(ctx, host.ID.String(), []app.Choice{{Path: "~/sites/plain", Name: "plain.example.test", URL: "https://plain.example.test"}}); p != nil {
+		t.Fatal(p)
+	}
+	tree, err := ws.DB().LoadTree(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sites := tree.SitesUnder(model.Node{Kind: model.KindHost, ID: host.ID}); len(sites) != 2 || sites[1].Name != "plain.example.test" {
+		t.Fatalf("sites of the host = %+v", sites)
+	}
+	if got := w.DiscoverHost(ctx, model.NewID().String()); code(got.Problem) != "problem.notFound" {
+		t.Errorf("DiscoverHost(missing) = %+v, want notFound", got)
+	}
+}
+
+// After a new address, the user checks the key again: only a key the server presented, and the
+// user trusted, is kept for the host.
+func TestKeepAKeyForAStoredHost(t *testing.T) {
+	ctx := context.Background()
+	w, _, _, ws := wizard(t)
+	host := model.Host{ID: model.NewID(), Name: "Bench", Hostname: "ssh.example.test", Port: 2222, User: "u12ab"}
+	if err := ws.AddHost(ctx, host, nil); err != nil {
+		t.Fatal(err)
+	}
+	keys := w.HostKeys(ctx, details)
+	fingerprint := keys.Keys[0].Fingerprint
+	if p := w.KeepKey(ctx, host.ID.String(), fingerprint); code(p) != "problem.keyNotReceived" {
+		t.Fatalf("KeepKey() before trusting = %+v, want keyNotReceived", p)
+	}
+	if p := w.Trust(keys.Name, fingerprint); p != nil {
+		t.Fatal(p)
+	}
+	if p := w.KeepKey(ctx, host.ID.String(), fingerprint); p != nil {
+		t.Fatal(p)
+	}
+	tree, _ := ws.DB().LoadTree(ctx)
+	if h, _ := tree.Host(host.ID); h.HostKeyFingerprint != fingerprint {
+		t.Errorf("stored fingerprint = %q, want %q", h.HostKeyFingerprint, fingerprint)
+	}
+}

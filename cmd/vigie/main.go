@@ -101,6 +101,7 @@ func openWindow(opts cli.Options) error {
 			application.NewService(app.NewSiteManager(db)),
 			application.NewService(preferences),
 			application.NewService(app.NewHostWizard(ws, emit)),
+			application.NewService(app.NewEditor(ws)),
 			application.NewService(scanner),
 		},
 		Assets: application.AssetOptions{Handler: application.AssetFileServerFS(frontend.Assets())},

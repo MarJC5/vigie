@@ -30,6 +30,14 @@ export interface Choice {
 }
 
 /**
+ * CreateResult is the answer of CreateFolder.
+ */
+export interface CreateResult {
+    "id": string;
+    "problem": Problem | null;
+}
+
+/**
  * DiscoverResult is the answer of Discover.
  */
 export interface DiscoverResult {
@@ -44,6 +52,17 @@ export interface DiscoverResult {
 export interface DiscoveryProgress {
     "checked": number;
     "total": number;
+}
+
+/**
+ * EditHostResult is the answer of EditHost.
+ */
+export interface EditHostResult {
+    /**
+     * KeyCleared: the address changed, so the server's key is to be checked and trusted again.
+     */
+    "keyCleared": boolean;
+    "problem": Problem | null;
 }
 
 /**
@@ -74,6 +93,11 @@ export interface HostDetails {
      */
     "wpCli": string;
     "folderId": string;
+
+    /**
+     * MaxConcurrent is the number of commands at a time on the account; 2 when zero.
+     */
+    "maxConcurrent": number;
 }
 
 /**

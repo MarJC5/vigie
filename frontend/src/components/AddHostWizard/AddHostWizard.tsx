@@ -83,6 +83,8 @@ function details(form: Form): HostDetails {
     keyPath: form.keyPath.trim(),
     wpCli: form.wpCli.trim(),
     folderId: form.folderId,
+    // Commands at a time: the default (2) until the host is edited.
+    maxConcurrent: 0,
   };
 }
 

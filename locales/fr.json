@@ -130,18 +130,23 @@
     "cannotLoad": "Ne se charge pas"
   },
   "problem": {
-    "emptyName": "Donnez un nom à l'hébergement.",
+    "emptyName": "Le nom ne peut pas être vide.",
     "slashInName": "Un nom ne peut pas contenir de barre oblique.",
     "noConnection": "Indiquez un alias SSH, ou un nom d'hôte et un utilisateur.",
     "noUser": "Indiquez l'utilisateur SSH.",
     "invalidPort": "Le port doit être compris entre 1 et 65535.",
-    "duplicateName": "Ce nom est déjà utilisé dans ce dossier.",
+    "duplicateName": "Ce nom est déjà utilisé à cet endroit.",
     "folderNotFound": "Ce dossier n'existe plus.",
     "noHostKey": "Le serveur n'a présenté aucune clé : {{message}}",
     "keyNotReceived": "Cette clé n'a pas été reçue du serveur. Demandez à nouveau les clés.",
     "noPhp": "PHP ne fonctionne pas en ligne de commande sur ce compte : {{message}}",
     "noWpCli": "WP-CLI est introuvable sur ce compte (essayé : {{message}}).",
     "findFailed": "La recherche des installations WordPress a échoué : {{message}}",
+    "notFound": "Cet élément n'existe plus : la liste a changé entre-temps.",
+    "siteMoved": "Un site reste sous son hébergement. S'il a changé de compte, supprimez-le ici et utilisez « Chercher de nouveaux sites » sur cet hébergement.",
+    "unknownColor": "Cette couleur n'existe pas.",
+    "folderNotEmpty": "Seul un dossier vide peut être supprimé : déplacez ou supprimez d'abord ce qu'il contient.",
+    "moveIntoItself": "Un dossier ne peut pas aller dans lui-même ni dans l'un de ses dossiers.",
     "error": "Une erreur s'est produite : {{message}}"
   },
   "wizard": {

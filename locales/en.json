@@ -123,18 +123,23 @@
     "cannotLoad": "Cannot be loaded"
   },
   "problem": {
-    "emptyName": "Give the host a name.",
+    "emptyName": "The name cannot be empty.",
     "slashInName": "A name cannot contain a slash.",
     "noConnection": "Enter an SSH alias, or a host name and a user.",
     "noUser": "Enter the SSH user.",
     "invalidPort": "The port must be between 1 and 65535.",
-    "duplicateName": "This name is already used in this folder.",
+    "duplicateName": "This name is already used here.",
     "folderNotFound": "This folder no longer exists.",
     "noHostKey": "The server presented no key: {{message}}",
     "keyNotReceived": "This key was not received from the server. Ask for the keys again.",
     "noPhp": "PHP does not run on the command line of this account: {{message}}",
     "noWpCli": "WP-CLI was not found on this account (tried: {{message}}).",
     "findFailed": "The search for WordPress installs failed: {{message}}",
+    "notFound": "This item no longer exists: the list was changed meanwhile.",
+    "siteMoved": "A site stays under its host. If it moved to another account, delete it here and use \"Find new sites\" on that host.",
+    "unknownColor": "This color does not exist.",
+    "folderNotEmpty": "Only an empty folder can be deleted: move or delete what it holds first.",
+    "moveIntoItself": "A folder cannot go into itself or one of its folders.",
     "error": "Something went wrong: {{message}}"
   },
   "wizard": {

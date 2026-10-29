@@ -11,6 +11,7 @@ import (
 	"github.com/MarJC5/vigie/internal/hostcheck"
 	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/sshx"
+	"github.com/MarJC5/vigie/internal/store"
 	"github.com/MarJC5/vigie/internal/workspace"
 )
 
@@ -21,7 +22,10 @@ type Problem struct {
 	Detail string `json:"detail"`
 }
 
-var errKeyNotReceived = errors.New("key not received from the server")
+var (
+	errKeyNotReceived = errors.New("key not received from the server")
+	errNodeNotFound   = errors.New("no folder, host or site with this ID")
+)
 
 // problemCodes maps known errors to their text; ProblemOf checks them in this order.
 var problemCodes = []struct {
@@ -34,6 +38,11 @@ var problemCodes = []struct {
 	{model.ErrNoUser, "problem.noUser"},
 	{model.ErrInvalidPort, "problem.invalidPort"},
 	{model.ErrDuplicateName, "problem.duplicateName"},
+	{model.ErrSiteMoved, "problem.siteMoved"},
+	{model.ErrUnknownColor, "problem.unknownColor"},
+	{store.ErrNotEmpty, "problem.folderNotEmpty"},
+	{store.ErrCycle, "problem.moveIntoItself"},
+	{errNodeNotFound, "problem.notFound"},
 	{model.ErrNotFound, "problem.folderNotFound"},
 	{sshx.ErrNoHostKey, "problem.noHostKey"},
 	{errKeyNotReceived, "problem.keyNotReceived"},
@@ -68,6 +77,8 @@ type HostDetails struct {
 	KeyPath  string `json:"keyPath"` // optional: only this key is offered
 	WPCLI    string `json:"wpCli"`   // WP-CLI command; "wp" when empty
 	FolderID string `json:"folderId"`
+	// MaxConcurrent is the number of commands at a time on the account; 2 when zero.
+	MaxConcurrent int `json:"maxConcurrent"`
 }
 
 // host is the model host the details describe, with a new ID.
@@ -75,7 +86,7 @@ func (d HostDetails) host() (model.Host, error) {
 	h := model.Host{
 		ID: model.NewID(), Name: strings.TrimSpace(d.Name), Alias: strings.TrimSpace(d.Alias),
 		Hostname: strings.TrimSpace(d.Hostname), Port: d.Port, User: strings.TrimSpace(d.User),
-		KeyPath: strings.TrimSpace(d.KeyPath), WPCLI: strings.TrimSpace(d.WPCLI),
+		KeyPath: strings.TrimSpace(d.KeyPath), WPCLI: strings.TrimSpace(d.WPCLI), MaxConcurrent: d.MaxConcurrent,
 	}
 	if d.FolderID != "" {
 		id, err := uuid.Parse(d.FolderID)
@@ -249,6 +260,26 @@ func (w *HostWizard) Discover(ctx context.Context, d HostDetails) DiscoverResult
 	found, truncated, err := w.ws.DiscoverAccount(ctx, h, func(checked, total int) {
 		w.emit(DiscoveryEvent, DiscoveryProgress{Checked: checked, Total: total})
 	})
+	return discovered(found, truncated, err)
+}
+
+// DiscoverHost searches the account of a stored host for installs, its own sites marked as
+// already added, sending DiscoveryEvent as it checks them; it adds nothing.
+func (w *HostWizard) DiscoverHost(ctx context.Context, hostID string) DiscoverResult {
+	n, err := findNode(ctx, w.ws, hostID)
+	if err != nil {
+		return DiscoverResult{Problem: ProblemOf(err)}
+	}
+	if n.Kind != model.KindHost {
+		return DiscoverResult{Problem: ProblemOf(errNodeNotFound)}
+	}
+	found, truncated, err := w.ws.DiscoverHost(ctx, n.ID, func(checked, total int) {
+		w.emit(DiscoveryEvent, DiscoveryProgress{Checked: checked, Total: total})
+	})
+	return discovered(found, truncated, err)
+}
+
+func discovered(found []discover.Found, truncated bool, err error) DiscoverResult {
 	if err != nil {
 		return DiscoverResult{Problem: ProblemOf(err)}
 	}
@@ -258,6 +289,54 @@ func (w *HostWizard) Discover(ctx context.Context, d HostDetails) DiscoverResult
 			Multisite: f.Multisite, Subsites: f.Subsites, Message: f.Message}
 	}
 	return result
+}
+
+// AddSites adds the installs chosen to a stored host, after its own sites, all or nothing.
+func (w *HostWizard) AddSites(ctx context.Context, hostID string, choices []Choice) *Problem {
+	n, err := findNode(ctx, w.ws, hostID)
+	if err != nil {
+		return ProblemOf(err)
+	}
+	if n.Kind != model.KindHost {
+		return ProblemOf(errNodeNotFound)
+	}
+	tree, err := w.ws.DB().LoadTree(ctx)
+	if err != nil {
+		return ProblemOf(err)
+	}
+	after := len(tree.SitesUnder(n))
+	return ProblemOf(w.ws.AddSites(ctx, n.ID, sitesOf(n.ID, choices, after)))
+}
+
+// KeepKey records, for a stored host whose address changed, the key the user trusted: the server
+// must have presented it in this session, as in Add.
+func (w *HostWizard) KeepKey(ctx context.Context, hostID, fingerprint string) *Problem {
+	w.mu.Lock()
+	trusted := w.trusted[fingerprint]
+	w.mu.Unlock()
+	if !trusted {
+		return ProblemOf(errKeyNotReceived)
+	}
+	n, err := findNode(ctx, w.ws, hostID)
+	if err != nil {
+		return ProblemOf(err)
+	}
+	if n.Kind != model.KindHost {
+		return ProblemOf(errNodeNotFound)
+	}
+	return ProblemOf(w.ws.SetHostKey(ctx, n.ID, fingerprint))
+}
+
+// sitesOf turns the installs chosen into sites of a host, placed from position first.
+func sitesOf(hostID model.ID, choices []Choice, first int) []model.Site {
+	sites := make([]model.Site, len(choices))
+	for i, c := range choices {
+		sites[i] = model.Site{
+			ID: model.NewID(), HostID: hostID, Name: strings.TrimSpace(c.Name), Path: c.Path, URL: c.URL,
+			Multisite: c.Multisite, Position: first + i,
+		}
+	}
+	return sites
 }
 
 // Add stores the host, with the fingerprint the user trusted, and the installs chosen.
@@ -273,14 +352,7 @@ func (w *HostWizard) Add(ctx context.Context, d HostDetails, fingerprint string,
 		return AddResult{Problem: ProblemOf(err)}
 	}
 	h.HostKeyFingerprint = fingerprint
-	sites := make([]model.Site, len(choices))
-	for i, c := range choices {
-		sites[i] = model.Site{
-			ID: model.NewID(), HostID: h.ID, Name: strings.TrimSpace(c.Name), Path: c.Path, URL: c.URL,
-			Multisite: c.Multisite, Position: i,
-		}
-	}
-	if err := w.ws.AddHost(ctx, h, sites); err != nil {
+	if err := w.ws.AddHost(ctx, h, sitesOf(h.ID, choices, 0)); err != nil {
 		return AddResult{Problem: ProblemOf(err)}
 	}
 	return AddResult{HostID: h.ID.String()}

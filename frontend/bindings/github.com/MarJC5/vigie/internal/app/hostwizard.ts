@@ -24,6 +24,13 @@ export function Add(d: $models.HostDetails, fingerprint: string, choices: $model
 }
 
 /**
+ * AddSites adds the installs chosen to a stored host, after its own sites, all or nothing.
+ */
+export function AddSites(hostID: string, choices: $models.Choice[] | null): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(2604344035, hostID, choices);
+}
+
+/**
  * Check validates the details: required fields, port, and a name free in the chosen folder.
  */
 export function Check(d: $models.HostDetails): $CancellablePromise<$models.Problem | null> {
@@ -39,10 +46,26 @@ export function Discover(d: $models.HostDetails): $CancellablePromise<$models.Di
 }
 
 /**
+ * DiscoverHost searches the account of a stored host for installs, its own sites marked as
+ * already added, sending DiscoveryEvent as it checks them; it adds nothing.
+ */
+export function DiscoverHost(hostID: string): $CancellablePromise<$models.DiscoverResult> {
+    return $Call.ByID(167424319, hostID);
+}
+
+/**
  * HostKeys asks the server for its keys.
  */
 export function HostKeys(d: $models.HostDetails): $CancellablePromise<$models.KeysResult> {
     return $Call.ByID(770468728, d);
+}
+
+/**
+ * KeepKey records, for a stored host whose address changed, the key the user trusted: the server
+ * must have presented it in this session, as in Add.
+ */
+export function KeepKey(hostID: string, fingerprint: string): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(2691660014, hostID, fingerprint);
 }
 
 /**
