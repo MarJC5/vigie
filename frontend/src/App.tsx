@@ -2,11 +2,12 @@ import { Events } from "@wailsio/runtime";
 import { useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
 
-import { VigieDiscovery, VigieMenu, VigieScans } from "../bindings/events";
-import { Editor, HostWizard, Preferences, Scanner, SiteManager } from "../bindings/github.com/MarJC5/vigie/internal/app";
-import type { Node, ScansState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { VigieDiscovery, VigieMenu, VigieScans, VigieUpdates } from "../bindings/events";
+import { Editor, HostWizard, Preferences, Scanner, SiteManager, Updates } from "../bindings/github.com/MarJC5/vigie/internal/app";
+import type { Node, ScansState, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { AddHostWizard, type WizardApi } from "./components/AddHostWizard/AddHostWizard";
 import { AppShell, type EditApi, type ShellData } from "./components/AppShell/AppShell";
+import type { UpdatesApi } from "./components/UpdateFlow/UpdateFlow";
 import { createI18n } from "./i18n";
 
 // The wizard's service, with the progress of discovery as the Go side sends it.
@@ -20,6 +21,17 @@ const shellData: ShellData = {
   site: (id) => SiteManager.SiteDetail(id),
   host: (id) => SiteManager.HostDetail(id),
   sites: (id) => SiteManager.Sites(id).then((rows) => rows ?? []),
+  history: (id) => Updates.History(id).then((ops) => ops ?? []),
+};
+
+// What updates sites, from the updates service.
+const updatesApi: UpdatesApi = {
+  Preview: Updates.Preview,
+  Update: Updates.Update,
+  UpdateAll: Updates.UpdateAll,
+  Rollback: Updates.Rollback,
+  CancelAll: Updates.CancelAll,
+  History: Updates.History,
 };
 
 // What edits the site manager: the editor, and the wizard's services for a stored host.
@@ -54,6 +66,7 @@ export function App() {
   // A host just added: selected when the shell opens again.
   const [added, setAdded] = useState<string>();
   const [scans, setScans] = useState<ScansState>({ running: [], completed: 0 });
+  const [updates, setUpdates] = useState<UpdatesState>({ running: [], active: 0, bulk: [], completed: 0, sites: [] });
 
   useEffect(() => {
     void Promise.all([Preferences.Language(), SiteManager.Tree()]).then(([lang, tree]) => {
@@ -62,14 +75,21 @@ export function App() {
       setLoaded({ i18n, nodes: tree.nodes ?? [] });
     });
     void Scanner.State().then(setScans);
-    return Events.On(VigieScans, (event) => setScans(event.data));
+    void Updates.State().then(setUpdates);
+    const offScans = Events.On(VigieScans, (event) => setScans(event.data));
+    const offUpdates = Events.On(VigieUpdates, (event) => setUpdates(event.data));
+    return () => {
+      offScans();
+      offUpdates();
+    };
   }, []);
 
-  // A scan stored: the statuses of the tree change.
+  // A scan stored, or an update ended (and the site scanned again): the statuses of the tree change.
+  const ended = scans.completed + updates.completed;
   useEffect(() => {
-    if (scans.completed === 0) return;
+    if (ended === 0) return;
     void SiteManager.Tree().then((tree) => setLoaded((l) => l && { ...l, nodes: tree.nodes ?? [] }));
-  }, [scans.completed]);
+  }, [ended]);
 
   // Reads the tree again, after an edit or a host added.
   const reload = async () => {
@@ -103,6 +123,8 @@ export function App() {
           commands={menuCommands}
           edit={editApi}
           onChanged={reload}
+          updates={updates}
+          updatesApi={updatesApi}
         />
       )}
     </I18nextProvider>

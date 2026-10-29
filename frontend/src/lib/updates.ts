@@ -102,6 +102,16 @@ export function selectionOf(keys: Iterable<string>): SelectionView {
   return sel;
 }
 
+/** The selection of exactly these items, so nothing the preview no longer offers is sent. */
+export function selectionOfItems(items: UpdateItemView[]): SelectionView {
+  return {
+    core: items.some((it) => it.kind === "core"),
+    plugins: items.filter((it) => it.kind === "plugin").map((it) => it.slug),
+    themes: items.filter((it) => it.kind === "theme").map((it) => it.slug),
+    languages: items.some((it) => it.kind === "language"),
+  };
+}
+
 /** The items of a preview that the selection keeps, in the order Vigie updates them: WordPress, the
  plugins, the themes, then the translations. */
 export function plannedItems(preview: SitePreviewView, sel: SelectionView): UpdateItemView[] {
@@ -111,6 +121,11 @@ export function plannedItems(preview: SitePreviewView, sel: SelectionView): Upda
   items.push(...(preview.themes ?? []).filter((it) => sel.themes?.includes(it.slug)));
   if (sel.languages) items.push(...(preview.languages ?? []));
   return items;
+}
+
+/** How many items a preview offers; the translations count as one. */
+export function pendingOf(p: SitePreviewView): number {
+  return (p.core ? 1 : 0) + (p.plugins ?? []).length + (p.themes ?? []).length + ((p.languages ?? []).length > 0 ? 1 : 0);
 }
 
 /** Can an update of this preview start: it was read, the server can dump, something is chosen. */

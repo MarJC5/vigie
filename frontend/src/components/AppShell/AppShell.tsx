@@ -5,11 +5,17 @@ import type {
   CreateResult,
   HostView,
   Node,
+  OperationView,
   Problem,
   ScansState,
+  SitePreviewView,
+  SiteResultView,
   SiteRow,
   SiteView,
+  UpdatesState,
 } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { namesOf } from "../../lib/updates";
+import { BulkDialog } from "../BulkDialog/BulkDialog";
 import { Button } from "../Button/Button";
 import { DeleteDialog } from "../DeleteDialog/DeleteDialog";
 import { EmptyState } from "../EmptyState/EmptyState";
@@ -25,6 +31,7 @@ import { SiteOverview } from "../SiteOverview/SiteOverview";
 import { SitesOverview } from "../SitesOverview/SitesOverview";
 import { type Drag, SiteTree } from "../SiteTree/SiteTree";
 import { StatusDot } from "../StatusDot/StatusDot";
+import { UpdateFlow, type UpdatesApi } from "../UpdateFlow/UpdateFlow";
 import styles from "./AppShell.module.css";
 
 /** What the detail pane reads from the Go side (SiteManager). */
@@ -32,6 +39,8 @@ export interface ShellData {
   site(id: string): Promise<SiteView>;
   host(id: string): Promise<HostView>;
   sites(nodeId: string): Promise<SiteRow[]>;
+  /** The updates and rollbacks of a site, the newest first; without it, no History tab. */
+  history?(siteId: string): Promise<OperationView[]>;
 }
 
 /** The Go services that edit the site manager (app.Editor, and app.HostWizard for a stored host). */
@@ -61,9 +70,21 @@ export interface AppShellProps {
   edit?: EditApi;
   /** Reads the tree again after an edit. */
   onChanged?: () => Promise<void> | void;
+  updates?: UpdatesState;
+  /** Without it, sites are not updated from the window. */
+  updatesApi?: UpdatesApi;
 }
 
 const idle: ScansState = { running: [], completed: 0 };
+const noUpdates: UpdatesState = { running: [], active: 0, bulk: [], completed: 0, sites: [] };
+
+/** The update of a site open in the window. */
+interface Flow {
+  site: { id: string; name: string };
+  keys: Set<string>;
+  names: Map<string, string>;
+  follow: boolean;
+}
 
 type DialogKind = "move" | "delete" | "host" | "find";
 
@@ -79,6 +100,8 @@ export function AppShell({
   commands,
   edit,
   onChanged,
+  updates = noUpdates,
+  updatesApi,
 }: AppShellProps) {
   const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState<string | undefined>(initialSelectedId);
@@ -92,6 +115,10 @@ export function AppShell({
   const [dialog, setDialog] = useState<{ kind: DialogKind; id: string } | null>(null);
   const [problem, setProblem] = useState<Problem | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
+  const [flow, setFlow] = useState<Flow | null>(null);
+  const [bulkDialog, setBulkDialog] = useState<{ id: string; name: string; previews: SitePreviewView[] | null } | null>(null);
+  // The host or folder whose last update of every site shows, until dismissed.
+  const [bulkFor, setBulkFor] = useState<string>();
 
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const say = (p: Problem) => t(p.code, { message: p.detail });
@@ -143,8 +170,8 @@ export function AppShell({
   useEffect(() => {
     onCommand.current = (action) => {
       if (action === "search") openSearch();
-      if (action === "scan" && selectedId) onScan?.(selectedId);
-      if (action === "scan-all") onScan?.("");
+      if (action === "scan" && selectedId) scan(selectedId);
+      if (action === "scan-all") scan("");
       if (action === "new-host") onAddHost?.();
       if (action === "new-folder") void createFolder(folderOf(selectedId));
     };
@@ -164,6 +191,32 @@ export function AppShell({
     return false;
   };
 
+  // A node with a site in an update not over yet: it cannot be scanned or updated.
+  const busySites = new Set(updates.sites ?? []);
+  const updating = (node: Node) =>
+    node.kind === "site" ? busySites.has(node.id) : nodes.some((n) => busySites.has(n.id) && n.path.startsWith(`${node.path}/`));
+  const scan = (id: string) => {
+    const node = id ? byId.get(id) : undefined;
+    if (id ? node && !updating(node) : busySites.size === 0) onScan?.(id);
+  };
+
+  const updateAll = (node: Node) => {
+    if (!updatesApi) return;
+    setBulkDialog({ id: node.id, name: node.name, previews: null });
+    void updatesApi.Preview(node.id).then((previews) => {
+      setBulkDialog((d) => (d && d.id === node.id ? { ...d, previews: previews ?? [] } : d));
+    });
+  };
+  const confirmBulk = async () => {
+    if (!updatesApi || !bulkDialog) return;
+    const id = bulkDialog.id;
+    setBulkDialog(null);
+    setProblem(null);
+    const refused = await updatesApi.UpdateAll(id);
+    if (refused) return setProblem(refused);
+    setBulkFor(id);
+  };
+
   // Opens the menu of a node at a point of the window.
   const openMenu = (id: string, point: { x: number; y: number }) => {
     const rect = shell.current?.getBoundingClientRect();
@@ -173,7 +226,7 @@ export function AppShell({
 
   const choose = (id: string, action: string) => {
     setMenu(null);
-    if (action === "scan") onScan?.(id);
+    if (action === "scan") scan(id);
     if (action === "newFolder") void createFolder(id);
     if (action === "rename") setEditingId(id);
     if (action === "move" || action === "delete" || action === "host" || action === "find") setDialog({ kind: action, id });
@@ -199,6 +252,19 @@ export function AppShell({
       return <span className={styles.running}>{text}</span>;
     }
     if (editingId) return <span className={styles.running}>{t("edit.renameHint")}</span>;
+    if (busySites.size > 0) {
+      return (
+        <>
+          <StatusDot status="unknown" label={t("manager.updating", { count: busySites.size })} />
+          <span className={styles.running}>{t("manager.updating", { count: busySites.size })}</span>
+          {updatesApi && (
+            <Button variant="text" onClick={() => void updatesApi.CancelAll()}>
+              {t("manager.stopAll")}
+            </Button>
+          )}
+        </>
+      );
+    }
     if (left > 0) {
       return (
         <>
@@ -215,7 +281,22 @@ export function AppShell({
     return selected && <Summary node={selected} nodes={nodes} />;
   };
 
-  const inert = dialog !== null || undefined;
+  const inert = (dialog !== null || bulkDialog !== null) || undefined;
+
+  // The update of a site takes the whole window; the shell keeps its state behind it.
+  if (flow && updatesApi) {
+    return (
+      <UpdateFlow
+        api={updatesApi}
+        site={flow.site}
+        keys={flow.keys}
+        names={flow.names}
+        state={updates}
+        follow={flow.follow}
+        onClose={() => setFlow(null)}
+      />
+    );
+  }
 
   return (
     <div ref={shell} className={styles.shell}>
@@ -285,11 +366,26 @@ export function AppShell({
               <Loaded
                 node={selected}
                 data={data}
-                revision={scans.completed}
+                revision={scans.completed + updates.completed}
                 scanning={scanning(selected)}
-                onScan={() => onScan?.(selected.id)}
+                onScan={() => scan(selected.id)}
                 onSelect={setSelectedId}
                 onMore={edit && ((point) => openMenu(selected.id, point))}
+                updating={updating(selected)}
+                {...(updatesApi && {
+                  onUpdate: (site: SiteView, keys: Set<string>) =>
+                    setFlow({ site: { id: site.id, name: site.name }, keys, names: namesOf(site.scan?.updates ?? []), follow: false }),
+                  onFollow: (site: SiteView) =>
+                    setFlow({ site: { id: site.id, name: site.name }, keys: new Set(), names: namesOf(site.scan?.updates ?? []), follow: true }),
+                  // The site turns busy at once; its page then offers to follow the rollback.
+                  onRollback: (site: SiteView, operationID: string) => {
+                    setProblem(null);
+                    void updatesApi.Rollback(site.id, operationID).then((p) => p && setProblem(p));
+                  },
+                  onUpdateAll: () => updateAll(selected),
+                  bulk: bulkFor === selected.id ? (updates.bulk ?? []) : undefined,
+                  onDismissBulk: () => setBulkFor(undefined),
+                })}
               />
             </section>
           ) : (
@@ -315,6 +411,14 @@ export function AppShell({
         />
       )}
 
+      {bulkDialog && (
+        <BulkDialog
+          name={bulkDialog.name}
+          previews={bulkDialog.previews}
+          onConfirm={() => void confirmBulk()}
+          onClose={() => setBulkDialog(null)}
+        />
+      )}
       {edit && dialog && dialogNode && dialog.kind === "move" && (
         <MoveDialog
           node={dialogNode}
@@ -415,6 +519,13 @@ function Loaded({
   onScan,
   onSelect,
   onMore,
+  updating,
+  onUpdate,
+  onFollow,
+  onRollback,
+  onUpdateAll,
+  bulk,
+  onDismissBulk,
 }: {
   node: Node;
   data: ShellData;
@@ -423,6 +534,13 @@ function Loaded({
   onScan: () => void;
   onSelect: (id: string) => void;
   onMore?: (point: { x: number; y: number }) => void;
+  updating: boolean;
+  onUpdate?: (site: SiteView, keys: Set<string>) => void;
+  onFollow?: (site: SiteView) => void;
+  onRollback?: (site: SiteView, operationID: string) => void;
+  onUpdateAll?: () => void;
+  bulk?: SiteResultView[];
+  onDismissBulk?: () => void;
 }) {
   const { t } = useTranslation();
   const [view, setView] = useState<{ id: string; view: View }>();
@@ -431,8 +549,10 @@ function Loaded({
     let current = true;
     const load = async (): Promise<View> => {
       switch (node.kind) {
-        case "site":
-          return { kind: "site", site: await data.site(node.id) };
+        case "site": {
+          const [site, history] = await Promise.all([data.site(node.id), data.history?.(node.id)]);
+          return { kind: "site", site, history };
+        }
         case "host":
           return { kind: "host", host: await data.host(node.id) };
       }
@@ -450,7 +570,23 @@ function Loaded({
   // Nothing until the first answer, which comes at once from the local database.
   if (!view || view.id !== node.id) return null;
   const v = view.view;
-  if (v.kind === "site") return <SiteOverview site={v.site} scanning={scanning} onScan={onScan} onMore={onMore} />;
+  if (v.kind === "site") {
+    const site = v.site;
+    return (
+      <SiteOverview
+        site={site}
+        scanning={scanning}
+        onScan={onScan}
+        onMore={onMore}
+        updating={updating}
+        onUpdate={onUpdate && ((keys) => onUpdate(site, keys))}
+        onFollow={onFollow && (() => onFollow(site))}
+        history={v.history}
+        onRollback={onRollback && ((id) => onRollback(site, id))}
+      />
+    );
+  }
+  const bulkProps = { onUpdateAll, updating, bulk, onDismissBulk };
   if (v.kind === "host") {
     const h = v.host;
     const subtitle = h.alias
@@ -467,6 +603,7 @@ function Loaded({
         onScan={onScan}
         onSelect={onSelect}
         onMore={onMore}
+        {...bulkProps}
       />
     );
   }
@@ -480,11 +617,12 @@ function Loaded({
       onScan={onScan}
       onSelect={onSelect}
       onMore={onMore}
+      {...bulkProps}
     />
   );
 }
 
-type View = { kind: "site"; site: SiteView } | { kind: "host"; host: HostView } | { kind: "folder"; rows: SiteRow[] };
+type View = { kind: "site"; site: SiteView; history?: OperationView[] } | { kind: "host"; host: HostView } | { kind: "folder"; rows: SiteRow[] };
 
 function Detail({ node }: { node: Node }) {
   const { t } = useTranslation();

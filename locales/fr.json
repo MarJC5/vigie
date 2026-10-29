@@ -19,7 +19,10 @@
     "subsites_one": "{{count}} sous-site",
     "subsites_many": "{{count}} sous-sites",
     "subsites_other": "{{count}} sous-sites",
-    "nameOf": "Nom de {{name}}"
+    "nameOf": "Nom de {{name}}",
+    "updating_one": "{{count}} site en mise à jour",
+    "updating_many": "{{count}} sites en mise à jour",
+    "updating_other": "{{count}} sites en mise à jour"
   },
   "empty": {
     "title": "Ajoutez votre premier hébergement",
@@ -294,13 +297,7 @@
   },
   "updates": {
     "label": "Mises à jour en attente",
-    "none": "Tout est à jour.",
-    "change": "{{from}} → {{to}}",
-    "unavailable": "demande une version plus récente de PHP ou de WordPress",
-    "unknown": "état inconnu",
-    "core": "WordPress",
-    "languageOf": "traduction {{language}} de {{item}}",
-    "available": "mise à jour disponible"
+    "none": "Tout est à jour."
   },
   "host": {
     "connection": "{{account}} · port {{port}} · {{wpCli}}",
@@ -486,7 +483,8 @@
       "stopping": "Arrêt après cet élément…",
       "running": "En cours…",
       "rollbackTitle": "Retour en arrière de {{name}}",
-      "stepsLabel": "Étapes de la mise à jour"
+      "stepsLabel": "Étapes de la mise à jour",
+      "notStarted": "Vigie n'a pas pu lancer cette mise à jour. Relevez le site, puis réessayez."
     },
     "result": {
       "doneTitle": "{{name}} est à jour",
@@ -567,7 +565,8 @@
       "stoppedTitle": "La mise à jour s'est arrêtée à {{site}}",
       "stoppedText": "Un élément a cassé ce site : ouvrez-le pour revenir en arrière ou garder la nouvelle version. Les sites suivants du même hébergement n'ont pas été lancés.",
       "open": "Ouvrir {{site}}",
-      "notStarted": "Un site précédent du même hébergement a échoué, ou la mise à jour a été arrêtée"
+      "notStarted": "Un site précédent du même hébergement a échoué, ou la mise à jour a été arrêtée",
+      "dismiss": "Retour aux sites"
     },
     "history": {
       "label": "Historique des mises à jour",
@@ -586,6 +585,22 @@
       "rolledBack": "Revenue en arrière",
       "backupKept": "Sauvegarde gardée sur le serveur :",
       "show": "Afficher les étapes"
-    }
+    },
+    "follow": "Suivre la mise à jour",
+    "bulkDialog": {
+      "title": "Tout mettre à jour dans {{name}}",
+      "lead": "Les sites d'un même hébergement passent l'un après l'autre, chacun sauvegardé et vérifié comme seul ; un hébergement s'arrête au premier site cassé.",
+      "loading": "Vigie lit sur le serveur ce que chaque site va changer.",
+      "items_one": "{{count}} élément",
+      "items_many": "{{count}} éléments",
+      "items_other": "{{count}} éléments",
+      "nothing": "Déjà à jour",
+      "confirm_one": "Mettre à jour {{count}} site",
+      "confirm_many": "Mettre à jour {{count}} sites",
+      "confirm_other": "Mettre à jour {{count}} sites",
+      "sites": "Sites concernés"
+    },
+    "updateAll": "Tout mettre à jour",
+    "updatingAll": "Mise à jour en cours…"
   }
 }

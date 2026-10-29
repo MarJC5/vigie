@@ -16,6 +16,7 @@ import {
   runRows,
   seconds,
   selectionOf,
+  selectionOfItems,
 } from "./updates";
 
 describe("choicesOf", () => {
@@ -46,6 +47,14 @@ describe("selectionOf", () => {
       themes: ["twentyfive"],
       languages: true,
     });
+  });
+});
+
+describe("selectionOfItems", () => {
+  it("sends only what the preview still offers", () => {
+    // Twenty Twenty-Five was chosen from the scan, but the preview no longer offers it.
+    const items = plannedItems(preview, selectionOf(["core", "plugin:akismet", "theme:twentytwentyfive", "languages"]));
+    expect(selectionOfItems(items)).toEqual({ core: true, plugins: ["akismet"], themes: [], languages: true });
   });
 });
 

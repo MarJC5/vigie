@@ -3,6 +3,8 @@ import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 
 import { hostRows, outdatedSite, sharedHost } from "../../fixtures/scans";
 import { sampleTree } from "../../fixtures/tree";
+import { completed, preview, running } from "../../fixtures/updates";
+import type { UpdatesApi } from "../UpdateFlow/UpdateFlow";
 import { AppShell, type EditApi } from "./AppShell";
 
 // Each story renders once per theme, so the window landmarks repeat by construction;
@@ -92,6 +94,61 @@ export const HostWithItsSites: Story = {
   play: async ({ canvas }) => {
     await expect((await canvas.findAllByText("u12ab@ssh.example-host.ch · port 22 · wp-cli"))[0]).toBeInTheDocument();
     await expect(canvas.getAllByRole("table", { name: "Sites of Shared hosting" })).toHaveLength(2);
+  },
+};
+
+const updatesApi = (): UpdatesApi => ({
+  Preview: fn(async () => [preview]),
+  Update: fn(async () => null),
+  UpdateAll: fn(async () => null),
+  Rollback: fn(async () => null),
+  CancelAll: fn(async () => {}),
+  History: fn(async () => [completed]),
+});
+
+// The data of a site whose id is the tree's, as in the window.
+const boulangerie = { ...data, site: async () => ({ ...outdatedSite, id: "boulangerie" }) };
+
+// A site in an update: counted in the footer, not scanned, and its window opens again from its page.
+export const SiteUpdating: Story = {
+  args: {
+    data: { ...boulangerie, history: async () => [running, completed] },
+    initialSelectedId: "boulangerie",
+    onScan: fn(),
+    updates: { running: [{ ...running, siteId: "boulangerie" }], active: 1, bulk: [], completed: 0, sites: ["boulangerie"] },
+    updatesApi: updatesApi(),
+  },
+  play: async ({ canvas, args }) => {
+    const [pane] = canvas.getAllByRole("complementary", { name: "Site manager" });
+    await expect(pane).toHaveTextContent("1 site updating");
+    await userEvent.click(within(pane!).getByRole("button", { name: "Stop all" }));
+    await expect(args.updatesApi!.CancelAll).toHaveBeenCalled();
+    await userEvent.click((await canvas.findAllByRole("button", { name: "Follow the update" }))[0]!);
+    await expect((await canvas.findAllByRole("heading", { level: 1, name: "Updating boulangerie-exemple.ch" }))[0]).toBeInTheDocument();
+    // The window closes back on the site.
+    await userEvent.click(canvas.getAllByRole("button", { name: "Close" })[0]!);
+    await expect((await canvas.findAllByRole("heading", { level: 1, name: "boulangerie-exemple.ch" }))[0]).toBeInTheDocument();
+    await expect(args.onScan).not.toHaveBeenCalled();
+  },
+};
+
+export const UpdateFromTheTab: Story = {
+  args: { data: { ...boulangerie, history: async () => [completed] }, initialSelectedId: "boulangerie", updatesApi: updatesApi() },
+  play: async ({ canvas, args }) => {
+    await userEvent.click((await canvas.findAllByRole("tab", { name: /Updates/ }))[0]!);
+    await userEvent.click(canvas.getAllByRole("button", { name: "Update (4)" })[0]!);
+    await expect((await canvas.findAllByRole("heading", { level: 1, name: "Update boulangerie-exemple.ch" }))[0]).toBeInTheDocument();
+    await expect(args.updatesApi!.Preview).toHaveBeenCalledWith("boulangerie");
+  },
+};
+
+export const UpdateAllOfAHost: Story = {
+  args: { data, initialSelectedId: "shared", updatesApi: updatesApi() },
+  play: async ({ canvas, args }) => {
+    await userEvent.click((await canvas.findAllByRole("button", { name: "Update all" }))[0]!);
+    await expect(args.updatesApi!.Preview).toHaveBeenCalledWith("shared");
+    await userEvent.click((await canvas.findAllByRole("button", { name: "Update 1 site" }))[0]!);
+    await waitFor(() => expect(args.updatesApi!.UpdateAll).toHaveBeenCalledWith("shared"));
   },
 };
 

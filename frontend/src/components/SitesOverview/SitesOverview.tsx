@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 
-import type { SiteRow } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { SiteResultView, SiteRow } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { BulkSummary } from "../BulkSummary/BulkSummary";
 import { Button } from "../Button/Button";
 import { Counts } from "../Counts/Counts";
 import { DetailHeader } from "../DetailHeader/DetailHeader";
@@ -19,11 +20,49 @@ export interface SitesOverviewProps {
   onSelect: (siteId: string) => void;
   /** Opens the host's or folder's menu under the point given. */
   onMore?: (point: { x: number; y: number }) => void;
+  /** Asks to update every site; without it, no such button. */
+  onUpdateAll?: () => void;
+  /** A site here is in an update not over yet. */
+  updating?: boolean;
+  /** How the last update of every site here ended, shown in place of the table until dismissed. */
+  bulk?: SiteResultView[];
+  onDismissBulk?: () => void;
 }
 
-/** A host or a folder: counts over its sites, then the table of their latest scans. */
-export function SitesOverview({ title, icon, subtitle, rows, scanLabel, scanning, onScan, onSelect, onMore }: SitesOverviewProps) {
+/** A host or a folder: counts over its sites, then the table of their latest scans, or how their
+ update ended. */
+export function SitesOverview({
+  title,
+  icon,
+  subtitle,
+  rows,
+  scanLabel,
+  scanning,
+  onScan,
+  onSelect,
+  onMore,
+  onUpdateAll,
+  updating = false,
+  bulk,
+  onDismissBulk,
+}: SitesOverviewProps) {
   const { t } = useTranslation();
+  const pending = rows.reduce((n, r) => n + r.pending, 0);
+  if (bulk && bulk.length > 0) {
+    return (
+      <>
+        <DetailHeader title={title} icon={icon} subtitle={subtitle} />
+        <BulkSummary results={bulk} onOpen={onSelect} />
+        {onDismissBulk && (
+          <div>
+            <Button variant="outline" onClick={onDismissBulk}>
+              {t("update.bulk.dismiss")}
+            </Button>
+          </div>
+        )}
+      </>
+    );
+  }
   return (
     <>
       <DetailHeader title={title} icon={icon} subtitle={subtitle}>
@@ -43,12 +82,17 @@ export function SitesOverview({ title, icon, subtitle, rows, scanLabel, scanning
         label={t("host.summary")}
         items={[
           { label: t("host.sites"), value: rows.length },
-          { label: t("host.pending"), value: rows.reduce((n, r) => n + r.pending, 0), tone: "warn" },
+          { label: t("host.pending"), value: pending, tone: "warn" },
           { label: t("host.attention"), value: rows.filter((r) => r.status === "warn").length, tone: "warn" },
           { label: t("host.notScanned"), value: rows.filter((r) => r.status === "").length },
         ]}
       >
-        <Button variant="primary" icon="refresh" onClick={onScan} disabled={scanning} aria-busy={scanning || undefined}>
+        {onUpdateAll && (
+          <Button icon="update" onClick={onUpdateAll} disabled={updating || scanning || pending === 0} aria-busy={updating || undefined}>
+            {updating ? t("update.updatingAll") : t("update.updateAll")}
+          </Button>
+        )}
+        <Button variant="primary" icon="refresh" onClick={onScan} disabled={scanning || updating} aria-busy={scanning || undefined}>
           {scanning ? t("overview.scanning") : scanLabel}
         </Button>
       </Counts>

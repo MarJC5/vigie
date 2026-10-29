@@ -27,6 +27,8 @@ export interface UpdateWindowProps {
   operation: OperationView | null;
   /** The update or rollback was asked for and Vigie has not reported its first step yet. */
   starting?: boolean;
+  /** The run asked for, or followed, is a rollback. */
+  rollingBack?: boolean;
   /** "Stop after this item" was asked for. */
   stopping?: boolean;
   /** Why Vigie refused to start (the site is busy, the preview changed). */
@@ -46,6 +48,7 @@ export function UpdateWindow({
   names,
   operation,
   starting = false,
+  rollingBack = false,
   stopping = false,
   problem,
   onClose,
@@ -54,14 +57,19 @@ export function UpdateWindow({
   onRollback,
 }: UpdateWindowProps) {
   const { t } = useTranslation();
-  const rollback = operation?.kind === "rollback";
+  const rollback = rollingBack || operation?.kind === "rollback";
   const running = starting || operation?.outcome === "running";
   const ended = !!operation && !running;
   const steps = [t("update.steps.preview"), t("update.steps.run"), t("update.steps.result")];
   const close: WizardAction = { label: t("update.result.close"), onClick: onClose };
 
+  const refusal = problem ? t(problem.code, { message: problem.detail }) : "";
   const refused = problem && (
-    <Notice title={t("update.preview.cannot")} text={t(problem.code, { message: problem.detail })} />
+    <Notice
+      title={t("update.preview.cannot")}
+      text={refusal}
+      detail={problem.detail && !refusal.includes(problem.detail) ? problem.detail : undefined}
+    />
   );
 
   if (!operation && !starting) {

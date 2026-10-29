@@ -17,7 +17,9 @@
     "stopAll": "Stop all",
     "subsites_one": "{{count}} subsite",
     "subsites_other": "{{count}} subsites",
-    "nameOf": "Name of {{name}}"
+    "nameOf": "Name of {{name}}",
+    "updating_one": "{{count}} site updating",
+    "updating_other": "{{count}} sites updating"
   },
   "empty": {
     "title": "Add your first host",
@@ -282,13 +284,7 @@
   },
   "updates": {
     "label": "Pending updates",
-    "none": "Everything is up to date.",
-    "change": "{{from}} → {{to}}",
-    "unavailable": "needs a newer PHP or WordPress",
-    "unknown": "state unknown",
-    "core": "WordPress",
-    "languageOf": "{{language}} translation of {{item}}",
-    "available": "update available"
+    "none": "Everything is up to date."
   },
   "host": {
     "connection": "{{account}} · port {{port}} · {{wpCli}}",
@@ -469,7 +465,8 @@
       "stopping": "Stopping after this item…",
       "running": "Updating…",
       "rollbackTitle": "Rolling back {{name}}",
-      "stepsLabel": "Steps of the update"
+      "stepsLabel": "Steps of the update",
+      "notStarted": "Vigie could not start this update. Scan the site, then try again."
     },
     "result": {
       "doneTitle": "{{name}} is up to date",
@@ -550,7 +547,8 @@
       "stoppedTitle": "The update stopped at {{site}}",
       "stoppedText": "An item broke this site: open it to roll back or keep the new version. The next sites of the same host were not started.",
       "open": "Open {{site}}",
-      "notStarted": "An earlier site of the same host failed, or the update was stopped"
+      "notStarted": "An earlier site of the same host failed, or the update was stopped",
+      "dismiss": "Back to the sites"
     },
     "history": {
       "label": "History of updates",
@@ -568,6 +566,20 @@
       "rolledBack": "Rolled back",
       "backupKept": "Backup kept on the server:",
       "show": "Show the steps"
-    }
+    },
+    "follow": "Follow the update",
+    "bulkDialog": {
+      "title": "Update everything in {{name}}",
+      "lead": "The sites of a host go one after another, each backed up and checked as on its own; a host stops at its first broken site.",
+      "loading": "Vigie reads on the server what each site will change.",
+      "items_one": "{{count}} item",
+      "items_other": "{{count}} items",
+      "nothing": "Up to date",
+      "confirm_one": "Update {{count}} site",
+      "confirm_other": "Update {{count}} sites",
+      "sites": "Sites"
+    },
+    "updateAll": "Update all",
+    "updatingAll": "Updating…"
   }
 }

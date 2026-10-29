@@ -1,14 +1,17 @@
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { ScanView, SiteView, UpdateView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { OperationView, ScanView, SiteView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { since } from "../../lib/time";
+import { choicesOf, namesOf, offeredKeys } from "../../lib/updates";
 import { Button } from "../Button/Button";
 import { DetailHeader } from "../DetailHeader/DetailHeader";
 import { InfoList, InfoRow } from "../InfoList/InfoList";
 import { Notice } from "../Notice/Notice";
 import { StatusDot } from "../StatusDot/StatusDot";
 import { TabBar } from "../TabBar/TabBar";
+import { UpdateChoices } from "../UpdateChoices/UpdateChoices";
+import { UpdateHistory } from "../UpdateHistory/UpdateHistory";
 import styles from "./SiteOverview.module.css";
 
 export interface SiteOverviewProps {
@@ -19,15 +22,43 @@ export interface SiteOverviewProps {
   now?: Date;
   /** Opens the site's menu under the point given. */
   onMore?: (point: { x: number; y: number }) => void;
+  /** The site is in an update or a rollback not over yet: it cannot be scanned or updated. */
+  updating?: boolean;
+  /** Opens the update of the items chosen; without it, the updates are only listed. */
+  onUpdate?: (keys: Set<string>) => void;
+  /** Opens the window of the update going on. */
+  onFollow?: () => void;
+  /** The updates and rollbacks of the site, the newest first; without it, no History tab. */
+  history?: OperationView[];
+  onRollback?: (operationID: string) => void;
 }
 
-/** A site with its latest scan: an overview, and the updates waiting. */
-export function SiteOverview({ site, scanning, onScan, now, onMore }: SiteOverviewProps) {
+/** A site with its latest scan: an overview, the updates waiting, and the history of its updates. */
+export function SiteOverview({
+  site,
+  scanning,
+  onScan,
+  now,
+  onMore,
+  updating = false,
+  onUpdate,
+  onFollow,
+  history,
+  onRollback,
+}: SiteOverviewProps) {
   const { t, i18n } = useTranslation();
   const [tab, setTab] = useState("overview");
   const panel = useId();
   const scan = site.scan;
   const pending = scan ? scan.pending.core + scan.pending.plugins + scan.pending.themes + scan.pending.languages : 0;
+  const updates = scan?.outcome === "completed" ? (scan.updates ?? []) : [];
+  const groups = choicesOf(updates);
+  const names = namesOf(updates);
+  // The choice goes back to every item offered at each new scan.
+  const scanKey = `${site.id}:${scan?.finished ?? ""}`;
+  const [choice, setChoice] = useState<{ key: string; chosen: Set<string> }>();
+  const chosen = choice?.key === scanKey ? choice.chosen : offeredKeys(groups);
+  const offered = offeredKeys(groups).size;
 
   return (
     <div className={styles.overview}>
@@ -52,18 +83,44 @@ export function SiteOverview({ site, scanning, onScan, now, onMore }: SiteOvervi
         tabs={[
           { id: "overview", label: t("tabs.overview") },
           { id: "updates", label: t("tabs.updates"), count: pending > 0 ? pending : undefined },
+          ...(history ? [{ id: "history", label: t("tabs.history") }] : []),
         ]}
         value={tab}
         onChange={setTab}
         panelId={panel}
       >
-        <Button variant="primary" icon="refresh" onClick={onScan} disabled={scanning} aria-busy={scanning || undefined}>
-          {scanning ? t("overview.scanning") : t("action.scanNow")}
-        </Button>
+        {updating && onFollow ? (
+          <Button variant="primary" icon="update" onClick={onFollow}>
+            {t("update.follow")}
+          </Button>
+        ) : tab === "updates" && onUpdate && offered > 0 ? (
+          <>
+            <span className={styles.selected}>{t("update.selected", { count: chosen.size, total: offered })}</span>
+            <Button variant="primary" icon="update" onClick={() => onUpdate(chosen)} disabled={chosen.size === 0 || updating}>
+              {t("update.updateSelected", { count: chosen.size })}
+            </Button>
+          </>
+        ) : (
+          <Button variant="primary" icon="refresh" onClick={onScan} disabled={scanning || updating} aria-busy={scanning || undefined}>
+            {scanning ? t("overview.scanning") : t("action.scanNow")}
+          </Button>
+        )}
       </TabBar>
       <div role="tabpanel" id={panel} aria-labelledby={`${panel}-${tab}`} className={styles.panel}>
-        {scan?.problem && <ScanNotice code={scan.problem.code} detail={scan.problem.detail} />}
-        {tab === "overview" ? <Overview site={site} /> : <Updates scan={scan} />}
+        {scan?.problem && tab !== "history" && <ScanNotice code={scan.problem.code} detail={scan.problem.detail} />}
+        {tab === "overview" && <Overview site={site} />}
+        {tab === "updates" &&
+          scan?.outcome === "completed" &&
+          (updates.length === 0 ? (
+            <InfoList>
+              <InfoRow label={t("updates.label")}>{t("updates.none")}</InfoRow>
+            </InfoList>
+          ) : (
+            <UpdateChoices groups={groups} chosen={chosen} onChange={(next) => setChoice({ key: scanKey, chosen: next })} names={names} />
+          ))}
+        {tab === "history" && history && (
+          <UpdateHistory operations={history} names={names} onRollback={(id) => onRollback?.(id)} busy={updating} />
+        )}
       </div>
     </div>
   );
@@ -135,41 +192,6 @@ function newestCore(scan: ScanView): string {
     .map((u) => u.updateVersion)
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
     .at(-1) ?? "";
-}
-
-function Updates({ scan }: { scan: ScanView | null }) {
-  const { t } = useTranslation();
-  if (!scan || scan.outcome !== "completed") return null;
-  const updates = scan.updates ?? [];
-  if (updates.length === 0) {
-    return (
-      <InfoList>
-        <InfoRow label={t("updates.label")}>{t("updates.none")}</InfoRow>
-      </InfoList>
-    );
-  }
-  return (
-    <InfoList>
-      {updates.map((u) => (
-        <InfoRow key={`${u.kind}-${u.slug}-${u.language}-${u.updateVersion}`} label={updateName(t, u)}>
-          {u.update === "available" &&
-            (u.kind === "language" ? t("updates.available") : t("updates.change", { from: u.version, to: u.updateVersion }))}
-          {u.update === "unavailable" && t("updates.unavailable")}
-          {u.update === "unknown" && t("updates.unknown")}
-        </InfoRow>
-      ))}
-    </InfoList>
-  );
-}
-
-function updateName(t: T, u: UpdateView): string {
-  switch (u.kind) {
-    case "core":
-      return t("updates.core");
-    case "language":
-      return t("updates.languageOf", { language: u.language, item: u.slug || t("updates.core") });
-  }
-  return u.title || u.slug;
 }
 
 /** Why the last scan did not complete; the raw message only when the text does not already say it. */

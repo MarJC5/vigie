@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent } from "storybook/test";
 
 import { hostRows } from "../../fixtures/scans";
+import { bulk } from "../../fixtures/updates";
 import { SitesOverview } from "./SitesOverview";
 
 const meta = {
@@ -50,5 +51,32 @@ export const Scanning: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.getAllByRole("button", { name: "Scanning…" })[0]).toHaveAttribute("aria-busy", "true");
     await expect(canvas.queryAllByRole("progressbar")).toHaveLength(0);
+  },
+};
+
+export const UpdateAll: Story = {
+  args: { onUpdateAll: fn() },
+  play: async ({ canvas, args }) => {
+    await userEvent.click(canvas.getAllByRole("button", { name: "Update all" })[0]!);
+    await expect(args.onUpdateAll).toHaveBeenCalled();
+  },
+};
+
+// While a site here updates, neither a scan nor another update starts.
+export const Updating: Story = {
+  args: { onUpdateAll: fn(), updating: true },
+  play: async ({ canvas }) => {
+    await expect(canvas.getAllByRole("button", { name: "Updating…" })[0]).toBeDisabled();
+    await expect(canvas.getAllByRole("button", { name: "Scan host" })[0]).toBeDisabled();
+  },
+};
+
+export const AfterAnUpdate: Story = {
+  args: { onUpdateAll: fn(), bulk, onDismissBulk: fn() },
+  play: async ({ canvas, args }) => {
+    await expect(canvas.getAllByRole("table", { name: "Result by site" })).toHaveLength(2);
+    await expect(canvas.queryAllByRole("table", { name: "Sites of Shared hosting" })).toHaveLength(0);
+    await userEvent.click(canvas.getAllByRole("button", { name: "Back to the sites" })[0]!);
+    await expect(args.onDismissBulk).toHaveBeenCalled();
   },
 };

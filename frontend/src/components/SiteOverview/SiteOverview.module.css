@@ -10,3 +10,8 @@
   flex-direction: column;
   gap: var(--vg-space-4);
 }
+
+.selected {
+  font-size: var(--vg-text-small);
+  color: var(--vg-text-muted);
+}

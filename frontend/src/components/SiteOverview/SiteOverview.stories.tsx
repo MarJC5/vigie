@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 
 import { failedSite, newSite, offlineSite, outdatedSite, upToDateSite } from "../../fixtures/scans";
+import { historyToRollBack } from "../../fixtures/updates";
 import { SiteOverview } from "./SiteOverview";
 
 const meta = {
@@ -29,15 +30,41 @@ export const NeedsAttention: Story = {
 };
 
 export const UpdatesTab: Story = {
-  play: async ({ canvas }) => {
+  args: { onUpdate: fn() },
+  play: async ({ canvas, args }) => {
     const [tab] = canvas.getAllByRole("tab", { name: /Updates/ });
     await expect(tab).toHaveTextContent("5");
     await userEvent.click(tab!);
     const [panel] = canvas.getAllByRole("tabpanel");
     await expect(panel).toHaveTextContent("Akismet Anti-spam5.3 → 5.7.2");
-    await expect(panel).toHaveTextContent("needs a newer PHP or WordPress");
-    await expect(panel).toHaveTextContent("fr_FR translation of akismetupdate available");
-    await expect(panel).toHaveTextContent("fr_FR translation of WordPressupdate available");
+    await expect(panel).toHaveTextContent("Not offered: needs a newer PHP or WordPress");
+    // Every item offered is chosen; a click leaves one out.
+    // Only the first render has its Updates tab open.
+    await expect(canvas.getAllByText("4 of 4 selected")).toHaveLength(1);
+    await userEvent.click(within(panel!).getByRole("checkbox", { name: /WooCommerce/ }));
+    await userEvent.click(canvas.getAllByRole("button", { name: "Update (3)" })[0]!);
+    await expect(args.onUpdate).toHaveBeenCalledWith(new Set(["core", "plugin:akismet", "languages"]));
+  },
+};
+
+export const History: Story = {
+  args: { history: historyToRollBack, onRollback: fn() },
+  play: async ({ canvas, args }) => {
+    await userEvent.click(canvas.getAllByRole("tab", { name: "History" })[0]!);
+    const [panel] = canvas.getAllByRole("tabpanel");
+    await expect(panel).toHaveTextContent("Update of 2 items");
+    await userEvent.click(within(panel!).getByRole("button", { name: "Roll back" }));
+    await expect(args.onRollback).toHaveBeenCalledWith("op-failed");
+  },
+};
+
+// A site in an update cannot be scanned or updated; its window opens again from the page.
+export const Updating: Story = {
+  args: { updating: true, onUpdate: fn(), onFollow: fn() },
+  play: async ({ canvas, args }) => {
+    await expect(canvas.queryAllByRole("button", { name: "Scan now" })).toHaveLength(0);
+    await userEvent.click(canvas.getAllByRole("button", { name: "Follow the update" })[0]!);
+    await expect(args.onFollow).toHaveBeenCalled();
   },
 };
 
