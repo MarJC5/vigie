@@ -307,5 +307,56 @@
     "minimise": "Minimize",
     "zoom": "Zoom",
     "front": "Bring All to Front"
+  },
+  "edit": {
+    "cancel": "Cancel",
+    "move": {
+      "title": "Move \"{{name}}\"",
+      "leadHost": "Choose the folder that will hold it. Its sites go with it.",
+      "leadFolder": "Choose the folder that will hold it, with everything in it.",
+      "destination": "Destination",
+      "root": "Top level",
+      "current": "current place",
+      "confirm": "Move"
+    },
+    "delete": {
+      "titleHost": "Delete \"{{name}}\"?",
+      "titleSite": "Delete \"{{name}}\"?",
+      "titleFolder": "Delete the folder \"{{name}}\"?",
+      "leadHost_one": "Its site, its scans and its update history are removed from Vigie.",
+      "leadHost_other": "Its {{count}} sites, their scans and their update history are removed from Vigie.",
+      "leadSite": "Its scans and its update history are removed from Vigie.",
+      "leadFolder": "The folder is empty.",
+      "notEmpty": "Only an empty folder can be deleted: move or delete what it holds first.",
+      "keep": "Nothing changes on the server: the sites, and the backups Vigie made in ~/.vigie, stay there.",
+      "confirmHost": "Delete the host",
+      "confirmSite": "Delete the site",
+      "confirmFolder": "Delete the folder",
+      "network": "network, {{count}} subsites"
+    },
+    "host": {
+      "title": "Edit the connection",
+      "lead_one": "{{name}} and its site use these settings.",
+      "lead_other": "{{name}} and its {{count}} sites use these settings.",
+      "maxConcurrent": "Commands at a time",
+      "maxConcurrentHint": "On shared hosting, keep 2",
+      "addressChanged": "The address changed: once saved, Vigie asks {{host}} for its key, for you to check it.",
+      "save": "Save",
+      "maxInvalid": "A whole number from 1 to 10, or empty for 2."
+    },
+    "key": {
+      "title": "Check the key of {{host}}",
+      "lead": "The address of the host changed. Compare this fingerprint with the one your host publishes before trusting it.",
+      "trust": "Trust"
+    },
+    "find": {
+      "title": "Find new sites",
+      "lead": "WordPress installs of {{name}}. Vigie adds only the ones you check.",
+      "searching": "Searching the account...",
+      "none": "No new install on this account.",
+      "add_one": "Add {{count}} site",
+      "add_other": "Add {{count}} sites",
+      "close": "Close"
+    }
   }
 }

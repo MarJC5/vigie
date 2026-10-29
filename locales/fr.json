@@ -318,5 +318,59 @@
     "minimise": "Placer dans le Dock",
     "zoom": "Réduire/agrandir",
     "front": "Tout ramener au premier plan"
+  },
+  "edit": {
+    "cancel": "Annuler",
+    "move": {
+      "title": "Déplacer « {{name}} »",
+      "leadHost": "Choisissez le dossier qui le contiendra. Ses sites le suivent.",
+      "leadFolder": "Choisissez le dossier qui le contiendra, avec tout ce qu'il contient.",
+      "destination": "Destination",
+      "root": "Racine",
+      "current": "emplacement actuel",
+      "confirm": "Déplacer"
+    },
+    "delete": {
+      "titleHost": "Supprimer « {{name}} » ?",
+      "titleSite": "Supprimer « {{name}} » ?",
+      "titleFolder": "Supprimer le dossier « {{name}} » ?",
+      "leadHost_one": "Son site, ses relevés et son historique de mises à jour sont retirés de Vigie.",
+      "leadHost_other": "Ses {{count}} sites, leurs relevés et leur historique de mises à jour sont retirés de Vigie.",
+      "leadHost_many": "Ses {{count}} sites, leurs relevés et leur historique de mises à jour sont retirés de Vigie.",
+      "leadSite": "Ses relevés et son historique de mises à jour sont retirés de Vigie.",
+      "leadFolder": "Le dossier est vide.",
+      "notEmpty": "Seul un dossier vide peut être supprimé : déplacez ou supprimez d'abord ce qu'il contient.",
+      "keep": "Rien ne change sur le serveur : les sites, et les sauvegardes faites par Vigie dans ~/.vigie, y restent.",
+      "confirmHost": "Supprimer l'hébergement",
+      "confirmSite": "Supprimer le site",
+      "confirmFolder": "Supprimer le dossier",
+      "network": "réseau, {{count}} sous-sites"
+    },
+    "host": {
+      "title": "Modifier la connexion",
+      "lead_one": "{{name}} et son site utilisent ces réglages.",
+      "lead_other": "{{name}} et ses {{count}} sites utilisent ces réglages.",
+      "lead_many": "{{name}} et ses {{count}} sites utilisent ces réglages.",
+      "maxConcurrent": "Commandes à la fois",
+      "maxConcurrentHint": "En mutualisé, gardez 2",
+      "addressChanged": "L'adresse a changé : une fois enregistrée, Vigie demande sa clé à {{host}} pour que vous la vérifiiez.",
+      "save": "Enregistrer",
+      "maxInvalid": "Un nombre entier de 1 à 10, ou vide pour 2."
+    },
+    "key": {
+      "title": "Vérifier la clé de {{host}}",
+      "lead": "L'adresse de l'hébergement a changé. Comparez cette empreinte avec celle que publie votre hébergeur avant de l'approuver.",
+      "trust": "Approuver"
+    },
+    "find": {
+      "title": "Chercher de nouveaux sites",
+      "lead": "Installations WordPress de {{name}}. Vigie n'ajoute que celles que vous cochez.",
+      "searching": "Recherche sur le compte…",
+      "none": "Aucune nouvelle installation sur ce compte.",
+      "add_one": "Ajouter {{count}} site",
+      "add_other": "Ajouter {{count}} sites",
+      "add_many": "Ajouter {{count}} sites",
+      "close": "Fermer"
+    }
   }
 }
