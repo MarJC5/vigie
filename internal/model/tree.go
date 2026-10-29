@@ -36,6 +36,9 @@ type Node struct {
 	ID   ID
 }
 
+// Root is the top of the tree: the folder without ID that holds root folders and hosts.
+var Root = Node{Kind: KindFolder, ID: NoID}
+
 // Tree is the site manager in memory: nested folders, hosts in folders (or at the root), sites
 // under hosts. Folders and hosts sharing a parent folder share one namespace, so paths are
 // unambiguous; names are compared without case.
@@ -278,6 +281,36 @@ func (t *Tree) childSite(host ID, name string) (Site, bool) {
 // its hosts; under a host, its sites. Siblings are ordered by position, then by name without case.
 func (t *Tree) Walk(fn func(n Node, depth int)) {
 	t.walkFolder(NoID, 0, fn)
+}
+
+// SitesUnder returns the site itself, the sites of a host, or every site under a folder (Root
+// for all), in tree order.
+func (t *Tree) SitesUnder(n Node) []Site {
+	var sites []Site
+	collect := func(node Node, _ int) {
+		if node.Kind == KindSite {
+			sites = append(sites, t.sites[node.ID])
+		}
+	}
+	switch n.Kind {
+	case KindSite:
+		if s, ok := t.sites[n.ID]; ok {
+			sites = append(sites, s)
+		}
+	case KindHost:
+		h, ok := t.hosts[n.ID]
+		if !ok {
+			return nil
+		}
+		t.walkFolder(h.FolderID, 0, func(node Node, depth int) {
+			if node.Kind == KindSite && t.sites[node.ID].HostID == n.ID {
+				collect(node, depth)
+			}
+		})
+	case KindFolder:
+		t.walkFolder(n.ID, 0, collect)
+	}
+	return sites
 }
 
 func (t *Tree) walkFolder(folder ID, depth int, fn func(Node, int)) {

@@ -216,3 +216,27 @@ func TestWalkVisitsParentsFirstInOrder(t *testing.T) {
 		t.Fatalf("Walk order =\n%q\nwant\n%q", got, want)
 	}
 }
+
+func TestSitesUnderANode(t *testing.T) {
+	tr, ids := sampleTree(t)
+	names := func(sites []model.Site) []string {
+		var out []string
+		for _, s := range sites {
+			out = append(out, s.Name)
+		}
+		return out
+	}
+	for _, tc := range []struct {
+		node model.Node
+		want string
+	}{
+		{model.Node{Kind: model.KindSite, ID: ids["misits.ch"]}, "misits.ch"},
+		{model.Node{Kind: model.KindHost, ID: ids["Infomaniak"]}, "misits.ch ok-jordane.ch"},
+		{model.Node{Kind: model.KindFolder, ID: ids["Clients"]}, "misits.ch ok-jordane.ch"},
+		{model.Root, "misits.ch ok-jordane.ch example.org"},
+	} {
+		if got := strings.Join(names(tr.SitesUnder(tc.node)), " "); got != tc.want {
+			t.Errorf("SitesUnder(%v) = %q, want %q", tc.node.Kind, got, tc.want)
+		}
+	}
+}
