@@ -169,6 +169,12 @@
     "unknownColor": "Cette couleur n'existe pas.",
     "folderNotEmpty": "Seul un dossier vide peut être supprimé : déplacez ou supprimez d'abord ce qu'il contient.",
     "moveIntoItself": "Un dossier ne peut pas aller dans lui-même ni dans l'un de ses dossiers.",
+    "busy": "Une mise à jour ou un retour en arrière est déjà en cours sur ce site : attendez sa fin.",
+    "noDumpTool": "Le serveur n'a pas d'outil de sauvegarde de base de données (mariadb-dump ou mysqldump), et Vigie sauvegarde la base avant chaque mise à jour.",
+    "cannotLoad": "WordPress ne se charge pas : {{message}}",
+    "previewFirst": "Regardez d'abord l'aperçu de la mise à jour : il a pu changer.",
+    "notOffered": "Cet élément n'est plus dans l'aperçu : regardez-le à nouveau.",
+    "nothingToRollBack": "Il n'y a rien à annuler.",
     "error": "Une erreur s'est produite : {{message}}"
   },
   "wizard": {

@@ -15,6 +15,7 @@ declare module "@wailsio/runtime" {
             "vigie:discovery": app$0.DiscoveryProgress;
             "vigie:menu": app$0.MenuCommand;
             "vigie:scans": app$0.ScansState;
+            "vigie:updates": app$0.UpdatesState;
         }
     }
 }

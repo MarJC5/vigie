@@ -6,12 +6,14 @@ import * as HostWizard from "./hostwizard.js";
 import * as Preferences from "./preferences.js";
 import * as Scanner from "./scanner.js";
 import * as SiteManager from "./sitemanager.js";
+import * as Updates from "./updates.js";
 export {
     Editor,
     HostWizard,
     Preferences,
     Scanner,
-    SiteManager
+    SiteManager,
+    Updates
 };
 
 export type {
@@ -29,14 +31,21 @@ export type {
     KeysResult,
     MenuCommand,
     Node,
+    OperationView,
     PendingView,
     Problem,
     RunningScan,
     ScanView,
     ScansState,
+    SelectionView,
+    SitePreviewView,
+    SiteResultView,
     SiteRow,
     SiteView,
+    StepView,
     TestResult,
     Tree,
-    UpdateView
+    UpdateItemView,
+    UpdateView,
+    UpdatesState
 } from "./models.js";

@@ -161,6 +161,12 @@
     "unknownColor": "This color does not exist.",
     "folderNotEmpty": "Only an empty folder can be deleted: move or delete what it holds first.",
     "moveIntoItself": "A folder cannot go into itself or one of its folders.",
+    "busy": "An update or a rollback already runs on this site: wait for its end.",
+    "noDumpTool": "The server has no database dump tool (mariadb-dump or mysqldump), and Vigie dumps the database before every update.",
+    "cannotLoad": "WordPress cannot be loaded: {{message}}",
+    "previewFirst": "Look at the preview of the update first: it may have changed.",
+    "notOffered": "This item is not in the preview any more: look at it again.",
+    "nothingToRollBack": "There is nothing to roll back.",
     "error": "Something went wrong: {{message}}"
   },
   "wizard": {

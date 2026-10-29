@@ -12,7 +12,9 @@ import (
 	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/store"
+	"github.com/MarJC5/vigie/internal/update"
 	"github.com/MarJC5/vigie/internal/workspace"
+	"github.com/MarJC5/vigie/internal/wpcli"
 )
 
 // Problem is why a step failed. Code is the key of its text in the catalogs ("failure.timedOut",
@@ -41,6 +43,12 @@ var problemCodes = []struct {
 	{model.ErrSiteMoved, "problem.siteMoved"},
 	{model.ErrUnknownColor, "problem.unknownColor"},
 	{store.ErrNotEmpty, "problem.folderNotEmpty"},
+	{store.ErrBusy, "problem.busy"},
+	{wpcli.ErrNoDumpTool, "problem.noDumpTool"},
+	{wpcli.ErrCannotLoad, "problem.cannotLoad"},
+	{errPreviewFirst, "problem.previewFirst"},
+	{update.ErrNotOffered, "problem.notOffered"},
+	{update.ErrNothingToRollBack, "problem.nothingToRollBack"},
 	{store.ErrCycle, "problem.moveIntoItself"},
 	{errNodeNotFound, "problem.notFound"},
 	{model.ErrNotFound, "problem.folderNotFound"},

@@ -203,6 +203,30 @@ export interface Node {
 }
 
 /**
+ * OperationView is an update or a rollback of a site, with its steps.
+ */
+export interface OperationView {
+    "id": string;
+    "siteId": string;
+
+    /**
+     * update, rollback
+     */
+    "kind": string;
+    "started": string;
+    "finished": string;
+    "outcome": string;
+    "summary": string;
+    "backupDir": string;
+    "steps": StepView[] | null;
+
+    /**
+     * Rollback is what a rollback would undo, on the latest operation only; nil otherwise.
+     */
+    "rollback": UpdateItemView | null;
+}
+
+/**
  * PendingView counts the updates that can be installed.
  */
 export interface PendingView {
@@ -290,6 +314,59 @@ export interface ScansState {
 }
 
 /**
+ * SelectionView is what the user chose to update on a site.
+ */
+export interface SelectionView {
+    "core": boolean;
+    "plugins": string[] | null;
+    "themes": string[] | null;
+    "languages": boolean;
+}
+
+/**
+ * SitePreviewView is what an update of a site would change.
+ */
+export interface SitePreviewView {
+    "siteId": string;
+    "name": string;
+    "path": string;
+    "core": UpdateItemView | null;
+    "plugins": UpdateItemView[] | null;
+    "themes": UpdateItemView[] | null;
+    "languages": UpdateItemView[] | null;
+    "dumpTool": boolean;
+
+    /**
+     * the preview could not be read
+     */
+    "problem": Problem | null;
+
+    /**
+     * the folder of the site's backups on the server
+     */
+    "backups": string;
+}
+
+/**
+ * SiteResultView is how the update of one site of a host or folder ended.
+ */
+export interface SiteResultView {
+    "siteId": string;
+    "path": string;
+
+    /**
+     * updated, failed, refused, nothing, not-started, cancelled
+     */
+    "outcome": string;
+
+    /**
+     * the step that failed, or why it was refused
+     */
+    "detail": string;
+    "operationId": string;
+}
+
+/**
  * SiteRow is a line of the table of a host or folder.
  */
 export interface SiteRow {
@@ -327,6 +404,30 @@ export interface SiteView {
 }
 
 /**
+ * StepView is one step of an operation.
+ */
+export interface StepView {
+    "position": number;
+    "step": string;
+    "itemKind": string;
+    "slug": string;
+    "versionBefore": string;
+    "versionAfter": string;
+
+    /**
+     * RFC 3339
+     */
+    "started": string;
+
+    /**
+     * empty while it runs
+     */
+    "finished": string;
+    "outcome": string;
+    "message": string;
+}
+
+/**
  * TestResult is the answer of TestConnection.
  */
 export interface TestResult {
@@ -341,6 +442,20 @@ export interface TestResult {
  */
 export interface Tree {
     "nodes": Node[] | null;
+}
+
+/**
+ * UpdateItemView is one item an update changes.
+ */
+export interface UpdateItemView {
+    /**
+     * core, plugin, theme, language
+     */
+    "kind": string;
+    "slug": string;
+    "language": string;
+    "from": string;
+    "to": string;
 }
 
 /**
@@ -361,4 +476,20 @@ export interface UpdateView {
      * available, unavailable, unknown
      */
     "update": string;
+}
+
+/**
+ * UpdatesState is what runs now and how the last update of several sites ended; Completed counts
+ * the operations ended since Vigie started, so the window reloads what changed when it grows.
+ */
+export interface UpdatesState {
+    "running": OperationView[] | null;
+
+    /**
+     * Active counts the runs not over yet: between two sites of a host, nothing runs but the run
+     * goes on.
+     */
+    "active": number;
+    "bulk": SiteResultView[] | null;
+    "completed": number;
 }
