@@ -82,7 +82,7 @@
     "sites_other": "{{name}} · {{count}} sites"
   },
   "cli": {
-    "usage": "Usage: vigie [--data-dir <dir>] [command]\n\nWithout a command, Vigie opens its window.\n\nCommands:\n  tree [--json]                  Print the site manager with each site's status\n  scan [path] [--json]           Scan a site, a host or a folder (everything without a path)\n  discover <host path> [--json]  List the WordPress installs of a host (adds nothing)\n  version                        Print the version\n  help                           Print this help\n\nPaths name folders, hosts and sites: \"Clients/Infomaniak/misits.ch\".\nExit status: 0 all good, 1 needs attention, 3 error.\n",
+    "usage": "Usage: vigie [--data-dir <dir>] [command]\n\nWithout a command, Vigie opens its window.\n\nCommands:\n  tree [--json]                   Print the site manager with each site's status\n  scan [path] [--json]            Scan a site, a host or a folder (everything without a path)\n  discover <host path> [--json]   List the WordPress installs of a host (adds nothing)\n  update [path] [--yes] [--json]  Preview, then update a site, a host or a folder (asks first)\n  version                         Print the version\n  help                            Print this help\n\nPaths name folders, hosts and sites: \"Clients/Infomaniak/misits.ch\".\nExit status: 0 all good, 1 needs attention, 3 error.\n",
     "unknownCommand": "unknown command \"{{command}}\"",
     "unknownOption": "unknown option \"{{option}}\"",
     "needsHost": "discover needs the path of a host, for example \"Clients/Infomaniak\"",
@@ -99,7 +99,27 @@
     "languageUpdates_other": "{{count}} translation updates",
     "unchecked": "some update checks did not reach wordpress.org",
     "truncated_one": "More installs were found: only the first {{count}} was checked.",
-    "truncated_other": "More installs were found: only the first {{count}} were checked."
+    "truncated_other": "More installs were found: only the first {{count}} were checked.",
+    "update": {
+      "prompt_one": "Update {{count}} site? [y/N] ",
+      "prompt_other": "Update {{count}} sites? [y/N] ",
+      "declined": "Nothing was updated.",
+      "nothing": "Nothing to update.",
+      "nothingHere": "nothing to update",
+      "cannot": "cannot be updated: {{reason}}",
+      "noDumpTool": "the server has no database dump tool (mariadb-dump or mysqldump), and Vigie dumps the database before every update",
+      "core": "WordPress {{from}} → {{to}}",
+      "plugin": "plugin {{slug}} {{from}} → {{to}}",
+      "theme": "theme {{slug}} {{from}} → {{to}}",
+      "languages": "translations: {{list}}",
+      "updated": "updated",
+      "failed": "failed: {{message}}",
+      "rollbackHint": "Roll back from the window: the History tab of the site.",
+      "notStarted": "not started",
+      "refused": "refused: {{reason}}",
+      "cancelled": "cancelled",
+      "jsonNeedsYes": "--json needs --yes: a script cannot answer the confirmation"
+    }
   },
   "outcome": {
     "cannotLoad": "WordPress cannot be loaded: {{message}}",

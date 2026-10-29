@@ -56,6 +56,7 @@ func Parse(args []string) (Options, error) {
 
 // Env is what the commands need from outside; main fills it, tests replace it.
 type Env struct {
+	In       io.Reader // answers the confirmation of an update
 	Out, Err io.Writer
 	Lang     string
 	Texts    *i18n.Catalogs
@@ -83,12 +84,17 @@ func Run(ctx context.Context, opts Options, env Env) int {
 	case "help", "--help", "-h":
 		fmt.Fprint(env.Out, env.t("cli.usage", nil))
 		return exitOK
-	case "tree", "scan", "discover":
+	case "tree", "scan", "discover", "update":
 	default:
 		fmt.Fprintf(env.Err, "vigie: %s\n\n%s", env.t("cli.unknownCommand", map[string]any{"command": name}), env.t("cli.usage", nil))
 		return exitError
 	}
 
+	// --yes answers the confirmation of an update, for scripts; no other command asks.
+	yes := false
+	if name == "update" {
+		rest, yes = withoutFlag(rest, "--yes")
+	}
 	args, asJSON, err := commandArgs(rest)
 	if err != nil {
 		return env.fail(env.t("cli.unknownOption", map[string]any{"option": err.Error()}))
@@ -107,6 +113,8 @@ func Run(ctx context.Context, opts Options, env Env) int {
 		return tree(ctx, env, ws, asJSON)
 	case "scan":
 		return scanPath(ctx, env, ws, path, asJSON)
+	case "update":
+		return updatePath(ctx, env, ws, path, asJSON, yes)
 	}
 	return discoverHost(ctx, env, ws, path, asJSON)
 }
@@ -124,4 +132,18 @@ func commandArgs(args []string) (rest []string, asJSON bool, err error) {
 		}
 	}
 	return rest, asJSON, nil
+}
+
+// withoutFlag removes a flag from the arguments and tells whether it was there.
+func withoutFlag(args []string, flag string) ([]string, bool) {
+	var rest []string
+	found := false
+	for _, a := range args {
+		if a == flag {
+			found = true
+			continue
+		}
+		rest = append(rest, a)
+	}
+	return rest, found
 }

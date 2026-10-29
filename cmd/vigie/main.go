@@ -62,7 +62,7 @@ func runCommand(opts cli.Options) int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 	return cli.Run(ctx, opts, cli.Env{
-		Out: os.Stdout, Err: os.Stderr, Lang: i18n.LanguageFromEnv(os.Getenv), Texts: texts,
+		In: os.Stdin, Out: os.Stdout, Err: os.Stderr, Lang: i18n.LanguageFromEnv(os.Getenv), Texts: texts,
 		Open: func(ctx context.Context) (*workspace.Workspace, error) { return open(ctx, opts) },
 	})
 }
