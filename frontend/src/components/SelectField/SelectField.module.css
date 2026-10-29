@@ -1,0 +1,50 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.label {
+  font-size: var(--vg-text-caption);
+  font-weight: var(--vg-weight-strong);
+  letter-spacing: var(--vg-tracking-caps);
+  text-transform: uppercase;
+  color: var(--vg-text-muted);
+}
+
+.control {
+  position: relative;
+  display: flex;
+}
+
+/* Drawn by the field itself: WebKit's native select ignores the outline. */
+.select {
+  appearance: none;
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  box-sizing: border-box;
+  padding: 0 calc(var(--vg-space-3) + 22px) 0 var(--vg-space-3);
+  border: 0;
+  border-radius: var(--vg-radius-control);
+  box-shadow: inset 0 0 0 1.5px var(--vg-border-strong);
+  background: var(--vg-surface-main);
+  color: var(--vg-text);
+  font: var(--vg-text-body) var(--vg-font);
+}
+
+.select:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 1px;
+}
+
+.caret {
+  position: absolute;
+  top: 50%;
+  right: var(--vg-space-3);
+  transform: translateY(-50%);
+  display: flex;
+  color: var(--vg-text-muted);
+  pointer-events: none;
+}

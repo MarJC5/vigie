@@ -1,0 +1,105 @@
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+.table th {
+  padding: 0 var(--vg-space-3) var(--vg-space-2);
+  text-align: left;
+  font-size: var(--vg-text-caption);
+  font-weight: var(--vg-weight-strong);
+  letter-spacing: var(--vg-tracking-caps);
+  text-transform: uppercase;
+  color: var(--vg-text-muted);
+}
+
+.table td {
+  height: 48px;
+  padding: 0 var(--vg-space-3);
+  vertical-align: middle;
+}
+
+.table tbody tr:nth-child(odd) td {
+  background: var(--vg-surface-row);
+}
+
+.table tbody tr td:first-child {
+  border-radius: var(--vg-radius-control) 0 0 var(--vg-radius-control);
+}
+
+.table tbody tr td:last-child {
+  border-radius: 0 var(--vg-radius-control) var(--vg-radius-control) 0;
+}
+
+.table tr[data-selectable="false"] {
+  color: var(--vg-text-muted);
+}
+
+.check {
+  width: 36px;
+}
+
+.box {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--vg-accent);
+}
+
+.name {
+  width: 100%;
+  height: 32px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--vg-radius-control);
+  box-shadow: inset 0 0 0 1.5px var(--vg-border);
+  background: transparent;
+  color: var(--vg-text);
+  font: var(--vg-weight-strong) var(--vg-text-body) var(--vg-font);
+}
+
+.name:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 1px;
+}
+
+.fixed {
+  padding: 0 10px;
+  font-weight: var(--vg-weight-strong);
+}
+
+.path {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--vg-text-caption);
+  color: var(--vg-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.state {
+  display: block;
+  font-size: var(--vg-text-small);
+  font-weight: var(--vg-weight-strong);
+}
+
+.detail {
+  display: block;
+  font-size: var(--vg-text-caption);
+  color: var(--vg-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

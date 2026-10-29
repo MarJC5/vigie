@@ -1,0 +1,88 @@
+.window {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--vg-surface-main);
+  color: var(--vg-text);
+}
+
+/* Leaves the macOS window buttons alone on the left, moves the window like a title bar. */
+.top {
+  height: 52px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 var(--vg-space-4);
+  --wails-draggable: drag;
+}
+
+.top button {
+  --wails-draggable: no-drag;
+}
+
+.main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  padding: var(--vg-space-2) var(--vg-space-7) var(--vg-space-6);
+}
+
+.content {
+  width: 100%;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.content[data-width="wide"] {
+  max-width: 1040px;
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--vg-space-2);
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--vg-text-display);
+  font-weight: var(--vg-weight-strong);
+  line-height: var(--vg-leading-tight);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.lead {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--vg-text-muted);
+  text-wrap: pretty;
+}
+
+.bar {
+  height: 72px;
+  flex: none;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--vg-space-5);
+  padding: 0 var(--vg-space-6);
+  border-top: 1px solid var(--vg-border);
+}
+
+.side {
+  flex: 1;
+  display: flex;
+}
+
+.end {
+  justify-content: flex-end;
+}

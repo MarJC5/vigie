@@ -1,0 +1,19 @@
+.row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  align-self: center;
+  cursor: pointer;
+}
+
+.box {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--vg-accent);
+}
+
+.box:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 2px;
+}
