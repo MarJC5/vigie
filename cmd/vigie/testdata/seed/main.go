@@ -1,6 +1,7 @@
 // Command seed prepares a data directory for the end-to-end test of the window: the interface
 // language when -lang is given, and unless -empty a fictional site manager that mirrors the fixture of the interface
-// stories, with fictional scans of two of its sites (never real hosts or sites).
+// stories, with fictional scans of two of its sites and the history of updates of one (never real
+// hosts or sites).
 //
 // Usage: seed [-lang en|fr] [-empty] <data-dir>
 package main
@@ -74,6 +75,63 @@ func seed(ctx context.Context, dir, lang string, empty bool) error {
 	}
 	for _, err := range errs {
 		if err != nil {
+			return err
+		}
+	}
+	return history(ctx, db, sites[1].ID)
+}
+
+// history stores two updates of the site with updates pending: a week ago, one that went well;
+// today, one stopped by the check after its second plugin, whose rollback is offered.
+func history(ctx context.Context, db *store.DB, site model.ID) error {
+	now := time.Now().Add(-10 * time.Minute)
+	step := func(at time.Time, kind model.StepKind, item model.ItemKind, slug, before, after string) model.OperationStep {
+		return model.OperationStep{Step: kind, ItemKind: item, Slug: slug, VersionBefore: before, VersionAfter: after,
+			Started: at, Finished: at.Add(2 * time.Second), Outcome: model.StepDone}
+	}
+	week := now.Add(-7 * 24 * time.Hour)
+	failing := step(now.Add(14*time.Second), model.StepCheck, model.ItemPlugin, "woocommerce", "", "")
+	failing.Outcome, failing.Message = model.StepFailed, "http://boulangerie-exemple.ch/ answers 500 (critical-error)"
+	runs := []struct {
+		op    model.Operation
+		steps []model.OperationStep
+	}{
+		{
+			model.Operation{ID: model.NewID(), SiteID: site, Kind: model.OperationUpdate, Started: week, Finished: week.Add(31 * time.Second),
+				Outcome: model.OperationCompleted, Summary: "1 of 1", BackupDir: "~/.vigie/backups/" + site.String() + "/" + week.UTC().Format("20060102-150405")},
+			[]model.OperationStep{
+				step(week, model.StepBackupDatabase, "", "", "", ""),
+				step(week.Add(2*time.Second), model.StepBackupFiles, model.ItemPlugin, "akismet", "", ""),
+				step(week.Add(4*time.Second), model.StepUpdate, model.ItemPlugin, "akismet", "5.2", "5.3"),
+				step(week.Add(6*time.Second), model.StepCheck, model.ItemPlugin, "akismet", "", ""),
+			},
+		},
+		{
+			model.Operation{ID: model.NewID(), SiteID: site, Kind: model.OperationUpdate, Started: now, Finished: now.Add(16 * time.Second),
+				Outcome: model.OperationFailed, Summary: "1 of 2", BackupDir: "~/.vigie/backups/" + site.String() + "/" + now.UTC().Format("20060102-150405")},
+			[]model.OperationStep{
+				step(now, model.StepBackupDatabase, "", "", "", ""),
+				step(now.Add(2*time.Second), model.StepBackupFiles, model.ItemPlugin, "akismet", "", ""),
+				step(now.Add(4*time.Second), model.StepBackupFiles, model.ItemPlugin, "woocommerce", "", ""),
+				step(now.Add(6*time.Second), model.StepUpdate, model.ItemPlugin, "akismet", "5.3", "5.7.2"),
+				step(now.Add(8*time.Second), model.StepCheck, model.ItemPlugin, "akismet", "", ""),
+				step(now.Add(10*time.Second), model.StepUpdate, model.ItemPlugin, "woocommerce", "9.8.1", "10.2.0"),
+				failing,
+			},
+		},
+	}
+	for _, r := range runs {
+		r.op.PID = os.Getpid()
+		if err := db.StartOperation(ctx, r.op); err != nil {
+			return err
+		}
+		for i, st := range r.steps {
+			st.Position = i
+			if err := db.SaveOperationStep(ctx, r.op.ID, st); err != nil {
+				return err
+			}
+		}
+		if err := db.FinishOperation(ctx, r.op.ID, r.op.Outcome, r.op.Finished, r.op.Summary); err != nil {
 			return err
 		}
 	}
