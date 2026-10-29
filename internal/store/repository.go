@@ -149,72 +149,92 @@ func checkNoCycle(ctx context.Context, tx *sql.Tx, self, parent model.ID) error 
 
 // SaveHost creates or updates a host.
 func (db *DB) SaveHost(ctx context.Context, h model.Host) error {
-	if err := h.Validate(); err != nil {
-		return err
-	}
+	return db.withTx(ctx, func(tx *sql.Tx) error { return saveHost(ctx, tx, h) })
+}
+
+// AddHostWithSites stores a new host and its sites in one transaction: if one is refused,
+// nothing is stored.
+func (db *DB) AddHostWithSites(ctx context.Context, h model.Host, sites []model.Site) error {
 	return db.withTx(ctx, func(tx *sql.Tx) error {
-		if h.FolderID != model.NoID {
-			ok, err := exists(ctx, tx, "folders", h.FolderID)
-			if err != nil {
-				return err
-			}
-			if !ok {
-				return fmt.Errorf("folder %s: %w", h.FolderID, model.ErrNotFound)
-			}
-		}
-		taken, err := nameTaken(ctx, tx, folderNamespace, parentArg(h.FolderID), h.ID, h.Name)
-		if err != nil {
+		if err := saveHost(ctx, tx, h); err != nil {
 			return err
 		}
-		if taken {
-			return fmt.Errorf("%q: %w", h.Name, model.ErrDuplicateName)
+		for _, s := range sites {
+			if err := saveSite(ctx, tx, s); err != nil {
+				return err
+			}
 		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO hosts (id, folder_id, name, alias, hostname, port, user, key_path,
-				wp_cli, max_concurrent, host_key_fingerprint, color, notes, position)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-			ON CONFLICT (id) DO UPDATE SET folder_id = excluded.folder_id, name = excluded.name,
-				alias = excluded.alias, hostname = excluded.hostname, port = excluded.port, user = excluded.user,
-				key_path = excluded.key_path, wp_cli = excluded.wp_cli, max_concurrent = excluded.max_concurrent,
-				host_key_fingerprint = excluded.host_key_fingerprint, color = excluded.color,
-				notes = excluded.notes, position = excluded.position`,
-			h.ID.String(), parentArg(h.FolderID), h.Name, h.Alias, h.Hostname, h.Port, h.User, h.KeyPath,
-			h.WPCLI, h.MaxConcurrent, h.HostKeyFingerprint, int(h.Color), h.Notes, h.Position)
-		return duplicate(err, h.Name)
+		return nil
 	})
 }
 
-// SaveSite creates or updates a site with its tags and subsites.
-func (db *DB) SaveSite(ctx context.Context, s model.Site) error {
-	if err := model.ValidateName(s.Name); err != nil {
+func saveHost(ctx context.Context, tx *sql.Tx, h model.Host) error {
+	if err := h.Validate(); err != nil {
 		return err
 	}
-	return db.withTx(ctx, func(tx *sql.Tx) error {
-		ok, err := exists(ctx, tx, "hosts", s.HostID)
+	if h.FolderID != model.NoID {
+		ok, err := exists(ctx, tx, "folders", h.FolderID)
 		if err != nil {
 			return err
 		}
 		if !ok {
-			return fmt.Errorf("host %s: %w", s.HostID, model.ErrNotFound)
+			return fmt.Errorf("folder %s: %w", h.FolderID, model.ErrNotFound)
 		}
-		taken, err := nameTaken(ctx, tx, "SELECT name FROM sites WHERE host_id = ?1 AND id <> ?2",
-			s.HostID.String(), s.ID, s.Name)
-		if err != nil {
-			return err
-		}
-		if taken {
-			return fmt.Errorf("%q: %w", s.Name, model.ErrDuplicateName)
-		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO sites (id, host_id, name, path, url, wp_cli, color, notes, position, multisite)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-			ON CONFLICT (id) DO UPDATE SET host_id = excluded.host_id, name = excluded.name, path = excluded.path,
-				url = excluded.url, wp_cli = excluded.wp_cli, color = excluded.color, notes = excluded.notes,
-				position = excluded.position, multisite = excluded.multisite`,
-			s.ID.String(), s.HostID.String(), s.Name, s.Path, s.URL, s.WPCLI, int(s.Color), s.Notes, s.Position, s.Multisite)
-		if err != nil {
-			return duplicate(err, s.Name)
-		}
-		return saveSiteChildren(ctx, tx, s)
-	})
+	}
+	taken, err := nameTaken(ctx, tx, folderNamespace, parentArg(h.FolderID), h.ID, h.Name)
+	if err != nil {
+		return err
+	}
+	if taken {
+		return fmt.Errorf("%q: %w", h.Name, model.ErrDuplicateName)
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO hosts (id, folder_id, name, alias, hostname, port, user, key_path,
+			wp_cli, max_concurrent, host_key_fingerprint, color, notes, position)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT (id) DO UPDATE SET folder_id = excluded.folder_id, name = excluded.name,
+			alias = excluded.alias, hostname = excluded.hostname, port = excluded.port, user = excluded.user,
+			key_path = excluded.key_path, wp_cli = excluded.wp_cli, max_concurrent = excluded.max_concurrent,
+			host_key_fingerprint = excluded.host_key_fingerprint, color = excluded.color,
+			notes = excluded.notes, position = excluded.position`,
+		h.ID.String(), parentArg(h.FolderID), h.Name, h.Alias, h.Hostname, h.Port, h.User, h.KeyPath,
+		h.WPCLI, h.MaxConcurrent, h.HostKeyFingerprint, int(h.Color), h.Notes, h.Position)
+	return duplicate(err, h.Name)
+}
+
+// SaveSite creates or updates a site with its tags and subsites.
+func (db *DB) SaveSite(ctx context.Context, s model.Site) error {
+	return db.withTx(ctx, func(tx *sql.Tx) error { return saveSite(ctx, tx, s) })
+}
+
+func saveSite(ctx context.Context, tx *sql.Tx, s model.Site) error {
+	if err := model.ValidateName(s.Name); err != nil {
+		return err
+	}
+	ok, err := exists(ctx, tx, "hosts", s.HostID)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return fmt.Errorf("host %s: %w", s.HostID, model.ErrNotFound)
+	}
+	taken, err := nameTaken(ctx, tx, "SELECT name FROM sites WHERE host_id = ?1 AND id <> ?2",
+		s.HostID.String(), s.ID, s.Name)
+	if err != nil {
+		return err
+	}
+	if taken {
+		return fmt.Errorf("%q: %w", s.Name, model.ErrDuplicateName)
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO sites (id, host_id, name, path, url, wp_cli, color, notes, position, multisite)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT (id) DO UPDATE SET host_id = excluded.host_id, name = excluded.name, path = excluded.path,
+			url = excluded.url, wp_cli = excluded.wp_cli, color = excluded.color, notes = excluded.notes,
+			position = excluded.position, multisite = excluded.multisite`,
+		s.ID.String(), s.HostID.String(), s.Name, s.Path, s.URL, s.WPCLI, int(s.Color), s.Notes, s.Position, s.Multisite)
+	if err != nil {
+		return duplicate(err, s.Name)
+	}
+	return saveSiteChildren(ctx, tx, s)
 }
 
 // saveSiteChildren replaces the tags (in order, without repeats) and the subsites of a site.

@@ -194,3 +194,29 @@ func TestDeleteOnlyEmptyNodes(t *testing.T) {
 func TestDBImplementsRepository(t *testing.T) {
 	var _ store.Repository = migrated(t)
 }
+
+func TestAddHostWithSitesIsAllOrNothing(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	host := model.Host{ID: model.NewID(), Name: "Bench", Alias: "bench"}
+	sites := []model.Site{
+		{ID: model.NewID(), HostID: host.ID, Name: "a.example.test", Path: "~/sites/a"},
+		{ID: model.NewID(), HostID: host.ID, Name: "A.example.test", Path: "~/sites/b"}, // same name, other case
+	}
+	if err := db.AddHostWithSites(ctx, host, sites); !errors.Is(err, model.ErrDuplicateName) {
+		t.Fatalf("AddHostWithSites() = %v, want ErrDuplicateName", err)
+	}
+	tree, err := db.LoadTree(ctx)
+	must(t, err)
+	if _, ok := tree.Host(host.ID); ok {
+		t.Fatal("the host was stored although a site was refused")
+	}
+
+	sites[1].Name = "b.example.test"
+	must(t, db.AddHostWithSites(ctx, host, sites))
+	tree, err = db.LoadTree(ctx)
+	must(t, err)
+	if got := tree.SitesUnder(model.Node{Kind: model.KindHost, ID: host.ID}); len(got) != 2 {
+		t.Fatalf("stored sites = %d, want 2", len(got))
+	}
+}
