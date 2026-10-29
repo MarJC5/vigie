@@ -73,3 +73,24 @@ func Replay(t testing.TB, fake *sshxtest.Fake, fixture, root, wp string) {
 	}
 	fake.Set(remote, Recorded(t, fixture, "cli-info"))
 }
+
+// ReplayUpdates makes fake answer update commands of the updates fixture (at ~/sites/updates,
+// with the WP-CLI command wp) with their recordings. Each recording holds the command line its
+// typed command gave when recorded, so a command that changed gets no answer.
+func ReplayUpdates(t testing.TB, fake *sshxtest.Fake, names ...string) {
+	t.Helper()
+	for _, name := range names {
+		_, here, _, _ := runtime.Caller(0)
+		data, err := os.ReadFile(filepath.Join(filepath.Dir(here), "..", "testdata", "recorded", "updates", name+".json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var r struct {
+			Args []string
+		}
+		if err := json.Unmarshal(data, &r); err != nil || len(r.Args) != 1 {
+			t.Fatalf("%s: one command line expected: %v", name, err)
+		}
+		fake.Set(r.Args[0], Recorded(t, "updates", name))
+	}
+}
