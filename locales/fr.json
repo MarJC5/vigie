@@ -82,5 +82,50 @@
     "sites_one": "{{name}} · {{count}} site",
     "sites_many": "{{name}} · {{count}} sites",
     "sites_other": "{{name}} · {{count}} sites"
+  },
+  "cli": {
+    "usage": "Usage : vigie [--data-dir <dossier>] [commande]\n\nSans commande, Vigie ouvre sa fenêtre.\n\nCommandes :\n  tree [--json]                      Affiche le gestionnaire de sites avec l'état de chaque site\n  scan [chemin] [--json]             Relève un site, un hébergement ou un dossier (tout sans chemin)\n  discover <hébergement> [--json]    Liste les installations WordPress d'un hébergement (n'ajoute rien)\n  version                            Affiche la version\n  help                               Affiche cette aide\n\nLes chemins nomment dossiers, hébergements et sites : « Clients/Infomaniak/misits.ch ».\nCode de sortie : 0 tout va bien, 1 à surveiller, 3 erreur.\n",
+    "unknownCommand": "commande inconnue « {{command}} »",
+    "unknownOption": "option inconnue « {{option}} »",
+    "needsHost": "discover attend le chemin d'un hébergement, par exemple « Clients/Infomaniak »",
+    "notFound": "rien à « {{path}} »",
+    "notAHost": "« {{path}} » n'est pas un hébergement",
+    "noSites": "Aucun site sous ce chemin.",
+    "wordpress": "WordPress {{version}}",
+    "coreUpdate": "WordPress {{version}} disponible",
+    "pluginUpdates_one": "{{count}} mise à jour d'extension",
+    "pluginUpdates_many": "{{count}} mises à jour d'extensions",
+    "pluginUpdates_other": "{{count}} mises à jour d'extensions",
+    "themeUpdates_one": "{{count}} mise à jour de thème",
+    "themeUpdates_many": "{{count}} mises à jour de thèmes",
+    "themeUpdates_other": "{{count}} mises à jour de thèmes",
+    "languageUpdates_one": "{{count}} mise à jour de traduction",
+    "languageUpdates_many": "{{count}} mises à jour de traductions",
+    "languageUpdates_other": "{{count}} mises à jour de traductions",
+    "unchecked": "certaines vérifications n'ont pas atteint wordpress.org",
+    "truncated_one": "D'autres installations ont été trouvées : seule la première a été vérifiée.",
+    "truncated_many": "D'autres installations ont été trouvées : seules les {{count}} premières ont été vérifiées.",
+    "truncated_other": "D'autres installations ont été trouvées : seules les {{count}} premières ont été vérifiées."
+  },
+  "outcome": {
+    "cannotLoad": "WordPress ne se charge pas : {{message}}",
+    "failed": "Relevé impossible : {{message}}",
+    "cancelled": "Relevé annulé"
+  },
+  "failure": {
+    "unresolved": "Le nom de l'hébergement est introuvable. Vérifiez l'adresse.",
+    "refused": "Le serveur refuse la connexion sur ce port. Vérifiez le port, et que SSH est activé pour ce compte.",
+    "timedOut": "Le serveur ne répond pas. Certains hébergeurs n'acceptent SSH que depuis des adresses IP autorisées (o2switch par exemple) : autorisez la vôtre dans le panneau de l'hébergeur.",
+    "hostKeyUnknown": "La clé du serveur n'est pas encore approuvée. Ajoutez à nouveau l'hébergement pour vérifier et approuver son empreinte.",
+    "hostKeyChanged": "La clé du serveur a changé depuis qu'elle a été approuvée. Cela peut être un changement de serveur ou une attaque : vérifiez auprès de l'hébergeur avant d'approuver la nouvelle clé.",
+    "authRefused": "Le serveur refuse la clé. Est-elle chargée dans votre agent SSH (Bitwarden, 1Password, ssh-agent) ?",
+    "keyFileMissing": "Le fichier de clé indiqué pour cet hébergement n'existe pas.",
+    "other": "Échec de SSH : {{message}}"
+  },
+  "found": {
+    "new": "Nouveau",
+    "alreadyAdded": "Déjà dans Vigie",
+    "notInstalled": "Non installé",
+    "cannotLoad": "Ne se charge pas"
   }
 }

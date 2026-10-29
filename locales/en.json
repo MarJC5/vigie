@@ -79,5 +79,46 @@
   "bottom": {
     "sites_one": "{{name}} · {{count}} site",
     "sites_other": "{{name}} · {{count}} sites"
+  },
+  "cli": {
+    "usage": "Usage: vigie [--data-dir <dir>] [command]\n\nWithout a command, Vigie opens its window.\n\nCommands:\n  tree [--json]                  Print the site manager with each site's status\n  scan [path] [--json]           Scan a site, a host or a folder (everything without a path)\n  discover <host path> [--json]  List the WordPress installs of a host (adds nothing)\n  version                        Print the version\n  help                           Print this help\n\nPaths name folders, hosts and sites: \"Clients/Infomaniak/misits.ch\".\nExit status: 0 all good, 1 needs attention, 3 error.\n",
+    "unknownCommand": "unknown command \"{{command}}\"",
+    "unknownOption": "unknown option \"{{option}}\"",
+    "needsHost": "discover needs the path of a host, for example \"Clients/Infomaniak\"",
+    "notFound": "nothing at \"{{path}}\"",
+    "notAHost": "\"{{path}}\" is not a host",
+    "noSites": "No site under this path.",
+    "wordpress": "WordPress {{version}}",
+    "coreUpdate": "WordPress {{version}} available",
+    "pluginUpdates_one": "{{count}} plugin update",
+    "pluginUpdates_other": "{{count}} plugin updates",
+    "themeUpdates_one": "{{count}} theme update",
+    "themeUpdates_other": "{{count}} theme updates",
+    "languageUpdates_one": "{{count}} translation update",
+    "languageUpdates_other": "{{count}} translation updates",
+    "unchecked": "some update checks did not reach wordpress.org",
+    "truncated_one": "More installs were found: only the first {{count}} was checked.",
+    "truncated_other": "More installs were found: only the first {{count}} were checked."
+  },
+  "outcome": {
+    "cannotLoad": "WordPress cannot be loaded: {{message}}",
+    "failed": "Scan failed: {{message}}",
+    "cancelled": "Scan cancelled"
+  },
+  "failure": {
+    "unresolved": "The host name could not be found. Check the address.",
+    "refused": "The server refused the connection on this port. Check the port, and that SSH is enabled for this account.",
+    "timedOut": "The server did not answer. Some hosts only accept SSH from allowed IP addresses (o2switch, for example): allow yours in the host's control panel.",
+    "hostKeyUnknown": "The server's key is not trusted yet. Add the host again to check and trust its fingerprint.",
+    "hostKeyChanged": "The server's key has changed since it was trusted. It can be a server change or an attack: check with the host before trusting the new key.",
+    "authRefused": "The server refused the key. Is it loaded in your SSH agent (Bitwarden, 1Password, ssh-agent)?",
+    "keyFileMissing": "The key file set for this host does not exist.",
+    "other": "SSH failed: {{message}}"
+  },
+  "found": {
+    "new": "New",
+    "alreadyAdded": "Already in Vigie",
+    "notInstalled": "Not installed",
+    "cannotLoad": "Cannot be loaded"
   }
 }

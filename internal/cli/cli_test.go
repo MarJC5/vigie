@@ -2,11 +2,13 @@ package cli_test
 
 import (
 	"bytes"
+	"context"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/MarJC5/vigie/internal/cli"
+	"github.com/MarJC5/vigie/internal/workspace"
 )
 
 func TestParse(t *testing.T) {
@@ -49,25 +51,38 @@ func TestOpensWindowWithoutCommand(t *testing.T) {
 	}
 }
 
+// run runs a command line with a workspace over the bench recordings, in lang.
+func run(t *testing.T, lang string, args ...string) (int, string, string) {
+	t.Helper()
+	opts, err := cli.Parse(args)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out, errOut bytes.Buffer
+	code := cli.Run(context.Background(), opts, cli.Env{
+		Out: &out, Err: &errOut, Lang: lang, Texts: texts(t),
+		Open: func(context.Context) (*workspace.Workspace, error) { return benchWorkspace(t), nil },
+	})
+	return code, out.String(), errOut.String()
+}
+
 func TestRunVersion(t *testing.T) {
-	var out, errOut bytes.Buffer
-	code := cli.Run(cli.Options{Command: []string{"version"}}, &out, &errOut)
-	if code != 0 || out.String() != "vigie dev\n" {
-		t.Fatalf("Run(version) = %d, %q", code, out.String())
+	code, out, _ := run(t, "en", "version")
+	if code != 0 || out != "vigie dev\n" {
+		t.Fatalf("version = %d, %q", code, out)
 	}
 }
 
-func TestRunUnknownCommand(t *testing.T) {
-	var out, errOut bytes.Buffer
-	code := cli.Run(cli.Options{Command: []string{"nope"}}, &out, &errOut)
-	if code != 2 || !strings.Contains(errOut.String(), "unknown command") || !strings.Contains(errOut.String(), "Usage") {
-		t.Fatalf("Run(nope) = %d, stderr %q", code, errOut.String())
+func TestRunUnknownCommandIsAnError(t *testing.T) {
+	code, _, errOut := run(t, "en", "nope")
+	if code != 3 || !strings.Contains(errOut, `unknown command "nope"`) || !strings.Contains(errOut, "Usage") {
+		t.Fatalf("nope = %d, stderr %q", code, errOut)
 	}
 }
 
-func TestRunHelp(t *testing.T) {
-	var out, errOut bytes.Buffer
-	if code := cli.Run(cli.Options{Command: []string{"help"}}, &out, &errOut); code != 0 || !strings.Contains(out.String(), "Usage") {
-		t.Fatalf("Run(help) = %d, %q", code, out.String())
+func TestRunHelpInTheUsersLanguage(t *testing.T) {
+	code, out, _ := run(t, "fr", "help")
+	if code != 0 || !strings.Contains(out, "Usage") || !strings.Contains(out, "Relève un site") {
+		t.Fatalf("help = %d, %q", code, out)
 	}
 }
