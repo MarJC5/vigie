@@ -2,4 +2,12 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  /* The empty space under the rows is the root, for a drop. */
+  min-height: 100%;
+}
+
+/* The root as a drop target: the whole list. */
+.tree[data-drop-target] {
+  border-radius: var(--vg-radius-control);
+  box-shadow: inset 0 0 0 2px var(--vg-accent);
 }

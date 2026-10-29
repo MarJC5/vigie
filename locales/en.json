@@ -16,7 +16,8 @@
     "running_other": "{{count}} scans running",
     "stopAll": "Stop all",
     "subsites_one": "{{count}} subsite",
-    "subsites_other": "{{count}} subsites"
+    "subsites_other": "{{count}} subsites",
+    "nameOf": "Name of {{name}}"
   },
   "empty": {
     "title": "Add your first host",

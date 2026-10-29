@@ -18,7 +18,8 @@
     "stopAll": "Tout arrêter",
     "subsites_one": "{{count}} sous-site",
     "subsites_many": "{{count}} sous-sites",
-    "subsites_other": "{{count}} sous-sites"
+    "subsites_other": "{{count}} sous-sites",
+    "nameOf": "Nom de {{name}}"
   },
   "empty": {
     "title": "Ajoutez votre premier hébergement",

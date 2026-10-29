@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, fireEvent, fn, userEvent, waitFor, within } from "storybook/test";
 
 import { sampleTree } from "../../fixtures/tree";
 import { SiteTree } from "./SiteTree";
@@ -82,5 +82,107 @@ export const Filtered: Story = {
     const names = within(tree!).getAllByRole("treeitem").map((i) => i.textContent);
     await expect(names).toHaveLength(3);
     await expect(names[2]).toContain("reseau-ecoles.ch");
+  },
+};
+
+// The row being renamed is a field: Enter keeps the name, Escape cancels.
+export const RenameInPlace: Story = {
+  args: { editingId: "personal", onRename: fn(), onCancelEdit: fn() },
+  play: async ({ canvas, args }) => {
+    // The field takes the focus as it appears (the last of the two themes here).
+    const field = canvas.getAllByRole("textbox", { name: "Name of Personal" }).find((f) => f === document.activeElement);
+    await expect(field).toHaveValue("Personal");
+    await userEvent.clear(field!);
+    await userEvent.type(field!, "Archives{Enter}");
+    await expect(args.onRename).toHaveBeenCalledWith("personal", "Archives");
+  },
+};
+
+export const CancelRename: Story = {
+  args: { editingId: "personal", onRename: fn(), onCancelEdit: fn() },
+  play: async ({ canvas, args }) => {
+    const field = canvas.getAllByRole("textbox", { name: "Name of Personal" }).find((f) => f === document.activeElement);
+    await userEvent.type(field!, "x{Escape}");
+    await expect(args.onCancelEdit).toHaveBeenCalled();
+    field!.blur();
+    await expect(args.onRename).not.toHaveBeenCalled();
+  },
+};
+
+// As in the Finder: Enter on the selected item renames it, Command-Backspace deletes it.
+export const EditFromTheKeyboard: Story = {
+  args: { onEdit: fn(), onDelete: fn(), onMenu: fn() },
+  play: async ({ canvas, args }) => {
+    const [atelier] = canvas.getAllByRole("treeitem", { name: /atelier-exemple.ch/ });
+    atelier!.focus();
+    await userEvent.keyboard("{Enter}");
+    await expect(args.onEdit).toHaveBeenCalledWith("atelier");
+    await userEvent.keyboard("{Meta>}{Backspace}{/Meta}");
+    await expect(args.onDelete).toHaveBeenCalledWith("atelier");
+    await userEvent.keyboard("{Shift>}{F10}{/Shift}");
+    await expect(args.onMenu).toHaveBeenCalledWith("atelier", expect.anything());
+  },
+};
+
+export const ContextMenu: Story = {
+  args: { onMenu: fn() },
+  play: async ({ canvas, args }) => {
+    const [shared] = canvas.getAllByRole("treeitem", { name: /Shared hosting/ });
+    await userEvent.pointer({ keys: "[MouseRight]", target: shared! });
+    await expect(args.onMenu).toHaveBeenCalledWith("shared", expect.anything());
+  },
+};
+
+// A host dragged onto a folder goes into it; onto a host or a site, into that row's folder.
+export const DragAHost: Story = {
+  args: { onMove: fn(), onDragChange: fn() },
+  play: async ({ canvas, args }) => {
+    const row = (name: RegExp) => canvas.getAllByRole("treeitem", { name })[0]!;
+    await expect(row(/atelier-exemple.ch/)).toHaveAttribute("draggable", "false");
+    const data = new DataTransfer();
+    fireEvent.dragStart(row(/Managed VPS/), { dataTransfer: data });
+    fireEvent.dragOver(row(/Clients/), { dataTransfer: data });
+    await waitFor(() => expect(row(/Clients/)).toHaveAttribute("data-drop-target", "true"));
+    await expect(args.onDragChange).toHaveBeenLastCalledWith({ id: "vps", target: "clients" });
+    fireEvent.dragOver(row(/boulangerie-exemple.ch/), { dataTransfer: data });
+    await expect(args.onDragChange).toHaveBeenLastCalledWith({ id: "vps", target: "clients" });
+    fireEvent.drop(row(/boulangerie-exemple.ch/), { dataTransfer: data });
+    await expect(args.onMove).toHaveBeenCalledWith("vps", "clients");
+    fireEvent.dragEnd(row(/Managed VPS/), { dataTransfer: data });
+    await expect(args.onDragChange).toHaveBeenLastCalledWith(null);
+  },
+};
+
+// A folder cannot go into itself, and its own place is no move: nothing is offered.
+export const NoMoveIntoItself: Story = {
+  args: { onMove: fn(), onDragChange: fn() },
+  play: async ({ canvas, args }) => {
+    const row = (name: RegExp) => canvas.getAllByRole("treeitem", { name })[0]!;
+    const data = new DataTransfer();
+    fireEvent.dragStart(row(/Clients/), { dataTransfer: data });
+    fireEvent.dragOver(row(/Shared hosting/), { dataTransfer: data });
+    await expect(args.onDragChange).toHaveBeenLastCalledWith({ id: "clients", target: undefined });
+    fireEvent.drop(row(/Shared hosting/), { dataTransfer: data });
+    await expect(args.onMove).not.toHaveBeenCalled();
+    // A drop ends the drag: the next try starts again.
+    fireEvent.dragStart(row(/Clients/), { dataTransfer: data });
+    fireEvent.dragOver(row(/Personal/), { dataTransfer: data });
+    fireEvent.drop(row(/Personal/), { dataTransfer: data });
+    await expect(args.onMove).toHaveBeenCalledWith("clients", "personal");
+  },
+};
+
+// The empty space under the rows is the root.
+export const DropAtTheRoot: Story = {
+  args: { onMove: fn(), onDragChange: fn() },
+  play: async ({ canvas, args }) => {
+    const [vps] = canvas.getAllByRole("treeitem", { name: /Managed VPS/ });
+    const [tree] = canvas.getAllByRole("tree");
+    const data = new DataTransfer();
+    fireEvent.dragStart(vps!, { dataTransfer: data });
+    fireEvent.dragOver(tree!, { dataTransfer: data });
+    await waitFor(() => expect(tree).toHaveAttribute("data-drop-target", "true"));
+    fireEvent.drop(tree!, { dataTransfer: data });
+    await expect(args.onMove).toHaveBeenCalledWith("vps", "");
   },
 };

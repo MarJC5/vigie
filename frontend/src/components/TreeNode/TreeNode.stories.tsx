@@ -44,3 +44,27 @@ export const Folder: Story = {
     await expect(args.onToggle).toHaveBeenCalled();
   },
 };
+
+// While a host is dragged onto a folder: the host dimmed, the folder outlined.
+export const Dragging: Story = {
+  render: (args) => (
+    <>
+      <TreeNode kind="folder" name="Clients" depth={0} expanded color="blue" onSelect={args.onSelect} onToggle={args.onToggle} />
+      <TreeNode kind="host" name="Managed VPS" depth={1} expanded={false} draggable dragging onSelect={args.onSelect} onToggle={args.onToggle} />
+      <TreeNode kind="folder" name="Personal" depth={0} expanded={false} dropTarget onSelect={args.onSelect} onToggle={args.onToggle} />
+    </>
+  ),
+  play: async ({ canvas }) => {
+    const [personal] = canvas.getAllByRole("treeitem", { name: /Personal/ });
+    await expect(personal).toHaveAttribute("data-drop-target", "true");
+    const [vps] = canvas.getAllByRole("treeitem", { name: /Managed VPS/ });
+    await expect(vps).toHaveAttribute("draggable", "true");
+  },
+};
+
+export const Renaming: Story = {
+  args: { kind: "folder", name: "New folder", depth: 0, expanded: false, selected: true, editing: true, editLabel: "Name of New folder", onRename: fn(), onCancelEdit: fn() },
+  play: async ({ canvas }) => {
+    await expect(canvas.getAllByRole("textbox", { name: "Name of New folder" })).toHaveLength(2);
+  },
+};
