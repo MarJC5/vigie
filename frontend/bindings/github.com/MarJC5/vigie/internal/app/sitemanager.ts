@@ -15,6 +15,20 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 import * as $models from "./models.js";
 
 /**
+ * SiteDetail returns a site with its latest scan.
+ */
+export function SiteDetail(siteID: string): $CancellablePromise<$models.SiteView> {
+    return $Call.ByID(2054680267, siteID);
+}
+
+/**
+ * Sites returns the table of the sites under a host or folder ("" for all).
+ */
+export function Sites(nodeID: string): $CancellablePromise<$models.SiteRow[] | null> {
+    return $Call.ByID(3022320395, nodeID);
+}
+
+/**
  * Tree returns the whole site manager.
  */
 export function Tree(): $CancellablePromise<$models.Tree> {

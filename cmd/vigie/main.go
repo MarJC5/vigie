@@ -21,6 +21,11 @@ import (
 	"github.com/MarJC5/vigie/locales"
 )
 
+// The events the window listens to, typed in its bindings.
+func init() {
+	application.RegisterEvent[app.ScansState](app.ScansEvent)
+}
+
 func main() {
 	opts, err := cli.Parse(os.Args[1:])
 	if err != nil {
@@ -68,11 +73,23 @@ func openWindow(opts cli.Options) error {
 	defer ws.Close()
 	db := ws.DB()
 
-	wails := application.New(application.Options{
+	// The scanner reports to the window, which exists once application.New has returned.
+	var wails *application.App
+	emit := func(name string, data any) {
+		if wails != nil {
+			wails.Event.Emit(name, data)
+		}
+	}
+	scanner := app.NewScanner(ws, emit)
+	defer scanner.CancelAll()
+
+	wails = application.New(application.Options{
 		Name: "Vigie",
 		Services: []application.Service{
 			application.NewService(app.NewSiteManager(db)),
 			application.NewService(app.NewPreferences(db, i18n.SystemLanguage)),
+			application.NewService(app.NewHostWizard(ws)),
+			application.NewService(scanner),
 		},
 		Assets: application.AssetOptions{Handler: application.AssetFileServerFS(frontend.Assets())},
 		Mac:    application.MacOptions{ApplicationShouldTerminateAfterLastWindowClosed: true},
