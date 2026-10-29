@@ -45,7 +45,7 @@ func TestScansAreKeptAndTheLatestIsRead(t *testing.T) {
 	start := time.Date(2026, 10, 29, 9, 0, 0, 0, time.UTC)
 	first, second := scanOf(a, start, "7.1.2"), scanOf(a, start.Add(time.Hour), "7.1.3")
 	other := scanOf(b, start, "7.0")
-	other.Outcome, other.Failure, other.Error, other.Items = model.ScanFailed, "timed-out", "ssh: connect to host: Operation timed out", nil
+	other.Outcome, other.Failure, other.Error, other.Items = model.ScanFailed, "timedOut", "ssh: connect to host: Operation timed out", nil
 	for _, s := range []model.Scan{first, second, other} {
 		must(t, db.SaveScan(ctx, s))
 	}

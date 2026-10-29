@@ -2,19 +2,26 @@ package sshx
 
 import "strings"
 
-// Failure is why ssh could not run a command, read from its messages (exit status 255).
+// Failure is why ssh could not run a command, read from its messages (exit status 255). Its
+// value is also the key of its explanation in the catalogs ("failure.timedOut").
 type Failure string
 
 const (
-	FailureUnresolved     Failure = "unresolved"       // the host name does not resolve
-	FailureRefused        Failure = "refused"          // nothing listens on that port
-	FailureTimedOut       Failure = "timed-out"        // no answer, for example an IP filter
-	FailureHostKeyUnknown Failure = "host-key-unknown" // not trusted yet
-	FailureHostKeyChanged Failure = "host-key-changed" // differs from the trusted key
-	FailureAuthRefused    Failure = "auth-refused"     // no accepted key
-	FailureKeyFileMissing Failure = "key-file-missing" // the key file set for the host is missing
+	FailureUnresolved     Failure = "unresolved"     // the host name does not resolve
+	FailureRefused        Failure = "refused"        // nothing listens on that port
+	FailureTimedOut       Failure = "timedOut"       // no answer, for example an IP filter
+	FailureHostKeyUnknown Failure = "hostKeyUnknown" // not trusted yet
+	FailureHostKeyChanged Failure = "hostKeyChanged" // differs from the trusted key
+	FailureAuthRefused    Failure = "authRefused"    // no accepted key
+	FailureKeyFileMissing Failure = "keyFileMissing" // the key file set for the host is missing
 	FailureOther          Failure = "other"
 )
+
+// Failures lists every failure, for the checks that each one is explained.
+var Failures = []Failure{
+	FailureUnresolved, FailureRefused, FailureTimedOut, FailureHostKeyUnknown,
+	FailureHostKeyChanged, FailureAuthRefused, FailureKeyFileMissing, FailureOther,
+}
 
 // Classify reads OpenSSH's messages; the most specific match wins.
 func Classify(stderr []byte) Failure {

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/MarJC5/vigie/internal/cli"
+	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/workspace"
 )
 
@@ -84,5 +85,18 @@ func TestRunHelpInTheUsersLanguage(t *testing.T) {
 	code, out, _ := run(t, "fr", "help")
 	if code != 0 || !strings.Contains(out, "Usage") || !strings.Contains(out, "Relève un site") {
 		t.Fatalf("help = %d, %q", code, out)
+	}
+}
+
+// Every ssh failure has its explanation, in every language.
+func TestEveryFailureIsExplained(t *testing.T) {
+	c := texts(t)
+	for _, lang := range []string{"en", "fr"} {
+		for _, f := range sshx.Failures {
+			key := "failure." + string(f)
+			if c.T(lang, key, nil) == key {
+				t.Errorf("%s: %s has no text", lang, key)
+			}
+		}
 	}
 }

@@ -15,17 +15,6 @@ import (
 	"github.com/MarJC5/vigie/internal/workspace"
 )
 
-// failureKeys maps the classified ssh failures to their explanation in the catalogs.
-var failureKeys = map[string]string{
-	string(sshx.FailureUnresolved):     "failure.unresolved",
-	string(sshx.FailureRefused):        "failure.refused",
-	string(sshx.FailureTimedOut):       "failure.timedOut",
-	string(sshx.FailureHostKeyUnknown): "failure.hostKeyUnknown",
-	string(sshx.FailureHostKeyChanged): "failure.hostKeyChanged",
-	string(sshx.FailureAuthRefused):    "failure.authRefused",
-	string(sshx.FailureKeyFileMissing): "failure.keyFileMissing",
-}
-
 // foundKeys maps the discovery states to their label in the catalogs.
 var foundKeys = map[discover.State]string{
 	discover.StateNew:          "found.new",
@@ -48,11 +37,9 @@ func explain(env Env, path string, err error) string {
 	return err.Error()
 }
 
+// failureText explains a classified ssh failure; "other" shows ssh's own message.
 func failureText(env Env, failure, message string) string {
-	if key, ok := failureKeys[failure]; ok {
-		return env.t(key, nil)
-	}
-	return env.t("failure.other", map[string]any{"message": message})
+	return env.t("failure."+failure, map[string]any{"message": message})
 }
 
 // summary is one line about a scan: versions and pending updates, or why it did not complete.
