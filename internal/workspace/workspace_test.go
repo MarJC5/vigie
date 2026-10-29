@@ -1,0 +1,189 @@
+package workspace_test
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"os"
+	"path/filepath"
+	"slices"
+	"testing"
+	"time"
+
+	"github.com/MarJC5/vigie/internal/discover"
+	"github.com/MarJC5/vigie/internal/model"
+	"github.com/MarJC5/vigie/internal/scan"
+	"github.com/MarJC5/vigie/internal/sshx"
+	"github.com/MarJC5/vigie/internal/sshx/sshxtest"
+	"github.com/MarJC5/vigie/internal/store"
+	"github.com/MarJC5/vigie/internal/workspace"
+	"github.com/MarJC5/vigie/internal/wpcli/wpclitest"
+)
+
+// bench stores Clients/Bench (the container account) with three of its sites, and a fake runner
+// replaying their recordings.
+func bench(t *testing.T) (*workspace.Workspace, *store.DB) {
+	t.Helper()
+	ws, db, _ := setup(t)
+	return ws, db
+}
+
+func benchFake(t *testing.T) (*workspace.Workspace, *sshxtest.Fake) {
+	t.Helper()
+	ws, _, fake := setup(t)
+	return ws, fake
+}
+
+func setup(t *testing.T) (*workspace.Workspace, *store.DB, *sshxtest.Fake) {
+	t.Helper()
+	ctx := context.Background()
+	db, err := store.Open(ctx, filepath.Join(t.TempDir(), "vigie.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	if err := db.Migrate(ctx, store.Migrations(), "test"); err != nil {
+		t.Fatal(err)
+	}
+	clients := model.Folder{ID: model.NewID(), Name: "Clients"}
+	host := model.Host{ID: model.NewID(), FolderID: clients.ID, Name: "Bench", Alias: "bench"}
+	sites := []model.Site{
+		{ID: model.NewID(), HostID: host.ID, Name: "outdated.example.test", Path: "~/sites/outdated"},
+		{ID: model.NewID(), HostID: host.ID, Name: "network.example.test", Path: "~/sites/network", Multisite: true, Position: 1},
+		{ID: model.NewID(), HostID: host.ID, Name: "broken", Path: "~/sites/broken", Position: 2},
+	}
+	for _, err := range []error{db.SaveFolder(ctx, clients), db.SaveHost(ctx, host)} {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	fake := sshxtest.NewFake()
+	for _, s := range sites {
+		if err := db.SaveSite(ctx, s); err != nil {
+			t.Fatal(err)
+		}
+		wpclitest.Replay(t, fake, filepath.Base(s.Path), s.Path, "wp")
+	}
+	return workspace.New(db, fake, time.Now), db, fake
+}
+
+func TestScanAFolderStoresEveryScan(t *testing.T) {
+	ws, db := bench(t)
+	var reports []scan.Progress
+	results, err := ws.Scan(context.Background(), "Clients", func(p scan.Progress) { reports = append(reports, p) })
+	if err != nil {
+		t.Fatal(err)
+	}
+	paths := make([]string, len(results))
+	for i, r := range results {
+		paths[i] = r.Path
+	}
+	want := []string{"Clients/Bench/outdated.example.test", "Clients/Bench/network.example.test", "Clients/Bench/broken"}
+	if !slices.Equal(paths, want) {
+		t.Fatalf("scanned %q, want %q in tree order", paths, want)
+	}
+	if results[0].Scan.Status() != model.StatusAttention || results[2].Scan.Outcome != model.ScanCannotLoad {
+		t.Errorf("results = %q, %q", results[0].Scan.Status(), results[2].Scan.Outcome)
+	}
+	if len(reports) == 0 {
+		t.Error("no progress reported")
+	}
+
+	latest, err := db.LatestScans(context.Background())
+	if err != nil || len(latest) != 3 {
+		t.Fatalf("stored scans = %d, %v; want 3", len(latest), err)
+	}
+	tree, err := db.LoadTree(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	network, _ := tree.Site(results[1].Scan.SiteID)
+	if len(network.Subsites) != 4 {
+		t.Errorf("network subsites stored = %d, want 4", len(network.Subsites))
+	}
+}
+
+func TestScanOneSite(t *testing.T) {
+	ws, _ := bench(t)
+	results, err := ws.Scan(context.Background(), "Clients/Bench/outdated.example.test", nil)
+	if err != nil || len(results) != 1 || results[0].Scan.Outcome != model.ScanCompleted {
+		t.Fatalf("Scan() = %+v, %v", results, err)
+	}
+}
+
+func TestScanUnknownPath(t *testing.T) {
+	ws, _ := bench(t)
+	if _, err := ws.Scan(context.Background(), "Clients/Nope", nil); !errors.Is(err, model.ErrNotFound) {
+		t.Fatalf("Scan(unknown) = %v, want ErrNotFound", err)
+	}
+}
+
+func TestDiscoverAHost(t *testing.T) {
+	ws, _ := benchWithSearch(t)
+	if _, _, err := ws.Discover(context.Background(), "Clients"); !errors.Is(err, workspace.ErrNotAHost) {
+		t.Fatalf("Discover(folder) = %v, want ErrNotAHost", err)
+	}
+	found, _, err := ws.Discover(context.Background(), "Clients/Bench")
+	if err != nil {
+		t.Fatal(err)
+	}
+	states := map[string]discover.State{}
+	for _, f := range found {
+		states[f.Path] = f.State
+	}
+	if len(found) != 6 || states["~/sites/outdated"] != discover.StateAlreadyAdded ||
+		states["~/sites/plain"] != discover.StateNew || states["~/sites/broken"] != discover.StateAlreadyAdded {
+		t.Fatalf("Discover() = %v, want six installs, those in Vigie marked", states)
+	}
+}
+
+// benchWithSearch also answers the search of the account and every install it finds.
+func benchWithSearch(t *testing.T) (*workspace.Workspace, *sshxtest.Fake) {
+	t.Helper()
+	ws, fake := benchFake(t)
+	data, err := os.ReadFile(filepath.Join("..", "discover", "testdata", "recorded", "find.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var find struct {
+		Exit   int
+		Stdout string
+	}
+	if err := json.Unmarshal(data, &find); err != nil {
+		t.Fatal(err)
+	}
+	fake.Set(discover.FindCommand(), sshx.Result{Stdout: []byte(find.Stdout), ExitCode: find.Exit})
+	for _, fixture := range wpclitest.Fixtures {
+		root := "~/sites/" + fixture
+		if fixture == "parent-config" {
+			root += "/public"
+		}
+		wpclitest.Replay(t, fake, fixture, root, "wp")
+	}
+	return ws, fake
+}
+
+func TestOpenCreatesTheDataDirectory(t *testing.T) {
+	// The cache directory of ssh connection sharing goes under HOME; short, for the length limit
+	// of Unix socket paths (the default temporary directory of macOS is too long).
+	home, err := os.MkdirTemp("/tmp", "vh-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.RemoveAll(home) })
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CACHE_HOME", "")
+	dir := filepath.Join(home, "data")
+	ws, err := workspace.Open(context.Background(), dir, "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ws.Close()
+	info, err := os.Stat(dir)
+	if err != nil || info.Mode().Perm() != 0o700 {
+		t.Fatalf("data directory = %v, %v; want 0700", info, err)
+	}
+	if v, err := ws.DB().SchemaVersion(context.Background()); err != nil || v < 3 {
+		t.Fatalf("schema version = %d, %v; want the scans migration applied", v, err)
+	}
+}
