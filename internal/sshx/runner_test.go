@@ -19,8 +19,13 @@ import (
 // fakeSSH is a stand-in for the ssh binary (testdata/fake-ssh): it prints its arguments, one per
 // line, and behaves according to the remote command.
 func fakeSSH(t *testing.T) string {
+	return fakeTool(t, "fake-ssh")
+}
+
+// fakeTool returns the absolute path of a stand-in program in testdata.
+func fakeTool(t *testing.T, name string) string {
 	t.Helper()
-	path, err := filepath.Abs("testdata/fake-ssh")
+	path, err := filepath.Abs("testdata/" + name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,6 +65,10 @@ func TestExecRunnerConnectionError(t *testing.T) {
 	_, err := runner(t, 5*time.Second).Run(context.Background(), sshx.Target{Alias: "a"}, "exit-255")
 	if !errors.Is(err, sshx.ErrConnection) {
 		t.Fatalf("ssh exit status 255: %v, want ErrConnection", err)
+	}
+	var connErr *sshx.ConnectionError
+	if !errors.As(err, &connErr) || connErr.Failure != sshx.FailureRefused {
+		t.Fatalf("ssh exit status 255: %#v, want a ConnectionError classified as refused", err)
 	}
 }
 

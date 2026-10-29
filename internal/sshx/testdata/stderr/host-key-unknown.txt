@@ -1,0 +1,2 @@
+No ED25519 host key is known for [ssh.example.test]:2222 and you have requested strict checking.
+Host key verification failed.

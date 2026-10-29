@@ -63,7 +63,7 @@ func (r ExecRunner) Run(ctx context.Context, target Target, remote string) (Resu
 		res.ExitCode = exitErr.ExitCode()
 		// ssh "exits with the exit status of the remote command or with 255 if an error occurred".
 		if res.ExitCode == 255 {
-			return res, fmt.Errorf("%w: %s", ErrConnection, strings.TrimSpace(stderr.String()))
+			return res, &ConnectionError{Failure: Classify(res.Stderr), Message: strings.TrimSpace(stderr.String())}
 		}
 		return res, nil
 	}

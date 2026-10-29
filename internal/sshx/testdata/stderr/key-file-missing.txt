@@ -1,0 +1,2 @@
+Warning: Identity file /home/user/.ssh/missing not accessible: No such file or directory.
+u12ab@ssh.example.test: Permission denied (publickey).
