@@ -14,6 +14,11 @@ import "../github.com/wailsapp/wails/v3/internal/eventcreate.js";
 export const VigieDiscovery = "vigie:discovery";
 
 /**
+ * Name of the custom event "vigie:menu".
+ */
+export const VigieMenu = "vigie:menu";
+
+/**
  * Name of the custom event "vigie:scans".
  */
 export const VigieScans = "vigie:scans";

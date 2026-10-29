@@ -13,6 +13,7 @@ declare module "@wailsio/runtime" {
     namespace Events {
         interface CustomEvents {
             "vigie:discovery": app$0.DiscoveryProgress;
+            "vigie:menu": app$0.MenuCommand;
             "vigie:scans": app$0.ScansState;
         }
     }

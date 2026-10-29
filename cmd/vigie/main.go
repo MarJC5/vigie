@@ -25,6 +25,7 @@ import (
 func init() {
 	application.RegisterEvent[app.ScansState](app.ScansEvent)
 	application.RegisterEvent[app.DiscoveryProgress](app.DiscoveryEvent)
+	application.RegisterEvent[app.MenuCommand](app.MenuEvent)
 }
 
 func main() {
@@ -84,17 +85,34 @@ func openWindow(opts cli.Options) error {
 	scanner := app.NewScanner(ws, emit)
 	defer scanner.CancelAll()
 
+	preferences := app.NewPreferences(db, i18n.SystemLanguage)
+	lang, err := preferences.Language(context.Background())
+	if err != nil {
+		return err
+	}
+	texts, err := i18n.Load(locales.Files())
+	if err != nil {
+		return err
+	}
+
 	wails = application.New(application.Options{
 		Name: "Vigie",
 		Services: []application.Service{
 			application.NewService(app.NewSiteManager(db)),
-			application.NewService(app.NewPreferences(db, i18n.SystemLanguage)),
+			application.NewService(preferences),
 			application.NewService(app.NewHostWizard(ws, emit)),
 			application.NewService(scanner),
 		},
 		Assets: application.AssetOptions{Handler: application.AssetFileServerFS(frontend.Assets())},
 		Mac:    application.MacOptions{ApplicationShouldTerminateAfterLastWindowClosed: true},
 	})
+	// Built by Vigie in the interface language, with its shortcuts; after application.New, which
+	// the standard items (About) read.
+	menu, err := menuBar(texts, lang, emit)
+	if err != nil {
+		return err
+	}
+	wails.Menu.Set(menu)
 	wails.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:     "Vigie",
 		Width:     1280,

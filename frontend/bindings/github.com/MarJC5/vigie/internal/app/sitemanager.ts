@@ -15,6 +15,13 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 import * as $models from "./models.js";
 
 /**
+ * HostDetail returns a host with its connection and its sites.
+ */
+export function HostDetail(hostID: string): $CancellablePromise<$models.HostView> {
+    return $Call.ByID(3238623274, hostID);
+}
+
+/**
  * SiteDetail returns a site with its latest scan.
  */
 export function SiteDetail(siteID: string): $CancellablePromise<$models.SiteView> {

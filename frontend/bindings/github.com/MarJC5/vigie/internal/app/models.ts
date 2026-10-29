@@ -85,6 +85,24 @@ export interface HostKey {
 }
 
 /**
+ * HostView is a host with its connection and the table of its sites.
+ */
+export interface HostView {
+    "id": string;
+    "name": string;
+    "alias": string;
+    "hostname": string;
+    "port": number;
+    "user": string;
+
+    /**
+     * the effective command
+     */
+    "wpCli": string;
+    "sites": SiteRow[] | null;
+}
+
+/**
  * Install is a WordPress install found on the account.
  */
 export interface Install {
@@ -111,6 +129,13 @@ export interface KeysResult {
     "name": string;
     "keys": HostKey[] | null;
     "problem": Problem | null;
+}
+
+/**
+ * MenuCommand is what the window receives with MenuEvent.
+ */
+export interface MenuCommand {
+    "action": string;
 }
 
 /**
