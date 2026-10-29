@@ -222,5 +222,32 @@
       "checking": "Checking the installs found: {{checked}} of {{total}}",
       "adding": "Adding the host and its sites…"
     }
+  },
+  "menu": {
+    "about": "About {{app}}",
+    "hide": "Hide {{app}}",
+    "hideOthers": "Hide Others",
+    "showAll": "Show All",
+    "quit": "Quit {{app}}",
+    "file": "File",
+    "newHost": "New Host…",
+    "closeWindow": "Close Window",
+    "edit": "Edit",
+    "undo": "Undo",
+    "redo": "Redo",
+    "cut": "Cut",
+    "copy": "Copy",
+    "paste": "Paste",
+    "selectAll": "Select All",
+    "view": "View",
+    "search": "Search",
+    "fullScreen": "Enter Full Screen",
+    "sites": "Sites",
+    "scan": "Scan Selection",
+    "scanAll": "Scan All Sites",
+    "window": "Window",
+    "minimise": "Minimize",
+    "zoom": "Zoom",
+    "front": "Bring All to Front"
   }
 }

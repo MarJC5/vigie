@@ -231,5 +231,32 @@
       "checking": "Vérification des installations trouvées : {{checked}} sur {{total}}",
       "adding": "Ajout de l'hébergement et de ses sites…"
     }
+  },
+  "menu": {
+    "about": "À propos de {{app}}",
+    "hide": "Masquer {{app}}",
+    "hideOthers": "Masquer les autres",
+    "showAll": "Tout afficher",
+    "quit": "Quitter {{app}}",
+    "file": "Fichier",
+    "newHost": "Nouvel hébergement…",
+    "closeWindow": "Fermer la fenêtre",
+    "edit": "Édition",
+    "undo": "Annuler",
+    "redo": "Rétablir",
+    "cut": "Couper",
+    "copy": "Copier",
+    "paste": "Coller",
+    "selectAll": "Tout sélectionner",
+    "view": "Présentation",
+    "search": "Rechercher",
+    "fullScreen": "Passer en mode plein écran",
+    "sites": "Sites",
+    "scan": "Relever la sélection",
+    "scanAll": "Relever tous les sites",
+    "window": "Fenêtre",
+    "minimise": "Placer dans le Dock",
+    "zoom": "Réduire/agrandir",
+    "front": "Tout ramener au premier plan"
   }
 }
