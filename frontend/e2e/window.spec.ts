@@ -101,3 +101,13 @@ test("the rail opens the settings, which list what each outside service receives
   await page.getByRole("navigation", { name: "Navigation" }).getByRole("link", { name: "Sites" }).click();
   await expect(page.getByRole("tree", { name: "Site manager" })).toBeVisible();
 });
+
+test("a cancelled scan keeps the results of the complete one before", async ({ page }) => {
+  await page.goto(seeded);
+  const tree = page.getByRole("tree", { name: "Site manager" });
+  await tree.getByRole("treeitem", { name: /atelier-exemple\.ch/ }).click();
+  await expect(page.getByRole("tabpanel")).toContainText("The latest scan did not complete");
+  await expect(page.getByRole("tabpanel")).toContainText("Scan cancelled. These results are from the scan of");
+  await expect(page.getByRole("tabpanel")).toContainText("7.1.3");
+  await expect(tree.getByRole("treeitem", { name: /atelier-exemple\.ch/ }).getByRole("img", { name: "Up to date" })).toBeVisible();
+});

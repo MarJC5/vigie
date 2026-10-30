@@ -25,11 +25,13 @@ export default defineConfig({
     { name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } } },
     { name: "webkit", use: { ...devices["Desktop Safari"], viewport: { width: 1280, height: 800 } } },
   ],
-  // The editing tests change their data: one server for each browser.
+  // The editing and security tests change their data: one server for each browser.
   webServer: [
     server(34115, "-lang en"),
     server(34116, "-lang fr -empty"),
     server(34117, "-lang en"),
     server(34118, "-lang en"),
+    server(34119, "-lang en"),
+    server(34120, "-lang en"),
   ],
 });

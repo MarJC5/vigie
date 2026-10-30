@@ -73,6 +73,7 @@ func seed(ctx context.Context, dir, lang string, empty bool) error {
 	for _, scan := range scans(sites[0].ID, sites[1].ID) {
 		errs = append(errs, db.SaveScan(ctx, scan))
 	}
+	errs = append(errs, ignore(ctx, db, sites[1].ID))
 	for _, err := range errs {
 		if err != nil {
 			return err
@@ -161,5 +162,26 @@ func scans(upToDate, outdated model.ID) []model.Scan {
 			Update: model.UpdateAvailable, UpdateVersion: "5.7.2", OnWordPressOrg: true},
 		{Kind: model.ItemLanguage, Slug: "akismet", Language: "fr_FR", Update: model.UpdateAvailable},
 	}
-	return []model.Scan{ok, warn}
+	warn.FilesChecked = finished
+	// Nothing urgent: the site keeps needing attention for its updates. Hidden from search engines is
+	// ignored (see ignores).
+	warn.Findings = []model.Finding{
+		{Kind: model.KindVulnerability, Subject: "plugin:akismet", Identifier: "fictional-1", Version: "5.3", Level: model.LevelAttention,
+			Facts: map[string]string{"name": "Fictional stored cross-site scripting", "severity": "medium", "score": "5.4", "fixed": "5.4"}},
+		{Kind: model.KindFileEditing, Subject: "site", Level: model.LevelAttention},
+		{Kind: model.KindHiddenFromSearch, Subject: "site", Level: model.LevelAttention},
+		{Kind: model.KindCheck, Subject: "site", Identifier: "domain", Level: model.LevelNotChecked, Facts: map[string]string{"reason": "off"}},
+		{Kind: model.KindCertificate, Subject: "site", Version: "2026-12-25", Level: model.LevelInfo,
+			Facts: map[string]string{"expires": "2026-12-25T10:00:00Z", "issuer": "Fictional CA"}},
+	}
+	// A scan of the up-to-date site cancelled after its complete one: the complete one stays shown.
+	cancelled := model.Scan{ID: model.NewID(), SiteID: upToDate, Started: finished.Add(time.Minute), Finished: finished.Add(time.Minute + time.Second),
+		Outcome: model.ScanCancelled, Error: "cancelled"}
+	return []model.Scan{ok, warn, cancelled}
+}
+
+// ignore sets aside the outdated site's "hidden from search engines", permanently.
+func ignore(ctx context.Context, db *store.DB, site model.ID) error {
+	return db.SaveIgnore(ctx, model.Ignore{SiteID: site, Key: model.Finding{Kind: model.KindHiddenFromSearch, Subject: "site"}.Key(),
+		Reason: "staging copy, hidden on purpose", Created: time.Now().Add(-24 * time.Hour)})
 }
