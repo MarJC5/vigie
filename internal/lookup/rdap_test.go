@@ -37,8 +37,8 @@ func TestRegisteredDomain(t *testing.T) {
 
 func TestDomainExpiryFromTheRegistry(t *testing.T) {
 	c, r, _ := client(map[string]answer{
-		bootstrap:                  {200, "rdap/bootstrap.json", ""},
-		verisign + "wordpress.com": {200, "rdap/com-wordpress.json", ""},
+		bootstrap:                  {status: 200, file: "rdap/bootstrap.json"},
+		verisign + "wordpress.com": {status: 200, file: "rdap/com-wordpress.json"},
 	})
 	got, err := c.DomainExpiry(context.Background(), "www.wordpress.com")
 	if err != nil {
@@ -65,8 +65,8 @@ func TestNoRequestWhereTheRegistryPublishesNothing(t *testing.T) {
 
 func TestDomainUnknownOrWithoutRegistry(t *testing.T) {
 	c, r, _ := client(map[string]answer{
-		bootstrap: {200, "rdap/bootstrap.json", ""},
-		verisign + "zzz-nonexistent-vigie-test-1234.com": {404, "rdap/com-unknown.json", ""},
+		bootstrap: {status: 200, file: "rdap/bootstrap.json"},
+		verisign + "zzz-nonexistent-vigie-test-1234.com": {status: 404, file: "rdap/com-unknown.json"},
 	})
 	ctx := context.Background()
 	got, err := c.DomainExpiry(ctx, "zzz-nonexistent-vigie-test-1234.com")
@@ -83,8 +83,8 @@ func TestDomainUnknownOrWithoutRegistry(t *testing.T) {
 
 func TestDomainExpiryIsKeptForAWeek(t *testing.T) {
 	c, r, now := client(map[string]answer{
-		bootstrap:                  {200, "rdap/bootstrap.json", ""},
-		verisign + "wordpress.com": {200, "rdap/com-wordpress.json", ""},
+		bootstrap:                  {status: 200, file: "rdap/bootstrap.json"},
+		verisign + "wordpress.com": {status: 200, file: "rdap/com-wordpress.json"},
 	})
 	ctx := context.Background()
 	if _, err := c.DomainExpiry(ctx, "wordpress.com"); err != nil {

@@ -25,9 +25,11 @@ type replay struct {
 }
 
 type answer struct {
-	status int
-	file   string // under testdata
-	body   string // when there is no file
+	status      int
+	file        string // under testdata
+	body        string // when there is no file
+	contentType string
+	location    string // a redirect's target
 }
 
 func (r *replay) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -48,7 +50,14 @@ func (r *replay) RoundTrip(req *http.Request) (*http.Response, error) {
 			return nil, err
 		}
 	}
-	return &http.Response{StatusCode: a.status, Body: io.NopCloser(bytes.NewReader(body)), Request: req}, nil
+	header := http.Header{}
+	if a.contentType != "" {
+		header.Set("Content-Type", a.contentType)
+	}
+	if a.location != "" {
+		header.Set("Location", a.location)
+	}
+	return &http.Response{StatusCode: a.status, Header: header, Body: io.NopCloser(bytes.NewReader(body)), Request: req}, nil
 }
 
 // memoryCache is store.DB's cache, in memory.

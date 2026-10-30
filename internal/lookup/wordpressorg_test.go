@@ -22,7 +22,7 @@ func pluginInfo(slug string) string {
 }
 
 func TestAPluginOnWordPressOrg(t *testing.T) {
-	c, r, now := client(map[string]answer{pluginInfo("polylang"): {200, "wordpress.org/plugin-polylang.json", ""}})
+	c, r, now := client(map[string]answer{pluginInfo("polylang"): {status: 200, file: "wordpress.org/plugin-polylang.json"}})
 	info, err := c.PluginInfo(context.Background(), "polylang")
 	if err != nil {
 		t.Fatal(err)
@@ -38,7 +38,7 @@ func TestAPluginOnWordPressOrg(t *testing.T) {
 }
 
 func TestAClosedPlugin(t *testing.T) {
-	c, _, _ := client(map[string]answer{pluginInfo("display-widgets"): {404, "wordpress.org/plugin-display-widgets.json", ""}})
+	c, _, _ := client(map[string]answer{pluginInfo("display-widgets"): {status: 404, file: "wordpress.org/plugin-display-widgets.json"}})
 	info, err := c.PluginInfo(context.Background(), "display-widgets")
 	if err != nil {
 		t.Fatal(err)
@@ -49,7 +49,7 @@ func TestAClosedPlugin(t *testing.T) {
 }
 
 func TestAPluginUnknownToWordPressOrg(t *testing.T) {
-	c, _, _ := client(map[string]answer{pluginInfo("zzz-premium"): {404, "wordpress.org/plugin-unknown.json", ""}})
+	c, _, _ := client(map[string]answer{pluginInfo("zzz-premium"): {status: 404, file: "wordpress.org/plugin-unknown.json"}})
 	info, err := c.PluginInfo(context.Background(), "zzz-premium")
 	if err != nil || info.OnWordPressOrg || info.Closed {
 		t.Fatalf("info = %+v, %v; want a plugin wordpress.org does not know, without error", info, err)
@@ -59,7 +59,7 @@ func TestAPluginUnknownToWordPressOrg(t *testing.T) {
 // Abandoned: no release on wordpress.org for two years (plan 05, decision 7).
 func TestAnAbandonedPlugin(t *testing.T) {
 	body := `{"name":"Old","slug":"old","version":"1.2","last_updated":"2024-10-29 9:00am GMT"}`
-	c, _, now := client(map[string]answer{pluginInfo("old"): {200, "", body}})
+	c, _, now := client(map[string]answer{pluginInfo("old"): {status: 200, body: body}})
 	info, err := c.PluginInfo(context.Background(), "old")
 	if err != nil {
 		t.Fatal(err)

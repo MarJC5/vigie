@@ -6,9 +6,11 @@ package lookup
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"time"
 
@@ -46,6 +48,10 @@ type Client struct {
 	Now       func() time.Time
 	// Allowed tells whether a destination may be asked: agreed to, and not turned off.
 	Allowed func(Destination) bool
+	// Dial reaches a site for its certificate; nil dials it directly.
+	Dial func(ctx context.Context, network, addr string) (net.Conn, error)
+	// Roots are the authorities a certificate must chain to; nil uses the system's, as browsers do.
+	Roots *x509.CertPool
 }
 
 // get answers from the cache while it is younger than maxAge, else asks url and keeps the answer.
