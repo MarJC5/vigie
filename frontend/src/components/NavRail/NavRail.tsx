@@ -6,7 +6,7 @@ import styles from "./NavRail.module.css";
 export type Section = "sites" | "activity" | "addons" | "settings" | "help";
 
 const sections: Array<{ id: Section; icon: IconName }> = [
-  { id: "sites", icon: "sites" },
+  { id: "sites", icon: "vigie" },
   { id: "activity", icon: "activity" },
   { id: "addons", icon: "puzzle" },
   { id: "settings", icon: "settings" },

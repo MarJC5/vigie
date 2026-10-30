@@ -40,6 +40,8 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 
+import { VigieIcon } from "./VigieIcon";
+
 // The only door to the icon set: names and sizes are decided here, always in the regular weight.
 const icons = {
   activity: ClockCounterClockwiseIcon,
@@ -79,6 +81,7 @@ const icons = {
   terminal: TerminalWindowIcon,
   trash: TrashIcon,
   update: ArrowCircleUpIcon,
+  vigie: VigieIcon,
   warning: WarningCircleIcon,
 } satisfies Record<string, PhosphorIcon>;
 

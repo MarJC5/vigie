@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
 
 import { Icon, iconNames } from "./Icon";
+import { VigieIcon } from "./VigieIcon";
 
 const meta = { component: Icon, args: { name: "folder" } } satisfies Meta<typeof Icon>;
 export default meta;
@@ -30,4 +31,18 @@ export const Gallery: Story = {
       ))}
     </div>
   ),
+};
+
+// Vigie's own glyph, in Phosphor's six weights; the window uses the regular one.
+export const VigieWeights: Story = {
+  render: () => (
+    <div style={{ display: "flex", gap: 16 }}>
+      {(["thin", "light", "regular", "bold", "fill", "duotone"] as const).map((weight) => (
+        <VigieIcon key={weight} weight={weight} size={48} aria-hidden="true" />
+      ))}
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelectorAll("svg")).toHaveLength(12); // six weights, two themes
+  },
 };
