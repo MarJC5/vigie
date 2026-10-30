@@ -3,6 +3,8 @@ package app
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strconv"
 
 	"github.com/MarJC5/vigie/internal/buildinfo"
 	"github.com/MarJC5/vigie/internal/i18n"
@@ -15,9 +17,15 @@ type settingsStore interface {
 }
 
 const (
-	languageSetting = "language"
-	themeSetting    = "theme"
+	languageSetting   = "language"
+	themeSetting      = "theme"
+	backgroundSetting = "background"
+	autoScanSetting   = "autoscan"
+	notifySetting     = "notify"
 )
+
+// AutoScanHours are the intervals offered for automatic scans, in hours; 0 is off.
+var AutoScanHours = []int{0, 1, 3, 6, 12, 24}
 
 // The themes the window can take: the system's, or one the user chose.
 const (
@@ -75,6 +83,56 @@ func (p *Preferences) SetTheme(ctx context.Context, theme string) error {
 		return fmt.Errorf("unknown theme %q", theme)
 	}
 	return p.store.SetSetting(ctx, themeSetting, theme)
+}
+
+// BackgroundSettings are the user's choices for Vigie in the background, each off by default: the
+// background mode (Vigie keeps running behind its menu bar icon once the window is closed),
+// automatic scans of everything every AutoScan hours (0 for never), notifications.
+type BackgroundSettings struct {
+	On       bool `json:"on"`
+	AutoScan int  `json:"autoScan"`
+	Notify   bool `json:"notify"`
+}
+
+// Background returns the background settings.
+func (p *Preferences) Background(ctx context.Context) (BackgroundSettings, error) {
+	var b BackgroundSettings
+	for key, set := range map[string]func(string){
+		backgroundSetting: func(v string) { b.On = v == "on" },
+		notifySetting:     func(v string) { b.Notify = v == "on" },
+		autoScanSetting: func(v string) {
+			if hours, err := strconv.Atoi(v); err == nil && slices.Contains(AutoScanHours, hours) {
+				b.AutoScan = hours
+			}
+		},
+	} {
+		value, ok, err := p.store.Setting(ctx, key)
+		if err != nil {
+			return BackgroundSettings{}, err
+		}
+		if ok {
+			set(value)
+		}
+	}
+	return b, nil
+}
+
+// SetBackground stores the background settings; an interval not offered is refused.
+func (p *Preferences) SetBackground(ctx context.Context, b BackgroundSettings) error {
+	if !slices.Contains(AutoScanHours, b.AutoScan) {
+		return fmt.Errorf("automatic scans every %d hours: not an interval offered", b.AutoScan)
+	}
+	onOff := map[bool]string{true: "on", false: "off"}
+	for key, value := range map[string]string{
+		backgroundSetting: onOff[b.On],
+		notifySetting:     onOff[b.Notify],
+		autoScanSetting:   strconv.Itoa(b.AutoScan),
+	} {
+		if err := p.store.SetSetting(ctx, key, value); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Version is Vigie's version, for the About tab of the settings.

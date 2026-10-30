@@ -67,6 +67,17 @@ export interface AttemptView {
 }
 
 /**
+ * BackgroundSettings are the user's choices for Vigie in the background, each off by default: the
+ * background mode (Vigie keeps running behind its menu bar icon once the window is closed),
+ * automatic scans of everything every AutoScan hours (0 for never), notifications.
+ */
+export interface BackgroundSettings {
+    "on": boolean;
+    "autoScan": number;
+    "notify": boolean;
+}
+
+/**
  * ChecksView tells which update checks reached wordpress.org.
  */
 export interface ChecksView {

@@ -114,6 +114,37 @@ func TestScanAFolderStoresEveryScan(t *testing.T) {
 	}
 }
 
+// A complete scan of everything records when it ended, for the schedule; a scan of a part of the
+// tree, or one cancelled, does not.
+func TestACompleteScanOfEverythingIsRecorded(t *testing.T) {
+	ctx := context.Background()
+	ws, _ := bench(t)
+	if _, ok, err := ws.EverythingScanned(ctx); ok || err != nil {
+		t.Fatalf("EverythingScanned() before any scan = %v, %v; want none", ok, err)
+	}
+	if _, err := ws.Scan(ctx, "Clients", workspace.ScanOptions{}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok, _ := ws.EverythingScanned(ctx); ok {
+		t.Fatal("a scan of a folder recorded a scan of everything")
+	}
+	cancelled, cancel := context.WithCancel(ctx)
+	cancel()
+	if _, err := ws.Scan(cancelled, "", workspace.ScanOptions{}, nil); !errors.Is(err, context.Canceled) {
+		t.Fatalf("Scan() cancelled = %v, want context.Canceled", err)
+	}
+	if _, ok, _ := ws.EverythingScanned(ctx); ok {
+		t.Fatal("a cancelled scan of everything was recorded")
+	}
+	before := time.Now().Truncate(time.Second)
+	if _, err := ws.Scan(ctx, "", workspace.ScanOptions{}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if at, ok, err := ws.EverythingScanned(ctx); !ok || err != nil || at.Before(before) {
+		t.Fatalf("EverythingScanned() = %v, %v, %v; want the end of the scan", at, ok, err)
+	}
+}
+
 func TestScanOneSite(t *testing.T) {
 	ws, _ := bench(t)
 	results, err := ws.Scan(context.Background(), "Clients/Bench/outdated.example.test", workspace.ScanOptions{}, nil)

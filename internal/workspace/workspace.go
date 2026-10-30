@@ -226,7 +226,29 @@ func (w *Workspace) ScanNode(ctx context.Context, node model.Node, opts ScanOpti
 		}
 		results[i].Scan.ApplyIgnores(ignores)
 	}
+	// The schedule of automatic scans counts from the end of the latest complete scan of everything.
+	if node == model.Root && ctx.Err() == nil {
+		if err := w.db.SetSetting(keep, everythingScannedSetting, w.deps.Now().UTC().Format(time.RFC3339)); err != nil {
+			return results, err
+		}
+	}
 	return results, nil
+}
+
+// everythingScannedSetting holds when the latest complete scan of everything ended.
+const everythingScannedSetting = "scan.everything"
+
+// EverythingScanned returns when the latest complete scan of everything ended, if there was one.
+func (w *Workspace) EverythingScanned(ctx context.Context) (time.Time, bool, error) {
+	value, ok, err := w.db.Setting(ctx, everythingScannedSetting)
+	if err != nil || !ok {
+		return time.Time{}, false, err
+	}
+	at, err := time.Parse(time.RFC3339, value)
+	if err != nil {
+		return time.Time{}, false, fmt.Errorf("%s: %w", everythingScannedSetting, err)
+	}
+	return at, true, nil
 }
 
 // Discover searches the account of the host at path for WordPress installs; it adds nothing.

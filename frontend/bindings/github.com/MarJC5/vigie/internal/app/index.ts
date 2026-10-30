@@ -27,6 +27,7 @@ export type {
     AddonView,
     AddonsView,
     AttemptView,
+    BackgroundSettings,
     ChecksView,
     Choice,
     ChoiceView,

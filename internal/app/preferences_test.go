@@ -52,3 +52,25 @@ func TestVersionForTheAboutTab(t *testing.T) {
 		t.Errorf("Version() = %q, want dev in tests", got)
 	}
 }
+
+// The background mode, automatic scans and notifications are off until the user turns them on.
+func TestTheBackgroundSettingsAreOffUntilChosen(t *testing.T) {
+	ctx := context.Background()
+	db := repository(t)
+	prefs := app.NewPreferences(db, nil)
+	if got, err := prefs.Background(ctx); err != nil || got.On || got.AutoScan != 0 || got.Notify {
+		t.Fatalf("Background() = %+v, %v; want everything off", got, err)
+	}
+	want := app.BackgroundSettings{On: true, AutoScan: 6, Notify: true}
+	if err := prefs.SetBackground(ctx, want); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := app.NewPreferences(db, nil).Background(ctx); got != want {
+		t.Fatalf("Background() after SetBackground = %+v, want %+v", got, want)
+	}
+	for _, hours := range []int{2, -1, 48} {
+		if err := prefs.SetBackground(ctx, app.BackgroundSettings{AutoScan: hours}); err == nil {
+			t.Errorf("SetBackground(every %d hours): want an error, not an interval offered", hours)
+		}
+	}
+}

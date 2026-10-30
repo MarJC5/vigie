@@ -10,11 +10,29 @@
 // @ts-ignore: Unused imports
 import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wailsio/runtime";
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as $models from "./models.js";
+
+/**
+ * Background returns the background settings.
+ */
+export function Background(): $CancellablePromise<$models.BackgroundSettings> {
+    return $Call.ByID(141652129);
+}
+
 /**
  * Language returns the interface language: the stored choice, else the system language.
  */
 export function Language(): $CancellablePromise<string> {
     return $Call.ByID(2315617687);
+}
+
+/**
+ * SetBackground stores the background settings; an interval not offered is refused.
+ */
+export function SetBackground(b: $models.BackgroundSettings): $CancellablePromise<void> {
+    return $Call.ByID(3824605099, b);
 }
 
 /**
