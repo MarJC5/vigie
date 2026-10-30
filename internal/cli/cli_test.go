@@ -38,6 +38,14 @@ func TestParse(t *testing.T) {
 	}
 }
 
+// Started by the system at login (Linux's autostart entry passes it), the window opens hidden.
+func TestParseAtLogin(t *testing.T) {
+	opts, err := cli.Parse([]string{"--at-login"})
+	if err != nil || !opts.AtLogin || !opts.OpensWindow() {
+		t.Fatalf("Parse(--at-login) = %+v, %v; want the window, at login", opts, err)
+	}
+}
+
 func TestParseRejectsMissingValue(t *testing.T) {
 	if _, err := cli.Parse([]string{"--data-dir"}); err == nil {
 		t.Fatal("Parse(--data-dir) without a value: want an error")

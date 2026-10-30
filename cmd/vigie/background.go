@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	_ "embed"
+	"errors"
 	"sync"
 	"time"
 
@@ -25,6 +26,8 @@ type keeper struct {
 	window  *application.WebviewWindow
 	dock    appDock
 	prefs   *app.Preferences
+	login   *app.LoginItem
+	atLogin bool // started by the system at login (--at-login); macOS says it once launched
 	watch   *app.Watch
 	scanner *app.Scanner
 	label   func(key string, vars map[string]any) string
@@ -34,8 +37,20 @@ type keeper struct {
 	next, urgent *application.MenuItem
 }
 
-// start puts the eye in the menu bar while the mode is on, and takes the window's closing.
+// start puts the eye in the menu bar while the mode is on, and takes the window's closing. With the
+// mode on the window is created hidden: it shows once Vigie has launched, unless at login.
 func (k *keeper) start(ctx context.Context) {
+	k.wails.Event.OnApplicationEvent(events.Common.ApplicationStarted, func(*application.ApplicationEvent) {
+		if b, err := k.prefs.Background(ctx); err != nil || !b.On {
+			return
+		}
+		if k.atLogin || launchedAtLogin() {
+			k.dock.HideAppIcon()
+			return
+		}
+		k.window.Show()
+		k.window.Focus()
+	})
 	// With the mode on, the window hides instead of closing; Vigie leaves the Dock until it opens.
 	k.window.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
 		if b, err := k.prefs.Background(ctx); err == nil && b.On {
@@ -68,6 +83,16 @@ func (k *keeper) start(ctx context.Context) {
 	}()
 }
 
+// loginItems are the system's login items through Wails; at login Vigie gets --at-login where the
+// system passes arguments (Linux), and is told by macOS otherwise.
+type loginItems struct{ app func() *application.App }
+
+func (l loginItems) Enable() error {
+	return l.app().Autostart.EnableWithOptions(application.AutostartOptions{Arguments: []string{"--at-login"}})
+}
+func (l loginItems) Disable() error           { return l.app().Autostart.Disable() }
+func (l loginItems) IsEnabled() (bool, error) { return l.app().Autostart.IsEnabled() }
+
 // appDock takes Vigie out of the Dock and back (none in the server build).
 type appDock interface {
 	ShowAppIcon()
@@ -81,6 +106,10 @@ func (k *keeper) apply(b app.BackgroundSettings) {
 		k.showEye()
 	} else {
 		k.removeEye()
+		// Started at login only for the background mode.
+		if err := k.login.Set(false); err != nil && !errors.Is(err, application.ErrAutostartNotSupported) {
+			k.wails.Logger.Error("login item", "error", err)
+		}
 		if !k.window.IsVisible() {
 			k.open()
 		}

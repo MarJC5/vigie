@@ -5,6 +5,7 @@ import * as Addons from "./addons.js";
 import * as Data from "./data.js";
 import * as Editor from "./editor.js";
 import * as HostWizard from "./hostwizard.js";
+import * as LoginItem from "./loginitem.js";
 import * as Preferences from "./preferences.js";
 import * as Scanner from "./scanner.js";
 import * as Security from "./security.js";
@@ -16,6 +17,7 @@ export {
     Data,
     Editor,
     HostWizard,
+    LoginItem,
     Preferences,
     Scanner,
     Security,
@@ -54,6 +56,7 @@ export type {
     ImportResult,
     Install,
     KeysResult,
+    LoginItemState,
     LookupsView,
     MenuCommand,
     Node,

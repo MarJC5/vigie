@@ -471,6 +471,14 @@ export interface KeysResult {
 }
 
 /**
+ * LoginItemState is what the window shows: whether the switch is offered, and its state.
+ */
+export interface LoginItemState {
+    "supported": boolean;
+    "on": boolean;
+}
+
+/**
  * LookupsView is the user's choices about the lookups.
  */
 export interface LookupsView {

@@ -133,6 +133,11 @@ func openWindow(opts cli.Options) error {
 	}
 	sites := app.NewSiteManager(db)
 	watch := app.NewWatch(sites, auto.Next)
+	login := app.NewLoginItem(loginItems{app: func() *application.App { return wails }}, application.ErrAutostartNotSupported)
+	background, err := preferences.Background(context.Background())
+	if err != nil {
+		return err
+	}
 	docked := newDock()
 
 	wails = application.New(application.Options{
@@ -140,6 +145,7 @@ func openWindow(opts cli.Options) error {
 		Services: []application.Service{
 			application.NewService(sites),
 			application.NewService(watch),
+			application.NewService(login),
 			application.NewService(preferences),
 			application.NewService(app.NewHostWizard(ws, emit)),
 			application.NewService(app.NewEditor(ws)),
@@ -172,13 +178,16 @@ func openWindow(opts cli.Options) error {
 		MinWidth:  960,
 		MinHeight: 600,
 		URL:       "/",
+		// In the background mode, shown once launched, unless at login (keeper.start).
+		Hidden: background.On,
 		// The window buttons keep their standard place, on the navigation rail; the rail and the
 		// header of the site list move the window (--wails-draggable in their styles).
 		Mac: application.MacWindow{TitleBar: application.MacTitleBarHidden, Appearance: appearance(theme)},
 	})
 	// The background mode: the eye in the menu bar, the window hidden instead of closed.
 	keep := &keeper{
-		wails: wails, window: window, dock: docked, prefs: preferences, watch: watch, scanner: scanner,
+		wails: wails, window: window, dock: docked, prefs: preferences, login: login, atLogin: opts.AtLogin,
+		watch: watch, scanner: scanner,
 		label: func(key string, vars map[string]any) string {
 			all := map[string]any{"app": "Vigie"}
 			for k, v := range vars {

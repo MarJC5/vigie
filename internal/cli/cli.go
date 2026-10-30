@@ -28,6 +28,7 @@ const (
 type Options struct {
 	DataDir string   // overrides the per-user configuration directory
 	Command []string // empty: open the window
+	AtLogin bool     // started by the system at login: the window opens hidden
 }
 
 // OpensWindow tells whether Vigie opens its window rather than running a command.
@@ -49,6 +50,8 @@ func Parse(args []string) (Options, error) {
 			opts.DataDir = args[i]
 		case strings.HasPrefix(arg, "--data-dir="):
 			opts.DataDir = strings.TrimPrefix(arg, "--data-dir=")
+		case arg == "--at-login":
+			opts.AtLogin = true
 		case strings.HasPrefix(arg, "-psn_"):
 			// Process serial number added by the macOS launcher.
 		default:
