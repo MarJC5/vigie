@@ -32,6 +32,8 @@ to protect. Vigie takes another route:
   failure, including premium plugins.
 - English and French interface.
 - A `vigie` command line with JSON output, for scripts and scheduled scans.
+- Vigie in the background: in the menu bar once its window is closed, automatic scans at the
+  interval you choose, notifications when a site turns urgent.
 
 ## Privacy
 

@@ -58,5 +58,8 @@ export default defineConfig({
     // The add-on test: a source run from its page, its hosts imported.
     server(34125, "-lang en -empty", undefined, true),
     server(34126, "-lang en -empty", undefined, true),
+    // The background settings: the mode, automatic scans, the next scan shown.
+    server(34127, "-lang en -empty"),
+    server(34128, "-lang en -empty"),
   ],
 });

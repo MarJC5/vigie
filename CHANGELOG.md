@@ -79,6 +79,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   never downloads or installs one ([docs/addons.md](docs/addons.md)).
 - The Go module `github.com/MarJC5/vigie/addon`, shared with add-ons: the export format, the
   description of an add-on, and the checks an add-on runs in its own tests.
+- In the background, each part off until turned on in the settings: Vigie keeps running in the
+  menu bar once its window is closed, opens at login, scans every site every 1, 3, 6, 12 or 24
+  hours (one scan after a sleep, never an update), and notifies when a scan turns a site urgent or
+  a host unreachable ([docs/background.md](docs/background.md)).
+- Vigie's own icon: an eye whose pupil is a shield.
 
 ### Changed
 
