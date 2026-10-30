@@ -52,6 +52,7 @@ type Deps struct {
 	KeyScanner KeyScanner
 	Resolver   Resolver
 	KnownHosts string // Vigie's own known_hosts file
+	Home       string // the user's home, where ~/.ssh/config is read
 	Now        func() time.Time
 	// Updates makes an updater that reports its steps to onStep, replacing the real one in tests;
 	// Checker replaces the real one's checks.
@@ -89,10 +90,15 @@ func Open(ctx context.Context, dataDir, version string) (*Workspace, error) {
 		db.Close()
 		return nil, err
 	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
 	runner := sshx.ExecRunner{Options: options, Timeout: commandTimeout}
 	ws := New(db, Deps{
 		Runner: runner, KeyScanner: sshx.KeyScanner{}, Resolver: runner,
-		KnownHosts: options.KnownHostsFile, Now: time.Now,
+		KnownHosts: options.KnownHostsFile, Home: home, Now: time.Now,
 	})
 	ws.deps.Lookups = newLookups(db, version, time.Now, ws.LookupAllowed)
 	ws.close = db.Close
