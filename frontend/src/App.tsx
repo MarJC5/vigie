@@ -3,9 +3,10 @@ import { useCallback, useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
 
 import { VigieDiscovery, VigieMenu, VigieScans, VigieUpdates } from "../bindings/events";
-import { Data, Editor, HostWizard, Preferences, Scanner, Security, SiteManager, Updates } from "../bindings/github.com/MarJC5/vigie/internal/app";
+import { Addons, Data, Editor, HostWizard, Preferences, Scanner, Security, SiteManager, Updates } from "../bindings/github.com/MarJC5/vigie/internal/app";
 import type { LookupsView, Node, ScansState, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { AddHostWizard, type WizardApi } from "./components/AddHostWizard/AddHostWizard";
+import { type AddonsApi, AddonsFlow } from "./components/AddonsFlow/AddonsFlow";
 import { AppShell, type EditApi, type SecurityApi, type ShellData } from "./components/AppShell/AppShell";
 import { ConsentScreen } from "./components/ConsentScreen/ConsentScreen";
 import { type DataApi, DataFlow, type DataNote, type DataTask } from "./components/DataFlow/DataFlow";
@@ -66,6 +67,9 @@ const dataApi: DataApi = {
   SSHConfig: Data.SSHConfig,
   ImportSSHConfig: Data.ImportSSHConfig,
 };
+
+// What lists and runs add-ons, from the add-ons service.
+const addonsApi: AddonsApi = { List: Addons.List, ChooseFile: Addons.ChooseFile, Run: Addons.Run };
 
 // What sets findings aside, from the security service.
 const securityApi: SecurityApi = { Ignore: Security.Ignore, Unignore: Security.Unignore };
@@ -168,6 +172,8 @@ export function App() {
   };
 
   const dataDone = (note?: DataNote, changed?: boolean) => {
+    // What an add-on brought shows in the site list.
+    if (dataTask?.kind === "preview" && changed) setSection("sites");
     setDataTask(undefined);
     setDataWindow(false);
     if (note) setDataNote(note);
@@ -237,6 +243,7 @@ export function App() {
               />
             )
           }
+          addonsPage={<AddonsFlow api={addonsApi} onLink={openURL} onPreview={(preview) => setDataTask({ kind: "preview", preview })} />}
           onExport={(nodeId) => setDataTask({ kind: "export", nodeId })}
           onStopAll={() => void Scanner.CancelAll()}
           commands={menuCommands}

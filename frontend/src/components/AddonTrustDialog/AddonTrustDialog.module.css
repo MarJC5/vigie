@@ -1,0 +1,9 @@
+.icon {
+  display: inline-flex;
+  color: var(--vg-text-muted);
+}
+
+.text {
+  margin: 0;
+  color: var(--vg-text-muted);
+}

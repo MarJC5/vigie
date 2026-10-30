@@ -137,3 +137,22 @@ func TestTheCodeNamesNoAddOn(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// The usual install folders come after the PATH's, each once.
+func TestTheFoldersVigieLooksIn(t *testing.T) {
+	home := t.TempDir()
+	local := filepath.Join(home, ".local", "bin")
+	if err := os.MkdirAll(local, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	got := filepath.SplitList(addons.Folders("/usr/bin"+string(os.PathListSeparator)+local, home))
+	count := 0
+	for _, dir := range got {
+		if dir == local {
+			count++
+		}
+	}
+	if got[0] != "/usr/bin" || got[1] != local || count != 1 || slices.Contains(got, filepath.Join(home, "go", "bin")) {
+		t.Errorf("Folders() = %q", got)
+	}
+}

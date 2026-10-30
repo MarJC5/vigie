@@ -27,8 +27,13 @@ export interface DataApi {
   ImportSSHConfig(aliases: string[], intoId: string): Promise<ImportResult>;
 }
 
-/** What the user asked for: an export (of everything, "", or a node), or an import. */
-export type DataTask = { kind: "export"; nodeId: string } | { kind: "ssh" } | { kind: "import"; source: "vigie" | "csv" };
+/** What the user asked for: an export (of everything, "", or a node), or an import, of a file or
+ of what an add-on wrote (its preview made already). */
+export type DataTask =
+  | { kind: "export"; nodeId: string }
+  | { kind: "ssh" }
+  | { kind: "import"; source: "vigie" | "csv" }
+  | { kind: "preview"; preview: ImportPreview };
 
 /** What the task did, for the row of the Data tab. */
 export interface DataNote {
@@ -49,10 +54,11 @@ export interface DataFlowProps {
 /** An export or an import, from its first dialog to its end, over the window. */
 export function DataFlow({ api, task, nodes, onClose, onWindow }: DataFlowProps) {
   return (
-    <div className={task.kind === "import" ? styles.window : styles.layer}>
+    <div className={task.kind === "import" || task.kind === "preview" ? styles.window : styles.layer}>
       {task.kind === "export" && <Export api={api} initial={task.nodeId} nodes={nodes} onClose={onClose} />}
       {task.kind === "ssh" && <FromSSHConfig api={api} nodes={nodes} onClose={onClose} />}
       {task.kind === "import" && <Import api={api} source={task.source} nodes={nodes} onClose={onClose} onWindow={onWindow} />}
+      {task.kind === "preview" && <Import api={api} ready={task.preview} nodes={nodes} onClose={onClose} onWindow={onWindow} />}
     </div>
   );
 }
@@ -154,12 +160,15 @@ function FromSSHConfig({ api, nodes, onClose }: { api: DataApi; nodes: Node[]; o
 function Import({
   api,
   source,
+  ready,
   nodes,
   onClose,
   onWindow,
 }: {
   api: DataApi;
-  source: "vigie" | "csv";
+  /** A file to choose, or a preview made already. */
+  source?: "vigie" | "csv";
+  ready?: ImportPreview;
   nodes: Node[];
   onClose: DataFlowProps["onClose"];
   onWindow?: () => void;
@@ -175,14 +184,14 @@ function Import({
   useEffect(() => {
     if (asked.current) return;
     asked.current = true;
-    void api.ChooseImport(source).then((p) => {
+    void (ready ? Promise.resolve(ready) : api.ChooseImport(source ?? "vigie")).then((p) => {
       if (p.cancelled) return onClose();
       // A file Vigie cannot read: said under the row of the Data tab.
       if (p.problem) return onClose({ row: "import", text: t(p.problem.code, { message: p.problem.detail }) });
       setPreview(p);
       onWindow?.();
     });
-  }, [api, source, onClose, onWindow, t]);
+  }, [api, source, ready, onClose, onWindow, t]);
 
   const close = () => {
     void api.CancelImport();

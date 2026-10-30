@@ -42,6 +42,24 @@ var (
 // namePattern is the name of a program, after the prefix: no path, no option.
 var namePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
 
+// Folders is where Vigie looks for add-ons: the folders of the PATH given, then the usual install
+// folders that exist (Homebrew's, ~/.local/bin, ~/go/bin), each once. An app opened from the Finder
+// or the Dock does not get the PATH of the user's shell, where Homebrew's folder is; no shell is run
+// to read it.
+func Folders(path, home string) string {
+	dirs := filepath.SplitList(path)
+	extra := []string{"/opt/homebrew/bin", "/usr/local/bin"}
+	if filepath.IsAbs(home) {
+		extra = append(extra, filepath.Join(home, ".local", "bin"), filepath.Join(home, "go", "bin"))
+	}
+	for _, dir := range extra {
+		if st, err := os.Stat(dir); err == nil && st.IsDir() && !slices.Contains(dirs, dir) {
+			dirs = append(dirs, dir)
+		}
+	}
+	return strings.Join(dirs, string(os.PathListSeparator))
+}
+
 // Installed is an add-on found on the PATH: its program, and what it says about itself, or why it
 // said nothing Vigie can use.
 type Installed struct {

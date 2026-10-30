@@ -3,11 +3,12 @@ import { useTranslation } from "react-i18next";
 import { Icon, type IconName } from "../Icon/Icon";
 import styles from "./NavRail.module.css";
 
-export type Section = "sites" | "activity" | "settings" | "help";
+export type Section = "sites" | "activity" | "addons" | "settings" | "help";
 
 const sections: Array<{ id: Section; icon: IconName }> = [
   { id: "sites", icon: "sites" },
   { id: "activity", icon: "activity" },
+  { id: "addons", icon: "puzzle" },
   { id: "settings", icon: "settings" },
   { id: "help", icon: "help" },
 ];
@@ -23,7 +24,7 @@ export interface NavRailProps {
 }
 
 // The sections that exist so far; the others are shown, not reachable yet.
-const reachable: Section[] = ["sites", "settings"];
+const reachable: Section[] = ["sites", "addons", "settings"];
 
 /** The narrow navigation rail; the native window controls sit above it. */
 export function NavRail({ current, onAddHost, inert, onNavigate }: NavRailProps) {

@@ -10,6 +10,52 @@ export interface AddResult {
 }
 
 /**
+ * AddonView is an add-on as the page shows it: installed, known from the Library, or both. Its
+ * texts are by language; the page shows the user's, else English.
+ */
+export interface AddonView {
+    "name": string;
+    "title": { [_ in string]?: string } | null;
+    "author": string;
+    "release": string;
+    "kind": string;
+    "summary": { [_ in string]?: string } | null;
+    "description": { [_ in string]?: string } | null;
+    "details": DetailView[] | null;
+
+    /**
+     * a data URI; "" for Vigie's default image
+     */
+    "image": string;
+    "settings": SettingView[] | null;
+    "installed": boolean;
+
+    /**
+     * where it is installed
+     */
+    "path": string;
+
+    /**
+     * where to get it, for one of the Library
+     */
+    "install": string;
+
+    /**
+     * an installed one whose description Vigie cannot use
+     */
+    "problem": Problem | null;
+}
+
+/**
+ * AddonsView is the content of the page.
+ */
+export interface AddonsView {
+    "installed": AddonView[] | null;
+    "library": AddonView[] | null;
+    "problem": Problem | null;
+}
+
+/**
  * AttemptView is a scan that did not complete after the one shown.
  */
 export interface AttemptView {
@@ -41,6 +87,14 @@ export interface Choice {
 }
 
 /**
+ * ChoiceView is one value of a choice.
+ */
+export interface ChoiceView {
+    "value": string;
+    "label": { [_ in string]?: string } | null;
+}
+
+/**
  * CreateResult is the answer of CreateFolder.
  */
 export interface CreateResult {
@@ -57,6 +111,14 @@ export interface DestinationView {
      */
     "id": string;
     "on": boolean;
+}
+
+/**
+ * DetailView is a fact of an add-on's page.
+ */
+export interface DetailView {
+    "label": { [_ in string]?: string } | null;
+    "value": { [_ in string]?: string } | null;
 }
 
 /**
@@ -112,6 +174,14 @@ export interface ExportSummary {
      * HistoryBytes is how much larger the file is with the history.
      */
     "historyBytes": number;
+    "problem": Problem | null;
+}
+
+/**
+ * FileChoice is the answer of ChooseFile.
+ */
+export interface FileChoice {
+    "file": string;
     "problem": Problem | null;
 }
 
@@ -313,7 +383,7 @@ export interface ImportPreview {
     "cancelled": boolean;
 
     /**
-     * FileVigie or FileCSV
+     * FileVigie, FileCSV or SourceAddOn
      */
     "source": string;
 
@@ -334,6 +404,13 @@ export interface ImportPreview {
      */
     "lines": number;
     "separator": string;
+
+    /**
+     * What an add-on wrote: its name and title, and its report word for word (also when it failed).
+     */
+    "addOn": string;
+    "addOnTitle": string;
+    "report": string;
 
     /**
      * the folder it adds into; "" for the top
@@ -609,6 +686,19 @@ export interface SelectionView {
     "plugins": string[] | null;
     "themes": string[] | null;
     "languages": boolean;
+}
+
+/**
+ * SettingView is something a run asks for.
+ */
+export interface SettingView {
+    "id": string;
+    "kind": string;
+    "label": { [_ in string]?: string } | null;
+    "help": { [_ in string]?: string } | null;
+    "default": string;
+    "required": boolean;
+    "choices": ChoiceView[] | null;
 }
 
 /**

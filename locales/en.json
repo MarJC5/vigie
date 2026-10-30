@@ -3,6 +3,7 @@
     "navigation": "Navigation",
     "sites": "Sites",
     "activity": "Activity",
+    "addons": "Add-ons",
     "settings": "Settings",
     "help": "Help"
   },
@@ -256,7 +257,14 @@
     "keyChanged": "Vigie trusts another key for one of these servers since the preview: look at the preview again.",
     "importChanged": "The site manager changed since the preview: look at the preview again.",
     "noSSHConfig": "Vigie cannot read ~/.ssh/config here.",
-    "sshConfigDepth": "~/.ssh/config includes files in a loop, or too deep."
+    "sshConfigDepth": "~/.ssh/config includes files in a loop, or too deep.",
+    "addonMissing": "This add-on is no longer installed.",
+    "addonNotASource": "This add-on does not bring data into Vigie: it runs from the command line.",
+    "addonTimedOut": "The add-on did not finish within two minutes: it was stopped, and nothing was added.",
+    "addonNoExport": "The add-on ended without writing anything: nothing was added.",
+    "addonFailed": "The add-on stopped with an error, and nothing was added: {{message}}",
+    "addonInvalid": "This add-on does not describe itself the way Vigie reads it: {{message}}",
+    "addonNewer": "This add-on is made for a newer Vigie: update Vigie to use it."
   },
   "wizard": {
     "close": "Close",
@@ -1053,7 +1061,11 @@
       "nothingYet": "Nothing is added yet.",
       "nothingNew": "Nothing to add: everything is already in Vigie.",
       "confirm_one": "Add {{count}} item",
-      "confirm_other": "Add {{count}} items"
+      "confirm_other": "Add {{count}} items",
+      "titleAddOn": "Import from {{title}}",
+      "leadAddOn": "Written by {{addon}} {{release}}. Nothing is added until you confirm.",
+      "report": "What the add-on left out",
+      "reportLead": "As {{addon}} said it, word for word:"
     },
     "separator": {
       "comma": "commas",
@@ -1067,5 +1079,45 @@
       "renamed": "its name was taken: renamed",
       "parent-refused": "what holds it is refused"
     }
+  },
+  "addons": {
+    "title": "Add-ons",
+    "write": "Write an add-on",
+    "trust": "A program of its own",
+    "understood": "Understood",
+    "trust1": "An add-on is a program of its own, installed by you. It runs on this computer with your rights, like any program you install: install only add-ons you trust.",
+    "trust2": "Vigie never downloads one, gives it no data and no access, runs one only when you start it from its page, never through a shell, and stops it after two minutes.",
+    "trust3": "Vigie reads only the export it writes, shows it to you in the preview, then deletes it: nothing is added before you confirm.",
+    "tabs": {
+      "library": "Library",
+      "installed": "Installed"
+    },
+    "by": "by {{author}}",
+    "kind": {
+      "source": "Source",
+      "destination": "Destination"
+    },
+    "installedNote": "Installed",
+    "howTo": "How to install",
+    "open": "Open",
+    "openNamed": "Open {{title}}",
+    "defaultImage": "No image of its own",
+    "loading": "Looking for add-ons…",
+    "emptyTitle": "No add-on installed",
+    "emptyText": "An add-on is a program named vigie-<name> on your PATH, installed like any other. It shows here once installed.",
+    "meta": "by {{author}} · {{kind}} · version {{release}}",
+    "runTitle": "Import",
+    "runLead": "Vigie runs {{program}} on this computer, then shows you what it wrote.",
+    "run": "Run the import",
+    "running": "Running…",
+    "nothingBefore": "Nothing is added before the preview.",
+    "chooseFile": "Other file…",
+    "details": "Details",
+    "installedAt": "Installed at",
+    "destinationNote": "This add-on runs from the command line: vigie {{name}}",
+    "failedTitle": "{{program}} stopped with an error",
+    "failedText": "Nothing was added. What it said:",
+    "unusable": "Vigie cannot use this add-on",
+    "notInstalled": "Not installed. Vigie never installs an add-on itself."
   }
 }

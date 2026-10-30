@@ -231,3 +231,23 @@
   gap: var(--vg-space-3);
   margin-left: auto;
 }
+
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+
+/* What an add-on said, word for word. */
+.report {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--vg-radius-control);
+  background: var(--vg-surface-row);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--vg-text-caption);
+  color: var(--vg-text-muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

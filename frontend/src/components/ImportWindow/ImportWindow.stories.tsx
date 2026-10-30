@@ -84,3 +84,25 @@ export const InFrench: Story = {
     await expect(canvas.getAllByText(/^site · ~\/www\/atelier · avec 12 relevés, 3 mises à jour et retours en arrière$/)).toHaveLength(2);
   },
 };
+
+// What an add-on wrote: its name in the heading, its report word for word.
+export const AnAddOn: Story = {
+  args: {
+    preview: {
+      ...vigiePreview,
+      source: "addon",
+      addOn: "sitelist",
+      addOnTitle: "Site list",
+      app: "0.2.0",
+      keys: [],
+      report: "3 folders, 2 hosts from the list.\nSkipped Old FTP: FTP, Vigie connects over SSH only",
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const screen = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(screen.getByRole("heading", { level: 1, name: "Import from Site list" })).toBeInTheDocument();
+    await expect(screen.getByText(/^Written by vigie-sitelist 0\.2\.0\./)).toBeInTheDocument();
+    await expect(screen.getByRole("heading", { name: "What the add-on left out" })).toBeInTheDocument();
+    await expect(screen.getByText(/Skipped Old FTP: FTP/)).toBeInTheDocument();
+  },
+};

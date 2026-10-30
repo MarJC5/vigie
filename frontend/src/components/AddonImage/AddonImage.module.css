@@ -1,0 +1,35 @@
+.image,
+.fallback {
+  display: block;
+  width: 100%;
+  height: 150px;
+  box-sizing: border-box;
+}
+
+.image {
+  object-fit: cover;
+}
+
+.image[data-size="hero"],
+.fallback[data-size="hero"] {
+  height: 200px;
+  border-radius: var(--vg-radius-panel);
+}
+
+/* No image of its own: Vigie's default one, neutral. */
+.fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--vg-surface-row);
+  color: var(--vg-text-muted);
+}
+
+.label {
+  font-size: var(--vg-text-caption);
+  font-weight: var(--vg-weight-strong);
+  letter-spacing: var(--vg-tracking-caps);
+  text-transform: uppercase;
+}

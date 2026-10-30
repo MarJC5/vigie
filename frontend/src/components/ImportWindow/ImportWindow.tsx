@@ -33,8 +33,10 @@ export function ImportWindow({ preview, nodes, onInto, keep, onKeep, onConfirm, 
   const { t } = useTranslation();
   const groups = groupsOf(preview.items ?? []);
   const keys = preview.keys ?? [];
-  const lead =
-    preview.source === "csv"
+  const addon = preview.source === "addon";
+  const lead = addon
+    ? t("data.preview.leadAddOn", { addon: `vigie-${preview.addOn}`, release: preview.app })
+    : preview.source === "csv"
       ? t("data.preview.leadCSV", { count: preview.lines, separator: t(`data.separator.${preview.separator === ";" ? "semicolon" : "comma"}`) })
       : t(preview.history ? "data.preview.leadHistory" : "data.preview.lead", {
           date: day(preview.exported),
@@ -49,14 +51,16 @@ export function ImportWindow({ preview, nodes, onInto, keep, onKeep, onConfirm, 
       <main className={styles.main} tabIndex={0}>
         <div className={styles.content}>
           <div className={styles.heading}>
-            <h1 className={styles.title}>{t("data.preview.title", { file: preview.file })}</h1>
+            <h1 className={styles.title}>
+              {addon ? t("data.preview.titleAddOn", { title: preview.addOnTitle }) : t("data.preview.title", { file: preview.file })}
+            </h1>
             <p className={styles.lead}>{lead}</p>
           </div>
           <div className={styles.into}>
             <SelectField label={t("data.into")} value={preview.into} options={folderOptions(t, nodes)} onChange={onInto} />
           </div>
           {problem && <Notice title={t("data.preview.failed")} text={t(problem.code, { message: problem.detail })} />}
-          <div className={styles.columns} data-keys={keys.length > 0 || undefined}>
+          <div className={styles.columns} data-keys={keys.length > 0 || (addon && preview.report) ? true : undefined}>
             <div className={styles.groups}>
               {order.map(
                 (g) =>
@@ -83,38 +87,51 @@ export function ImportWindow({ preview, nodes, onInto, keep, onKeep, onConfirm, 
                   ),
               )}
             </div>
-            {keys.length > 0 && (
-              <section className={styles.keys}>
-                <h2 className={styles.groupTitle}>{t("data.preview.keys")}</h2>
-                <p className={styles.keysLead}>{t("data.preview.keysLead")}</p>
-                {keys.map((k) =>
-                  k.refused ? (
-                    <div key={k.hostId + k.fingerprint} className={styles.key} data-refused>
-                      <span className={styles.itemText}>
-                        <span className={styles.name}>{k.host}</span>
-                        <span className={styles.detail}>{t("data.preview.keyRefused", { reason: t(`cli.import.key.${k.refused}`) })}</span>
-                      </span>
-                    </div>
-                  ) : (
-                    <label key={k.hostId + k.fingerprint} className={styles.key}>
-                      <input
-                        type="checkbox"
-                        className={styles.box}
-                        checked={keep.has(k.hostId)}
-                        onChange={(event) => onKeep(k.hostId, event.target.checked)}
-                      />
-                      <span className={styles.itemText}>
-                        <span className={styles.name}>
-                          {k.host} · {k.server}
-                        </span>
-                        <span className={styles.fingerprint} data-selectable>
-                          {k.type} {k.fingerprint}
-                        </span>
-                      </span>
-                    </label>
-                  ),
+            {(keys.length > 0 || (addon && preview.report)) && (
+              <div className={styles.side}>
+                {addon && preview.report && (
+                  <section className={styles.keys}>
+                    <h2 className={styles.groupTitle}>{t("data.preview.report")}</h2>
+                    <p className={styles.keysLead}>{t("data.preview.reportLead", { addon: `vigie-${preview.addOn}` })}</p>
+                    <pre className={styles.report} data-selectable>
+                      {preview.report}
+                    </pre>
+                  </section>
                 )}
-              </section>
+                {keys.length > 0 && (
+                  <section className={styles.keys}>
+                    <h2 className={styles.groupTitle}>{t("data.preview.keys")}</h2>
+                    <p className={styles.keysLead}>{t("data.preview.keysLead")}</p>
+                    {keys.map((k) =>
+                      k.refused ? (
+                        <div key={k.hostId + k.fingerprint} className={styles.key} data-refused>
+                          <span className={styles.itemText}>
+                            <span className={styles.name}>{k.host}</span>
+                            <span className={styles.detail}>{t("data.preview.keyRefused", { reason: t(`cli.import.key.${k.refused}`) })}</span>
+                          </span>
+                        </div>
+                      ) : (
+                        <label key={k.hostId + k.fingerprint} className={styles.key}>
+                          <input
+                            type="checkbox"
+                            className={styles.box}
+                            checked={keep.has(k.hostId)}
+                            onChange={(event) => onKeep(k.hostId, event.target.checked)}
+                          />
+                          <span className={styles.itemText}>
+                            <span className={styles.name}>
+                              {k.host} · {k.server}
+                            </span>
+                            <span className={styles.fingerprint} data-selectable>
+                              {k.type} {k.fingerprint}
+                            </span>
+                          </span>
+                        </label>
+                      ),
+                    )}
+                  </section>
+                )}
+              </div>
             )}
           </div>
         </div>

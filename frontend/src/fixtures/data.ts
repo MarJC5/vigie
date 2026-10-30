@@ -31,6 +31,9 @@ export const vigiePreview: ImportPreview = {
   history: true,
   lines: 0,
   separator: "",
+  addOn: "",
+  addOnTitle: "",
+  report: "",
   into: "",
   items: [
     item({ kind: "folder", path: "Clients/Valais", status: "added" }),

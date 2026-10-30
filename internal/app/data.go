@@ -22,6 +22,9 @@ import (
 const (
 	FileVigie = "vigie" // an export, JSON
 	FileCSV   = "csv"   // a site list
+	FileAny   = "any"   // a file an add-on reads
+	// SourceAddOn marks an import of what an add-on wrote.
+	SourceAddOn = "addon"
 )
 
 var (
@@ -166,7 +169,7 @@ func exportName(path string, at time.Time) string {
 // ImportPreview is what an import would do, shown before it does it.
 type ImportPreview struct {
 	Cancelled bool   `json:"cancelled"` // the user closed the file dialog
-	Source    string `json:"source"`    // FileVigie or FileCSV
+	Source    string `json:"source"`    // FileVigie, FileCSV or SourceAddOn
 	File      string `json:"file"`      // the file's name
 	// An export: when and by which Vigie it was written, with its history or not.
 	Exported string `json:"exported"`
@@ -175,6 +178,10 @@ type ImportPreview struct {
 	// A CSV list: the lines read after the header, and their separator.
 	Lines     int    `json:"lines"`
 	Separator string `json:"separator"`
+	// What an add-on wrote: its name and title, and its report word for word (also when it failed).
+	AddOn      string `json:"addOn"`
+	AddOnTitle string `json:"addOnTitle"`
+	Report     string `json:"report"`
 
 	Into    string          `json:"into"` // the folder it adds into; "" for the top
 	Items   []ImportItem    `json:"items"`
@@ -248,6 +255,16 @@ func (d *Data) ChooseImport(ctx context.Context, kind string) ImportPreview {
 				Reason: string(l.Reason), Detail: l.Text, Line: l.Line, Value: l.Value})
 		}
 	}
+	d.mu.Lock()
+	d.pending = &p
+	d.mu.Unlock()
+	return d.PreviewImport(ctx, "")
+}
+
+// previewAddOn previews the import of what an add-on wrote, at the top of the site manager.
+func (d *Data) previewAddOn(ctx context.Context, f export.File, name, title, release, report string) ImportPreview {
+	p := pendingImport{file: f, source: ImportPreview{Source: SourceAddOn, AddOn: name, AddOnTitle: title, App: release,
+		Exported: f.Exported.UTC().Format(time.RFC3339), Report: report}}
 	d.mu.Lock()
 	d.pending = &p
 	d.mu.Unlock()

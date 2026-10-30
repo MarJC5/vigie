@@ -8,6 +8,8 @@ import (
 	"uuid"
 
 	"github.com/MarJC5/vigie/addon/export"
+	"github.com/MarJC5/vigie/addon/info"
+	"github.com/MarJC5/vigie/internal/addons"
 	"github.com/MarJC5/vigie/internal/discover"
 	"github.com/MarJC5/vigie/internal/exchange"
 	"github.com/MarJC5/vigie/internal/hostcheck"
@@ -72,6 +74,13 @@ var problemCodes = []struct {
 	{store.ErrIDTaken, "problem.importChanged"},
 	{workspace.ErrNoSSHConfig, "problem.noSSHConfig"},
 	{sshx.ErrConfigDepth, "problem.sshConfigDepth"},
+	{errNoAddOn, "problem.addonMissing"},
+	{addons.ErrNotASource, "problem.addonNotASource"},
+	{addons.ErrTimedOut, "problem.addonTimedOut"},
+	{addons.ErrNoExport, "problem.addonNoExport"},
+	{info.ErrNotAnInfo, "problem.addonInvalid"},
+	{info.ErrNewerVersion, "problem.addonNewer"},
+	{info.ErrInvalid, "problem.addonInvalid"},
 }
 
 // ProblemOf turns an error into a Problem the interface can translate; nil gives nil.
@@ -87,6 +96,9 @@ func ProblemOf(err error) *Problem {
 		if errors.Is(err, p.err) {
 			return &Problem{Code: p.code, Detail: err.Error()}
 		}
+	}
+	if _, ok := errors.AsType[*addons.Failed](err); ok {
+		return &Problem{Code: "problem.addonFailed", Detail: err.Error()}
 	}
 	return &Problem{Code: "problem.error", Detail: err.Error()}
 }

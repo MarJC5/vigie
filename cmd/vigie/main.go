@@ -13,6 +13,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 
 	"github.com/MarJC5/vigie/frontend"
+	"github.com/MarJC5/vigie/internal/addons"
 	"github.com/MarJC5/vigie/internal/app"
 	"github.com/MarJC5/vigie/internal/buildinfo"
 	"github.com/MarJC5/vigie/internal/cli"
@@ -103,6 +104,15 @@ func openWindow(opts cli.Options) error {
 		return err
 	}
 
+	files := picker{app: func() *application.App { return wails }}
+	data := app.NewData(ws, files, time.Now)
+	// Add-ons are looked for in the PATH and the usual install folders (an app opened from the Finder
+	// does not get the PATH of the user's shell).
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+
 	wails = application.New(application.Options{
 		Name: "Vigie",
 		Services: []application.Service{
@@ -113,7 +123,8 @@ func openWindow(opts cli.Options) error {
 			application.NewService(app.NewUpdates(ws, emit, scanner)),
 			application.NewService(scanner),
 			application.NewService(app.NewSecurity(ws, time.Now)),
-			application.NewService(app.NewData(ws, picker{app: func() *application.App { return wails }}, time.Now)),
+			application.NewService(data),
+			application.NewService(app.NewAddons(data, files, func() string { return addons.Folders(os.Getenv("PATH"), home) })),
 		},
 		Assets: application.AssetOptions{Handler: application.AssetFileServerFS(frontend.Assets())},
 		Mac:    application.MacOptions{ApplicationShouldTerminateAfterLastWindowClosed: true},

@@ -3,6 +3,7 @@
     "navigation": "Navigation",
     "sites": "Sites",
     "activity": "Activité",
+    "addons": "Add-ons",
     "settings": "Réglages",
     "help": "Aide"
   },
@@ -270,7 +271,14 @@
     "keyChanged": "Vigie fait confiance à une autre clé pour l'un de ces serveurs depuis l'aperçu : regardez de nouveau l'aperçu.",
     "importChanged": "Le gestionnaire de sites a changé depuis l'aperçu : regardez de nouveau l'aperçu.",
     "noSSHConfig": "Vigie ne peut pas lire ~/.ssh/config ici.",
-    "sshConfigDepth": "~/.ssh/config inclut des fichiers en boucle, ou trop profondément."
+    "sshConfigDepth": "~/.ssh/config inclut des fichiers en boucle, ou trop profondément.",
+    "addonMissing": "Cet add-on n'est plus installé.",
+    "addonNotASource": "Cet add-on n'apporte pas de données dans Vigie : il se lance en ligne de commande.",
+    "addonTimedOut": "L'add-on n'a pas fini en deux minutes : il a été arrêté, et rien n'a été ajouté.",
+    "addonNoExport": "L'add-on s'est terminé sans rien écrire : rien n'a été ajouté.",
+    "addonFailed": "L'add-on s'est arrêté sur une erreur, et rien n'a été ajouté : {{message}}",
+    "addonInvalid": "Cet add-on ne se décrit pas comme Vigie le lit : {{message}}",
+    "addonNewer": "Cet add-on est fait pour un Vigie plus récent : mettez Vigie à jour pour l'utiliser."
   },
   "wizard": {
     "close": "Fermer",
@@ -1101,7 +1109,11 @@
       "nothingNew": "Rien à ajouter : tout est déjà dans Vigie.",
       "confirm_one": "Ajouter {{count}} élément",
       "confirm_many": "Ajouter {{count}} éléments",
-      "confirm_other": "Ajouter {{count}} éléments"
+      "confirm_other": "Ajouter {{count}} éléments",
+      "titleAddOn": "Importer depuis {{title}}",
+      "leadAddOn": "Écrit par {{addon}} {{release}}. Rien n'est ajouté avant votre accord.",
+      "report": "Ce que l'add-on a laissé de côté",
+      "reportLead": "Tel que {{addon}} l'a dit, mot pour mot :"
     },
     "separator": {
       "comma": "virgules",
@@ -1115,5 +1127,45 @@
       "renamed": "nom déjà pris : renommé",
       "parent-refused": "ce qui le contient est refusé"
     }
+  },
+  "addons": {
+    "title": "Add-ons",
+    "write": "Écrire un add-on",
+    "trust": "Un programme à part",
+    "understood": "Compris",
+    "trust1": "Un add-on est un programme à part, que vous installez. Il s'exécute sur cet ordinateur avec vos droits, comme tout programme installé : n'installez que des add-ons de confiance.",
+    "trust2": "Vigie n'en télécharge jamais, ne lui transmet aucune donnée ni aucun accès, ne le lance que lorsque vous le démarrez depuis sa page, jamais par un shell, et l'arrête après deux minutes.",
+    "trust3": "Vigie lit seulement l'export qu'il écrit, vous le montre dans l'aperçu, puis le supprime : rien n'est ajouté avant votre accord.",
+    "tabs": {
+      "library": "Bibliothèque",
+      "installed": "Installés"
+    },
+    "by": "par {{author}}",
+    "kind": {
+      "source": "Source",
+      "destination": "Destination"
+    },
+    "installedNote": "Installé",
+    "howTo": "Comment l'installer",
+    "open": "Ouvrir",
+    "openNamed": "Ouvrir {{title}}",
+    "defaultImage": "Pas d'image propre",
+    "loading": "Recherche des add-ons…",
+    "emptyTitle": "Aucun add-on installé",
+    "emptyText": "Un add-on est un programme nommé vigie-<nom> dans votre PATH, installé comme les autres. Il apparaît ici une fois installé.",
+    "meta": "par {{author}} · {{kind}} · version {{release}}",
+    "runTitle": "Importer",
+    "runLead": "Vigie lance {{program}} sur cet ordinateur, puis vous montre ce qu'il a écrit.",
+    "run": "Lancer l'import",
+    "running": "En cours…",
+    "nothingBefore": "Rien n'est ajouté avant l'aperçu.",
+    "chooseFile": "Autre fichier…",
+    "details": "Détails",
+    "installedAt": "Installé dans",
+    "destinationNote": "Cet add-on se lance en ligne de commande : vigie {{name}}",
+    "failedTitle": "{{program}} s'est arrêté sur une erreur",
+    "failedText": "Rien n'a été ajouté. Ce qu'il a dit :",
+    "unusable": "Vigie ne peut pas utiliser cet add-on",
+    "notInstalled": "Pas installé. Vigie n'installe jamais un add-on lui-même."
   }
 }

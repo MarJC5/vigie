@@ -19,12 +19,13 @@ func (p picker) SaveFile(name string) (string, error) {
 		PromptForSingleSelection()
 }
 
-// OpenFile asks for an export or a CSV site list; "" when cancelled.
+// OpenFile asks for an export, a CSV site list, or any file an add-on reads; "" when cancelled.
 func (p picker) OpenFile(kind string) (string, error) {
 	dialog := p.app().Dialog.OpenFile().CanChooseFiles(true).CanChooseDirectories(false)
-	if kind == app.FileCSV {
+	switch kind {
+	case app.FileCSV:
 		dialog.AddFilter("CSV", "*.csv")
-	} else {
+	case app.FileVigie:
 		dialog.AddFilter("JSON", "*.json")
 	}
 	return dialog.PromptForSingleSelection()
