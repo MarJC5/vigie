@@ -53,6 +53,16 @@ func NewScanner(ws *workspace.Workspace, emit func(name string, data any)) *Scan
 // Scan starts scanning a folder, host or site ("" for everything) and returns at once; starting
 // a node that is already being scanned does nothing.
 func (s *Scanner) Scan(nodeID string) *Problem {
+	return s.start(nodeID, workspace.ScanOptions{})
+}
+
+// CheckFiles is Scan, comparing the files with wordpress.org's even when it was done less than a
+// day ago.
+func (s *Scanner) CheckFiles(nodeID string) *Problem {
+	return s.start(nodeID, workspace.ScanOptions{CheckFiles: true})
+}
+
+func (s *Scanner) start(nodeID string, opts workspace.ScanOptions) *Problem {
 	tree, err := s.ws.DB().LoadTree(context.Background())
 	if err != nil {
 		return ProblemOf(err)
@@ -75,7 +85,7 @@ func (s *Scanner) Scan(nodeID string) *Problem {
 
 	go func() {
 		defer cancel()
-		results, _ := s.ws.ScanNode(ctx, node, workspace.ScanOptions{}, func(p scan.Progress) { s.progress(nodeID, p) })
+		results, _ := s.ws.ScanNode(ctx, node, opts, func(p scan.Progress) { s.progress(nodeID, p) })
 		s.mu.Lock()
 		delete(s.running, nodeID)
 		for i, id := range s.order {

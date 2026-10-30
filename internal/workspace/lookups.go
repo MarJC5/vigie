@@ -2,6 +2,8 @@ package workspace
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"slices"
 	"strings"
@@ -12,12 +14,87 @@ import (
 	"github.com/MarJC5/vigie/internal/store"
 )
 
-// The settings of the lookups made from the user's machine: when the user agreed to them (unset
-// until then), and the destinations turned off, comma separated.
+// The settings of the lookups made from the user's machine: when the user agreed to them, when
+// they last answered "not now", and the destinations turned off, comma separated. Times are
+// RFC 3339; unset until then.
 const (
 	lookupsAgreedSetting = "lookups.agreed"
+	lookupsAskedSetting  = "lookups.asked"
 	lookupsOffSetting    = "lookups.off"
 )
+
+// Destinations are the services a scan may ask, in the order the interface lists them.
+var Destinations = []lookup.Destination{lookup.WPVulnerability, lookup.WordPressOrg, lookup.Registry, lookup.Site}
+
+// LookupSettings are the user's choices about the lookups.
+type LookupSettings struct {
+	Agreed time.Time // zero: not agreed
+	Asked  time.Time // the last "not now"; zero: never asked
+	Off    []lookup.Destination
+}
+
+// LookupSettings reads the user's choices about the lookups.
+func (w *Workspace) LookupSettings(ctx context.Context) (LookupSettings, error) {
+	var ls LookupSettings
+	for _, t := range []struct {
+		key string
+		at  *time.Time
+	}{{lookupsAgreedSetting, &ls.Agreed}, {lookupsAskedSetting, &ls.Asked}} {
+		value, _, err := w.db.Setting(ctx, t.key)
+		if err != nil {
+			return LookupSettings{}, err
+		}
+		if value == "" {
+			continue
+		}
+		if *t.at, err = time.Parse(time.RFC3339, value); err != nil {
+			return LookupSettings{}, fmt.Errorf("setting %s: %w", t.key, err)
+		}
+	}
+	off, _, err := w.db.Setting(ctx, lookupsOffSetting)
+	if err != nil {
+		return LookupSettings{}, err
+	}
+	for _, d := range strings.Split(off, ",") {
+		if slices.Contains(Destinations, lookup.Destination(d)) {
+			ls.Off = append(ls.Off, lookup.Destination(d))
+		}
+	}
+	return ls, nil
+}
+
+// SetLookupSettings stores the user's choices about the lookups; an unknown destination is refused.
+func (w *Workspace) SetLookupSettings(ctx context.Context, ls LookupSettings) error {
+	for _, d := range ls.Off {
+		if !slices.Contains(Destinations, d) {
+			return fmt.Errorf("destination %q: %w", d, ErrUnknownDestination)
+		}
+	}
+	off := []string{}
+	for _, d := range Destinations {
+		if slices.Contains(ls.Off, d) {
+			off = append(off, string(d))
+		}
+	}
+	for key, value := range map[string]string{
+		lookupsAgreedSetting: timeSetting(ls.Agreed), lookupsAskedSetting: timeSetting(ls.Asked), lookupsOffSetting: strings.Join(off, ","),
+	} {
+		if err := w.db.SetSetting(ctx, key, value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ErrUnknownDestination is returned for a destination Vigie does not ask.
+var ErrUnknownDestination = errors.New("unknown destination")
+
+func timeSetting(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	return t.UTC().Format(time.RFC3339)
+}
 
 // repository is where a service asked by Vigie can learn what it is.
 const repository = "https://github.com/MarJC5/vigie"
@@ -35,15 +112,10 @@ func newLookups(db *store.DB, version string, now func() time.Time, allowed func
 }
 
 // LookupAllowed tells whether a destination may be asked: the user agreed to the lookups and did
-// not turn this one off. A setting that cannot be read allows nothing.
+// not turn this one off. Settings that cannot be read allow nothing.
 func (w *Workspace) LookupAllowed(d lookup.Destination) bool {
-	ctx := context.Background()
-	agreed, ok, err := w.db.Setting(ctx, lookupsAgreedSetting)
-	if err != nil || !ok || agreed == "" {
-		return false
-	}
-	off, _, err := w.db.Setting(ctx, lookupsOffSetting)
-	return err == nil && !slices.Contains(strings.Split(off, ","), string(d))
+	ls, err := w.LookupSettings(context.Background())
+	return err == nil && !ls.Agreed.IsZero() && !slices.Contains(ls.Off, d)
 }
 
 // scanner runs the scans, with the outside lookups when the workspace has them.

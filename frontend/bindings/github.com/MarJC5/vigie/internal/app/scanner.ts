@@ -29,6 +29,14 @@ export function CancelAll(): $CancellablePromise<void> {
 }
 
 /**
+ * CheckFiles is Scan, comparing the files with wordpress.org's even when it was done less than a
+ * day ago.
+ */
+export function CheckFiles(nodeID: string): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(2190943458, nodeID);
+}
+
+/**
  * Scan starts scanning a folder, host or site ("" for everything) and returns at once; starting
  * a node that is already being scanned does nothing.
  */

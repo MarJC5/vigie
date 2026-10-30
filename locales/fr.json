@@ -189,7 +189,9 @@
     "previewFirst": "Regardez d'abord l'aperçu de la mise à jour : il a pu changer.",
     "notOffered": "Cet élément n'est plus dans l'aperçu : regardez-le à nouveau.",
     "nothingToRollBack": "Il n'y a rien à annuler.",
-    "error": "Une erreur s'est produite : {{message}}"
+    "error": "Une erreur s'est produite : {{message}}",
+    "reasonRequired": "Une raison est demandée pour ignorer un constat définitivement.",
+    "unknownDestination": "Vigie ne connaît pas ce service."
   },
   "wizard": {
     "close": "Fermer",

@@ -177,7 +177,9 @@
     "previewFirst": "Look at the preview of the update first: it may have changed.",
     "notOffered": "This item is not in the preview any more: look at it again.",
     "nothingToRollBack": "There is nothing to roll back.",
-    "error": "Something went wrong: {{message}}"
+    "error": "Something went wrong: {{message}}",
+    "reasonRequired": "A reason is required to ignore a finding permanently.",
+    "unknownDestination": "Vigie does not know this service."
   },
   "wizard": {
     "close": "Close",

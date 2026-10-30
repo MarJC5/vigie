@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -140,6 +141,35 @@ func TestCancelAScan(t *testing.T) {
 	for _, sc := range latest {
 		if sc.Outcome != model.ScanCancelled {
 			t.Errorf("outcome = %q, want cancelled", sc.Outcome)
+		}
+	}
+}
+
+// "Check files now" compares the files again within the day; a plain scan carries them over.
+func TestCheckFilesAgain(t *testing.T) {
+	fake := sshxtest.NewFake()
+	ws, _, host := benchSites(t, fake)
+	ev := newEvents()
+	s := app.NewScanner(ws, ev.emit)
+	checksums := func() int {
+		n := 0
+		for _, c := range fake.Calls() {
+			if strings.Contains(c, "'verify-checksums'") {
+				n++
+			}
+		}
+		return n
+	}
+	for _, step := range []struct {
+		start func(string) *app.Problem
+		want  int
+	}{{s.Scan, 4}, {s.Scan, 4}, {s.CheckFiles, 8}} {
+		if p := step.start(host.ID.String()); p != nil {
+			t.Fatal(p)
+		}
+		ev.idle(t)
+		if got := checksums(); got != step.want {
+			t.Fatalf("%d checksum commands, want %d", got, step.want)
 		}
 	}
 }

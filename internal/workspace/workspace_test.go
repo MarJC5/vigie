@@ -183,22 +183,34 @@ func TestAScanAppliesTheIgnoresOfItsSite(t *testing.T) {
 
 // Nothing is asked of an outside service before the user agreed, nor of one turned off.
 func TestLookupsNeedTheUsersAgreement(t *testing.T) {
-	ws, db := bench(t)
+	ws, _ := bench(t)
 	ctx := context.Background()
 	if ws.LookupAllowed(lookup.WPVulnerability) {
 		t.Fatal("allowed before the user agreed")
 	}
-	if err := db.SetSetting(ctx, "lookups.agreed", "2026-10-30T09:00:00Z"); err != nil {
+	asked := time.Date(2026, 10, 30, 9, 0, 0, 0, time.UTC)
+	if err := ws.SetLookupSettings(ctx, workspace.LookupSettings{Asked: asked}); err != nil {
 		t.Fatal(err)
 	}
-	if !ws.LookupAllowed(lookup.WPVulnerability) || !ws.LookupAllowed(lookup.Site) {
-		t.Fatal("not allowed once agreed")
+	if ws.LookupAllowed(lookup.WPVulnerability) {
+		t.Fatal("allowed after \"not now\"")
 	}
-	if err := db.SetSetting(ctx, "lookups.off", "site,registry"); err != nil {
+	agreed := asked.Add(time.Hour)
+	if err := ws.SetLookupSettings(ctx, workspace.LookupSettings{Agreed: agreed, Asked: asked,
+		Off: []lookup.Destination{lookup.Site, lookup.Registry}}); err != nil {
 		t.Fatal(err)
 	}
-	if !ws.LookupAllowed(lookup.WordPressOrg) || ws.LookupAllowed(lookup.Site) || ws.LookupAllowed(lookup.Registry) {
+	if !ws.LookupAllowed(lookup.WPVulnerability) || !ws.LookupAllowed(lookup.WordPressOrg) ||
+		ws.LookupAllowed(lookup.Site) || ws.LookupAllowed(lookup.Registry) {
 		t.Error("a destination turned off is still allowed, or another is not")
+	}
+	got, err := ws.LookupSettings(ctx)
+	if err != nil || !got.Agreed.Equal(agreed) || !got.Asked.Equal(asked) ||
+		!slices.Equal(got.Off, []lookup.Destination{lookup.Registry, lookup.Site}) {
+		t.Errorf("LookupSettings() = %+v, %v", got, err)
+	}
+	if err := ws.SetLookupSettings(ctx, workspace.LookupSettings{Off: []lookup.Destination{"example.com"}}); !errors.Is(err, workspace.ErrUnknownDestination) {
+		t.Errorf("an unknown destination = %v, want ErrUnknownDestination", err)
 	}
 }
 

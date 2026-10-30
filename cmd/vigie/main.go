@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
@@ -105,6 +106,7 @@ func openWindow(opts cli.Options) error {
 			application.NewService(app.NewEditor(ws)),
 			application.NewService(app.NewUpdates(ws, emit)),
 			application.NewService(scanner),
+			application.NewService(app.NewSecurity(ws, time.Now)),
 		},
 		Assets: application.AssetOptions{Handler: application.AssetFileServerFS(frontend.Assets())},
 		Mac:    application.MacOptions{ApplicationShouldTerminateAfterLastWindowClosed: true},

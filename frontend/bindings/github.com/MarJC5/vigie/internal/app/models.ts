@@ -38,6 +38,17 @@ export interface CreateResult {
 }
 
 /**
+ * DestinationView is a service a scan may ask, and whether it is turned on.
+ */
+export interface DestinationView {
+    /**
+     * wpvulnerability, wordpress.org, registry, site
+     */
+    "id": string;
+    "on": boolean;
+}
+
+/**
  * DiscoverResult is the answer of Discover.
  */
 export interface DiscoverResult {
@@ -63,6 +74,47 @@ export interface EditHostResult {
      */
     "keyCleared": boolean;
     "problem": Problem | null;
+}
+
+/**
+ * FindingCountsView counts the findings by level, those set aside apart.
+ */
+export interface FindingCountsView {
+    "urgent": number;
+    "attention": number;
+    "notChecked": number;
+    "ignored": number;
+}
+
+/**
+ * FindingView is a finding as the interface writes it in its language, from its kind and facts.
+ */
+export interface FindingView {
+    "key": string;
+    "kind": string;
+
+    /**
+     * core, plugin:<slug>, theme:<slug>, php, user:<login>, site
+     */
+    "subject": string;
+
+    /**
+     * the plugin's or theme's title, when the subject is one
+     */
+    "name": string;
+    "identifier": string;
+    "version": string;
+
+    /**
+     * urgent, attention, not-checked, info
+     */
+    "level": string;
+    "facts": { [_ in string]?: string } | null;
+
+    /**
+     * nil unless set aside
+     */
+    "ignore": IgnoreView | null;
 }
 
 /**
@@ -127,6 +179,22 @@ export interface HostView {
 }
 
 /**
+ * IgnoreView is why and until when a finding is set aside.
+ */
+export interface IgnoreView {
+    /**
+     * "": permanently
+     */
+    "untilVersion": string;
+    "reason": string;
+
+    /**
+     * RFC 3339
+     */
+    "created": string;
+}
+
+/**
  * Install is a WordPress install found on the account.
  */
 export interface Install {
@@ -153,6 +221,22 @@ export interface KeysResult {
     "name": string;
     "keys": HostKey[] | null;
     "problem": Problem | null;
+}
+
+/**
+ * LookupsView is the user's choices about the lookups.
+ */
+export interface LookupsView {
+    /**
+     * RFC 3339; "" while not agreed
+     */
+    "agreed": string;
+
+    /**
+     * the last "not now"
+     */
+    "asked": string;
+    "destinations": DestinationView[] | null;
 }
 
 /**
@@ -302,6 +386,17 @@ export interface ScanView {
      * SourceUnknown names the plugins whose updates Vigie cannot see (not on wordpress.org).
      */
     "sourceUnknown": string[] | null;
+
+    /**
+     * FilesChecked is when the files were last compared with wordpress.org's; "" never.
+     */
+    "filesChecked": string;
+
+    /**
+     * the worst first
+     */
+    "findings": FindingView[] | null;
+    "counts": FindingCountsView;
 }
 
 /**
@@ -381,6 +476,11 @@ export interface SiteRow {
     "wordpress": string;
     "phpCli": string;
     "pending": number;
+
+    /**
+     * Worst is the worst finding not set aside, urgent or needing attention; nil when none.
+     */
+    "worst": FindingView | null;
 }
 
 /**

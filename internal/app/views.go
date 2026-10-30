@@ -38,6 +38,38 @@ type ScanView struct {
 	Updates []UpdateView `json:"updates"`
 	// SourceUnknown names the plugins whose updates Vigie cannot see (not on wordpress.org).
 	SourceUnknown []string `json:"sourceUnknown"`
+	// FilesChecked is when the files were last compared with wordpress.org's; "" never.
+	FilesChecked string            `json:"filesChecked"`
+	Findings     []FindingView     `json:"findings"` // the worst first
+	Counts       FindingCountsView `json:"counts"`
+}
+
+// FindingView is a finding as the interface writes it in its language, from its kind and facts.
+type FindingView struct {
+	Key        string            `json:"key"`
+	Kind       string            `json:"kind"`
+	Subject    string            `json:"subject"` // core, plugin:<slug>, theme:<slug>, php, user:<login>, site
+	Name       string            `json:"name"`    // the plugin's or theme's title, when the subject is one
+	Identifier string            `json:"identifier"`
+	Version    string            `json:"version"`
+	Level      string            `json:"level"` // urgent, attention, not-checked, info
+	Facts      map[string]string `json:"facts"`
+	Ignore     *IgnoreView       `json:"ignore"` // nil unless set aside
+}
+
+// IgnoreView is why and until when a finding is set aside.
+type IgnoreView struct {
+	UntilVersion string `json:"untilVersion"` // "": permanently
+	Reason       string `json:"reason"`
+	Created      string `json:"created"` // RFC 3339
+}
+
+// FindingCountsView counts the findings by level, those set aside apart.
+type FindingCountsView struct {
+	Urgent     int `json:"urgent"`
+	Attention  int `json:"attention"`
+	NotChecked int `json:"notChecked"`
+	Ignored    int `json:"ignored"`
 }
 
 // ChecksView tells which update checks reached wordpress.org.
@@ -76,6 +108,8 @@ type SiteRow struct {
 	WordPress string `json:"wordpress"`
 	PHPCLI    string `json:"phpCli"`
 	Pending   int    `json:"pending"`
+	// Worst is the worst finding not set aside, urgent or needing attention; nil when none.
+	Worst *FindingView `json:"worst"`
 }
 
 // ScanProblem is why a scan did not complete, with the text keys of the catalogs; nil when it
@@ -107,6 +141,15 @@ func scanView(s model.Scan) *ScanView {
 		Pending:       PendingView{Core: p.Core, Plugins: p.Plugins, Themes: p.Themes, Languages: p.Languages},
 		Updates:       []UpdateView{},
 		SourceUnknown: []string{},
+		FilesChecked:  rfc3339(s.FilesChecked),
+		Findings:      findingViews(s),
+	}
+	c := s.CountFindings()
+	v.Counts = FindingCountsView{Urgent: c.Urgent, Attention: c.Attention, NotChecked: c.NotChecked}
+	for _, f := range s.Findings {
+		if f.Ignore != nil {
+			v.Counts.Ignored++
+		}
 	}
 	for _, item := range s.Items {
 		switch item.Kind {
@@ -131,6 +174,43 @@ func scanView(s model.Scan) *ScanView {
 		}
 	}
 	return v
+}
+
+// findingViews are the findings of a scan, each plugin or theme with its title.
+func findingViews(s model.Scan) []FindingView {
+	titles := map[string]string{}
+	for _, item := range s.Items {
+		if item.Title != "" && (item.Kind == model.ItemPlugin || item.Kind == model.ItemTheme) {
+			titles[string(item.Kind)+":"+item.Slug] = item.Title
+		}
+	}
+	views := []FindingView{}
+	for _, f := range s.Findings {
+		v := FindingView{
+			Key: f.Key(), Kind: string(f.Kind), Subject: f.Subject, Name: titles[f.Subject], Identifier: f.Identifier,
+			Version: f.Version, Level: string(f.Level), Facts: f.Facts,
+		}
+		if v.Facts == nil {
+			v.Facts = map[string]string{}
+		}
+		if f.Ignore != nil {
+			v.Ignore = &IgnoreView{UntilVersion: f.Ignore.UntilVersion, Reason: f.Ignore.Reason, Created: rfc3339(f.Ignore.Created)}
+		}
+		views = append(views, v)
+	}
+	return views
+}
+
+// worst is the worst finding not set aside that calls for something, urgent or needing attention.
+func worst(findings []FindingView) *FindingView {
+	for _, level := range []model.FindingLevel{model.LevelUrgent, model.LevelAttention} {
+		for i, f := range findings {
+			if f.Ignore == nil && f.Level == string(level) {
+				return &findings[i]
+			}
+		}
+	}
+	return nil
 }
 
 // SiteDetail returns a site with its latest scan.
@@ -179,6 +259,7 @@ func (s *SiteManager) Sites(ctx context.Context, nodeID string) ([]SiteRow, erro
 			p := scan.PendingUpdates()
 			row.Status, row.WordPress, row.PHPCLI = string(scan.Status()), scan.WordPress, scan.PHPCLI
 			row.Pending = p.Core + p.Plugins + p.Themes + p.Languages
+			row.Worst = worst(findingViews(scan))
 		}
 		rows = append(rows, row)
 	}

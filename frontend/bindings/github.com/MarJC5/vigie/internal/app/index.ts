@@ -5,6 +5,7 @@ import * as Editor from "./editor.js";
 import * as HostWizard from "./hostwizard.js";
 import * as Preferences from "./preferences.js";
 import * as Scanner from "./scanner.js";
+import * as Security from "./security.js";
 import * as SiteManager from "./sitemanager.js";
 import * as Updates from "./updates.js";
 export {
@@ -12,6 +13,7 @@ export {
     HostWizard,
     Preferences,
     Scanner,
+    Security,
     SiteManager,
     Updates
 };
@@ -21,14 +23,19 @@ export type {
     ChecksView,
     Choice,
     CreateResult,
+    DestinationView,
     DiscoverResult,
     DiscoveryProgress,
     EditHostResult,
+    FindingCountsView,
+    FindingView,
     HostDetails,
     HostKey,
     HostView,
+    IgnoreView,
     Install,
     KeysResult,
+    LookupsView,
     MenuCommand,
     Node,
     OperationView,

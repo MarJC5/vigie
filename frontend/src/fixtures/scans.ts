@@ -16,6 +16,9 @@ const scan = (s: Partial<ScanView>): ScanView => ({
   themes: 2,
   updates: [],
   sourceUnknown: [],
+  filesChecked: "2026-10-29T08:57:00Z",
+  findings: [],
+  counts: { urgent: 0, attention: 0, notChecked: 0, ignored: 0 },
   ...s,
 });
 
@@ -81,9 +84,9 @@ export const failedSite: SiteView = {
 export const newSite: SiteView = { id: "new", name: "nouveau.example.test", path: "~/sites/nouveau", url: "", multisite: false, scan: null };
 
 export const hostRows: SiteRow[] = [
-  { id: "atelier", name: "atelier-exemple.ch", path: "Clients/Shared hosting/atelier-exemple.ch", status: "ok", wordpress: "7.1.3", phpCli: "8.4.27", pending: 0 },
-  { id: "outdated", name: "boulangerie-exemple.ch", path: "Clients/Shared hosting/boulangerie-exemple.ch", status: "warn", wordpress: "7.1.3", phpCli: "8.4.27", pending: 4 },
-  { id: "new", name: "nouveau.example.test", path: "Clients/Shared hosting/nouveau.example.test", status: "", wordpress: "", phpCli: "", pending: 0 },
+  { id: "atelier", name: "atelier-exemple.ch", path: "Clients/Shared hosting/atelier-exemple.ch", status: "ok", wordpress: "7.1.3", phpCli: "8.4.27", pending: 0, worst: null },
+  { id: "outdated", name: "boulangerie-exemple.ch", path: "Clients/Shared hosting/boulangerie-exemple.ch", status: "warn", wordpress: "7.1.3", phpCli: "8.4.27", pending: 4, worst: null },
+  { id: "new", name: "nouveau.example.test", path: "Clients/Shared hosting/nouveau.example.test", status: "", wordpress: "", phpCli: "", pending: 0, worst: null },
 ];
 
 export const sharedHost: HostView = {
