@@ -85,6 +85,8 @@ func Run(ctx context.Context, opts Options, env Env) int {
 	case "help", "--help", "-h":
 		fmt.Fprint(env.Out, env.t("cli.usage", nil))
 		return exitOK
+	case "export", "import":
+		return runData(ctx, env, name, rest)
 	case "tree", "scan", "discover", "update":
 	default:
 		fmt.Fprintf(env.Err, "vigie: %s\n\n%s", env.t("cli.unknownCommand", map[string]any{"command": name}), env.t("cli.usage", nil))

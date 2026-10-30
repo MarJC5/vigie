@@ -89,7 +89,7 @@
     "sites_other": "{{name}} · {{count}} sites"
   },
   "cli": {
-    "usage": "Usage : vigie [--data-dir <dossier>] [commande]\n\nSans commande, Vigie ouvre sa fenêtre.\n\nCommandes :\n  tree [--json]                     Affiche le gestionnaire de sites avec l'état de chaque site\n  scan [chemin] [--check-files] [--json]\n                                    Relève un site, un hébergement ou un dossier (tout sans chemin) ;\n                                    --check-files compare de nouveau les fichiers, même dans la journée\n  discover <hébergement> [--json]   Liste les installations WordPress d'un hébergement (n'ajoute rien)\n  update [chemin] [--yes] [--json]  Aperçu, puis mise à jour d'un site, d'un hébergement ou d'un dossier (demande d'abord)\n  version                           Affiche la version\n  help                              Affiche cette aide\n\nLes chemins nomment dossiers, hébergements et sites : « Clients/Infomaniak/misits.ch ».\nCode de sortie : 0 tout va bien, 1 à surveiller ou pas entièrement vérifié, 2 urgent, 3 erreur.\n",
+    "usage": "Usage : vigie [--data-dir <dossier>] [commande]\n\nSans commande, Vigie ouvre sa fenêtre.\n\nCommandes :\n  tree [--json]                     Affiche le gestionnaire de sites avec l'état de chaque site\n  scan [chemin] [--check-files] [--json]\n                                    Relève un site, un hébergement ou un dossier (tout sans chemin) ;\n                                    --check-files compare de nouveau les fichiers, même dans la journée\n  discover <hébergement> [--json]   Liste les installations WordPress d'un hébergement (n'ajoute rien)\n  update [chemin] [--yes] [--json]  Aperçu, puis mise à jour d'un site, d'un hébergement ou d'un dossier (demande d'abord)\n  export [chemin] [--history] [-o <fichier>] [--json]\n                                    Exporte tout, un dossier ou un hébergement (sur la sortie standard\n                                    sans -o) ; --history ajoute relevés, mises à jour et retours en arrière\n  import <fichier> [--into <dossier>] [--yes] [--trust-keys] [--json]\n  import --ssh-config [--into <dossier>] [--yes] [--json]\n                                    Aperçu, puis ajout de ce qui est nouveau d'un export, d'une liste de\n                                    sites CSV ou de ~/.ssh/config (demande d'abord) ; les clés d'hôte ne\n                                    sont gardées qu'une fois confirmées, ou avec --trust-keys\n  version                           Affiche la version\n  help                              Affiche cette aide\n\nLes chemins nomment dossiers, hébergements et sites : « Clients/Infomaniak/misits.ch ».\nCode de sortie : 0 tout va bien, 1 à surveiller ou pas entièrement vérifié, 2 urgent, 3 erreur.\n",
     "unknownCommand": "commande inconnue « {{command}} »",
     "unknownOption": "option inconnue « {{option}} »",
     "needsHost": "discover attend le chemin d'un hébergement, par exemple « Clients/Infomaniak »",
@@ -141,7 +141,71 @@
       "cancelled": "annulé",
       "jsonNeedsYes": "--json demande --yes : un script ne peut pas répondre à la confirmation"
     },
-    "attempt": "dernier relevé non terminé : {{reason}}"
+    "attempt": "dernier relevé non terminé : {{reason}}",
+    "needsValue": "{{option}} demande une valeur",
+    "export": {
+      "done": "Exporté dans {{file}} (dossiers : {{folders}}, hébergements : {{hosts}}, sites : {{sites}}).",
+      "sensitive": "Le fichier nomme vos serveurs et vos utilisateurs SSH, et contient vos notes : gardez-le en lieu sûr.",
+      "notExportable": "un site s'exporte avec son hébergement : donnez le chemin de l'hébergement, d'un dossier, ou aucun pour tout"
+    },
+    "import": {
+      "needsFile": "import demande un fichier, un export ou une liste de sites CSV, ou --ssh-config",
+      "jsonNeedsYes": "--json demande --yes : un script ne peut pas répondre à la confirmation",
+      "notAnExport": "{{file}} n'est ni un export de Vigie ni une liste de sites CSV",
+      "newer": "cet export a été écrit par un Vigie plus récent : mettez Vigie à jour pour l'importer",
+      "notAFolder": "« {{path}} » n'est pas un dossier",
+      "into": "Dans {{path}} :",
+      "top": "le haut du gestionnaire de sites",
+      "status": {
+        "added": "nouveau",
+        "present": "déjà là",
+        "refused": "refusé"
+      },
+      "reason": {
+        "same-id": "même identifiant",
+        "same-name": "le dossier de ce nom reçoit ce que le fichier y met",
+        "same-connection": "un hébergement atteint déjà ce compte",
+        "same-path": "même hébergement et même chemin",
+        "renamed": "nom déjà pris : renommé",
+        "parent-refused": "ce qui le contient est refusé"
+      },
+      "sshPresent": "atteint par {{path}}",
+      "sshError": "ssh ne peut pas le lire : {{message}}",
+      "lineRefused": "Ligne {{line}} refusée : {{reason}}",
+      "line": {
+        "columns": "pas autant de valeurs que l'en-tête",
+        "no-path": "pas de chemin",
+        "no-connection": "ni alias ni hôte",
+        "both-connection": "un alias et un hôte",
+        "no-user": "un hôte sans utilisateur",
+        "bad-port": "un port qui n'en est pas un",
+        "bad-color": "une couleur inconnue",
+        "bad-name": "un nom vide ou avec une barre oblique",
+        "bad-folder": "un chemin de dossier avec une partie vide",
+        "other-folder": "son compte est dans un autre dossier sur une ligne précédente",
+        "same-site": "le même site qu'une ligne précédente"
+      },
+      "history": "Avec les sites ajoutés : {{ignores}} constats mis de côté, {{scans}} relevés, {{operations}} mises à jour et retours en arrière.",
+      "keyOffered": "Clé de {{host}} : {{type}} {{fingerprint}}, gardée seulement si vous la confirmez.",
+      "keyRefused": "Clé de {{host}} non gardée : {{reason}}. L'hébergement demandera à sa première connexion.",
+      "key": {
+        "invalid": "ce n'est pas une clé valide",
+        "other-server": "elle est pour un autre serveur",
+        "unresolved": "ssh ne résout pas l'alias ici",
+        "one-per-host": "l'hébergement en a déjà une",
+        "other-trusted": "Vigie fait confiance à une autre clé pour ce serveur"
+      },
+      "prompt_one": "Importer {{count}} dossier, hébergement ou site ? [o/N] ",
+      "prompt_other": "Importer {{count}} dossiers, hébergements et sites ? [o/N] ",
+      "prompt_many": "Importer {{count}} dossiers, hébergements et sites ? [o/N] ",
+      "trustPrompt": "Faire confiance à {{type}} {{fingerprint}} pour {{host}} ? Vérifiez-la avec son administrateur. [o/N] ",
+      "declined": "Rien n'a été importé.",
+      "nothing": "Rien à importer.",
+      "done_one": "{{count}} dossier, hébergement ou site importé.",
+      "done_other": "{{count}} dossiers, hébergements et sites importés.",
+      "done_many": "{{count}} dossiers, hébergements et sites importés.",
+      "keysLeft": "Les clés non confirmées ne sont pas gardées : ces hébergements demanderont à leur première connexion."
+    }
   },
   "outcome": {
     "cannotLoad": "WordPress ne se charge pas : {{message}}",

@@ -85,7 +85,7 @@
     "sites_other": "{{name}} · {{count}} sites"
   },
   "cli": {
-    "usage": "Usage: vigie [--data-dir <dir>] [command]\n\nWithout a command, Vigie opens its window.\n\nCommands:\n  tree [--json]                   Print the site manager with each site's status\n  scan [path] [--check-files] [--json]\n                                  Scan a site, a host or a folder (everything without a path);\n                                  --check-files compares the files again, even within the day\n  discover <host path> [--json]   List the WordPress installs of a host (adds nothing)\n  update [path] [--yes] [--json]  Preview, then update a site, a host or a folder (asks first)\n  version                         Print the version\n  help                            Print this help\n\nPaths name folders, hosts and sites: \"Clients/Infomaniak/misits.ch\".\nExit status: 0 all good, 1 needs attention or not fully checked, 2 urgent, 3 error.\n",
+    "usage": "Usage: vigie [--data-dir <dir>] [command]\n\nWithout a command, Vigie opens its window.\n\nCommands:\n  tree [--json]                   Print the site manager with each site's status\n  scan [path] [--check-files] [--json]\n                                  Scan a site, a host or a folder (everything without a path);\n                                  --check-files compares the files again, even within the day\n  discover <host path> [--json]   List the WordPress installs of a host (adds nothing)\n  update [path] [--yes] [--json]  Preview, then update a site, a host or a folder (asks first)\n  export [path] [--history] [-o <file>] [--json]\n                                  Export everything, a folder or a host (to the standard output\n                                  without -o); --history adds the scans, updates and rollbacks\n  import <file> [--into <folder>] [--yes] [--trust-keys] [--json]\n  import --ssh-config [--into <folder>] [--yes] [--json]\n                                  Preview, then add what is new from an export, a CSV site list\n                                  or ~/.ssh/config (asks first); host keys are kept only once\n                                  confirmed, or with --trust-keys\n  version                         Print the version\n  help                            Print this help\n\nPaths name folders, hosts and sites: \"Clients/Infomaniak/misits.ch\".\nExit status: 0 all good, 1 needs attention or not fully checked, 2 urgent, 3 error.\n",
     "unknownCommand": "unknown command \"{{command}}\"",
     "unknownOption": "unknown option \"{{option}}\"",
     "needsHost": "discover needs the path of a host, for example \"Clients/Infomaniak\"",
@@ -129,7 +129,69 @@
       "cancelled": "cancelled",
       "jsonNeedsYes": "--json needs --yes: a script cannot answer the confirmation"
     },
-    "attempt": "latest scan did not complete: {{reason}}"
+    "attempt": "latest scan did not complete: {{reason}}",
+    "needsValue": "{{option}} needs a value",
+    "export": {
+      "done": "Exported to {{file}} (folders: {{folders}}, hosts: {{hosts}}, sites: {{sites}}).",
+      "sensitive": "The file names your servers and SSH users, and holds your notes: keep it somewhere safe.",
+      "notExportable": "a site is exported with its host: give the path of the host, of a folder, or none for everything"
+    },
+    "import": {
+      "needsFile": "import needs one file, an export or a CSV site list, or --ssh-config",
+      "jsonNeedsYes": "--json needs --yes: a script cannot answer the confirmation",
+      "notAnExport": "{{file}} is neither a Vigie export nor a CSV site list",
+      "newer": "this export was written by a newer Vigie: update Vigie to import it",
+      "notAFolder": "\"{{path}}\" is not a folder",
+      "into": "Into {{path}}:",
+      "top": "the top of the site manager",
+      "status": {
+        "added": "new",
+        "present": "already there",
+        "refused": "refused"
+      },
+      "reason": {
+        "same-id": "same ID",
+        "same-name": "the folder of that name receives what the file puts in it",
+        "same-connection": "a host reaches the same account",
+        "same-path": "same host and path",
+        "renamed": "its name was taken: renamed",
+        "parent-refused": "what holds it is refused"
+      },
+      "sshPresent": "reached by {{path}}",
+      "sshError": "ssh cannot read it: {{message}}",
+      "lineRefused": "Line {{line}} refused: {{reason}}",
+      "line": {
+        "columns": "not as many values as the header",
+        "no-path": "no path",
+        "no-connection": "neither an alias nor a host",
+        "both-connection": "an alias and a host",
+        "no-user": "a host without a user",
+        "bad-port": "a port that is not one",
+        "bad-color": "an unknown color",
+        "bad-name": "a name that is empty or has a slash",
+        "bad-folder": "a folder path with an empty part",
+        "other-folder": "its account is in another folder on an earlier line",
+        "same-site": "the same site as an earlier line"
+      },
+      "history": "With the sites added: {{ignores}} findings set aside, {{scans}} scans, {{operations}} updates and rollbacks.",
+      "keyOffered": "Key of {{host}}: {{type}} {{fingerprint}}, trusted only if you confirm it.",
+      "keyRefused": "Key of {{host}} not kept: {{reason}}. The host asks at its first connection.",
+      "key": {
+        "invalid": "it is not a valid key",
+        "other-server": "it is for another server",
+        "unresolved": "ssh does not resolve the alias here",
+        "one-per-host": "the host has one already",
+        "other-trusted": "Vigie trusts another key for this server"
+      },
+      "prompt_one": "Import {{count}} folder, host or site? [y/N] ",
+      "prompt_other": "Import {{count}} folders, hosts and sites? [y/N] ",
+      "trustPrompt": "Trust {{type}} {{fingerprint}} for {{host}}? Check it with its administrator. [y/N] ",
+      "declined": "Nothing was imported.",
+      "nothing": "Nothing to import.",
+      "done_one": "{{count}} folder, host or site imported.",
+      "done_other": "{{count}} folders, hosts and sites imported.",
+      "keysLeft": "The keys not confirmed were not kept: those hosts ask at their first connection."
+    }
   },
   "outcome": {
     "cannotLoad": "WordPress cannot be loaded: {{message}}",

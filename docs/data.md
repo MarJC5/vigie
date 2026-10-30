@@ -84,6 +84,25 @@ connection, as a new host does.
 Everything is added in one go: when something changed in between and clashes with the preview,
 nothing is added.
 
+## From the command line
+
+```sh
+vigie export [path] [--history] [-o file] [--json]
+vigie import <file> [--into folder] [--yes] [--trust-keys] [--json]
+vigie import --ssh-config [--into folder] [--yes] [--json]
+```
+
+* `export` exports everything, a folder or a host. With `-o`, it writes the file, readable by you
+  only, and says what it holds (`--json`: as JSON); without, it writes the export itself to the
+  standard output, for a script or an add-on.
+* `import` reads an export, or a CSV site list (by its `.csv` extension, or when the file is not an
+  export), or with `--ssh-config` the names of `~/.ssh/config` that no host reaches yet. It prints
+  the preview, asks before adding anything, then asks for each host key. `--yes` answers the first
+  question for a script; the keys then stay out, unless `--trust-keys` keeps them all. `--json`
+  needs `--yes` and prints the preview with `"imported": true` once done.
+* Exit status: 0 done, or nothing to import; 1 when something was refused or left out, or you said
+  no; 3 on an error.
+
 ## Importing a site list (CSV)
 
 A list of sites, from a spreadsheet for example, is imported the same way: Vigie reads it into an
