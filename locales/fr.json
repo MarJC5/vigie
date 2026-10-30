@@ -135,7 +135,8 @@
   "outcome": {
     "cannotLoad": "WordPress ne se charge pas : {{message}}",
     "failed": "Relevé impossible : {{message}}",
-    "cancelled": "Relevé annulé"
+    "cancelled": "Relevé annulé",
+    "notWordPress": "Plus de WordPress à cet emplacement : le dossier est vide ou a été supprimé. Si le site a quitté ce serveur, retirez-le aussi de Vigie."
   },
   "failure": {
     "unresolved": "Le nom de l'hébergement est introuvable. Vérifiez l'adresse.",
@@ -299,7 +300,8 @@
     "sourceUnknownCount_many": "{{count}} extensions",
     "sourceUnknownCount_other": "{{count}} extensions",
     "show": "Voir",
-    "hide": "Masquer"
+    "hide": "Masquer",
+    "remove": "Retirer de Vigie…"
   },
   "updates": {
     "label": "Mises à jour en attente",

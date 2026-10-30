@@ -91,6 +91,7 @@ func TestScanProblemIsTranslatable(t *testing.T) {
 		{model.Scan{Outcome: model.ScanFailed, Failure: "timedOut", Error: "timed out"}, "failure.timedOut"},
 		{model.Scan{Outcome: model.ScanFailed, Error: "unexpected output"}, "outcome.failed"},
 		{model.Scan{Outcome: model.ScanCannotLoad, Error: "Error establishing a database connection."}, "outcome.cannotLoad"},
+		{model.Scan{Outcome: model.ScanCannotLoad, Failure: "notWordPress", Error: "This does not seem to be a WordPress installation."}, "outcome.notWordPress"},
 		{model.Scan{Outcome: model.ScanCancelled}, "outcome.cancelled"},
 	} {
 		if got := app.ScanProblem(tc.scan); got == nil || got.Code != tc.want || got.Detail != tc.scan.Error {

@@ -385,6 +385,7 @@ export function AppShell({
                 onSelect={setSelectedId}
                 onMore={edit && ((point) => openMenu(selected.id, point))}
                 onSiteMenu={edit && ((id, point) => openMenu(id, point, false))}
+                onRemove={edit && (() => setDialog({ kind: "delete", id: selected.id }))}
                 updating={updating(selected)}
                 {...(updatesApi && {
                   onUpdate: (site: SiteView, keys: Set<string>) =>
@@ -556,6 +557,7 @@ function Loaded({
   onSelect,
   onMore,
   onSiteMenu,
+  onRemove,
   updating,
   onUpdate,
   onFollow,
@@ -572,6 +574,7 @@ function Loaded({
   onSelect: (id: string) => void;
   onMore?: (point: { x: number; y: number }) => void;
   onSiteMenu?: (id: string, point: { x: number; y: number }) => void;
+  onRemove?: () => void;
   updating: boolean;
   onUpdate?: (site: SiteView, keys: Set<string>) => void;
   onFollow?: (site: SiteView) => void;
@@ -621,6 +624,7 @@ function Loaded({
         onFollow={onFollow && (() => onFollow(site))}
         history={v.history}
         onRollback={onRollback && ((id) => onRollback(site, id))}
+        onRemove={onRemove}
       />
     );
   }

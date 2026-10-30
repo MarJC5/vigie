@@ -31,6 +31,8 @@ export interface SiteOverviewProps {
   /** The updates and rollbacks of the site, the newest first; without it, no History tab. */
   history?: OperationView[];
   onRollback?: (operationID: string) => void;
+  /** Asks to remove the site from Vigie, offered when its folder holds no WordPress any more. */
+  onRemove?: () => void;
 }
 
 /** A site with its latest scan: an overview, the updates waiting, and the history of its updates. */
@@ -45,6 +47,7 @@ export function SiteOverview({
   onFollow,
   history,
   onRollback,
+  onRemove,
 }: SiteOverviewProps) {
   const { t, i18n } = useTranslation();
   const [tab, setTab] = useState("overview");
@@ -107,7 +110,9 @@ export function SiteOverview({
         )}
       </TabBar>
       <div role="tabpanel" id={panel} aria-labelledby={`${panel}-${tab}`} className={styles.panel}>
-        {scan?.problem && tab !== "history" && <ScanNotice code={scan.problem.code} detail={scan.problem.detail} />}
+        {scan?.problem && tab !== "history" && (
+          <ScanNotice code={scan.problem.code} detail={scan.problem.detail} onRemove={onRemove} />
+        )}
         {tab === "overview" && <Overview site={site} />}
         {tab === "updates" &&
           scan?.outcome === "completed" &&
@@ -223,9 +228,19 @@ function newestCore(scan: ScanView): string {
     .at(-1) ?? "";
 }
 
-/** Why the last scan did not complete; the raw message only when the text does not already say it. */
-function ScanNotice({ code, detail }: { code: string; detail: string }) {
+/** Why the last scan did not complete; the raw message only when the text does not already say it.
+ A site with no WordPress left at its path can be removed from Vigie at once. */
+function ScanNotice({ code, detail, onRemove }: { code: string; detail: string; onRemove?: () => void }) {
   const { t } = useTranslation();
   const text = t(code, { message: detail });
-  return <Notice title={t("overview.scanProblem")} text={text} detail={detail && !text.includes(detail) ? detail : undefined} />;
+  const gone = code === "outcome.notWordPress";
+  return (
+    <Notice
+      title={t("overview.scanProblem")}
+      text={text}
+      detail={detail && !text.includes(detail) ? detail : undefined}
+      tone={gone ? "warn" : "danger"}
+      action={gone && onRemove ? { label: t("overview.remove"), onClick: onRemove } : undefined}
+    />
+  );
 }

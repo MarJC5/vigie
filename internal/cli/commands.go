@@ -11,6 +11,7 @@ import (
 
 	"github.com/MarJC5/vigie/internal/discover"
 	"github.com/MarJC5/vigie/internal/model"
+	"github.com/MarJC5/vigie/internal/scan"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/workspace"
 )
@@ -47,6 +48,9 @@ func summary(env Env, s model.Scan) string {
 	switch s.Outcome {
 	case model.ScanCompleted:
 	case model.ScanCannotLoad:
+		if s.Failure == scan.FailureNotWordPress {
+			return env.t("outcome.notWordPress", nil)
+		}
 		return env.t("outcome.cannotLoad", map[string]any{"message": s.Error})
 	case model.ScanCancelled:
 		return env.t("outcome.cancelled", nil)

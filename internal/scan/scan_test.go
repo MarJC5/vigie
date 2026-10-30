@@ -106,6 +106,15 @@ func TestScanOfASiteThatCannotLoad(t *testing.T) {
 	}
 }
 
+// A site removed from the server: no WordPress at its path any more.
+func TestScanOfASiteNoLongerThere(t *testing.T) {
+	gone := sshx.Result{ExitCode: 1, Stderr: []byte("Error: This does not seem to be a WordPress installation.\nThe used path is: /home/u/sites/gone/")}
+	got, _ := scanner(answering{gone}).Site(context.Background(), job("plain"), nil)
+	if got.Outcome != model.ScanCannotLoad || got.Failure != scan.FailureNotWordPress {
+		t.Fatalf("scan = %q, %q; want cannot-load, %s", got.Outcome, got.Failure, scan.FailureNotWordPress)
+	}
+}
+
 func TestScanOfANetworkReadsItsSubsites(t *testing.T) {
 	j := job("network")
 	j.Site.Multisite = true
@@ -148,6 +157,13 @@ func TestProgressCountsTheSteps(t *testing.T) {
 }
 
 // failing answers every command with the same error.
+// answering gives every command the same result.
+type answering struct{ res sshx.Result }
+
+func (a answering) Run(context.Context, sshx.Target, string) (sshx.Result, error) {
+	return a.res, nil
+}
+
 type failing struct{ err error }
 
 func (f failing) Run(context.Context, sshx.Target, string) (sshx.Result, error) {

@@ -7,6 +7,7 @@ import (
 	"uuid"
 
 	"github.com/MarJC5/vigie/internal/model"
+	"github.com/MarJC5/vigie/internal/scan"
 )
 
 // SiteView is a site with its latest scan.
@@ -84,6 +85,9 @@ func ScanProblem(s model.Scan) *Problem {
 	case model.ScanCompleted:
 		return nil
 	case model.ScanCannotLoad:
+		if s.Failure == scan.FailureNotWordPress {
+			return &Problem{Code: "outcome.notWordPress", Detail: s.Error}
+		}
 		return &Problem{Code: "outcome.cannotLoad", Detail: s.Error}
 	case model.ScanCancelled:
 		return &Problem{Code: "outcome.cancelled", Detail: s.Error}

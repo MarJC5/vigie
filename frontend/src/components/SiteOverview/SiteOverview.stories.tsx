@@ -146,3 +146,28 @@ export const Network: Story = {
     await expect(canvas.getAllByRole("tabpanel")[0]).toHaveTextContent("Multisite network");
   },
 };
+
+// The site's folder holds no WordPress any more: the notice says so and offers to remove it.
+export const SiteNoLongerThere: Story = {
+  args: {
+    site: {
+      ...failedSite,
+      scan: {
+        ...failedSite.scan!,
+        outcome: "cannot-load",
+        problem: {
+          code: "outcome.notWordPress",
+          detail: "WordPress cannot be loaded: no WordPress at this path: Error: This does not seem to be a WordPress installation.",
+        },
+      },
+    },
+    onRemove: fn(),
+  },
+  play: async ({ canvas, args }) => {
+    const [alert] = canvas.getAllByRole("alert");
+    await expect(alert).toHaveTextContent("No WordPress at this path any more");
+    await expect(alert).toHaveTextContent("This does not seem to be a WordPress installation");
+    await userEvent.click(within(alert!).getByRole("button", { name: "Remove from Vigie…" }));
+    await expect(args.onRemove).toHaveBeenCalled();
+  },
+};

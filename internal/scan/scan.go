@@ -57,6 +57,8 @@ func (s Scanner) Site(ctx context.Context, job Job, progress func(Progress)) (mo
 		result.Outcome = model.ScanCompleted
 	case ctx.Err() != nil || errors.Is(err, context.Canceled):
 		result.Outcome, result.Error = model.ScanCancelled, "cancelled"
+	case errors.Is(err, wpcli.ErrNotWordPress):
+		result.Outcome, result.Failure, result.Error = model.ScanCannotLoad, FailureNotWordPress, err.Error()
 	case errors.Is(err, wpcli.ErrCannotLoad), errors.Is(err, errNotInstalled):
 		result.Outcome, result.Error = model.ScanCannotLoad, err.Error()
 	case errors.As(err, &connErr):
@@ -77,6 +79,10 @@ var errNotInstalled = errors.New("WordPress is not installed at this path")
 // FailureUnreadable is the failure of a scan whose WP-CLI output Vigie could not read; its text
 // in the catalogs is "failure.unreadable".
 const FailureUnreadable = "unreadable"
+
+// FailureNotWordPress is why a site could not load when its folder is gone or holds no WordPress
+// any more: most likely removed from the server. Its text in the catalogs is "outcome.notWordPress".
+const FailureNotWordPress = "notWordPress"
 
 // run is one scan in progress.
 type run struct {

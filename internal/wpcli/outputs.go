@@ -19,7 +19,12 @@ import (
 // error in the configuration); the error carries WP-CLI's message.
 var ErrCannotLoad = errors.New("WordPress cannot be loaded")
 
-// Check turns a failed WP-CLI command into ErrCannotLoad with its message; a success gives nil.
+// ErrNotWordPress is the kind of ErrCannotLoad where the site's folder is gone or holds no
+// WordPress any more: the site was most likely removed from the server.
+var ErrNotWordPress = errors.New("no WordPress at this path")
+
+// Check turns a failed WP-CLI command into ErrCannotLoad with its message, also ErrNotWordPress when
+// WP-CLI finds no WordPress at the path; a success gives nil.
 func Check(res sshx.Result) error {
 	if res.ExitCode == 0 {
 		return nil
@@ -27,6 +32,10 @@ func Check(res sshx.Result) error {
 	msg := strings.TrimSpace(string(res.Stderr))
 	if msg == "" {
 		msg = "exit status " + strconv.Itoa(res.ExitCode)
+	}
+	// WP-CLI's words, the same for a missing folder and a folder without wp-load.php.
+	if strings.Contains(msg, "This does not seem to be a WordPress installation") {
+		return fmt.Errorf("%w: %w: %s", ErrCannotLoad, ErrNotWordPress, msg)
 	}
 	return fmt.Errorf("%w: %s", ErrCannotLoad, msg)
 }

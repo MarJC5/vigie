@@ -94,6 +94,19 @@ func TestIsInstalled(t *testing.T) {
 	}
 }
 
+// WP-CLI's answer when the folder is gone or holds no WordPress any more (WP-CLI 2.12).
+const notWordPress = "Error: This does not seem to be a WordPress installation.\nThe used path is: /home/clients/0858/sites/gone.example.test/\nPass --path=`path/to/wordpress` or run `wp core download`."
+
+func TestCheckTellsAFolderWithoutWordPress(t *testing.T) {
+	err := wpcli.Check(sshx.Result{ExitCode: 1, Stderr: []byte(notWordPress)})
+	if !errors.Is(err, wpcli.ErrNotWordPress) || !errors.Is(err, wpcli.ErrCannotLoad) {
+		t.Fatalf("Check() = %v, want ErrNotWordPress, a kind of ErrCannotLoad", err)
+	}
+	if err := wpcli.Check(result(load(t, "broken", "plugin-list"))); errors.Is(err, wpcli.ErrNotWordPress) {
+		t.Errorf("Check() of a database error = %v, want no ErrNotWordPress", err)
+	}
+}
+
 func TestCommandErrorCarriesWPCLIsMessage(t *testing.T) {
 	err := wpcli.Check(result(load(t, "broken", "plugin-list")))
 	if !errors.Is(err, wpcli.ErrCannotLoad) || err.Error() == "" {

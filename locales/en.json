@@ -126,7 +126,8 @@
   "outcome": {
     "cannotLoad": "WordPress cannot be loaded: {{message}}",
     "failed": "Scan failed: {{message}}",
-    "cancelled": "Scan cancelled"
+    "cancelled": "Scan cancelled",
+    "notWordPress": "No WordPress at this path any more: the folder is empty or gone. If the site left this server, remove it from Vigie too."
   },
   "failure": {
     "unresolved": "The host name could not be found. Check the address.",
@@ -285,7 +286,8 @@
     "sourceUnknownCount_one": "{{count}} plugin",
     "sourceUnknownCount_other": "{{count}} plugins",
     "show": "Show",
-    "hide": "Hide"
+    "hide": "Hide",
+    "remove": "Remove from Vigie…"
   },
   "updates": {
     "label": "Pending updates",
