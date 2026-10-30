@@ -16,6 +16,7 @@ GO_TESTDATA := ./cmd/vigie/testdata/seed
 vet:
 	go vet ./... $(GO_TESTDATA)
 	go vet -tags integration ./internal/integration
+	go vet -tags server ./cmd/vigie
 
 # Only the module's packages: gofmt alone would also walk frontend/node_modules.
 fmt-check:
