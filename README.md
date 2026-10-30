@@ -22,8 +22,8 @@ to protect. Vigie takes another route:
 ## Planned features
 
 - A site manager with nested folders, hosts (one SSH account each) and sites, with colors and
-  notes; discovery of every WordPress install on a host; hosts from `~/.ssh/config` (an import from
-  FileZilla is planned as an optional add-on).
+  notes; discovery of every WordPress install on a host; hosts from `~/.ssh/config`, and from
+  FileZilla's site manager with the add-on [`vigie-filezilla`](https://github.com/MarJC5/vigie-filezilla).
 - A scan of each site: WordPress, PHP and database versions, pending updates (core, plugins,
   themes, translations), known vulnerabilities, abandoned plugins, file integrity, administrators
   and two-factor status, TLS certificate and domain expiry.

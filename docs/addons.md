@@ -26,6 +26,25 @@ downloads one, gives it no data and no access to anything, and runs one only whe
   own `--vigie-info`). Vigie never downloads or installs an add-on: the page of one that is not
   installed says where to get it.
 
+## Known add-ons
+
+| Add-on | Kind | What it does |
+| --- | --- | --- |
+| [`vigie-filezilla`](https://github.com/MarJC5/vigie-filezilla) | source | Turns FileZilla's site manager into hosts of Vigie: its folders, its SFTP servers with user, port, key file, comments and color. Never reads the passwords. |
+
+## Listing an add-on in the Library
+
+The Library's file is generated, never edited by hand. Add an entry with only the add-on's install
+address and name to `internal/addons/library.json`:
+
+```json
+{"install": "https://github.com/someone/vigie-example", "info": {"name": "example"}}
+```
+
+then install a release of the add-on (not a development build) and run `make library`: each entry
+takes the description its add-on prints with `--vigie-info`, without its settings. Run it again
+when an add-on changes its texts or its image.
+
 ## Writing an add-on
 
 An add-on answers two options, reserved for Vigie; every other option is its own.
