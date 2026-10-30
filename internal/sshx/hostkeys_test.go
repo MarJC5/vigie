@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -102,6 +103,32 @@ func TestTrustWritesOnlyVigiesFile(t *testing.T) {
 	}
 	if info.Mode().Perm() != 0o600 {
 		t.Fatalf("known_hosts mode = %v, want 0600", info.Mode().Perm())
+	}
+}
+
+func TestTrustedKeysReadBackWhatTrustWrote(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "known_hosts")
+	if keys, err := sshx.TrustedKeys(file, "ssh.example.test"); err != nil || keys != nil {
+		t.Fatalf("TrustedKeys() without a file = %v, %v", keys, err)
+	}
+	keys := scanned(t)
+	for _, name := range []string{"ssh.example.test", "[ssh.example.test]:2222"} {
+		if err := sshx.Trust(file, name, keys[0]); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// A line Vigie would not write itself is skipped.
+	f, err := os.OpenFile(file, os.O_APPEND|os.O_WRONLY, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.WriteString("ssh.example.test ssh-ed25519 not-a-key\nssh.example.test,other ssh-ed25519 " + keys[1].Key + "\n"); err != nil {
+		t.Fatal(err)
+	}
+	f.Close()
+	got, err := sshx.TrustedKeys(file, "ssh.example.test")
+	if err != nil || !reflect.DeepEqual(got, []sshx.HostKey{keys[0]}) {
+		t.Errorf("TrustedKeys() = %v, %v; want the key trusted under that very name", got, err)
 	}
 }
 

@@ -177,6 +177,30 @@ func Trust(file, name string, key HostKey) error {
 	return os.Rename(tmp.Name(), file)
 }
 
+// TrustedKeys returns the keys Vigie's known_hosts file trusts for name; none when the file or
+// the name is missing. Lines it would not write itself are skipped.
+func TrustedKeys(file, name string) ([]HostKey, error) {
+	data, err := os.ReadFile(file)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var keys []HostKey
+	for line := range strings.Lines(string(data)) {
+		fields := strings.Fields(line)
+		if len(fields) != 3 || fields[0] != name {
+			continue
+		}
+		key := HostKey{Type: fields[1], Key: fields[2]}
+		if _, err := key.blob(); err == nil {
+			keys = append(keys, key)
+		}
+	}
+	return keys, nil
+}
+
 // KeyScanner asks a server for its host keys with the system ssh-keyscan. Nothing is trusted
 // until the user accepts a fingerprint.
 type KeyScanner struct {

@@ -148,3 +148,23 @@ func TestAnIncompleteScanKeepsTheLatestCompleteOne(t *testing.T) {
 		t.Errorf("after a complete scan: %+v", latest[site.ID])
 	}
 }
+
+func TestEveryScanOfASite(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	site := siteOnHost(t, db, "a.example.test")
+	other := siteOnHost(t, db, "b.example.test")
+	start := time.Date(2026, 10, 30, 9, 0, 0, 0, time.UTC)
+	first, second := scanOf(site, start, "7.1.3"), scanOf(site, start.Add(time.Hour), "7.1.4")
+	second.Findings = []model.Finding{{Kind: model.KindFileEditing, Subject: "site", Level: model.LevelAttention}}
+	for _, s := range []model.Scan{first, scanOf(other, start, "7.1.3"), second} {
+		must(t, db.SaveScan(ctx, s))
+	}
+	got, err := db.Scans(ctx, site.ID)
+	if err != nil || len(got) != 2 {
+		t.Fatalf("Scans() = %d scans, %v; want the site's two", len(got), err)
+	}
+	if got[0].ID != first.ID || got[1].ID != second.ID || len(got[0].Items) != len(first.Items) || len(got[1].Findings) != 1 {
+		t.Errorf("Scans() = %+v, want the oldest first with their items and findings", got)
+	}
+}
