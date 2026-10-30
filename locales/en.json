@@ -53,6 +53,7 @@
     "ok": "Up to date",
     "warn": "Needs attention",
     "danger": "Urgent",
+    "partial": "Not fully checked",
     "unknown": "Unknown"
   },
   "color": {
@@ -84,7 +85,7 @@
     "sites_other": "{{name}} · {{count}} sites"
   },
   "cli": {
-    "usage": "Usage: vigie [--data-dir <dir>] [command]\n\nWithout a command, Vigie opens its window.\n\nCommands:\n  tree [--json]                   Print the site manager with each site's status\n  scan [path] [--json]            Scan a site, a host or a folder (everything without a path)\n  discover <host path> [--json]   List the WordPress installs of a host (adds nothing)\n  update [path] [--yes] [--json]  Preview, then update a site, a host or a folder (asks first)\n  version                         Print the version\n  help                            Print this help\n\nPaths name folders, hosts and sites: \"Clients/Infomaniak/misits.ch\".\nExit status: 0 all good, 1 needs attention, 3 error.\n",
+    "usage": "Usage: vigie [--data-dir <dir>] [command]\n\nWithout a command, Vigie opens its window.\n\nCommands:\n  tree [--json]                   Print the site manager with each site's status\n  scan [path] [--check-files] [--json]\n                                  Scan a site, a host or a folder (everything without a path);\n                                  --check-files compares the files again, even within the day\n  discover <host path> [--json]   List the WordPress installs of a host (adds nothing)\n  update [path] [--yes] [--json]  Preview, then update a site, a host or a folder (asks first)\n  version                         Print the version\n  help                            Print this help\n\nPaths name folders, hosts and sites: \"Clients/Infomaniak/misits.ch\".\nExit status: 0 all good, 1 needs attention or not fully checked, 2 urgent, 3 error.\n",
     "unknownCommand": "unknown command \"{{command}}\"",
     "unknownOption": "unknown option \"{{option}}\"",
     "needsHost": "discover needs the path of a host, for example \"Clients/Infomaniak\"",
@@ -100,6 +101,12 @@
     "languageUpdates_one": "{{count}} translation update",
     "languageUpdates_other": "{{count}} translation updates",
     "unchecked": "some update checks did not reach wordpress.org",
+    "urgentFindings_one": "{{count}} urgent finding",
+    "urgentFindings_other": "{{count}} urgent findings",
+    "attentionFindings_one": "{{count}} finding to watch",
+    "attentionFindings_other": "{{count}} findings to watch",
+    "notChecked_one": "{{count}} check not run",
+    "notChecked_other": "{{count}} checks not run",
     "truncated_one": "More installs were found: only the first {{count}} was checked.",
     "truncated_other": "More installs were found: only the first {{count}} were checked.",
     "update": {

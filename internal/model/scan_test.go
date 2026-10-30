@@ -19,6 +19,15 @@ func upToDate() model.Scan {
 	}
 }
 
+// found adds one finding per level.
+func found(levels ...model.FindingLevel) func(*model.Scan) {
+	return func(s *model.Scan) {
+		for i, l := range levels {
+			s.Findings = append(s.Findings, model.Finding{Kind: model.KindCheck, Subject: "site", Identifier: string(rune('a' + i)), Level: l})
+		}
+	}
+}
+
 func TestSiteStatus(t *testing.T) {
 	with := func(change func(*model.Scan)) model.Scan {
 		s := upToDate()
@@ -48,6 +57,23 @@ func TestSiteStatus(t *testing.T) {
 		{"translation check failed", with(func(s *model.Scan) { s.LanguagesChecked = false }), model.StatusAttention},
 		// Shown on the plugin, but most client sites have one: it would keep them all orange.
 		{"plugin not on wordpress.org", with(func(s *model.Scan) { s.Items[1].OnWordPressOrg = false }), model.StatusUpToDate},
+		// The worst finding that is not ignored.
+		{"urgent finding", with(found(model.LevelUrgent, model.LevelAttention, model.LevelNotChecked)), model.StatusUrgent},
+		{"urgent finding and an update", with(func(s *model.Scan) {
+			s.Items[1].Update = model.UpdateAvailable
+			found(model.LevelUrgent)(s)
+		}), model.StatusUrgent},
+		{"finding that needs attention", with(found(model.LevelAttention, model.LevelNotChecked)), model.StatusAttention},
+		{"a check not run", with(found(model.LevelNotChecked, model.LevelInfo)), model.StatusPartial},
+		{"a check not run and an update", with(func(s *model.Scan) {
+			s.Items[1].Update = model.UpdateAvailable
+			found(model.LevelNotChecked)(s)
+		}), model.StatusAttention},
+		{"information only", with(found(model.LevelInfo)), model.StatusUpToDate},
+		{"urgent finding ignored", with(func(s *model.Scan) {
+			found(model.LevelUrgent)(s)
+			s.Findings[0].Ignore = &model.Ignore{Key: s.Findings[0].Key(), Reason: "patched on purpose"}
+		}), model.StatusUpToDate},
 	} {
 		if got := tc.scan.Status(); got != tc.want {
 			t.Errorf("%s: Status() = %q, want %q", tc.name, got, tc.want)

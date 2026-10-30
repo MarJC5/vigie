@@ -75,7 +75,7 @@ func (s *Scanner) Scan(nodeID string) *Problem {
 
 	go func() {
 		defer cancel()
-		results, _ := s.ws.ScanNode(ctx, node, func(p scan.Progress) { s.progress(nodeID, p) })
+		results, _ := s.ws.ScanNode(ctx, node, workspace.ScanOptions{}, func(p scan.Progress) { s.progress(nodeID, p) })
 		s.mu.Lock()
 		delete(s.running, nodeID)
 		for i, id := range s.order {

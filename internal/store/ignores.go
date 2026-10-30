@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+	"uuid"
 
 	"github.com/MarJC5/vigie/internal/model"
 )
@@ -39,23 +40,32 @@ func (db *DB) DeleteIgnore(ctx context.Context, siteID model.ID, key string) err
 
 // Ignores returns the ignores of a site, sorted by finding key.
 func (db *DB) Ignores(ctx context.Context, siteID model.ID) ([]model.Ignore, error) {
-	rows, err := db.sql.QueryContext(ctx, `SELECT finding_key, until_version, reason, created_at
-		FROM ignores WHERE site_id = ? ORDER BY finding_key`, siteID.String())
+	bySite, err := db.ignores(ctx, "WHERE site_id = ?", siteID.String())
+	return bySite[siteID], err
+}
+
+// ignores returns the ignores that match a condition, by site, each sorted by finding key.
+func (db *DB) ignores(ctx context.Context, where string, args ...any) (map[model.ID][]model.Ignore, error) {
+	rows, err := db.sql.QueryContext(ctx, `SELECT site_id, finding_key, until_version, reason, created_at
+		FROM ignores `+where+` ORDER BY site_id, finding_key`, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var list []model.Ignore
+	bySite := map[model.ID][]model.Ignore{}
 	for rows.Next() {
-		i := model.Ignore{SiteID: siteID}
-		var created string
-		if err := rows.Scan(&i.Key, &i.UntilVersion, &i.Reason, &created); err != nil {
+		var i model.Ignore
+		var site, created string
+		if err := rows.Scan(&site, &i.Key, &i.UntilVersion, &i.Reason, &created); err != nil {
+			return nil, err
+		}
+		if i.SiteID, err = uuid.Parse(site); err != nil {
 			return nil, err
 		}
 		if i.Created, err = time.Parse(time.RFC3339Nano, created); err != nil {
 			return nil, err
 		}
-		list = append(list, i)
+		bySite[i.SiteID] = append(bySite[i.SiteID], i)
 	}
-	return list, rows.Err()
+	return bySite, rows.Err()
 }

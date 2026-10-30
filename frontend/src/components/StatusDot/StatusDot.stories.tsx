@@ -7,13 +7,15 @@ const meta = { component: StatusDot, args: { status: "ok" } } satisfies Meta<typ
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// The meaning is never carried by color alone: each status has its own shape and its label.
+// The meaning is never carried by color alone: each status has its shape and its label ("not fully
+// checked" and "unknown" share the ring).
 export const AllStatuses: Story = {
   render: () => (
     <div style={{ display: "flex", gap: 20 }}>
       <StatusDot status="ok" withLabel />
       <StatusDot status="warn" withLabel />
       <StatusDot status="danger" withLabel />
+      <StatusDot status="partial" withLabel />
       <StatusDot status="unknown" withLabel />
     </div>
   ),

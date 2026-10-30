@@ -86,3 +86,34 @@ func TestLookupCache(t *testing.T) {
 		t.Fatalf("Lookup() after a newer answer = %+v", got)
 	}
 }
+
+// An ignore applies to the latest scan as it is loaded, also one made after the scan.
+func TestLatestScansMarkTheIgnoredFindings(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	site := siteOnHost(t, db, "a.example.test")
+	other := siteOnHost(t, db, "b.example.test")
+	start := time.Date(2026, 10, 30, 9, 0, 0, 0, time.UTC)
+	s := scanOf(site, start, "7.1.3")
+	s.Findings = []model.Finding{
+		{Kind: model.KindHiddenFromSearch, Subject: "site", Level: model.LevelAttention},
+		{Kind: model.KindFileEditing, Subject: "site", Level: model.LevelAttention},
+	}
+	must(t, db.SaveScan(ctx, s))
+	o := scanOf(other, start, "7.1.3")
+	o.Findings = []model.Finding{{Kind: model.KindHiddenFromSearch, Subject: "site", Level: model.LevelAttention}}
+	must(t, db.SaveScan(ctx, o))
+	ignore := model.Ignore{SiteID: site.ID, Key: s.Findings[0].Key(), Reason: "staging copy", Created: start.Add(time.Hour)}
+	must(t, db.SaveIgnore(ctx, ignore))
+
+	latest, err := db.LatestScans(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := latest[site.ID].Findings; got[0].Ignore == nil || *got[0].Ignore != ignore || got[1].Ignore != nil {
+		t.Errorf("site's findings = %+v, want the first ignored", got)
+	}
+	if got := latest[other.ID].Findings; got[0].Ignore != nil {
+		t.Errorf("the other site's finding is ignored: %+v", got)
+	}
+}

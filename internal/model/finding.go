@@ -76,6 +76,9 @@ type Finding struct {
 	Version    string // the subject's installed version, when it has one
 	Level      FindingLevel
 	Facts      map[string]string // the details shown: score, fixed version, date, reason...
+	// Ignore sets the finding aside when an ignore of its site covers it: it stays listed and never
+	// counts. Not stored with the scan: an ignore applies to the scans before it too.
+	Ignore *Ignore
 }
 
 // Key names a finding the same way from one scan to the next, whatever its version and facts: an
@@ -109,4 +112,41 @@ func (i Ignore) Validate() error {
 // it is permanent.
 func (i Ignore) Covers(f Finding) bool {
 	return i.Key == f.Key() && (i.UntilVersion == "" || i.UntilVersion == f.Version)
+}
+
+// ApplyIgnores marks the findings of the scan that the ignores of its site cover.
+func (s *Scan) ApplyIgnores(ignores []Ignore) {
+	for i := range s.Findings {
+		s.Findings[i].Ignore = nil
+		for _, ig := range ignores {
+			if ig.SiteID == s.SiteID && ig.Covers(s.Findings[i]) {
+				s.Findings[i].Ignore = &ig
+				break
+			}
+		}
+	}
+}
+
+// FindingCounts counts the findings that are not ignored, by level; information is not counted.
+type FindingCounts struct {
+	Urgent, Attention, NotChecked int
+}
+
+// CountFindings counts the findings that are not ignored.
+func (s Scan) CountFindings() FindingCounts {
+	var c FindingCounts
+	for _, f := range s.Findings {
+		if f.Ignore != nil {
+			continue
+		}
+		switch f.Level {
+		case LevelUrgent:
+			c.Urgent++
+		case LevelAttention:
+			c.Attention++
+		case LevelNotChecked:
+			c.NotChecked++
+		}
+	}
+	return c
 }

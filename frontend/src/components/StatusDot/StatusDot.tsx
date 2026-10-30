@@ -2,10 +2,11 @@ import { useTranslation } from "react-i18next";
 
 import styles from "./StatusDot.module.css";
 
-export type Status = "ok" | "warn" | "danger" | "unknown";
+export type Status = "ok" | "warn" | "danger" | "partial" | "unknown";
 
-// Each status has its own shape, so it never depends on color alone.
-const shapes: Record<Status, string> = { ok: "circle", warn: "square", danger: "triangle", unknown: "ring" };
+// Each status has its own shape, so it never depends on color alone; "not fully checked" shares
+// the ring of "unknown" and differs by its name.
+const shapes: Record<Status, string> = { ok: "circle", warn: "square", danger: "triangle", partial: "ring", unknown: "ring" };
 
 export interface StatusDotProps {
   status: Status;

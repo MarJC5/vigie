@@ -16,8 +16,9 @@ import (
 // Exit statuses, so scripts and cron can act on a scan.
 const (
 	exitOK        = 0
-	exitAttention = 1
-	exitError     = 3 // 2 is kept for "urgent" (known vulnerabilities)
+	exitAttention = 1 // needs attention, or not fully checked
+	exitUrgent    = 2
+	exitError     = 3
 )
 
 // Options are the parsed command line.
@@ -95,6 +96,11 @@ func Run(ctx context.Context, opts Options, env Env) int {
 	if name == "update" {
 		rest, yes = withoutFlag(rest, "--yes")
 	}
+	// --check-files compares the files with wordpress.org's even when it was done less than a day ago.
+	checkFiles := false
+	if name == "scan" {
+		rest, checkFiles = withoutFlag(rest, "--check-files")
+	}
 	args, asJSON, err := commandArgs(rest)
 	if err != nil {
 		return env.fail(env.t("cli.unknownOption", map[string]any{"option": err.Error()}))
@@ -112,7 +118,7 @@ func Run(ctx context.Context, opts Options, env Env) int {
 	case "tree":
 		return tree(ctx, env, ws, asJSON)
 	case "scan":
-		return scanPath(ctx, env, ws, path, asJSON)
+		return scanPath(ctx, env, ws, path, workspace.ScanOptions{CheckFiles: checkFiles}, asJSON)
 	case "update":
 		return updatePath(ctx, env, ws, path, asJSON, yes)
 	}

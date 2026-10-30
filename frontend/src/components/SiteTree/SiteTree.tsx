@@ -202,7 +202,7 @@ export function SiteTree({
 
 // The latest scan's status; a site never scanned shows the unknown ring.
 function siteStatus(status: string): Status {
-  return status === "ok" || status === "warn" || status === "danger" ? status : "unknown";
+  return status === "ok" || status === "warn" || status === "danger" || status === "partial" ? status : "unknown";
 }
 
 // Lower case without accents, so "écoles" matches "ECOLES".

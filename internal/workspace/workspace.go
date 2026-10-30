@@ -139,10 +139,17 @@ type Scanned struct {
 	Subsites []model.Subsite
 }
 
+// ScanOptions change what a scan does.
+type ScanOptions struct {
+	// CheckFiles compares the files with wordpress.org's even when the last comparison is less
+	// than a day old.
+	CheckFiles bool
+}
+
 // Scan scans the site at path, the sites of a host, or every site under a folder ("" for all),
 // stores each scan (also a failed or cancelled one) and the subsites of networks, and returns the
-// scans in tree order.
-func (w *Workspace) Scan(ctx context.Context, path string, progress func(scan.Progress)) ([]Scanned, error) {
+// scans in tree order, with the findings the ignores of each site cover marked.
+func (w *Workspace) Scan(ctx context.Context, path string, opts ScanOptions, progress func(scan.Progress)) ([]Scanned, error) {
 	node := model.Root
 	if path != "" {
 		tree, err := w.db.LoadTree(ctx)
@@ -153,11 +160,11 @@ func (w *Workspace) Scan(ctx context.Context, path string, progress func(scan.Pr
 			return nil, err
 		}
 	}
-	return w.ScanNode(ctx, node, progress)
+	return w.ScanNode(ctx, node, opts, progress)
 }
 
 // ScanNode is Scan for a node of the tree (model.Root for all).
-func (w *Workspace) ScanNode(ctx context.Context, node model.Node, progress func(scan.Progress)) ([]Scanned, error) {
+func (w *Workspace) ScanNode(ctx context.Context, node model.Node, opts ScanOptions, progress func(scan.Progress)) ([]Scanned, error) {
 	tree, err := w.db.LoadTree(ctx)
 	if err != nil {
 		return nil, err
@@ -185,6 +192,7 @@ func (w *Workspace) ScanNode(ctx context.Context, node model.Node, progress func
 		job := scan.Job{
 			Site: site, Target: sshx.TargetFor(host), HostKey: host.ID.String(),
 			Max: maxConcurrent(host), WPCLI: tree.EffectiveWPCLI(site.ID), Previous: latest[site.ID],
+			CheckFiles: opts.CheckFiles,
 		}
 		results[i].Path = tree.PathOf(model.Node{Kind: model.KindSite, ID: site.ID})
 		wg.Go(func() {
@@ -206,6 +214,11 @@ func (w *Workspace) ScanNode(ctx context.Context, node model.Node, progress func
 				return results, err
 			}
 		}
+		ignores, err := w.db.Ignores(keep, sites[i].ID)
+		if err != nil {
+			return results, err
+		}
+		results[i].Scan.ApplyIgnores(ignores)
 	}
 	return results, nil
 }

@@ -70,7 +70,8 @@ func (db *DB) SaveScan(ctx context.Context, s model.Scan) error {
 	})
 }
 
-// LatestScans returns the latest scan of each scanned site, with its items.
+// LatestScans returns the latest scan of each scanned site, with its items and its findings, those
+// an ignore of the site covers marked.
 func (db *DB) LatestScans(ctx context.Context) (map[model.ID]model.Scan, error) {
 	rows, err := db.sql.QueryContext(ctx, `SELECT id, site_id, started_at, finished_at, outcome, failure, error,
 			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
@@ -117,7 +118,18 @@ func (db *DB) LatestScans(ctx context.Context) (map[model.ID]model.Scan, error) 
 	if err := db.loadScanItems(ctx, scans, byScan); err != nil {
 		return nil, err
 	}
-	return scans, db.loadScanFindings(ctx, scans, byScan)
+	if err := db.loadScanFindings(ctx, scans, byScan); err != nil {
+		return nil, err
+	}
+	ignores, err := db.ignores(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	for id, s := range scans {
+		s.ApplyIgnores(ignores[id])
+		scans[id] = s
+	}
+	return scans, nil
 }
 
 // loadScanFindings adds the findings of the given scans, in their order.

@@ -80,7 +80,7 @@ func setup(t *testing.T) (*workspace.Workspace, *store.DB, *sshxtest.Fake) {
 func TestScanAFolderStoresEveryScan(t *testing.T) {
 	ws, db := bench(t)
 	var reports []scan.Progress
-	results, err := ws.Scan(context.Background(), "Clients", func(p scan.Progress) { reports = append(reports, p) })
+	results, err := ws.Scan(context.Background(), "Clients", workspace.ScanOptions{}, func(p scan.Progress) { reports = append(reports, p) })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,8 @@ func TestScanAFolderStoresEveryScan(t *testing.T) {
 	if !slices.Equal(paths, want) {
 		t.Fatalf("scanned %q, want %q in tree order", paths, want)
 	}
-	if results[0].Scan.Status() != model.StatusAttention || results[2].Scan.Outcome != model.ScanCannotLoad {
+	// Urgent: the bench's image adds wp-config-docker.php to WordPress's files.
+	if results[0].Scan.Status() != model.StatusUrgent || results[2].Scan.Outcome != model.ScanCannotLoad {
 		t.Errorf("results = %q, %q", results[0].Scan.Status(), results[2].Scan.Outcome)
 	}
 	if len(reports) == 0 {
@@ -115,7 +116,7 @@ func TestScanAFolderStoresEveryScan(t *testing.T) {
 
 func TestScanOneSite(t *testing.T) {
 	ws, _ := bench(t)
-	results, err := ws.Scan(context.Background(), "Clients/Bench/outdated.example.test", nil)
+	results, err := ws.Scan(context.Background(), "Clients/Bench/outdated.example.test", workspace.ScanOptions{}, nil)
 	if err != nil || len(results) != 1 || results[0].Scan.Outcome != model.ScanCompleted {
 		t.Fatalf("Scan() = %+v, %v", results, err)
 	}
@@ -134,16 +135,49 @@ func TestTheFilesOfTheLatestScanAreCarriedOver(t *testing.T) {
 		}
 		return n
 	}
-	first, err := ws.Scan(ctx, "Clients/Bench/outdated.example.test", nil)
+	first, err := ws.Scan(ctx, "Clients/Bench/outdated.example.test", workspace.ScanOptions{}, nil)
 	if err != nil || checksums() != 2 {
 		t.Fatalf("first scan: %v, %d checksum commands", err, checksums())
 	}
-	second, err := ws.Scan(ctx, "Clients/Bench/outdated.example.test", nil)
+	second, err := ws.Scan(ctx, "Clients/Bench/outdated.example.test", workspace.ScanOptions{}, nil)
 	if err != nil || checksums() != 2 {
 		t.Fatalf("second scan: %v, %d checksum commands; want none more", err, checksums())
 	}
 	if !second[0].Scan.FilesChecked.Equal(first[0].Scan.FilesChecked) {
 		t.Errorf("files checked %v, then %v", first[0].Scan.FilesChecked, second[0].Scan.FilesChecked)
+	}
+	if _, err := ws.Scan(ctx, "Clients/Bench/outdated.example.test", workspace.ScanOptions{CheckFiles: true}, nil); err != nil || checksums() != 4 {
+		t.Fatalf("scan asked to check the files: %v, %d checksum commands; want 2 more", err, checksums())
+	}
+}
+
+// A fresh scan comes back with the ignores of its site applied.
+func TestAScanAppliesTheIgnoresOfItsSite(t *testing.T) {
+	ws, db := bench(t)
+	ctx := context.Background()
+	tree, err := db.LoadTree(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	node, err := tree.Resolve("Clients/Bench/outdated.example.test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	key := "core-file|core|wp-config-docker.php"
+	if err := db.SaveIgnore(ctx, model.Ignore{SiteID: node.ID, Key: key, Reason: "the container image's", Created: time.Now()}); err != nil {
+		t.Fatal(err)
+	}
+	results, err := ws.Scan(ctx, "Clients/Bench/outdated.example.test", workspace.ScanOptions{}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range results[0].Scan.Findings {
+		if f.Key() == key && f.Ignore == nil {
+			t.Errorf("finding not marked ignored: %+v", f)
+		}
+	}
+	if results[0].Scan.Status() != model.StatusAttention {
+		t.Errorf("Status() = %q, want needs attention once the urgent finding is ignored", results[0].Scan.Status())
 	}
 }
 
@@ -170,7 +204,7 @@ func TestLookupsNeedTheUsersAgreement(t *testing.T) {
 
 func TestScanUnknownPath(t *testing.T) {
 	ws, _ := bench(t)
-	if _, err := ws.Scan(context.Background(), "Clients/Nope", nil); !errors.Is(err, model.ErrNotFound) {
+	if _, err := ws.Scan(context.Background(), "Clients/Nope", workspace.ScanOptions{}, nil); !errors.Is(err, model.ErrNotFound) {
 		t.Fatalf("Scan(unknown) = %v, want ErrNotFound", err)
 	}
 }

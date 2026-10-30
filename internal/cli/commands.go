@@ -8,6 +8,7 @@ import (
 	"io"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/MarJC5/vigie/internal/discover"
 	"github.com/MarJC5/vigie/internal/model"
@@ -76,6 +77,15 @@ func summary(env Env, s model.Scan) string {
 	if !s.CoreChecked || !s.PluginsChecked || !s.ThemesChecked || !s.LanguagesChecked {
 		parts = append(parts, env.t("cli.unchecked", nil))
 	}
+	found := s.CountFindings()
+	for _, c := range []struct {
+		key   string
+		count int
+	}{{"cli.urgentFindings", found.Urgent}, {"cli.attentionFindings", found.Attention}, {"cli.notChecked", found.NotChecked}} {
+		if c.count > 0 {
+			parts = append(parts, env.t(c.key, map[string]any{"count": c.count}))
+		}
+	}
 	return strings.Join(parts, ", ")
 }
 
@@ -95,16 +105,18 @@ func statusText(env Env, s model.Scan) string {
 	return env.t("status."+string(s.Status()), nil)
 }
 
-// exitFor is the worst outcome: an error when a scan did not complete, attention when a site
-// needs it.
+// exitFor is the worst outcome: an error when a scan did not complete, urgent when a site is,
+// attention when a site needs it or was not fully checked.
 func exitFor(scans []model.Scan) int {
 	code := exitOK
 	for _, s := range scans {
-		switch {
-		case s.Outcome != model.ScanCompleted:
+		switch s.Status() {
+		case model.StatusUnknown:
 			return exitError
-		case s.Status() == model.StatusAttention:
-			code = exitAttention
+		case model.StatusUrgent:
+			code = exitUrgent
+		case model.StatusAttention, model.StatusPartial:
+			code = max(code, exitAttention)
 		}
 	}
 	return code
@@ -123,6 +135,40 @@ type scanJSON struct {
 	Pending   pendingJSON `json:"pending"`
 	Checked   checkedJSON `json:"checked"`
 	Subsites  int         `json:"subsites,omitempty"`
+	// FilesChecked is when the files were last compared with wordpress.org's.
+	FilesChecked string        `json:"filesChecked,omitempty"`
+	Findings     []findingJSON `json:"findings"`
+}
+
+// findingJSON is a finding, its facts as Vigie stores them; an ignored one says until when and why.
+type findingJSON struct {
+	Kind       string            `json:"kind"`
+	Subject    string            `json:"subject"`
+	Identifier string            `json:"identifier,omitempty"`
+	Version    string            `json:"version,omitempty"`
+	Level      string            `json:"level"`
+	Facts      map[string]string `json:"facts,omitempty"`
+	Ignored    bool              `json:"ignored"`
+	Ignore     *ignoreJSON       `json:"ignore,omitempty"`
+}
+
+type ignoreJSON struct {
+	UntilVersion string `json:"untilVersion,omitempty"` // empty: permanently
+	Reason       string `json:"reason,omitempty"`
+	Created      string `json:"created"`
+}
+
+func findingsJSON(findings []model.Finding) []findingJSON {
+	out := make([]findingJSON, len(findings))
+	for i, f := range findings {
+		out[i] = findingJSON{Kind: string(f.Kind), Subject: f.Subject, Identifier: f.Identifier, Version: f.Version,
+			Level: string(f.Level), Facts: f.Facts, Ignored: f.Ignore != nil}
+		if f.Ignore != nil {
+			out[i].Ignore = &ignoreJSON{UntilVersion: f.Ignore.UntilVersion, Reason: f.Ignore.Reason,
+				Created: f.Ignore.Created.UTC().Format(time.RFC3339)}
+		}
+	}
+	return out
 }
 
 type pendingJSON struct {
@@ -139,8 +185,8 @@ type checkedJSON struct {
 	Languages bool `json:"languages"`
 }
 
-func scanPath(ctx context.Context, env Env, ws *workspace.Workspace, path string, asJSON bool) int {
-	results, err := ws.Scan(ctx, path, nil)
+func scanPath(ctx context.Context, env Env, ws *workspace.Workspace, path string, opts workspace.ScanOptions, asJSON bool) int {
+	results, err := ws.Scan(ctx, path, opts, nil)
 	if err != nil {
 		return env.fail(explain(env, path, err))
 	}
@@ -157,7 +203,10 @@ func scanPath(ctx context.Context, env Env, ws *workspace.Workspace, path string
 				WordPress: s.WordPress, PHPCLI: s.PHPCLI, WPCLI: s.WPCLI, Home: s.Home,
 				Pending:  pendingJSON{Core: p.Core, Plugins: p.Plugins, Themes: p.Themes, Languages: p.Languages},
 				Checked:  checkedJSON{Core: s.CoreChecked, Plugins: s.PluginsChecked, Themes: s.ThemesChecked, Languages: s.LanguagesChecked},
-				Subsites: len(r.Subsites),
+				Subsites: len(r.Subsites), Findings: findingsJSON(s.Findings),
+			}
+			if !s.FilesChecked.IsZero() {
+				out[i].FilesChecked = s.FilesChecked.UTC().Format(time.RFC3339)
 			}
 		}
 		writeJSON(env.Out, out)

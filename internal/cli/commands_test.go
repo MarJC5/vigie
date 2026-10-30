@@ -78,8 +78,55 @@ func (b byHost) Run(ctx context.Context, target sshx.Target, remote string) (ssh
 	return sshx.Result{}, &sshx.ConnectionError{Failure: sshx.FailureRefused, Message: "ssh: connect to host down port 22: Connection refused"}
 }
 
-func TestScanASiteThatNeedsAttention(t *testing.T) {
+// The bench's image adds wp-config-docker.php where only WordPress's own files belong: urgent.
+const dockerFile = "core-file|core|wp-config-docker.php"
+
+// runIn runs a command on a workspace.
+func runIn(t *testing.T, ws *workspace.Workspace, lang string, args ...string) (int, string) {
+	t.Helper()
+	var out, errOut strings.Builder
+	code := cli.Run(context.Background(), cli.Options{Command: args}, cli.Env{
+		Out: &out, Err: &errOut, Lang: lang, Texts: texts(t),
+		Open: func(context.Context) (*workspace.Workspace, error) { return ws, nil },
+	})
+	return code, out.String() + errOut.String()
+}
+
+// ignoreDockerFile ignores the bench's added file on the outdated site, permanently.
+func ignoreDockerFile(t *testing.T, ws *workspace.Workspace) {
+	t.Helper()
+	tree, err := ws.DB().LoadTree(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	node, err := tree.Resolve("Clients/Bench/outdated.example.test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := ws.DB().SaveIgnore(context.Background(), model.Ignore{SiteID: node.ID, Key: dockerFile,
+		Reason: "added by the container image", Created: time.Now()}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestScanAnUrgentSite(t *testing.T) {
 	code, out, _ := run(t, "en", "scan", "Clients/Bench/outdated.example.test")
+	if code != 2 {
+		t.Fatalf("exit %d, want 2 (urgent)\n%s", code, out)
+	}
+	for _, want := range []string{"Clients/Bench/outdated.example.test", "Urgent", "WordPress 7.1.3", "1 urgent finding",
+		"5 checks not run"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("output lacks %q:\n%s", want, out)
+		}
+	}
+}
+
+// Once its urgent finding is ignored, the site needs attention for its updates and the rest.
+func TestScanASiteThatNeedsAttention(t *testing.T) {
+	ws := benchWorkspace(t)
+	ignoreDockerFile(t, ws)
+	code, out := runIn(t, ws, "en", "scan", "Clients/Bench/outdated.example.test")
 	if code != 1 {
 		t.Fatalf("exit %d, want 1 (needs attention)\n%s", code, out)
 	}
@@ -89,11 +136,24 @@ func TestScanASiteThatNeedsAttention(t *testing.T) {
 			t.Errorf("output lacks %q:\n%s", want, out)
 		}
 	}
+	if strings.Contains(out, "urgent finding") {
+		t.Errorf("an ignored finding is counted:\n%s", out)
+	}
+}
+
+func TestScanAcceptsCheckFiles(t *testing.T) {
+	if code, out, errOut := run(t, "en", "scan", "--check-files", "Clients/Bench/outdated.example.test"); code != 2 {
+		t.Fatalf("exit %d\n%s%s", code, out, errOut)
+	}
+	if code, _, errOut := run(t, "en", "tree", "--check-files"); code != 3 || !strings.Contains(errOut, "--check-files") {
+		t.Errorf("tree --check-files: exit %d, %q; want refused", code, errOut)
+	}
 }
 
 func TestScanInFrench(t *testing.T) {
 	_, out, _ := run(t, "fr", "scan", "Clients/Bench/outdated.example.test")
-	for _, want := range []string{"À surveiller", "1 mise à jour d'extension", "2 mises à jour de traductions"} {
+	for _, want := range []string{"Urgent", "1 constat urgent", "1 mise à jour d'extension", "2 mises à jour de traductions",
+		"5 vérifications non faites"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("output lacks %q:\n%s", want, out)
 		}
@@ -116,7 +176,20 @@ func TestScanErrorsExplainThemselves(t *testing.T) {
 }
 
 func TestScanJSON(t *testing.T) {
-	code, out, _ := run(t, "en", "scan", "Clients/Bench", "--json")
+	ws := benchWorkspace(t)
+	ignoreDockerFile(t, ws)
+	code, out := runIn(t, ws, "en", "scan", "Clients/Bench", "--json")
+	type finding struct {
+		Kind       string            `json:"kind"`
+		Subject    string            `json:"subject"`
+		Identifier string            `json:"identifier"`
+		Level      string            `json:"level"`
+		Facts      map[string]string `json:"facts"`
+		Ignored    bool              `json:"ignored"`
+		Ignore     *struct {
+			Reason string `json:"reason"`
+		} `json:"ignore"`
+	}
 	var results []struct {
 		Path      string `json:"path"`
 		Outcome   string `json:"outcome"`
@@ -128,8 +201,10 @@ func TestScanJSON(t *testing.T) {
 		Checked struct {
 			Core, Plugins, Themes, Languages bool
 		} `json:"checked"`
-		Subsites int    `json:"subsites"`
-		Error    string `json:"error"`
+		Subsites     int       `json:"subsites"`
+		Error        string    `json:"error"`
+		FilesChecked string    `json:"filesChecked"`
+		Findings     []finding `json:"findings"`
 	}
 	if err := json.Unmarshal([]byte(out), &results); err != nil {
 		t.Fatalf("not JSON: %v\n%s", err, out)
@@ -138,10 +213,25 @@ func TestScanJSON(t *testing.T) {
 		t.Fatalf("exit %d, %d results", code, len(results))
 	}
 	first := results[0]
-	if first.Status != "warn" || first.WordPress != "7.1.3" || first.Pending.Plugins != 1 || !first.Checked.Core {
+	if first.Status != "warn" || first.WordPress != "7.1.3" || first.Pending.Plugins != 1 || !first.Checked.Core || first.FilesChecked == "" {
 		t.Errorf("first = %+v", first)
 	}
-	if results[1].Subsites != 4 || results[2].Outcome != "cannot-load" || results[2].Error == "" {
+	var docker, vulnerabilities *finding
+	for i, f := range first.Findings {
+		switch {
+		case f.Kind == "core-file" && f.Identifier == "wp-config-docker.php":
+			docker = &first.Findings[i]
+		case f.Kind == "check" && f.Identifier == "vulnerabilities":
+			vulnerabilities = &first.Findings[i]
+		}
+	}
+	if docker == nil || docker.Level != "urgent" || !docker.Ignored || docker.Ignore == nil || docker.Ignore.Reason != "added by the container image" {
+		t.Errorf("the ignored file = %+v", docker)
+	}
+	if vulnerabilities == nil || vulnerabilities.Level != "not-checked" || vulnerabilities.Ignored || vulnerabilities.Facts["reason"] != "off" {
+		t.Errorf("the vulnerability check = %+v", vulnerabilities)
+	}
+	if results[1].Subsites != 4 || results[2].Outcome != "cannot-load" || results[2].Error == "" || results[2].Findings == nil {
 		t.Errorf("network = %+v, broken = %+v", results[1], results[2])
 	}
 }
@@ -155,7 +245,7 @@ func TestScanUnknownPath(t *testing.T) {
 
 func TestTreeShowsTheLatestStatus(t *testing.T) {
 	ws := benchWorkspace(t)
-	if _, err := ws.Scan(context.Background(), "Clients/Bench/outdated.example.test", nil); err != nil {
+	if _, err := ws.Scan(context.Background(), "Clients/Bench/outdated.example.test", workspace.ScanOptions{}, nil); err != nil {
 		t.Fatal(err)
 	}
 	var out, errOut strings.Builder
@@ -166,7 +256,7 @@ func TestTreeShowsTheLatestStatus(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit %d: %s", code, errOut.String())
 	}
-	for _, want := range []string{"Clients/", "  Bench/", "    outdated.example.test", "Needs attention", "WordPress 7.1.3",
+	for _, want := range []string{"Clients/", "  Bench/", "    outdated.example.test", "Urgent", "WordPress 7.1.3",
 		"    broken", "Not scanned yet"} {
 		if !strings.Contains(out.String(), want) {
 			t.Errorf("tree lacks %q:\n%s", want, out.String())

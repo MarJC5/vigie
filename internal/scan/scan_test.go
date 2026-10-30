@@ -87,8 +87,9 @@ func TestScanOfAnOutdatedSite(t *testing.T) {
 	if counts := got.PendingUpdates(); counts != (model.UpdateCounts{Core: 1, Plugins: 1, Themes: 1, Languages: 2}) {
 		t.Errorf("PendingUpdates() = %+v", counts)
 	}
-	if got.Status() != model.StatusAttention {
-		t.Errorf("Status() = %q, want needs attention", got.Status())
+	// The bench's image adds wp-config-docker.php where only WordPress's own files belong.
+	if got.Status() != model.StatusUrgent || find(t, got, model.KindCoreFile, "core", "wp-config-docker.php").Level != model.LevelUrgent {
+		t.Errorf("Status() = %q, want urgent for the added file", got.Status())
 	}
 }
 
@@ -100,8 +101,8 @@ func TestScanWithoutOutboundHTTPNeverSaysUpToDate(t *testing.T) {
 	if got.CoreChecked || got.PluginsChecked || got.ThemesChecked || got.LanguagesChecked {
 		t.Errorf("checks = %v %v %v %v, want none proven", got.CoreChecked, got.PluginsChecked, got.ThemesChecked, got.LanguagesChecked)
 	}
-	if got.Status() != model.StatusAttention {
-		t.Errorf("Status() = %q, want needs attention", got.Status())
+	if got.Status() == model.StatusUpToDate {
+		t.Errorf("Status() = %q, want anything but up to date", got.Status())
 	}
 }
 

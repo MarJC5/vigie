@@ -52,3 +52,26 @@ func TestIgnorePermanentlyNeedsAReason(t *testing.T) {
 		t.Error("an ignore covers another finding")
 	}
 }
+
+func TestIgnoresAreAppliedToTheirSiteOnly(t *testing.T) {
+	site, other := model.NewID(), model.NewID()
+	vuln := model.Finding{Kind: model.KindVulnerability, Subject: "plugin:akismet", Identifier: "u1", Version: "5.7.2", Level: model.LevelUrgent}
+	files := model.Finding{Kind: model.KindFileEditing, Subject: "site", Level: model.LevelAttention}
+	s := model.Scan{SiteID: site, Outcome: model.ScanCompleted, Findings: []model.Finding{vuln, files}}
+	s.ApplyIgnores([]model.Ignore{
+		{SiteID: site, Key: vuln.Key(), UntilVersion: "5.7.2"},
+		{SiteID: other, Key: files.Key(), Reason: "another site's"},
+	})
+	if s.Findings[0].Ignore == nil || s.Findings[1].Ignore != nil {
+		t.Fatalf("ignored = %v, %v; want the vulnerability only", s.Findings[0].Ignore, s.Findings[1].Ignore)
+	}
+	if c := s.CountFindings(); c != (model.FindingCounts{Attention: 1}) {
+		t.Errorf("CountFindings() = %+v, want the one not ignored", c)
+	}
+	// The next version: the ignore lapses.
+	s.Findings[0].Version = "5.7.3"
+	s.ApplyIgnores([]model.Ignore{{SiteID: site, Key: vuln.Key(), UntilVersion: "5.7.2"}})
+	if s.Findings[0].Ignore != nil || s.Status() != model.StatusUrgent {
+		t.Errorf("after the next version: ignored %v, status %q", s.Findings[0].Ignore, s.Status())
+	}
+}

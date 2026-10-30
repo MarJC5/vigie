@@ -92,17 +92,25 @@ const (
 	StatusUnknown   SiteStatus = "unknown"
 	StatusUpToDate  SiteStatus = "ok"
 	StatusAttention SiteStatus = "warn"
+	StatusUrgent    SiteStatus = "danger"
+	StatusPartial   SiteStatus = "partial" // not fully checked: a check of the scan could not run
 )
 
-// Status summarizes the scan: unknown when it did not complete; needs attention when an update is
-// pending or cannot be installed, or a check did not reach wordpress.org; up to date otherwise. A
-// plugin whose update source is unknown is shown as such but does not change the status: most
-// client sites have one, and "needs attention" must keep its meaning.
+// Status summarizes the scan from its worst part, the ignored findings left aside: unknown when it
+// did not complete; urgent when a finding is; needs attention when a finding does, an update is
+// pending or cannot be installed, or an update check did not reach wordpress.org; not fully
+// checked when a check could not run; up to date otherwise. A plugin whose update source is
+// unknown is shown as such but does not change the status: most client sites have one, and "needs
+// attention" must keep its meaning.
 func (s Scan) Status() SiteStatus {
 	if s.Outcome != ScanCompleted {
 		return StatusUnknown
 	}
-	if !s.CoreChecked || !s.PluginsChecked || !s.ThemesChecked || !s.LanguagesChecked {
+	c := s.CountFindings()
+	switch {
+	case c.Urgent > 0:
+		return StatusUrgent
+	case c.Attention > 0 || !s.CoreChecked || !s.PluginsChecked || !s.ThemesChecked || !s.LanguagesChecked:
 		return StatusAttention
 	}
 	for _, item := range s.Items {
@@ -110,6 +118,9 @@ func (s Scan) Status() SiteStatus {
 		case UpdateAvailable, UpdateUnavailable, UpdateUnknown:
 			return StatusAttention
 		}
+	}
+	if c.NotChecked > 0 {
+		return StatusPartial
 	}
 	return StatusUpToDate
 }
