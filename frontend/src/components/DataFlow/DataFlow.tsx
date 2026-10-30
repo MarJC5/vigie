@@ -42,15 +42,17 @@ export interface DataFlowProps {
   nodes: Node[];
   /** Done or cancelled, with what it did when it did something; changed: the site manager has new nodes. */
   onClose: (note?: DataNote, changed?: boolean) => void;
+  /** The preview of an import is shown: it takes the whole window, the rest of it goes away. */
+  onWindow?: () => void;
 }
 
 /** An export or an import, from its first dialog to its end, over the window. */
-export function DataFlow({ api, task, nodes, onClose }: DataFlowProps) {
+export function DataFlow({ api, task, nodes, onClose, onWindow }: DataFlowProps) {
   return (
     <div className={task.kind === "import" ? styles.window : styles.layer}>
       {task.kind === "export" && <Export api={api} initial={task.nodeId} nodes={nodes} onClose={onClose} />}
       {task.kind === "ssh" && <FromSSHConfig api={api} nodes={nodes} onClose={onClose} />}
-      {task.kind === "import" && <Import api={api} source={task.source} nodes={nodes} onClose={onClose} />}
+      {task.kind === "import" && <Import api={api} source={task.source} nodes={nodes} onClose={onClose} onWindow={onWindow} />}
     </div>
   );
 }
@@ -149,7 +151,19 @@ function FromSSHConfig({ api, nodes, onClose }: { api: DataApi; nodes: Node[]; o
   );
 }
 
-function Import({ api, source, nodes, onClose }: { api: DataApi; source: "vigie" | "csv"; nodes: Node[]; onClose: DataFlowProps["onClose"] }) {
+function Import({
+  api,
+  source,
+  nodes,
+  onClose,
+  onWindow,
+}: {
+  api: DataApi;
+  source: "vigie" | "csv";
+  nodes: Node[];
+  onClose: DataFlowProps["onClose"];
+  onWindow?: () => void;
+}) {
   const { t } = useTranslation();
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [keep, setKeep] = useState(new Set<string>());
@@ -166,8 +180,9 @@ function Import({ api, source, nodes, onClose }: { api: DataApi; source: "vigie"
       // A file Vigie cannot read: said under the row of the Data tab.
       if (p.problem) return onClose({ row: "import", text: t(p.problem.code, { message: p.problem.detail }) });
       setPreview(p);
+      onWindow?.();
     });
-  }, [api, source, onClose, t]);
+  }, [api, source, onClose, onWindow, t]);
 
   const close = () => {
     void api.CancelImport();

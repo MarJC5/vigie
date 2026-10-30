@@ -1,5 +1,5 @@
 import { Browser, Events } from "@wailsio/runtime";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
 
 import { VigieDiscovery, VigieMenu, VigieScans, VigieUpdates } from "../bindings/events";
@@ -102,6 +102,8 @@ export function App() {
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("general");
   const [dataTask, setDataTask] = useState<DataTask>();
   const [dataNote, setDataNote] = useState<DataNote>();
+  // The preview of an import takes the whole window, as the wizard does.
+  const [dataWindow, setDataWindow] = useState(false);
 
   useEffect(() => {
     void Promise.all([Preferences.Language(), SiteManager.Tree(), Preferences.Version()]).then(([lang, tree, version]) => {
@@ -158,9 +160,12 @@ export function App() {
 
   const dataDone = (note?: DataNote, changed?: boolean) => {
     setDataTask(undefined);
+    setDataWindow(false);
     if (note) setDataNote(note);
     if (changed) void reload();
   };
+
+  const showDataWindow = useCallback(() => setDataWindow(true), []);
 
   const hostAdded = async (hostId: string) => {
     await reload();
@@ -182,7 +187,7 @@ export function App() {
         />
       ) : adding ? (
         <AddHostWizard api={wizardApi} folders={folders} onClose={() => setAdding(false)} onAdded={hostAdded} />
-      ) : (
+      ) : dataWindow ? null : (
         <AppShell
           key={added}
           nodes={loaded.nodes}
@@ -224,7 +229,7 @@ export function App() {
           updatesApi={updatesApi}
         />
       )}
-      {dataTask && !waiting && !adding && <DataFlow api={dataApi} task={dataTask} nodes={loaded.nodes} onClose={dataDone} />}
+      {dataTask && !waiting && !adding && <DataFlow api={dataApi} task={dataTask} nodes={loaded.nodes} onClose={dataDone} onWindow={showDataWindow} />}
     </I18nextProvider>
   );
 }
