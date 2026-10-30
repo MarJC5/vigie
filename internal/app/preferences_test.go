@@ -28,3 +28,9 @@ func TestLanguageChoiceIsStored(t *testing.T) {
 		t.Fatal("SetLanguage(de): want an error, the language is not supported")
 	}
 }
+
+func TestVersionForTheAboutTab(t *testing.T) {
+	if got := app.NewPreferences(repository(t), func() string { return "fr" }).Version(); got != "dev" {
+		t.Errorf("Version() = %q, want dev in tests", got)
+	}
+}

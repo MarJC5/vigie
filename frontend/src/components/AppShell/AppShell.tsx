@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type {
   CreateResult,
+  FindingView,
   HostView,
   Node,
   OperationView,
@@ -22,10 +23,11 @@ import { EmptyState } from "../EmptyState/EmptyState";
 import type { IconName } from "../Icon/Icon";
 import { type FindSitesApi, FindSitesDialog } from "../FindSitesDialog/FindSitesDialog";
 import { HostDialog, type HostEditApi } from "../HostDialog/HostDialog";
+import { IgnoreDialog } from "../IgnoreDialog/IgnoreDialog";
 import { InfoList, InfoRow } from "../InfoList/InfoList";
 import { type ColorChoice, Menu, type MenuEntry } from "../Menu/Menu";
 import { MoveDialog } from "../MoveDialog/MoveDialog";
-import { NavRail } from "../NavRail/NavRail";
+import { NavRail, type Section } from "../NavRail/NavRail";
 import { SearchField } from "../SearchField/SearchField";
 import { SiteOverview } from "../SiteOverview/SiteOverview";
 import { SitesOverview } from "../SitesOverview/SitesOverview";
@@ -41,6 +43,12 @@ export interface ShellData {
   sites(nodeId: string): Promise<SiteRow[]>;
   /** The updates and rollbacks of a site, the newest first; without it, no History tab. */
   history?(siteId: string): Promise<OperationView[]>;
+}
+
+/** The Go service that sets findings aside (app.Security). */
+export interface SecurityApi {
+  Ignore(siteId: string, key: string, untilVersion: string, reason: string): Promise<Problem | null>;
+  Unignore(siteId: string, key: string): Promise<Problem | null>;
 }
 
 /** The Go services that edit the site manager (app.Editor, and app.HostWizard for a stored host). */
@@ -73,6 +81,16 @@ export interface AppShellProps {
   updates?: UpdatesState;
   /** Without it, sites are not updated from the window. */
   updatesApi?: UpdatesApi;
+  /** The section shown: the sites, or the settings page given. */
+  section?: Section;
+  onSection?: (section: Section) => void;
+  settingsPage?: ReactNode;
+  /** Scans a node comparing its files again, even within the day. */
+  onCheckFiles?: (nodeId: string) => void;
+  /** Without it, findings are listed but not set aside. */
+  security?: SecurityApi;
+  /** Opens an address in the browser. */
+  onOpen?: (href: string) => void;
 }
 
 const idle: ScansState = { running: [], completed: 0 };
@@ -102,6 +120,12 @@ export function AppShell({
   onChanged,
   updates = noUpdates,
   updatesApi,
+  section = "sites",
+  onSection,
+  settingsPage,
+  onCheckFiles,
+  security,
+  onOpen,
 }: AppShellProps) {
   const { t } = useTranslation();
   // Something to show at once: the item asked for, else the first host, else the first item.
@@ -122,6 +146,10 @@ export function AppShell({
   const [bulkDialog, setBulkDialog] = useState<{ id: string; name: string; previews: SitePreviewView[] | null } | null>(null);
   // The host or folder whose last update of every site shows, until dismissed.
   const [bulkFor, setBulkFor] = useState<string>();
+  // The finding being set aside, and why the last attempt was refused.
+  const [ignoring, setIgnoring] = useState<{ site: SiteView; finding: FindingView; problem: Problem | null } | null>(null);
+  // Grows when an ignore changes: the detail is read again.
+  const [ignores, setIgnores] = useState(0);
 
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const say = (p: Problem) => t(p.code, { message: p.detail });
@@ -177,6 +205,7 @@ export function AppShell({
       if (action === "scan-all") scan("");
       if (action === "new-host") onAddHost?.();
       if (action === "new-folder") void createFolder(folderOf(selectedId));
+      if (action === "settings") onSection?.("settings");
     };
   });
   useEffect(() => commands?.((action) => onCommand.current(action)), [commands]);
@@ -288,7 +317,36 @@ export function AppShell({
     return selected && <Summary node={selected} nodes={nodes} />;
   };
 
-  const inert = (dialog !== null || bulkDialog !== null) || undefined;
+  const inert = (dialog !== null || bulkDialog !== null || ignoring !== null) || undefined;
+
+  const ignore = async (untilVersion: string, reason: string) => {
+    if (!security || !ignoring) return;
+    const refused = await security.Ignore(ignoring.site.id, ignoring.finding.key, untilVersion, reason);
+    if (refused) return setIgnoring({ ...ignoring, problem: refused });
+    setIgnoring(null);
+    setIgnores((n) => n + 1);
+    await onChanged?.();
+  };
+  const restore = async (site: SiteView, finding: FindingView) => {
+    if (!security) return;
+    setProblem(null);
+    const refused = await security.Unignore(site.id, finding.key);
+    if (refused) setProblem(refused);
+    setIgnores((n) => n + 1);
+    await onChanged?.();
+  };
+
+  // The settings take the place of the site list and the detail.
+  if (section === "settings") {
+    return (
+      <div ref={shell} className={styles.shell}>
+        <NavRail current="settings" onAddHost={onAddHost} onNavigate={onSection} />
+        <main className={styles.main} tabIndex={0}>
+          {settingsPage}
+        </main>
+      </div>
+    );
+  }
 
   // The update of a site takes the whole window; the shell keeps its state behind it.
   if (flow && updatesApi) {
@@ -307,7 +365,7 @@ export function AppShell({
 
   return (
     <div ref={shell} className={styles.shell}>
-      <NavRail current="sites" onAddHost={onAddHost} inert={inert} />
+      <NavRail current="sites" onAddHost={onAddHost} inert={inert} onNavigate={onSection} />
       {paneOpen && (
         <aside aria-label={t("manager.label")} className={styles.pane} inert={inert}>
           <div className={styles.paneHeader}>
@@ -382,7 +440,7 @@ export function AppShell({
               <Loaded
                 node={selected}
                 data={data}
-                revision={scans.completed + updates.completed}
+                revision={scans.completed + updates.completed + ignores}
                 scanning={scanning(selected)}
                 onScan={() => scan(selected.id)}
                 onSelect={setSelectedId}
@@ -390,6 +448,10 @@ export function AppShell({
                 onSiteMenu={edit && ((id, point) => openMenu(id, point, false))}
                 onRemove={edit && (() => setDialog({ kind: "delete", id: selected.id }))}
                 updating={updating(selected)}
+                onCheckFiles={onCheckFiles && (() => !updating(selected) && onCheckFiles(selected.id))}
+                onIgnore={security && ((site, finding) => setIgnoring({ site, finding, problem: null }))}
+                onRestore={security && ((site, finding) => void restore(site, finding))}
+                onOpen={onOpen}
                 {...(updatesApi && {
                   onUpdate: (site: SiteView, keys: Set<string>) =>
                     setFlow({ site: { id: site.id, name: site.name }, keys, names: namesOf(site.scan?.updates ?? []), follow: false }),
@@ -440,6 +502,15 @@ export function AppShell({
         />
       )}
 
+      {ignoring && (
+        <IgnoreDialog
+          finding={ignoring.finding}
+          site={ignoring.site.name}
+          problem={ignoring.problem}
+          onIgnore={(untilVersion, reason) => void ignore(untilVersion, reason)}
+          onClose={() => setIgnoring(null)}
+        />
+      )}
       {bulkDialog && (
         <BulkDialog
           name={bulkDialog.name}
@@ -568,6 +639,10 @@ function Loaded({
   onUpdateAll,
   bulk,
   onDismissBulk,
+  onCheckFiles,
+  onIgnore,
+  onRestore,
+  onOpen,
 }: {
   node: Node;
   data: ShellData;
@@ -585,6 +660,10 @@ function Loaded({
   onUpdateAll?: () => void;
   bulk?: SiteResultView[];
   onDismissBulk?: () => void;
+  onCheckFiles?: () => void;
+  onIgnore?: (site: SiteView, finding: FindingView) => void;
+  onRestore?: (site: SiteView, finding: FindingView) => void;
+  onOpen?: (href: string) => void;
 }) {
   const { t } = useTranslation();
   const [view, setView] = useState<{ id: string; view: View }>();
@@ -628,6 +707,10 @@ function Loaded({
         history={v.history}
         onRollback={onRollback && ((id) => onRollback(site, id))}
         onRemove={onRemove}
+        onCheckFiles={onCheckFiles}
+        onIgnore={onIgnore && ((finding) => onIgnore(site, finding))}
+        onRestore={onRestore && ((finding) => onRestore(site, finding))}
+        onOpen={onOpen}
       />
     );
   }

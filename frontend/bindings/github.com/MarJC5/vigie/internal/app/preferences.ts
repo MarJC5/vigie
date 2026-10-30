@@ -23,3 +23,10 @@ export function Language(): $CancellablePromise<string> {
 export function SetLanguage(lang: string): $CancellablePromise<void> {
     return $Call.ByID(3678969577, lang);
 }
+
+/**
+ * Version is Vigie's version, for the About tab of the settings.
+ */
+export function Version(): $CancellablePromise<string> {
+    return $Call.ByID(1128356011);
+}

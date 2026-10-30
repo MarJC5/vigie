@@ -342,6 +342,7 @@
   },
   "menu": {
     "about": "À propos de {{app}}",
+    "settings": "Réglages…",
     "hide": "Masquer {{app}}",
     "hideOthers": "Masquer les autres",
     "showAll": "Tout afficher",

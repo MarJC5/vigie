@@ -10,6 +10,7 @@ const (
 	ActionSearch    = "search"     // focuses the search of the site list
 	ActionScan      = "scan"       // scans the selected folder, host or site
 	ActionScanAll   = "scan-all"   // scans every site
+	ActionSettings  = "settings"   // opens the settings
 )
 
 // MenuCommand is what the window receives with MenuEvent.
@@ -39,6 +40,8 @@ var separator = MenuEntry{Separator: true}
 var MenuBar = []MenuSection{
 	{Key: "", Items: []MenuEntry{
 		{Key: "menu.about", Role: "about"},
+		separator,
+		{Key: "menu.settings", Accelerator: "CmdOrCtrl+,", Action: ActionSettings},
 		separator,
 		{Key: "menu.hide", Role: "hide"},
 		{Key: "menu.hideOthers", Role: "hideOthers"},

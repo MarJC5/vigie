@@ -88,3 +88,16 @@ test("the search keeps what matches", async ({ page }) => {
   await expect(page.getByRole("searchbox")).toHaveCount(0);
   await expect(page.getByRole("tree", { name: "Site manager" }).getByRole("treeitem")).toHaveCount(7);
 });
+
+test("the rail opens the settings, which list what each outside service receives", async ({ page }) => {
+  await page.goto(seeded);
+  await page.getByRole("navigation", { name: "Navigation" }).getByRole("link", { name: "Settings" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Settings");
+  await expect(page.getByRole("tree")).toHaveCount(0);
+  await expect(page.getByRole("main")).toHaveCount(1);
+  await page.getByRole("tab", { name: "Lookups outside" }).click();
+  await expect(page.getByRole("switch")).toHaveCount(4);
+  await expect(page.getByRole("tabpanel")).toContainText("Receives: plugin slugs · answer kept 1 day");
+  await page.getByRole("navigation", { name: "Navigation" }).getByRole("link", { name: "Sites" }).click();
+  await expect(page.getByRole("tree", { name: "Site manager" })).toBeVisible();
+});

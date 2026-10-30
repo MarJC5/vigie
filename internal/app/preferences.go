@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/MarJC5/vigie/internal/buildinfo"
 	"github.com/MarJC5/vigie/internal/i18n"
 )
 
@@ -44,4 +45,9 @@ func (p *Preferences) SetLanguage(ctx context.Context, lang string) error {
 		return fmt.Errorf("unsupported language %q", lang)
 	}
 	return p.store.SetSetting(ctx, languageSetting, lang)
+}
+
+// Version is Vigie's version, for the About tab of the settings.
+func (p *Preferences) Version() string {
+	return buildinfo.Version()
 }

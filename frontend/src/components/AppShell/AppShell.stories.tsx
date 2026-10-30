@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 
+import { findings, xss } from "../../fixtures/findings";
 import { hostRows, outdatedSite, sharedHost } from "../../fixtures/scans";
 import { sampleTree } from "../../fixtures/tree";
 import { completed, preview, running } from "../../fixtures/updates";
@@ -345,5 +346,49 @@ export const MenuOfATableRow: Story = {
     const [menu] = await canvas.findAllByRole("menu", { name: "Actions on atelier-exemple.ch" });
     await expect(within(menu!).getByRole("menuitem", { name: /Rename/ })).toBeInTheDocument();
     await expect(canvas.getAllByRole("heading", { level: 1, name: "Shared hosting" })[0]).toBeInTheDocument();
+  },
+};
+
+// A finding set aside from the Security tab: the dialog, the call to the Go side, the detail read
+// again and the tree's statuses too.
+export const IgnoreAFinding: Story = {
+  args: {
+    data: {
+      ...data,
+      site: async () => ({
+        ...outdatedSite,
+        id: "boulangerie",
+        scan: { ...outdatedSite.scan!, status: "danger", findings, counts: { urgent: 2, attention: 4, notChecked: 1, ignored: 1 } },
+      }),
+    },
+    initialSelectedId: "boulangerie",
+    security: { Ignore: fn(async () => null), Unignore: fn(async () => null) },
+    onChanged: fn(),
+    onCheckFiles: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const window = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await userEvent.click(await window.findByRole("tab", { name: /Security/ }));
+    await userEvent.click(window.getByRole("button", { name: /Ignore “Contact Form 7/ }));
+    const dialog = within(window.getByRole("dialog"));
+    await userEvent.click(dialog.getByRole("button", { name: "Ignore" }));
+    await expect(args.security!.Ignore).toHaveBeenCalledWith("boulangerie", xss.key, "6.0.4", "");
+    await waitFor(() => expect(window.queryByRole("dialog")).toBeNull());
+    await expect(args.onChanged).toHaveBeenCalled();
+    await userEvent.click(window.getByRole("button", { name: "Check files now" }));
+    await expect(args.onCheckFiles).toHaveBeenCalledWith("boulangerie");
+  },
+};
+
+// The rail opens the settings, which take the place of the site list.
+export const Settings: Story = {
+  args: { section: "settings", onSection: fn(), settingsPage: <h1>Settings</h1> },
+  play: async ({ canvas, args }) => {
+    await expect(canvas.queryByRole("tree")).toBeNull();
+    const [settings] = canvas.getAllByRole("link", { name: "Settings" });
+    await expect(settings).toHaveAttribute("aria-current", "page");
+    const [sites] = canvas.getAllByRole("link", { name: "Sites" });
+    await userEvent.click(sites!);
+    await expect(args.onSection).toHaveBeenCalledWith("sites");
   },
 };

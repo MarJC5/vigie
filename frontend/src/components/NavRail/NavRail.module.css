@@ -32,6 +32,14 @@
   color: var(--vg-text);
 }
 
+.item[aria-disabled="true"] {
+  cursor: default;
+}
+
+.item[aria-disabled="true"]:hover {
+  color: var(--vg-text-muted);
+}
+
 .item[aria-current="page"] {
   background: var(--vg-surface-selected);
   color: var(--vg-accent-text);

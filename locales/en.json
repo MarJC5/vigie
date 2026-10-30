@@ -325,6 +325,7 @@
   },
   "menu": {
     "about": "About {{app}}",
+    "settings": "Settings…",
     "hide": "Hide {{app}}",
     "hideOthers": "Hide Others",
     "showAll": "Show All",

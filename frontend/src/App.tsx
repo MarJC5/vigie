@@ -1,12 +1,15 @@
-import { Events } from "@wailsio/runtime";
+import { Browser, Events } from "@wailsio/runtime";
 import { useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
 
 import { VigieDiscovery, VigieMenu, VigieScans, VigieUpdates } from "../bindings/events";
-import { Editor, HostWizard, Preferences, Scanner, SiteManager, Updates } from "../bindings/github.com/MarJC5/vigie/internal/app";
-import type { Node, ScansState, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { Editor, HostWizard, Preferences, Scanner, Security, SiteManager, Updates } from "../bindings/github.com/MarJC5/vigie/internal/app";
+import type { LookupsView, Node, ScansState, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { AddHostWizard, type WizardApi } from "./components/AddHostWizard/AddHostWizard";
-import { AppShell, type EditApi, type ShellData } from "./components/AppShell/AppShell";
+import { AppShell, type EditApi, type SecurityApi, type ShellData } from "./components/AppShell/AppShell";
+import { ConsentScreen } from "./components/ConsentScreen/ConsentScreen";
+import type { Section } from "./components/NavRail/NavRail";
+import { SettingsPage, type SettingsTab } from "./components/SettingsPage/SettingsPage";
 import type { UpdatesApi } from "./components/UpdateFlow/UpdateFlow";
 import { createI18n } from "./i18n";
 
@@ -51,12 +54,25 @@ const editApi: EditApi = {
   onDiscovery: (listener) => Events.On(VigieDiscovery, (event) => listener(event.data)),
 };
 
+// What sets findings aside, from the security service.
+const securityApi: SecurityApi = { Ignore: Security.Ignore, Unignore: Security.Unignore };
+
+// Links open in the user's browser, never in the window.
+const openURL = (href: string) => void Browser.OpenURL(href);
+
 // The commands of the native menu bar.
 const menuCommands = (handler: (action: string) => void) => Events.On(VigieMenu, (event) => handler(event.data.action));
 
 interface Loaded {
   i18n: ReturnType<typeof createI18n>;
   nodes: Node[];
+  version: string;
+}
+
+/** A scan asked for before the user answered the consent screen. */
+interface Waiting {
+  nodeId: string;
+  checkFiles: boolean;
 }
 
 /** Reads the interface language and the site manager from the Go side, then shows the window. */
@@ -67,13 +83,18 @@ export function App() {
   const [added, setAdded] = useState<string>();
   const [scans, setScans] = useState<ScansState>({ running: [], completed: 0 });
   const [updates, setUpdates] = useState<UpdatesState>({ running: [], active: 0, bulk: [], completed: 0, sites: [] });
+  const [lookups, setLookups] = useState<LookupsView>();
+  const [waiting, setWaiting] = useState<Waiting>();
+  const [section, setSection] = useState<Section>("sites");
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>("general");
 
   useEffect(() => {
-    void Promise.all([Preferences.Language(), SiteManager.Tree()]).then(([lang, tree]) => {
+    void Promise.all([Preferences.Language(), SiteManager.Tree(), Preferences.Version()]).then(([lang, tree, version]) => {
       const i18n = createI18n(lang);
       document.documentElement.lang = i18n.language;
-      setLoaded({ i18n, nodes: tree.nodes ?? [] });
+      setLoaded({ i18n, nodes: tree.nodes ?? [], version });
     });
+    void Security.Lookups().then(setLookups);
     void Scanner.State().then(setScans);
     void Updates.State().then(setUpdates);
     const offScans = Events.On(VigieScans, (event) => setScans(event.data));
@@ -97,6 +118,29 @@ export function App() {
     setLoaded((l) => l && { ...l, nodes: tree.nodes ?? [] });
   };
 
+  // A scan starts at once, unless the user never answered the consent screen: it asks first.
+  const start = (w: Waiting) => void (w.checkFiles ? Scanner.CheckFiles(w.nodeId) : Scanner.Scan(w.nodeId));
+  const scan = (nodeId: string, checkFiles = false) => {
+    if (lookups && !lookups.agreed && !lookups.asked) return setWaiting({ nodeId, checkFiles });
+    start({ nodeId, checkFiles });
+  };
+  const answered = async (answer: () => Promise<unknown>) => {
+    await answer();
+    setLookups(await Security.Lookups());
+    if (waiting) start(waiting);
+    setWaiting(undefined);
+  };
+  const changeLookups = async (change: () => Promise<unknown>) => {
+    await change();
+    setLookups(await Security.Lookups());
+  };
+  const changeLanguage = async (lang: string) => {
+    await Preferences.SetLanguage(lang);
+    await loaded?.i18n.changeLanguage(lang);
+    document.documentElement.lang = lang;
+    setLoaded((l) => l && { ...l });
+  };
+
   const hostAdded = async (hostId: string) => {
     await reload();
     setAdded(hostId);
@@ -106,9 +150,16 @@ export function App() {
   // Both calls stay in the process and answer at once: nothing to show while they run.
   if (!loaded) return null;
   const folders = loaded.nodes.filter((n) => n.kind === "folder").map((n) => ({ id: n.id, path: n.path }));
+  const destinations = (lookups?.destinations ?? []).map((d) => d.id);
   return (
     <I18nextProvider i18n={loaded.i18n}>
-      {adding ? (
+      {waiting ? (
+        <ConsentScreen
+          destinations={destinations}
+          onAgree={(on) => void answered(() => Security.Agree(on))}
+          onNotNow={() => void answered(() => Security.NotNow())}
+        />
+      ) : adding ? (
         <AddHostWizard api={wizardApi} folders={folders} onClose={() => setAdding(false)} onAdded={hostAdded} />
       ) : (
         <AppShell
@@ -118,7 +169,28 @@ export function App() {
           initialSelectedId={added}
           data={shellData}
           scans={scans}
-          onScan={(nodeId) => void Scanner.Scan(nodeId)}
+          onScan={(nodeId) => scan(nodeId)}
+          onCheckFiles={(nodeId) => scan(nodeId, true)}
+          security={securityApi}
+          onOpen={openURL}
+          section={section}
+          onSection={setSection}
+          settingsPage={
+            lookups && (
+              <SettingsPage
+                tab={settingsTab}
+                onTab={setSettingsTab}
+                language={loaded.i18n.language}
+                onLanguage={(lang) => void changeLanguage(lang)}
+                lookups={lookups}
+                onAgree={() => void changeLookups(() => Security.Agree((lookups.destinations ?? []).filter((d) => d.on).map((d) => d.id)))}
+                onWithdraw={() => void changeLookups(() => Security.Withdraw())}
+                onDestination={(id, on) => void changeLookups(() => Security.SetDestination(id, on))}
+                version={loaded.version}
+                onOpen={openURL}
+              />
+            )
+          }
           onStopAll={() => void Scanner.CancelAll()}
           commands={menuCommands}
           edit={editApi}

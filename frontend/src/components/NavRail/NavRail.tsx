@@ -18,10 +18,15 @@ export interface NavRailProps {
   onAddHost?: () => void;
   /** Under a dialog: out of reach of the focus and the pointer. */
   inert?: boolean;
+  /** Opens a section; without it, the rail only shows where the window is. */
+  onNavigate?: (section: Section) => void;
 }
 
+// The sections that exist so far; the others are shown, not reachable yet.
+const reachable: Section[] = ["sites", "settings"];
+
 /** The narrow navigation rail; the native window controls sit above it. */
-export function NavRail({ current, onAddHost, inert }: NavRailProps) {
+export function NavRail({ current, onAddHost, inert, onNavigate }: NavRailProps) {
   const { t } = useTranslation();
   return (
     <nav aria-label={t("nav.navigation")} className={styles.rail} inert={inert}>
@@ -31,7 +36,12 @@ export function NavRail({ current, onAddHost, inert }: NavRailProps) {
           href={`#${id}`}
           aria-label={t(`nav.${id}`)}
           aria-current={id === current ? "page" : undefined}
+          aria-disabled={reachable.includes(id) ? undefined : true}
           className={styles.item}
+          onClick={(event) => {
+            event.preventDefault();
+            if (onNavigate && reachable.includes(id)) onNavigate(id);
+          }}
         >
           <Icon name={icon} size={22} />
         </a>
