@@ -1,0 +1,661 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MarJC5/vigie/blob/main/docs/export-v1.schema.json",
+  "title": "Vigie export, version 1",
+  "description": "The site manager of Vigie, written by vigie export and read by vigie import (docs/data.md).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "exported",
+    "app",
+    "scope",
+    "folders",
+    "hosts",
+    "sites",
+    "ignores"
+  ],
+  "properties": {
+    "format": {
+      "const": "vigie"
+    },
+    "version": {
+      "const": 1
+    },
+    "exported": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "app": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string",
+      "description": "the path of the node exported; \"\" for everything"
+    },
+    "folders": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/folder"
+      }
+    },
+    "hosts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/host"
+      }
+    },
+    "sites": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/site"
+      }
+    },
+    "ignores": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ignore"
+      }
+    },
+    "history": {
+      "$ref": "#/$defs/history"
+    }
+  },
+  "$defs": {
+    "folder": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "parent",
+        "name",
+        "color",
+        "notes",
+        "position"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "parent": {
+          "type": "string",
+          "description": "an ID of the export, or \"\" at its top"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "color": {
+          "type": "string",
+          "enum": [
+            "none",
+            "red",
+            "green",
+            "blue",
+            "yellow",
+            "cyan",
+            "magenta",
+            "orange"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        },
+        "position": {
+          "type": "integer"
+        }
+      }
+    },
+    "hostKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "type",
+        "key"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "the name in known_hosts: host, or [host]:port"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "ssh-ed25519",
+            "ecdsa-sha2-nistp256",
+            "ecdsa-sha2-nistp384",
+            "ecdsa-sha2-nistp521",
+            "ssh-rsa"
+          ]
+        },
+        "key": {
+          "type": "string",
+          "description": "base64 of the public key"
+        }
+      }
+    },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "folder",
+        "name",
+        "alias",
+        "hostname",
+        "port",
+        "user",
+        "keyPath",
+        "wpCli",
+        "maxConcurrent",
+        "trustedKeys",
+        "color",
+        "notes",
+        "position"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "folder": {
+          "type": "string",
+          "description": "an ID of the export, or \"\" at its top"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "alias": {
+          "type": "string"
+        },
+        "hostname": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer"
+        },
+        "user": {
+          "type": "string"
+        },
+        "keyPath": {
+          "type": "string"
+        },
+        "wpCli": {
+          "type": "string"
+        },
+        "maxConcurrent": {
+          "type": "integer"
+        },
+        "trustedKeys": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/hostKey"
+          }
+        },
+        "color": {
+          "type": "string",
+          "enum": [
+            "none",
+            "red",
+            "green",
+            "blue",
+            "yellow",
+            "cyan",
+            "magenta",
+            "orange"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        },
+        "position": {
+          "type": "integer"
+        }
+      }
+    },
+    "subsite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "blogId",
+        "url",
+        "public",
+        "archived",
+        "spam",
+        "deleted",
+        "pinned"
+      ],
+      "properties": {
+        "blogId": {
+          "type": "integer"
+        },
+        "url": {
+          "type": "string"
+        },
+        "public": {
+          "type": "boolean"
+        },
+        "archived": {
+          "type": "boolean"
+        },
+        "spam": {
+          "type": "boolean"
+        },
+        "deleted": {
+          "type": "boolean"
+        },
+        "pinned": {
+          "type": "boolean"
+        }
+      }
+    },
+    "site": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "host",
+        "name",
+        "path",
+        "url",
+        "wpCli",
+        "color",
+        "notes",
+        "tags",
+        "position",
+        "multisite",
+        "subsites"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "host": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string"
+        },
+        "wpCli": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string",
+          "enum": [
+            "none",
+            "red",
+            "green",
+            "blue",
+            "yellow",
+            "cyan",
+            "magenta",
+            "orange"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "position": {
+          "type": "integer"
+        },
+        "multisite": {
+          "type": "boolean"
+        },
+        "subsites": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/subsite"
+          }
+        }
+      }
+    },
+    "ignore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "site",
+        "key",
+        "untilVersion",
+        "reason",
+        "created"
+      ],
+      "properties": {
+        "site": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "untilVersion": {
+          "type": "string",
+          "description": "\"\": permanently, and then a reason is required"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "slug",
+        "title",
+        "status",
+        "version",
+        "language",
+        "update",
+        "updateVersion",
+        "autoUpdate",
+        "onWordPressOrg"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "language": {
+          "type": "string"
+        },
+        "update": {
+          "type": "string"
+        },
+        "updateVersion": {
+          "type": "string"
+        },
+        "autoUpdate": {
+          "type": "boolean"
+        },
+        "onWordPressOrg": {
+          "type": "boolean"
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "subject",
+        "identifier",
+        "version",
+        "level",
+        "facts"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "identifier": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "level": {
+          "type": "string",
+          "enum": [
+            "urgent",
+            "attention",
+            "info",
+            "not-checked"
+          ]
+        },
+        "facts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "scan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "site",
+        "started",
+        "finished",
+        "outcome",
+        "failure",
+        "error",
+        "wordpress",
+        "phpCli",
+        "wpCli",
+        "home",
+        "coreChecked",
+        "pluginsChecked",
+        "themesChecked",
+        "languagesChecked",
+        "items",
+        "findings"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "site": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "started": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "finished": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "outcome": {
+          "type": "string"
+        },
+        "failure": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        },
+        "wordpress": {
+          "type": "string"
+        },
+        "phpCli": {
+          "type": "string"
+        },
+        "wpCli": {
+          "type": "string"
+        },
+        "home": {
+          "type": "string"
+        },
+        "coreChecked": {
+          "type": "boolean"
+        },
+        "pluginsChecked": {
+          "type": "boolean"
+        },
+        "themesChecked": {
+          "type": "boolean"
+        },
+        "languagesChecked": {
+          "type": "boolean"
+        },
+        "filesChecked": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/item"
+          }
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/finding"
+          }
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "step",
+        "itemKind",
+        "slug",
+        "versionBefore",
+        "versionAfter",
+        "started",
+        "outcome",
+        "message"
+      ],
+      "properties": {
+        "step": {
+          "type": "string"
+        },
+        "itemKind": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "versionBefore": {
+          "type": "string"
+        },
+        "versionAfter": {
+          "type": "string"
+        },
+        "started": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "finished": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "outcome": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "site",
+        "kind",
+        "started",
+        "outcome",
+        "summary",
+        "backupDir",
+        "steps"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "site": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "started": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "finished": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "outcome": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "backupDir": {
+          "type": "string"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        }
+      }
+    },
+    "history": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scans",
+        "operations"
+      ],
+      "properties": {
+        "scans": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/scan"
+          }
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/operation"
+          }
+        }
+      }
+    }
+  }
+}
