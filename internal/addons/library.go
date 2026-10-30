@@ -11,8 +11,9 @@ import (
 )
 
 // library.json lists the known add-ons, in the format of their own descriptions: it is data, so
-// the code still names no add-on.
+// the code still names no add-on. It is generated from the installed add-ons, never edited by hand.
 //
+//go:generate go run gen_library.go
 //go:embed library.json
 var library []byte
 

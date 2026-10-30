@@ -5,7 +5,7 @@ WAILS := go run $(WAILS_MODULE)
 WAILS_BIN := $(CURDIR)/.task/bin
 
 # Container tests (Docker needed): make test-integration; make record refreshes the WP-CLI outputs.
-.PHONY: test-integration record test vet fmt-check vuln go-check frontend-install frontend-browsers frontend-lint frontend-test frontend-build frontend-e2e bindings bindings-check app check
+.PHONY: test-integration record test vet fmt-check vuln go-check frontend-install frontend-browsers frontend-lint frontend-test frontend-build frontend-e2e bindings bindings-check library app check
 
 # The module shared with add-ons (./addon) is a module of its own: ./... does not reach it.
 test:
@@ -65,6 +65,10 @@ bindings-check:
 	@tmp="$$(mktemp -d)"; \
 	$(WAILS) generate bindings -ts -i -silent -d "$$tmp" ./cmd/vigie && \
 	diff -r "$$tmp" frontend/bindings || { echo "Bindings are stale: run make bindings"; exit 1; }
+
+# The Library's descriptions, from the add-ons installed here (each one listed must be).
+library:
+	go generate ./internal/addons
 
 # Vigie.app (macOS, signed ad hoc) or the Linux build, with the Wails tasks.
 app:
