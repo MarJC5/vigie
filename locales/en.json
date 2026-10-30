@@ -316,8 +316,12 @@
       "status": "Status",
       "wordpress": "WordPress",
       "php": "PHP",
-      "updates": "Updates"
-    }
+      "updates": "Updates",
+      "worst": "Worst finding"
+    },
+    "urgent": "Urgent",
+    "ok": "Up to date",
+    "partial": "Not fully checked"
   },
   "menu": {
     "about": "About {{app}}",
@@ -604,5 +608,268 @@
     "updateAll": "Update all",
     "updatingAll": "Updating…",
     "upToDateOne": "Up to date"
+  },
+  "security": {
+    "summary": {
+      "urgent_one": "{{count}} urgent",
+      "urgent_other": "{{count}} urgent",
+      "attention_one": "{{count}} needs attention",
+      "attention_other": "{{count}} need attention",
+      "notChecked_one": "{{count}} not checked",
+      "notChecked_other": "{{count}} not checked",
+      "ignored_one": "{{count}} ignored",
+      "ignored_other": "{{count}} ignored",
+      "none": "Nothing to report"
+    },
+    "filesChecked": "Files checked on {{date}} at {{time}}",
+    "filesNever": "Files not compared yet",
+    "checkFiles": "Check files now",
+    "checkingFiles": "Checking files…",
+    "group": {
+      "urgent": "Urgent",
+      "attention": "Needs attention",
+      "not-checked": "Not checked",
+      "info": "Information",
+      "ignored": "Ignored"
+    },
+    "level": {
+      "urgent": "Urgent",
+      "attention": "Needs attention",
+      "not-checked": "Not checked",
+      "info": "Information",
+      "ignored": "Ignored"
+    },
+    "ignore": "Ignore…",
+    "ignoreNamed": "Ignore “{{title}}”",
+    "restore": "Stop ignoring",
+    "restoreNamed": "Stop ignoring “{{title}}”",
+    "ignoredUntil": "Ignored on {{date}} until a version other than {{version}}",
+    "ignoredForever": "Ignored permanently on {{date}}: “{{reason}}”",
+    "creditBefore": "Vulnerability data from",
+    "creditAfter": ", without warranty: none known is not the same as safe.",
+    "notScanned": "Scan the site to see its security.",
+    "dialog": {
+      "title": "Ignore “{{title}}”?",
+      "lead": "The finding stays listed, dimmed, and no longer counts in the status of {{site}}.",
+      "how": "How long",
+      "untilNext": "Until the next version of {{name}}",
+      "untilNextHint": "Ends by itself as soon as a scan reads a version other than {{version}}.",
+      "forever": "Permanently",
+      "foreverHint": "A reason is required, so you know later why.",
+      "reason": "Reason",
+      "reasonOptional": "Reason (optional)",
+      "confirm": "Ignore"
+    },
+    "finding": {
+      "stale": "answer from {{date}}, the service could not be reached",
+      "severity": {
+        "none": "none",
+        "low": "low",
+        "medium": "medium",
+        "high": "high",
+        "critical": "critical"
+      },
+      "vulnerability": {
+        "title": "{{subject}} {{version}}: {{name}}",
+        "score": "CVSS {{score}}, {{severity}}",
+        "unscored": "severity unknown",
+        "kev": "exploited (KEV)",
+        "unfixed": "not fixed in any version",
+        "fixed": "fixed in {{version}}"
+      },
+      "phpSupport": {
+        "securityOnly": "PHP {{version}} gets security fixes only",
+        "unmaintained": "PHP {{version}} is no longer maintained",
+        "end": "End of life on {{date}}"
+      },
+      "pluginClosed": {
+        "title": "{{name}} is closed on wordpress.org",
+        "on": "Closed on {{date}}: {{reason}}"
+      },
+      "closeReason": {
+        "security-issue": "security issue",
+        "author-request": "author request",
+        "guideline-violation": "guideline violation",
+        "licensing-trademark-violation": "licensing or trademark violation",
+        "merged-into-core": "merged into WordPress",
+        "unused": "unused"
+      },
+      "pluginAbandoned": {
+        "title": "{{name}} had no release for two years",
+        "detail": "Last release on {{date}}"
+      },
+      "coreFile": {
+        "changed": "WordPress file changed: {{file}}",
+        "changedDetail": "It differs from the file wordpress.org publishes for this version.",
+        "missing": "WordPress file missing: {{file}}",
+        "missingDetail": "WordPress publishes it for this version; it is not on the server.",
+        "added": "File added to WordPress: {{file}}",
+        "addedDetail": "Only WordPress's own files belong there."
+      },
+      "pluginFile": {
+        "changed": "{{name}}: file changed, {{file}}",
+        "added": "{{name}}: file added, {{file}}",
+        "detail": "Plugins are sometimes patched on purpose: check whether this one was."
+      },
+      "pluginUnverified": {
+        "title": "{{name}}: files not compared",
+        "detail": "wordpress.org publishes no checksums for version {{version}}."
+      },
+      "uploadsPhp": {
+        "title": "PHP file in uploads: {{file}}",
+        "detail": "WordPress never puts PHP files in the uploads folder."
+      },
+      "uploadsPhpMore": {
+        "title_one": "More than {{count}} PHP file in uploads",
+        "title_other": "More than {{count}} PHP files in uploads"
+      },
+      "administrator": {
+        "off": "{{login}}: administrator without two-factor",
+        "on": "{{login}}: administrator with two-factor",
+        "unknown": "{{login}}: administrator, two-factor unknown",
+        "since": "since {{date}}",
+        "super": "super administrator"
+      },
+      "fileEditing": {
+        "title": "Files can be edited from the dashboard",
+        "detail": "DISALLOW_FILE_EDIT is not set in wp-config.php."
+      },
+      "errorsDisplayed": {
+        "title": "PHP errors are shown on the pages",
+        "detail": "WP_DEBUG is on and WP_DEBUG_DISPLAY is not turned off."
+      },
+      "hiddenFromSearch": {
+        "title": "Hidden from search engines",
+        "detail": "Settings › Reading asks search engines not to index the site."
+      },
+      "noHttps": {
+        "title": "Address without HTTPS",
+        "detail": "The site's address starts with http://."
+      },
+      "cronOverdue": {
+        "title_one": "{{count}} WP-Cron event overdue",
+        "title_other": "{{count}} WP-Cron events overdue",
+        "detail": "The oldest, {{hook}}, was due on {{date}}: WP-Cron does not run."
+      },
+      "autoloadSize": {
+        "title": "Options loaded on every page are heavy",
+        "detail": "{{size}} KB, above WordPress's own limit of {{limit}} KB."
+      },
+      "databaseVersion": {
+        "title": "Database: {{version}}"
+      },
+      "certificate": {
+        "valid": "TLS certificate valid until {{date}}",
+        "until": "until {{date}}",
+        "expired": "TLS certificate expired",
+        "wrong-name": "TLS certificate issued for another name",
+        "unknown-authority": "TLS certificate from an unknown authority",
+        "invalid": "TLS certificate refused"
+      },
+      "domain": {
+        "title": "Domain {{domain}}",
+        "expires": "Registration ends on {{date}}",
+        "not-published": "Expiry not published by the registry of .{{tld}}",
+        "no-service": "No registry publishes data for .{{tld}}",
+        "not-found": "The registry does not know this domain"
+      },
+      "debugLog": {
+        "title": "debug.log can be downloaded",
+        "detail": "{{url}} answers to anyone."
+      },
+      "check": {
+        "core-files": "WordPress files not compared",
+        "plugin-files": "Plugin files not compared",
+        "uploads": "Uploads not searched",
+        "administrators": "Administrators not read",
+        "settings": "Settings not read",
+        "cron": "WP-Cron not read",
+        "autoload": "Options not read",
+        "database-version": "Database version not read",
+        "vulnerabilities": "Vulnerabilities not checked",
+        "wordpressOrg": "wordpress.org not asked",
+        "certificate": "Certificate not checked",
+        "domain": "Domain expiry not checked",
+        "debug-log": "debug.log not checked",
+        "off": "Lookups outside not agreed to, or turned off in Settings."
+      }
+    }
+  },
+  "lookups": {
+    "colWho": "Asked",
+    "colSent": "Receives",
+    "colKept": "Answer kept",
+    "destination": {
+      "wpvulnerability": {
+        "name": "WPVulnerability",
+        "sent": "plugin and theme slugs, WordPress and PHP versions",
+        "kept": "1 day"
+      },
+      "wordpressOrg": {
+        "name": "wordpress.org",
+        "sent": "plugin slugs",
+        "kept": "1 day"
+      },
+      "iana": {
+        "name": "IANA",
+        "sent": "nothing about your sites (the list of registries), with the domain registries",
+        "kept": "until it expires"
+      },
+      "registry": {
+        "name": "Domain registry (.com, .fr…)",
+        "sent": "the domain name; no request for .ch, .li, .de",
+        "kept": "1 week"
+      },
+      "site": {
+        "name": "The site itself",
+        "sent": "its name (certificate) and one request for the first byte of debug.log",
+        "kept": "nothing"
+      }
+    },
+    "off": {
+      "wpvulnerability": "Off: known vulnerabilities are not checked.",
+      "wordpressOrg": "Off: closed and abandoned plugins are not checked.",
+      "registry": "Off: domain expiry is not checked.",
+      "site": "Off: the certificate and debug.log are not checked."
+    },
+    "neverTitle": "Never sent",
+    "neverText": "Your sites’ addresses to third parties, the versions of your plugins (compared on your computer), your SSH details, anything from your databases."
+  },
+  "consent": {
+    "title": "Before the first security scan",
+    "lead": "To find known vulnerabilities, closed plugins and expiry dates, Vigie asks a few services from your computer. This is exactly what each one receives. Nothing is sent until you agree.",
+    "later": "You can change these choices at any time in Settings.",
+    "notNow": "Not now",
+    "agree": "Agree"
+  },
+  "settings": {
+    "title": "Settings",
+    "tabs": {
+      "general": "General",
+      "lookups": "Lookups outside",
+      "about": "About"
+    },
+    "language": {
+      "title": "Language",
+      "desc": "The language of the window and of the command line.",
+      "en": "English",
+      "fr": "Français"
+    },
+    "lookupsLead": "What Vigie asks, from your computer, during a security scan. A lookup turned off leaves its checks “not checked”, never “up to date”.",
+    "services": "Services asked during a security scan",
+    "consentSection": "Consent and sources",
+    "consentTitle": "Consent",
+    "agreedDesc": "Given on {{date}} at {{time}}. Withdrawing it stops every lookup outside; those checks become “not checked”.",
+    "notAgreedDesc": "Not given: nothing is sent, and the checks that need it are “not checked”.",
+    "withdraw": "Withdraw consent",
+    "agree": "Agree",
+    "sourceTitle": "Vulnerability data",
+    "sourceDesc": "From WPVulnerability, public domain (CC0), without warranty: none known is not the same as safe.",
+    "version": "Version",
+    "versionDesc": "Vigie {{version}}",
+    "license": "License",
+    "licenseDesc": "MIT. Not affiliated with the WordPress Foundation.",
+    "receives": "Receives: {{sent}} · answer kept {{kept}}",
+    "neverRow": "What never leaves your computer"
   }
 }

@@ -333,8 +333,12 @@
       "status": "État",
       "wordpress": "WordPress",
       "php": "PHP",
-      "updates": "Mises à jour"
-    }
+      "updates": "Mises à jour",
+      "worst": "Constat le plus grave"
+    },
+    "urgent": "Urgents",
+    "ok": "À jour",
+    "partial": "Pas entièrement vérifiés"
   },
   "menu": {
     "about": "À propos de {{app}}",
@@ -630,5 +634,274 @@
     "updateAll": "Tout mettre à jour",
     "updatingAll": "Mise à jour en cours…",
     "upToDateOne": "À jour"
+  },
+  "security": {
+    "summary": {
+      "urgent_one": "{{count}} urgent",
+      "urgent_many": "{{count}} urgents",
+      "urgent_other": "{{count}} urgents",
+      "attention_one": "{{count}} à surveiller",
+      "attention_many": "{{count}} à surveiller",
+      "attention_other": "{{count}} à surveiller",
+      "notChecked_one": "{{count}} non vérifié",
+      "notChecked_many": "{{count}} non vérifiés",
+      "notChecked_other": "{{count}} non vérifiés",
+      "ignored_one": "{{count}} ignoré",
+      "ignored_many": "{{count}} ignorés",
+      "ignored_other": "{{count}} ignorés",
+      "none": "Rien à signaler"
+    },
+    "filesChecked": "Fichiers vérifiés le {{date}} à {{time}}",
+    "filesNever": "Fichiers pas encore comparés",
+    "checkFiles": "Vérifier les fichiers",
+    "checkingFiles": "Vérification des fichiers…",
+    "group": {
+      "urgent": "Urgent",
+      "attention": "À surveiller",
+      "not-checked": "Non vérifié",
+      "info": "Information",
+      "ignored": "Ignoré"
+    },
+    "level": {
+      "urgent": "Urgent",
+      "attention": "À surveiller",
+      "not-checked": "Non vérifié",
+      "info": "Information",
+      "ignored": "Ignoré"
+    },
+    "ignore": "Ignorer…",
+    "ignoreNamed": "Ignorer « {{title}} »",
+    "restore": "Ne plus ignorer",
+    "restoreNamed": "Ne plus ignorer « {{title}} »",
+    "ignoredUntil": "Ignoré le {{date}} jusqu'à une autre version que {{version}}",
+    "ignoredForever": "Ignoré définitivement le {{date}} : « {{reason}} »",
+    "creditBefore": "Données de vulnérabilités :",
+    "creditAfter": ", sans garantie : aucune connue ne veut pas dire sûr.",
+    "notScanned": "Relevez le site pour voir sa sécurité.",
+    "dialog": {
+      "title": "Ignorer « {{title}} » ?",
+      "lead": "Le constat reste listé, grisé, et ne compte plus dans l'état de {{site}}.",
+      "how": "Combien de temps",
+      "untilNext": "Jusqu’à la prochaine version de {{name}}",
+      "untilNextHint": "S'annule tout seul dès qu'un relevé lit une autre version que {{version}}.",
+      "forever": "Définitivement",
+      "foreverHint": "Une raison est demandée, pour savoir plus tard pourquoi.",
+      "reason": "Raison",
+      "reasonOptional": "Raison (facultative)",
+      "confirm": "Ignorer"
+    },
+    "finding": {
+      "stale": "réponse du {{date}}, le service n'a pas pu être joint",
+      "severity": {
+        "none": "nulle",
+        "low": "faible",
+        "medium": "moyenne",
+        "high": "élevée",
+        "critical": "critique"
+      },
+      "vulnerability": {
+        "title": "{{subject}} {{version}} : {{name}}",
+        "score": "CVSS {{score}}, {{severity}}",
+        "unscored": "gravité inconnue",
+        "kev": "exploitée (KEV)",
+        "unfixed": "corrigée dans aucune version",
+        "fixed": "corrigée en {{version}}"
+      },
+      "phpSupport": {
+        "securityOnly": "PHP {{version}} ne reçoit plus que des correctifs de sécurité",
+        "unmaintained": "PHP {{version}} n'est plus maintenu",
+        "end": "Fin de vie le {{date}}"
+      },
+      "pluginClosed": {
+        "title": "{{name}} est fermée sur wordpress.org",
+        "on": "Fermée le {{date}} : {{reason}}"
+      },
+      "closeReason": {
+        "security-issue": "problème de sécurité",
+        "author-request": "demande de l'auteur",
+        "guideline-violation": "non-respect des règles",
+        "licensing-trademark-violation": "licence ou marque",
+        "merged-into-core": "intégrée à WordPress",
+        "unused": "inutilisée"
+      },
+      "pluginAbandoned": {
+        "title": "{{name}} n'a pas eu de nouvelle version depuis deux ans",
+        "detail": "Dernière version le {{date}}"
+      },
+      "coreFile": {
+        "changed": "Fichier de WordPress modifié : {{file}}",
+        "changedDetail": "Il diffère du fichier que wordpress.org publie pour cette version.",
+        "missing": "Fichier de WordPress manquant : {{file}}",
+        "missingDetail": "WordPress le publie pour cette version ; il n'est pas sur le serveur.",
+        "added": "Fichier ajouté à WordPress : {{file}}",
+        "addedDetail": "Seuls les fichiers de WordPress ont leur place ici."
+      },
+      "pluginFile": {
+        "changed": "{{name}} : fichier modifié, {{file}}",
+        "added": "{{name}} : fichier ajouté, {{file}}",
+        "detail": "Une extension est parfois modifiée exprès : vérifiez si c'est le cas."
+      },
+      "pluginUnverified": {
+        "title": "{{name}} : fichiers non comparés",
+        "detail": "wordpress.org ne publie pas de sommes de contrôle pour la version {{version}}."
+      },
+      "uploadsPhp": {
+        "title": "Fichier PHP dans uploads : {{file}}",
+        "detail": "WordPress ne met jamais de fichier PHP dans le dossier des envois."
+      },
+      "uploadsPhpMore": {
+        "title_one": "Plus de {{count}} fichier PHP dans uploads",
+        "title_many": "Plus de {{count}} fichiers PHP dans uploads",
+        "title_other": "Plus de {{count}} fichiers PHP dans uploads"
+      },
+      "administrator": {
+        "off": "{{login}} : administrateur sans double authentification",
+        "on": "{{login}} : administrateur avec double authentification",
+        "unknown": "{{login}} : administrateur, double authentification inconnue",
+        "since": "depuis le {{date}}",
+        "super": "super administrateur"
+      },
+      "fileEditing": {
+        "title": "Fichiers modifiables depuis l'administration",
+        "detail": "DISALLOW_FILE_EDIT n'est pas défini dans wp-config.php."
+      },
+      "errorsDisplayed": {
+        "title": "Les erreurs PHP s'affichent sur les pages",
+        "detail": "WP_DEBUG est actif et WP_DEBUG_DISPLAY n'est pas désactivé."
+      },
+      "hiddenFromSearch": {
+        "title": "Masqué aux moteurs de recherche",
+        "detail": "Réglages › Lecture demande aux moteurs de ne pas indexer le site."
+      },
+      "noHttps": {
+        "title": "Adresse sans HTTPS",
+        "detail": "L'adresse du site commence par http://."
+      },
+      "cronOverdue": {
+        "title_one": "{{count}} tâche WP-Cron en retard",
+        "title_many": "{{count}} tâches WP-Cron en retard",
+        "title_other": "{{count}} tâches WP-Cron en retard",
+        "detail": "La plus ancienne, {{hook}}, était prévue le {{date}} : WP-Cron ne tourne pas."
+      },
+      "autoloadSize": {
+        "title": "Les options chargées sur chaque page sont lourdes",
+        "detail": "{{size}} Ko, au-dessus de la limite de WordPress, {{limit}} Ko."
+      },
+      "databaseVersion": {
+        "title": "Base de données : {{version}}"
+      },
+      "certificate": {
+        "valid": "Certificat TLS valable jusqu'au {{date}}",
+        "until": "jusqu'au {{date}}",
+        "expired": "Certificat TLS expiré",
+        "wrong-name": "Certificat TLS émis pour un autre nom",
+        "unknown-authority": "Certificat TLS d'une autorité inconnue",
+        "invalid": "Certificat TLS refusé"
+      },
+      "domain": {
+        "title": "Domaine {{domain}}",
+        "expires": "Enregistrement jusqu'au {{date}}",
+        "not-published": "Expiration non publiée par le registre du .{{tld}}",
+        "no-service": "Aucun registre ne publie de données pour le .{{tld}}",
+        "not-found": "Le registre ne connaît pas ce domaine"
+      },
+      "debugLog": {
+        "title": "debug.log est téléchargeable",
+        "detail": "{{url}} répond à n'importe qui."
+      },
+      "check": {
+        "core-files": "Fichiers de WordPress non comparés",
+        "plugin-files": "Fichiers des extensions non comparés",
+        "uploads": "Dossier uploads non parcouru",
+        "administrators": "Administrateurs non lus",
+        "settings": "Réglages non lus",
+        "cron": "WP-Cron non lu",
+        "autoload": "Options non lues",
+        "database-version": "Version de la base non lue",
+        "vulnerabilities": "Vulnérabilités non vérifiées",
+        "wordpressOrg": "wordpress.org non interrogé",
+        "certificate": "Certificat non vérifié",
+        "domain": "Expiration du domaine non vérifiée",
+        "debug-log": "debug.log non vérifié",
+        "off": "Recherches extérieures pas encore acceptées, ou désactivées dans Réglages."
+      }
+    }
+  },
+  "lookups": {
+    "colWho": "Interrogé",
+    "colSent": "Reçoit",
+    "colKept": "Réponse gardée",
+    "destination": {
+      "wpvulnerability": {
+        "name": "WPVulnerability",
+        "sent": "slugs des extensions et des thèmes, versions de WordPress et de PHP",
+        "kept": "1 jour"
+      },
+      "wordpressOrg": {
+        "name": "wordpress.org",
+        "sent": "slugs des extensions",
+        "kept": "1 jour"
+      },
+      "iana": {
+        "name": "IANA",
+        "sent": "rien sur vos sites (la liste des registres), avec les registres des domaines",
+        "kept": "jusqu'à expiration"
+      },
+      "registry": {
+        "name": "Registre du domaine (.com, .fr…)",
+        "sent": "le nom de domaine ; aucune requête pour .ch, .li, .de",
+        "kept": "1 semaine"
+      },
+      "site": {
+        "name": "Le site lui-même",
+        "sent": "son nom (certificat) et une requête pour le premier octet de debug.log",
+        "kept": "rien"
+      }
+    },
+    "off": {
+      "wpvulnerability": "Désactivé : les vulnérabilités connues ne sont pas vérifiées.",
+      "wordpressOrg": "Désactivé : les extensions fermées ou abandonnées ne sont pas vérifiées.",
+      "registry": "Désactivé : l'expiration des domaines n'est pas vérifiée.",
+      "site": "Désactivé : le certificat et debug.log ne sont pas vérifiés."
+    },
+    "neverTitle": "Jamais envoyé",
+    "neverText": "L'adresse de vos sites à des tiers, les versions de vos extensions (comparées sur votre ordinateur), vos accès SSH, le contenu de vos bases de données."
+  },
+  "consent": {
+    "title": "Avant le premier relevé de sécurité",
+    "lead": "Pour connaître les vulnérabilités, les extensions fermées et les dates d'expiration, Vigie interroge quelques services depuis votre ordinateur. Voici exactement ce que chacun reçoit. Rien n'est envoyé sans votre accord.",
+    "later": "Vous pouvez changer ces choix à tout moment dans Réglages.",
+    "notNow": "Pas maintenant",
+    "agree": "Accepter"
+  },
+  "settings": {
+    "title": "Réglages",
+    "tabs": {
+      "general": "Général",
+      "lookups": "Recherches extérieures",
+      "about": "À propos"
+    },
+    "language": {
+      "title": "Langue",
+      "desc": "La langue de la fenêtre et de la ligne de commande.",
+      "en": "English",
+      "fr": "Français"
+    },
+    "lookupsLead": "Ce que Vigie interroge, depuis votre ordinateur, pendant un relevé de sécurité. Une recherche désactivée laisse ses vérifications « non vérifiées », jamais « à jour ».",
+    "services": "Services interrogés pendant un relevé de sécurité",
+    "consentSection": "Accord et sources",
+    "consentTitle": "Accord",
+    "agreedDesc": "Donné le {{date}} à {{time}}. Le retirer coupe toutes les recherches extérieures ; ces vérifications deviennent « non vérifiées ».",
+    "notAgreedDesc": "Pas donné : rien n'est envoyé, et les vérifications qui en ont besoin sont « non vérifiées ».",
+    "withdraw": "Retirer l'accord",
+    "agree": "Accepter",
+    "sourceTitle": "Données de vulnérabilités",
+    "sourceDesc": "Par WPVulnerability, domaine public (CC0), sans garantie : aucune connue ne veut pas dire sûr.",
+    "version": "Version",
+    "versionDesc": "Vigie {{version}}",
+    "license": "Licence",
+    "licenseDesc": "MIT. Sans lien avec la WordPress Foundation.",
+    "receives": "Reçoit : {{sent}} · réponse gardée {{kept}}",
+    "neverRow": "Ce qui ne quitte jamais votre ordinateur"
   }
 }

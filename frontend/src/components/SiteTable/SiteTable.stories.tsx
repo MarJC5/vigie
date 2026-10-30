@@ -7,12 +7,13 @@ const meta = {
   component: SiteTable,
   args: {
     label: "Sites of Shared hosting",
-    columns: { site: "Site", status: "Status", wordpress: "WordPress", php: "PHP", updates: "Updates" },
+    columns: { site: "Site", status: "Status", worst: "Worst finding", updates: "Updates" },
     notScanned: "Not scanned yet",
     rows: [
-      { id: "a", name: "atelier-exemple.ch", status: "ok", wordpress: "7.1.3", php: "8.4.27", pending: 0 },
-      { id: "b", name: "boulangerie-exemple.ch", status: "warn", wordpress: "7.1.2", php: "8.4.27", pending: 4 },
-      { id: "c", name: "nouveau.example.test", status: "", wordpress: "", php: "", pending: 0 },
+      { id: "a", name: "atelier-exemple.ch", status: "ok", worst: "", pending: 0 },
+      { id: "b", name: "boulangerie-exemple.ch", status: "danger", worst: "WooCommerce 9.8.1: SQL injection without authentication", pending: 4 },
+      { id: "v", name: "vieux-site.ch", status: "partial", worst: "", pending: 0 },
+      { id: "c", name: "nouveau.example.test", status: "", worst: "", pending: 0 },
     ],
     onSelect: fn(),
   },
@@ -22,7 +23,9 @@ export default meta;
 export const Sites: StoryObj<typeof meta> = {
   play: async ({ canvas, args }) => {
     const [table] = canvas.getAllByRole("table", { name: "Sites of Shared hosting" });
-    await expect(table!.querySelectorAll("tbody tr")).toHaveLength(3);
+    await expect(table!.querySelectorAll("tbody tr")).toHaveLength(4);
+    await expect(table).toHaveTextContent("WooCommerce 9.8.1: SQL injection without authentication");
+    await expect(table).toHaveTextContent("Not fully checked");
     await expect(table).toHaveTextContent("Not scanned yet");
     // A site's name opens it.
     const [link] = canvas.getAllByRole("button", { name: "boulangerie-exemple.ch" });

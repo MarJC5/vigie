@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 
+import { findings, xss } from "../../fixtures/findings";
 import { failedSite, newSite, offlineSite, outdatedSite, upToDateSite } from "../../fixtures/scans";
 import { historyToRollBack } from "../../fixtures/updates";
 import { SiteOverview } from "./SiteOverview";
@@ -31,6 +32,27 @@ export const NeedsAttention: Story = {
     const [scan] = canvas.getAllByRole("button", { name: "Scan now" });
     await userEvent.click(scan!);
     await expect(args.onScan).toHaveBeenCalled();
+  },
+};
+
+// The Security tab counts what calls for something; it lists the findings and sets one aside.
+export const SecurityTab: Story = {
+  args: {
+    site: {
+      ...outdatedSite,
+      scan: { ...outdatedSite.scan!, status: "danger", findings, counts: { urgent: 2, attention: 4, notChecked: 1, ignored: 1 } },
+    },
+    onIgnore: fn(),
+    onCheckFiles: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    const tab = page.getByRole("tab", { name: /Security/ });
+    await expect(tab).toHaveTextContent("6");
+    await userEvent.click(tab);
+    await expect(page.getByRole("tabpanel")).toHaveTextContent("2 urgent · 4 need attention");
+    await userEvent.click(page.getByRole("button", { name: /Ignore “Contact Form 7/ }));
+    await expect(args.onIgnore).toHaveBeenCalledWith(xss);
   },
 };
 

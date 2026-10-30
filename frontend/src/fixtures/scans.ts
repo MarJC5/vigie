@@ -1,5 +1,6 @@
 // Fictional scan results for stories and tests: never real hosts or sites.
 import type { HostView, ScanView, SiteRow, SiteView } from "../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { exploited } from "./findings";
 
 const scan = (s: Partial<ScanView>): ScanView => ({
   finished: "2026-10-29T08:57:00Z",
@@ -85,7 +86,7 @@ export const newSite: SiteView = { id: "new", name: "nouveau.example.test", path
 
 export const hostRows: SiteRow[] = [
   { id: "atelier", name: "atelier-exemple.ch", path: "Clients/Shared hosting/atelier-exemple.ch", status: "ok", wordpress: "7.1.3", phpCli: "8.4.27", pending: 0, worst: null },
-  { id: "outdated", name: "boulangerie-exemple.ch", path: "Clients/Shared hosting/boulangerie-exemple.ch", status: "warn", wordpress: "7.1.3", phpCli: "8.4.27", pending: 4, worst: null },
+  { id: "outdated", name: "boulangerie-exemple.ch", path: "Clients/Shared hosting/boulangerie-exemple.ch", status: "danger", wordpress: "7.1.3", phpCli: "8.4.27", pending: 4, worst: exploited },
   { id: "new", name: "nouveau.example.test", path: "Clients/Shared hosting/nouveau.example.test", status: "", wordpress: "", phpCli: "", pending: 0, worst: null },
 ];
 

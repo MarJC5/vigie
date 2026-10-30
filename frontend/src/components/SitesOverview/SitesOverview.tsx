@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 
+import { findingText } from "../../lib/findings";
 import type { SiteResultView, SiteRow } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { BulkSummary } from "../BulkSummary/BulkSummary";
 import { Button } from "../Button/Button";
@@ -49,8 +50,9 @@ export function SitesOverview({
   bulk,
   onDismissBulk,
 }: SitesOverviewProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const pending = rows.reduce((n, r) => n + r.pending, 0);
+  const count = (status: string) => rows.filter((r) => r.status === status).length;
   if (bulk && bulk.length > 0) {
     return (
       <>
@@ -105,9 +107,11 @@ export function SitesOverview({
         label={t("host.summary")}
         items={[
           { label: t("host.sites"), value: rows.length },
-          { label: t("host.pending"), value: pending, tone: "warn" },
-          { label: t("host.attention"), value: rows.filter((r) => r.status === "warn").length, tone: "warn" },
-          { label: t("host.notScanned"), value: rows.filter((r) => r.status === "").length },
+          { label: t("host.urgent"), value: count("danger"), tone: "danger" },
+          { label: t("host.attention"), value: count("warn"), tone: "warn" },
+          { label: t("host.partial"), value: count("partial") },
+          { label: t("host.ok"), value: count("ok") },
+          ...(count("") > 0 ? [{ label: t("host.notScanned"), value: count("") }] : []),
         ]}
       />
       {rows.length === 0 ? (
@@ -118,12 +122,17 @@ export function SitesOverview({
           columns={{
             site: t("host.col.site"),
             status: t("host.col.status"),
-            wordpress: t("host.col.wordpress"),
-            php: t("host.col.php"),
+            worst: t("host.col.worst"),
             updates: t("host.col.updates"),
           }}
           notScanned={t("detail.notScanned")}
-          rows={rows.map((r) => ({ id: r.id, name: r.name, status: r.status, wordpress: r.wordpress, php: r.phpCli, pending: r.pending }))}
+          rows={rows.map((r) => ({
+            id: r.id,
+            name: r.name,
+            status: r.status,
+            worst: r.worst ? findingText(r.worst, t, i18n.language).title : "",
+            pending: r.pending,
+          }))}
           onSelect={onSelect}
           onMenu={onSiteMenu}
         />

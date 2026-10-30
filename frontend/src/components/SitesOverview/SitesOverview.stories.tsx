@@ -25,8 +25,9 @@ export const Host: Story = {
   play: async ({ canvas, args }) => {
     const [summary] = canvas.getAllByRole("list", { name: "Summary" });
     await expect(summary).toHaveTextContent("Sites3");
-    await expect(summary).toHaveTextContent("Pending updates4");
-    await expect(summary).toHaveTextContent("Need attention1");
+    await expect(summary).toHaveTextContent("Urgent1");
+    await expect(summary).toHaveTextContent("Need attention0");
+    await expect(summary).toHaveTextContent("Up to date1");
     await expect(summary).toHaveTextContent("Not scanned1");
     // The actions sit on the title line, so the counts keep their row to themselves.
     const scan = canvas.getAllByRole("button", { name: "Scan host" })[0]!;

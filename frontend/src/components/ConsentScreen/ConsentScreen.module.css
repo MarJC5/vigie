@@ -1,0 +1,109 @@
+.window {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--vg-surface-main);
+  color: var(--vg-text);
+}
+
+/* Leaves the macOS window buttons alone, moves the window like a title bar. */
+.top {
+  height: 52px;
+  flex: none;
+  --wails-draggable: drag;
+}
+
+.main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--vg-space-7) var(--vg-space-6);
+}
+
+.main:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: -2px;
+}
+
+.content {
+  width: 100%;
+  max-width: 980px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--vg-space-2);
+  text-align: center;
+}
+
+.icon {
+  display: inline-flex;
+  color: var(--vg-accent-text);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--vg-text-display);
+  font-weight: var(--vg-weight-strong);
+  line-height: var(--vg-leading-tight);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.lead {
+  margin: 0;
+  max-width: 70ch;
+  color: var(--vg-text-muted);
+  text-wrap: pretty;
+}
+
+.never {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vg-space-3);
+  padding: 14px 18px;
+  border-radius: var(--vg-radius-panel);
+  background: var(--vg-surface-row);
+  color: var(--vg-text-muted);
+}
+
+.neverText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-1);
+}
+
+.neverTitle {
+  font-weight: var(--vg-weight-strong);
+  color: var(--vg-text);
+}
+
+.bar {
+  height: 72px;
+  flex: none;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--vg-space-5);
+  padding: 0 var(--vg-space-6);
+  border-top: 1px solid var(--vg-border);
+}
+
+.later {
+  font-size: var(--vg-text-small);
+  color: var(--vg-text-muted);
+}
+
+.actions {
+  display: flex;
+  gap: var(--vg-space-3);
+  margin-left: auto;
+}

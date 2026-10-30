@@ -6,8 +6,9 @@ import styles from "./Counts.module.css";
 export interface Count {
   label: string;
   value: number;
-  /** "warn" marks a count that needs attention, with the warning shape, when it is not zero. */
-  tone?: "warn";
+  /** Marks a count that needs attention ("warn") or is urgent ("danger") with that status's shape,
+   when it is not zero. */
+  tone?: "warn" | "danger";
 }
 
 export interface CountsProps {
@@ -26,7 +27,7 @@ export function Counts({ label, items, children }: CountsProps) {
         <li key={item.label} className={styles.count}>
           <span className={styles.label}>{item.label}</span>
           <span className={styles.value}>
-            {item.tone === "warn" && item.value > 0 && <StatusDot status="warn" />}
+            {item.tone && item.value > 0 && <StatusDot status={item.tone} />}
             {item.value}
           </span>
         </li>

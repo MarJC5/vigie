@@ -1,0 +1,65 @@
+.table {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.head,
+.row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 0.8fr) minmax(0, 1.7fr) 140px;
+  align-items: center;
+  gap: var(--vg-space-4);
+  padding: 0 var(--vg-space-4);
+}
+
+.head {
+  padding-bottom: var(--vg-space-1);
+  font-size: var(--vg-text-caption);
+  font-weight: var(--vg-weight-strong);
+  letter-spacing: var(--vg-tracking-caps);
+  text-transform: uppercase;
+  color: var(--vg-text-muted);
+}
+
+.row {
+  min-height: 52px;
+  padding-block: var(--vg-space-2);
+  border-radius: var(--vg-radius-control);
+  background: var(--vg-surface-row);
+}
+
+.switchColumn {
+  display: flex;
+  align-items: center;
+}
+
+.name {
+  font-weight: var(--vg-weight-strong);
+}
+
+.muted {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--vg-text-small);
+  color: var(--vg-text-muted);
+}
+
+.off {
+  color: var(--vg-text);
+}
+
+.kept {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

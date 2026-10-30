@@ -4,16 +4,16 @@ import styles from "./SiteTable.module.css";
 export interface SiteRowData {
   id: string;
   name: string;
-  /** ok, warn or unknown from the latest scan; empty when never scanned. */
+  /** ok, warn, danger, partial or unknown from the latest scan; empty when never scanned. */
   status: string;
-  wordpress: string;
-  php: string;
+  /** The worst finding not set aside, in words; empty when none. */
+  worst: string;
   pending: number;
 }
 
 export interface SiteTableProps {
   label: string;
-  columns: { site: string; status: string; wordpress: string; php: string; updates: string };
+  columns: { site: string; status: string; worst: string; updates: string };
   notScanned: string;
   rows: SiteRowData[];
   onSelect: (id: string) => void;
@@ -31,8 +31,7 @@ export function SiteTable({ label, columns, notScanned, rows, onSelect, onMenu }
           <tr>
             <th scope="col">{columns.site}</th>
             <th scope="col">{columns.status}</th>
-            <th scope="col">{columns.wordpress}</th>
-            <th scope="col">{columns.php}</th>
+            <th scope="col">{columns.worst}</th>
             <th scope="col">{columns.updates}</th>
           </tr>
         </thead>
@@ -54,8 +53,7 @@ export function SiteTable({ label, columns, notScanned, rows, onSelect, onMenu }
                 </button>
               </td>
               <td>{row.status ? <StatusDot status={row.status as Status} withLabel /> : <span className={styles.muted}>{notScanned}</span>}</td>
-              <td>{row.wordpress}</td>
-              <td>{row.php}</td>
+              <td className={styles.muted}>{row.worst}</td>
               <td>{row.status ? row.pending : ""}</td>
             </tr>
           ))}

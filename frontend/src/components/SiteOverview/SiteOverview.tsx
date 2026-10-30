@@ -1,13 +1,14 @@
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { OperationView, ScanView, SiteView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { FindingView, OperationView, ScanView, SiteView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { since } from "../../lib/time";
 import { choicesOf, namesOf, offeredKeys } from "../../lib/updates";
 import { Button } from "../Button/Button";
 import { DetailHeader } from "../DetailHeader/DetailHeader";
 import { InfoList, InfoRow } from "../InfoList/InfoList";
 import { Notice } from "../Notice/Notice";
+import { SecurityPanel } from "../SecurityPanel/SecurityPanel";
 import { StatusDot } from "../StatusDot/StatusDot";
 import { TabBar } from "../TabBar/TabBar";
 import { UpdateChoices } from "../UpdateChoices/UpdateChoices";
@@ -33,6 +34,13 @@ export interface SiteOverviewProps {
   onRollback?: (operationID: string) => void;
   /** Asks to remove the site from Vigie, offered when its folder holds no WordPress any more. */
   onRemove?: () => void;
+  /** Scans again, comparing the files even when it was done less than a day ago. */
+  onCheckFiles?: () => void;
+  /** Opens the dialog that sets a finding aside; without it, findings are only listed. */
+  onIgnore?: (finding: FindingView) => void;
+  onRestore?: (finding: FindingView) => void;
+  /** Opens an address in the browser. */
+  onOpen?: (href: string) => void;
 }
 
 /** A site with its latest scan: an overview, the updates waiting, and the history of its updates. */
@@ -48,6 +56,10 @@ export function SiteOverview({
   history,
   onRollback,
   onRemove,
+  onCheckFiles,
+  onIgnore,
+  onRestore,
+  onOpen,
 }: SiteOverviewProps) {
   const { t, i18n } = useTranslation();
   const [tab, setTab] = useState("overview");
@@ -62,6 +74,8 @@ export function SiteOverview({
   const [choice, setChoice] = useState<{ key: string; chosen: Set<string> }>();
   const chosen = choice?.key === scanKey ? choice.chosen : offeredKeys(groups);
   const offered = offeredKeys(groups).size;
+  const completed = scan?.outcome === "completed";
+  const toLookAt = completed && scan ? scan.counts.urgent + scan.counts.attention : 0;
 
   return (
     <div className={styles.overview}>
@@ -86,6 +100,7 @@ export function SiteOverview({
         tabs={[
           { id: "overview", label: t("tabs.overview") },
           { id: "updates", label: t("tabs.updates"), count: pending > 0 ? pending : undefined },
+          { id: "security", label: t("tabs.security"), count: toLookAt > 0 ? toLookAt : undefined },
           ...(history ? [{ id: "history", label: t("tabs.history") }] : []),
         ]}
         value={tab}
@@ -122,6 +137,16 @@ export function SiteOverview({
             </InfoList>
           ) : (
             <UpdateChoices groups={groups} chosen={chosen} onChange={(next) => setChoice({ key: scanKey, chosen: next })} names={names} />
+          ))}
+        {tab === "security" &&
+          (completed && scan ? (
+            <SecurityPanel scan={scan} scanning={scanning} onCheckFiles={updating ? undefined : onCheckFiles} onIgnore={onIgnore} onRestore={onRestore} onOpen={onOpen} />
+          ) : (
+            !scan && (
+              <InfoList>
+                <InfoRow label={t("tabs.security")}>{t("security.notScanned")}</InfoRow>
+              </InfoList>
+            )
           ))}
         {tab === "history" && history && (
           <UpdateHistory operations={history} names={names} onRollback={(id) => onRollback?.(id)} busy={updating} />
