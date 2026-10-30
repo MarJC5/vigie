@@ -412,6 +412,12 @@
     "ok": "Up to date",
     "partial": "Not fully checked"
   },
+  "notify": {
+    "urgent_one": "{{name}} turned urgent",
+    "urgent_other": "{{count}} sites turned urgent: {{names}}",
+    "unreachable_one": "{{name}} cannot be reached",
+    "unreachable_other": "{{count}} hosts cannot be reached: {{names}}"
+  },
   "tray": {
     "open": "Open {{app}}",
     "scanAll": "Scan all sites",

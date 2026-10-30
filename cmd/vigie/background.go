@@ -4,13 +4,17 @@ import (
 	"context"
 	_ "embed"
 	"errors"
+	"fmt"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
+	"github.com/wailsapp/wails/v3/pkg/services/notifications"
 
 	"github.com/MarJC5/vigie/internal/app"
+	"github.com/MarJC5/vigie/internal/model"
 )
 
 // trayIcon is the eye of Vigie's glyph in black, a template image macOS draws light or dark.
@@ -30,7 +34,11 @@ type keeper struct {
 	atLogin bool // started by the system at login (--at-login); macOS says it once launched
 	watch   *app.Watch
 	scanner *app.Scanner
+	notify  *notifications.NotificationService
 	label   func(key string, vars map[string]any) string
+
+	notifyStart sync.Once
+	notifyErr   error // why notifications cannot be sent here (no bundle, the server build)
 
 	mu           sync.Mutex // the eye is made and removed while refresh writes its menu
 	tray         *application.SystemTray
@@ -65,6 +73,11 @@ func (k *keeper) start(ctx context.Context) {
 	k.wails.Event.OnApplicationEvent(events.Mac.ApplicationShouldHandleReopen, func(*application.ApplicationEvent) { k.open() })
 	k.prefs.OnBackground = func(b app.BackgroundSettings) { k.apply(b) }
 	k.wails.Event.On(app.ScansEvent, func(*application.CustomEvent) { k.refresh(ctx) })
+	k.scanner.OnScanned = func(tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan) {
+		if b, err := k.prefs.Background(ctx); err == nil && b.Notify {
+			k.alert(app.Alerts(tree, before, after))
+		}
+	}
 
 	if b, err := k.prefs.Background(ctx); err == nil && b.On {
 		k.showEye()
@@ -102,6 +115,17 @@ type appDock interface {
 // apply follows a change of the settings: the eye shows while the mode is on; turned off while
 // the window is hidden, the window opens.
 func (k *keeper) apply(b app.BackgroundSettings) {
+	if b.Notify {
+		// The system asks the user once; refused, notifications stay silent.
+		go func() {
+			if !k.notifications() {
+				return
+			}
+			if _, err := k.notify.RequestNotificationAuthorization(); err != nil {
+				k.wails.Logger.Error("notifications", "error", err)
+			}
+		}()
+	}
 	if b.On {
 		k.showEye()
 	} else {
@@ -115,6 +139,43 @@ func (k *keeper) apply(b app.BackgroundSettings) {
 		}
 	}
 	k.refresh(context.Background())
+}
+
+// notifications starts the notification service once, at its first use rather than as a service
+// of the window: it needs a bundled app, and the window needs none of its methods.
+func (k *keeper) notifications() bool {
+	k.notifyStart.Do(func() {
+		k.notifyErr = k.notify.ServiceStartup(context.Background(), application.ServiceOptions{})
+		if k.notifyErr != nil {
+			k.wails.Logger.Error("notifications", "error", k.notifyErr)
+		}
+	})
+	return k.notifyErr == nil
+}
+
+// alert sends a notification per kind of alert: the sites turned urgent, the hosts unreachable.
+func (k *keeper) alert(alerts []app.Alert) {
+	if len(alerts) == 0 || !k.notifications() {
+		return
+	}
+	for _, kind := range []string{app.AlertUrgent, app.AlertUnreachable} {
+		var names []string
+		for _, a := range alerts {
+			if a.Kind == kind {
+				names = append(names, a.Name)
+			}
+		}
+		if len(names) == 0 {
+			continue
+		}
+		body := k.label("notify."+kind, map[string]any{"count": len(names), "name": names[0], "names": strings.Join(names, ", ")})
+		err := k.notify.SendNotification(notifications.NotificationOptions{
+			ID: fmt.Sprintf("vigie-%s-%d", kind, time.Now().UnixNano()), Title: "Vigie", Body: body,
+		})
+		if err != nil {
+			k.wails.Logger.Error("notifications", "error", err)
+		}
+	}
 }
 
 // showEye puts the eye and its menu in the menu bar, once.

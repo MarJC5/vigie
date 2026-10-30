@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+	"github.com/wailsapp/wails/v3/pkg/services/notifications"
 
 	"github.com/MarJC5/vigie/frontend"
 	"github.com/MarJC5/vigie/internal/addons"
@@ -139,6 +140,7 @@ func openWindow(opts cli.Options) error {
 		return err
 	}
 	docked := newDock()
+	notifier := notifications.New()
 
 	wails = application.New(application.Options{
 		Name: "Vigie",
@@ -187,7 +189,7 @@ func openWindow(opts cli.Options) error {
 	// The background mode: the eye in the menu bar, the window hidden instead of closed.
 	keep := &keeper{
 		wails: wails, window: window, dock: docked, prefs: preferences, login: login, atLogin: opts.AtLogin,
-		watch: watch, scanner: scanner,
+		watch: watch, scanner: scanner, notify: notifier,
 		label: func(key string, vars map[string]any) string {
 			all := map[string]any{"app": "Vigie"}
 			for k, v := range vars {

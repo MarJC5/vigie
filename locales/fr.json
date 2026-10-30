@@ -432,6 +432,14 @@
     "ok": "À jour",
     "partial": "Pas entièrement vérifiés"
   },
+  "notify": {
+    "urgent_one": "{{name}} est devenu urgent",
+    "urgent_many": "{{count}} sites sont devenus urgents : {{names}}",
+    "urgent_other": "{{count}} sites sont devenus urgents : {{names}}",
+    "unreachable_one": "{{name}} est injoignable",
+    "unreachable_many": "{{count}} hébergements sont injoignables : {{names}}",
+    "unreachable_other": "{{count}} hébergements sont injoignables : {{names}}"
+  },
   "tray": {
     "open": "Ouvrir {{app}}",
     "scanAll": "Relever tous les sites",

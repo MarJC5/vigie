@@ -97,6 +97,23 @@ func TestScanAHostInTheBackground(t *testing.T) {
 	}
 }
 
+// The end of a scan is told with the latest scans before it, for the notifications.
+func TestTheEndOfAScanIsToldWithWhatCameBefore(t *testing.T) {
+	ws, _, host := benchSites(t, sshxtest.NewFake())
+	ev := newEvents()
+	s := app.NewScanner(ws, ev.emit)
+	var before map[model.ID]model.Scan
+	var after []model.Scan
+	s.OnScanned = func(_ *model.Tree, b map[model.ID]model.Scan, a []model.Scan) { before, after = b, a }
+	if p := s.Scan(host.ID.String()); p != nil {
+		t.Fatal(p)
+	}
+	ev.idle(t)
+	if before == nil || len(before) != 0 || len(after) != 2 {
+		t.Fatalf("told %d scans before and %d after, want none before and the two made", len(before), len(after))
+	}
+}
+
 func TestScanUnknownNode(t *testing.T) {
 	ws, _, _ := benchSites(t, sshxtest.NewFake())
 	s := app.NewScanner(ws, newEvents().emit)
