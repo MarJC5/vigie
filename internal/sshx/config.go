@@ -16,22 +16,23 @@ var ErrConfigDepth = errors.New("too many nested includes")
 const maxConfigDepth = 16
 
 // ConfigNames lists the names of the Host lines of the user's ~/.ssh/config and of the files it
-// includes, in the order they come, each once. Patterns are left out (with "*" or "?"), and so are
-// negated ones ("!"): they name no one host. What each name stands for is ssh's to tell (ssh -G),
-// so Match blocks and the other keywords are not read. A missing ~/.ssh/config lists nothing.
-// Vigie never writes these files.
-func ConfigNames(home string) ([]string, error) {
+// includes, in the order they come, each once, and counts the patterns left out (with "*" or "?",
+// or negated with "!"): they name no one host. What each name stands for is ssh's to tell
+// (ssh -G), so Match blocks and the other keywords are not read. A missing ~/.ssh/config lists
+// nothing. Vigie never writes these files.
+func ConfigNames(home string) (names []string, patterns int, err error) {
 	r := configReader{home: home, seen: map[string]bool{}}
 	if err := r.read(filepath.Join(home, ".ssh", "config"), 0); err != nil && !errors.Is(err, os.ErrNotExist) {
-		return nil, err
+		return nil, 0, err
 	}
-	return r.names, nil
+	return r.names, r.patterns, nil
 }
 
 type configReader struct {
-	home  string
-	names []string
-	seen  map[string]bool
+	home     string
+	names    []string
+	patterns int
+	seen     map[string]bool
 }
 
 func (r *configReader) read(file string, depth int) error {
@@ -47,7 +48,11 @@ func (r *configReader) read(file string, depth int) error {
 		switch strings.ToLower(keyword) {
 		case "host":
 			for _, name := range args {
-				if strings.ContainsAny(name, "*?") || strings.HasPrefix(name, "!") || r.seen[name] {
+				if strings.ContainsAny(name, "*?") || strings.HasPrefix(name, "!") {
+					r.patterns++
+					continue
+				}
+				if r.seen[name] {
 					continue
 				}
 				r.seen[name] = true

@@ -23,20 +23,27 @@ type SSHConfigHost struct {
 	Error    string // why ssh could not read its settings
 }
 
+// SSHConfig is what ~/.ssh/config names: its hosts, and how many patterns it has, which name no
+// one host.
+type SSHConfig struct {
+	Hosts    []SSHConfigHost
+	Patterns int
+}
+
 // SSHConfigHosts lists the names of ~/.ssh/config and its includes, with the settings ssh uses
 // for each (ssh -G), and the host already reaching it: the same alias, or the same hostname, port
 // and user.
-func (w *Workspace) SSHConfigHosts(ctx context.Context) ([]SSHConfigHost, error) {
+func (w *Workspace) SSHConfigHosts(ctx context.Context) (SSHConfig, error) {
 	if w.deps.Home == "" || w.deps.Resolver == nil {
-		return nil, ErrNoSSHConfig
+		return SSHConfig{}, ErrNoSSHConfig
 	}
-	names, err := sshx.ConfigNames(w.deps.Home)
+	names, patterns, err := sshx.ConfigNames(w.deps.Home)
 	if err != nil {
-		return nil, err
+		return SSHConfig{}, err
 	}
 	tree, err := w.db.LoadTree(ctx)
 	if err != nil {
-		return nil, err
+		return SSHConfig{}, err
 	}
 	var stored []model.Host
 	tree.Walk(func(n model.Node, _ int) {
@@ -51,7 +58,7 @@ func (w *Workspace) SSHConfigHosts(ctx context.Context) ([]SSHConfigHost, error)
 		resolved, err := w.deps.Resolver.Resolve(ctx, name)
 		if err != nil {
 			if ctx.Err() != nil {
-				return nil, ctx.Err()
+				return SSHConfig{}, ctx.Err()
 			}
 			entry.Error = err.Error()
 		}
@@ -66,7 +73,7 @@ func (w *Workspace) SSHConfigHosts(ctx context.Context) ([]SSHConfigHost, error)
 		}
 		out = append(out, entry)
 	}
-	return out, nil
+	return SSHConfig{Hosts: out, Patterns: patterns}, nil
 }
 
 // SSHConfigFile is a file to import holding a host for each alias, named after it: the import

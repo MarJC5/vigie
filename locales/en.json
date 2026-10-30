@@ -243,7 +243,18 @@
     "error": "Something went wrong: {{message}}",
     "reasonRequired": "A reason is required to ignore a finding permanently.",
     "unknownDestination": "Vigie does not know this service.",
-    "scanning": "This site is being scanned: wait for the scan to end before updating it."
+    "scanning": "This site is being scanned: wait for the scan to end before updating it.",
+    "notAnExport": "This file is not a Vigie export.",
+    "newerExport": "This export was written by a newer Vigie: update Vigie to import it.",
+    "invalidExport": "This export does not hold together and cannot be imported: {{message}}",
+    "notACSV": "This file is not a site list Vigie reads: {{message}}",
+    "notExportable": "A site is exported with its host: export the host or a folder.",
+    "noImport": "No import is being previewed: choose the file again.",
+    "notAFolder": "Sites can only be imported into a folder.",
+    "keyChanged": "Vigie trusts another key for one of these servers since the preview: look at the preview again.",
+    "importChanged": "The site manager changed since the preview: look at the preview again.",
+    "noSSHConfig": "Vigie cannot read ~/.ssh/config here.",
+    "sshConfigDepth": "~/.ssh/config includes files in a loop, or too deep."
   },
   "wizard": {
     "close": "Close",

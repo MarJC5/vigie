@@ -46,18 +46,18 @@ Host shared
 		".ssh/nested.conf":     "HOST nested\n",
 		"other/ssh.conf":       "Host from-home\n",
 	})
-	got, err := sshx.ConfigNames(home)
+	got, patterns, err := sshx.ConfigNames(home)
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := []string{"shared", "shared-old", "staging", "quoted name", "production", "from-a", "nested", "from-b", "from-home"}
-	if !slices.Equal(got, want) {
-		t.Errorf("ConfigNames() =\n%q\nwant\n%q", got, want)
+	if !slices.Equal(got, want) || patterns != 4 {
+		t.Errorf("ConfigNames() =\n%q, %d patterns\nwant\n%q, 4", got, patterns, want)
 	}
 }
 
 func TestNoConfigListsNothing(t *testing.T) {
-	got, err := sshx.ConfigNames(t.TempDir())
+	got, _, err := sshx.ConfigNames(t.TempDir())
 	if err != nil || len(got) != 0 {
 		t.Errorf("ConfigNames(no file) = %q, %v", got, err)
 	}
@@ -66,7 +66,7 @@ func TestNoConfigListsNothing(t *testing.T) {
 // A file that includes itself stops where ssh stops, instead of looping.
 func TestIncludesInALoopStop(t *testing.T) {
 	home := writeFiles(t, map[string]string{".ssh/config": "Host loop\nInclude config\n"})
-	if _, err := sshx.ConfigNames(home); !errors.Is(err, sshx.ErrConfigDepth) {
+	if _, _, err := sshx.ConfigNames(home); !errors.Is(err, sshx.ErrConfigDepth) {
 		t.Errorf("ConfigNames(a loop) = %v, want ErrConfigDepth", err)
 	}
 }

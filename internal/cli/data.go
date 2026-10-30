@@ -278,28 +278,28 @@ func readImport(file string) (importSource, error) {
 		if !errors.Is(err, exchange.ErrNotAnExport) {
 			return importSource{file: f}, err
 		}
-		if f, lines, err := exchange.ReadCSV(bytes.NewReader(data)); err == nil {
-			return importSource{file: f, lines: lines}, nil
+		if f, report, err := exchange.ReadCSV(bytes.NewReader(data)); err == nil {
+			return importSource{file: f, lines: report.Refused}, nil
 		}
 		return importSource{}, exchange.ErrNotAnExport
 	}
-	f, lines, err := exchange.ReadCSV(bytes.NewReader(data))
-	return importSource{file: f, lines: lines}, err
+	f, report, err := exchange.ReadCSV(bytes.NewReader(data))
+	return importSource{file: f, lines: report.Refused}, err
 }
 
 // readSSHConfig takes the names of ~/.ssh/config that no host reaches yet and ssh can read.
 func readSSHConfig(ctx context.Context, ws *workspace.Workspace) (importSource, error) {
-	hosts, err := ws.SSHConfigHosts(ctx)
+	config, err := ws.SSHConfigHosts(ctx)
 	if err != nil {
 		return importSource{}, err
 	}
 	var aliases []string
-	for _, h := range hosts {
+	for _, h := range config.Hosts {
 		if h.Present == "" && h.Error == "" {
 			aliases = append(aliases, h.Alias)
 		}
 	}
-	return importSource{file: workspace.SSHConfigFile(aliases), sshConfig: hosts}, nil
+	return importSource{file: workspace.SSHConfigFile(aliases), sshConfig: config.Hosts}, nil
 }
 
 func importError(env Env, o dataOptions, err error) string {

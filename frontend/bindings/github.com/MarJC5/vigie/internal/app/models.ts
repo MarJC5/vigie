@@ -88,6 +88,34 @@ export interface EditHostResult {
 }
 
 /**
+ * ExportResult is the answer of Export: the file written, "" when the user cancelled.
+ */
+export interface ExportResult {
+    "file": string;
+    "problem": Problem | null;
+}
+
+/**
+ * ExportSummary is what an export of a node holds, for the export dialog.
+ */
+export interface ExportSummary {
+    /**
+     * "" for everything
+     */
+    "path": string;
+    "folders": number;
+    "hosts": number;
+    "sites": number;
+    "ignores": number;
+
+    /**
+     * HistoryBytes is how much larger the file is with the history.
+     */
+    "historyBytes": number;
+    "problem": Problem | null;
+}
+
+/**
  * FindingCountsView counts the findings by level, those set aside apart.
  */
 export interface FindingCountsView {
@@ -203,6 +231,126 @@ export interface IgnoreView {
      * RFC 3339
      */
     "created": string;
+}
+
+/**
+ * ImportItem is a folder, host or site of the file and what the import does with it, or a line of
+ * a CSV list that was refused.
+ */
+export interface ImportItem {
+    /**
+     * folder, host, site, line
+     */
+    "kind": string;
+    "path": string;
+
+    /**
+     * added, present, refused
+     */
+    "status": string;
+
+    /**
+     * workspace.ImportReason, or for a line exchange.CSVReason
+     */
+    "reason": string;
+
+    /**
+     * why it is refused; for a line, its values
+     */
+    "detail": string;
+
+    /**
+     * a host: its alias, or user@hostname:port
+     */
+    "account": string;
+
+    /**
+     * a site: its WordPress root
+     */
+    "sitePath": string;
+    "subsites": number;
+    "scans": number;
+    "operations": number;
+    "line": number;
+
+    /**
+     * a line: the value at fault
+     */
+    "value": string;
+}
+
+/**
+ * ImportKeyView is a key of the file for a host added, for the user to keep or leave out.
+ */
+export interface ImportKeyView {
+    "hostId": string;
+
+    /**
+     * its path
+     */
+    "host": string;
+
+    /**
+     * the server's name in known_hosts
+     */
+    "server": string;
+    "type": string;
+    "fingerprint": string;
+
+    /**
+     * workspace.KeyRefusal; "" when it can be kept
+     */
+    "refused": string;
+}
+
+/**
+ * ImportPreview is what an import would do, shown before it does it.
+ */
+export interface ImportPreview {
+    /**
+     * the user closed the file dialog
+     */
+    "cancelled": boolean;
+
+    /**
+     * FileVigie or FileCSV
+     */
+    "source": string;
+
+    /**
+     * the file's name
+     */
+    "file": string;
+
+    /**
+     * An export: when and by which Vigie it was written, with its history or not.
+     */
+    "exported": string;
+    "app": string;
+    "history": boolean;
+
+    /**
+     * A CSV list: the lines read after the header, and their separator.
+     */
+    "lines": number;
+    "separator": string;
+
+    /**
+     * the folder it adds into; "" for the top
+     */
+    "into": string;
+    "items": ImportItem[] | null;
+    "keys": ImportKeyView[] | null;
+    "added": number;
+    "problem": Problem | null;
+}
+
+/**
+ * ImportResult is the answer of an import: how many folders, hosts and sites it added.
+ */
+export interface ImportResult {
+    "added": number;
+    "problem": Problem | null;
 }
 
 /**
@@ -358,6 +506,34 @@ export interface RunningScan {
      * sites finished
      */
     "done": number;
+}
+
+/**
+ * SSHAlias is a name of ~/.ssh/config, the account ssh reaches through it, and the host already
+ * reaching it or why ssh cannot read it.
+ */
+export interface SSHAlias {
+    "alias": string;
+
+    /**
+     * user@hostname:port
+     */
+    "account": string;
+
+    /**
+     * the path of the host already reaching it
+     */
+    "present": string;
+    "error": string;
+}
+
+/**
+ * SSHConfigView lists the names of ~/.ssh/config, and how many patterns it left out.
+ */
+export interface SSHConfigView {
+    "hosts": SSHAlias[] | null;
+    "patterns": number;
+    "problem": Problem | null;
 }
 
 /**

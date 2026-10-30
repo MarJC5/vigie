@@ -36,7 +36,7 @@ func TestTheHostsOfTheSSHConfigAndTheOnesAlreadyThere(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(home, ".ssh"), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	config := "Host bench shared new broken\n"
+	config := "Host bench shared new broken *.example.test\n"
 	if err := os.WriteFile(filepath.Join(home, ".ssh", "config"), []byte(config), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -55,8 +55,8 @@ func TestTheHostsOfTheSSHConfigAndTheOnesAlreadyThere(t *testing.T) {
 		{Alias: "new", Hostname: "new.example.test", Port: 22, User: "deploy"},
 		{Alias: "broken", Error: "ssh -G: exit status 255"},
 	}
-	if !slices.Equal(got, want) {
-		t.Fatalf("SSHConfigHosts() =\n%+v\nwant\n%+v", got, want)
+	if !slices.Equal(got.Hosts, want) || got.Patterns != 1 {
+		t.Fatalf("SSHConfigHosts() =\n%+v\nwant\n%+v and 1 pattern", got, want)
 	}
 
 	// The aliases chosen become hosts in the folder chosen, as an import.

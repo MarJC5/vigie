@@ -257,7 +257,18 @@
     "error": "Une erreur s'est produite : {{message}}",
     "reasonRequired": "Une raison est demandée pour ignorer un constat définitivement.",
     "unknownDestination": "Vigie ne connaît pas ce service.",
-    "scanning": "Un relevé de ce site est en cours : attendez sa fin pour le mettre à jour."
+    "scanning": "Un relevé de ce site est en cours : attendez sa fin pour le mettre à jour.",
+    "notAnExport": "Ce fichier n'est pas un export de Vigie.",
+    "newerExport": "Cet export a été écrit par un Vigie plus récent : mettez Vigie à jour pour l'importer.",
+    "invalidExport": "Cet export n'est pas cohérent et ne peut pas être importé : {{message}}",
+    "notACSV": "Ce fichier n'est pas une liste de sites que Vigie sait lire : {{message}}",
+    "notExportable": "Un site s'exporte avec son hébergement : exportez l'hébergement ou un dossier.",
+    "noImport": "Aucun import n'est en aperçu : choisissez de nouveau le fichier.",
+    "notAFolder": "Les sites ne s'importent que dans un dossier.",
+    "keyChanged": "Vigie fait confiance à une autre clé pour l'un de ces serveurs depuis l'aperçu : regardez de nouveau l'aperçu.",
+    "importChanged": "Le gestionnaire de sites a changé depuis l'aperçu : regardez de nouveau l'aperçu.",
+    "noSSHConfig": "Vigie ne peut pas lire ~/.ssh/config ici.",
+    "sshConfigDepth": "~/.ssh/config inclut des fichiers en boucle, ou trop profondément."
   },
   "wizard": {
     "close": "Fermer",

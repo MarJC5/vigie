@@ -37,11 +37,21 @@ const (
 	CSVSameSite       CSVReason = "same-site"    // its account and path are on an earlier line
 )
 
-// CSVRefusal is a line of a CSV file left out, with why, and the value at fault when there is one.
+// CSVRefusal is a line of a CSV file left out, with why, the value at fault when there is one, and
+// the line's values joined again by the separator.
 type CSVRefusal struct {
 	Line   int
 	Reason CSVReason
 	Value  string
+	Text   string
+}
+
+// CSVReport is what reading a CSV file found: the lines read after the header, the separator, and
+// the lines refused.
+type CSVReport struct {
+	Lines     int
+	Separator string
+	Refused   []CSVRefusal
 }
 
 // The columns of a site list: a connection (alias, or host, port and user), the site's path and
@@ -53,13 +63,13 @@ var csvColumns = []string{"folder", "alias", "host", "port", "user", "path", "ur
 // RFC 4180 says; a leading byte order mark is skipped. Folders are paths ("Clients/Valais");
 // sites of the same account share one host, named after its alias or its hostname. What the file
 // gives becomes an export with new IDs, to import with its preview; the lines refused are listed.
-func ReadCSV(r io.Reader) (File, []CSVRefusal, error) {
+func ReadCSV(r io.Reader) (File, CSVReport, error) {
 	data, err := io.ReadAll(io.LimitReader(r, maxSize+1))
 	if err != nil {
-		return File{}, nil, err
+		return File{}, CSVReport{}, err
 	}
 	if len(data) > maxSize {
-		return File{}, nil, fmt.Errorf("larger than %d MB: %w", maxSize>>20, ErrNotACSV)
+		return File{}, CSVReport{}, fmt.Errorf("larger than %d MB: %w", maxSize>>20, ErrNotACSV)
 	}
 	data = bytes.TrimPrefix(data, []byte("\uFEFF"))
 	header, _, _ := bufio.NewReader(bytes.NewReader(data)).ReadLine()
@@ -71,16 +81,16 @@ func ReadCSV(r io.Reader) (File, []CSVRefusal, error) {
 	reader.TrimLeadingSpace = true
 	names, err := reader.Read()
 	if err != nil {
-		return File{}, nil, fmt.Errorf("header: %w", ErrNotACSV)
+		return File{}, CSVReport{}, fmt.Errorf("header: %w", ErrNotACSV)
 	}
 	columns := map[string]int{}
 	for i, name := range names {
 		name = strings.ToLower(strings.TrimSpace(name))
 		if !slices.Contains(csvColumns, name) {
-			return File{}, nil, fmt.Errorf("column %q: %w", name, ErrNotACSV)
+			return File{}, CSVReport{}, fmt.Errorf("column %q: %w", name, ErrNotACSV)
 		}
 		if _, twice := columns[name]; twice {
-			return File{}, nil, fmt.Errorf("column %q twice: %w", name, ErrNotACSV)
+			return File{}, CSVReport{}, fmt.Errorf("column %q twice: %w", name, ErrNotACSV)
 		}
 		columns[name] = i
 	}
@@ -88,7 +98,7 @@ func ReadCSV(r io.Reader) (File, []CSVRefusal, error) {
 	_, hasHost := columns["host"]
 	_, hasUser := columns["user"]
 	if _, ok := columns["path"]; !ok || (!hasAlias && !(hasHost && hasUser)) {
-		return File{}, nil, fmt.Errorf("a path, and an alias or a host and user, are needed: %w", ErrNotACSV)
+		return File{}, CSVReport{}, fmt.Errorf("a path, and an alias or a host and user, are needed: %w", ErrNotACSV)
 	}
 	b := csvBuilder{
 		file:    File{Folders: []Folder{}, Hosts: []Host{}, Sites: []Site{}, Ignores: []Ignore{}},
@@ -100,11 +110,13 @@ func ReadCSV(r io.Reader) (File, []CSVRefusal, error) {
 			break
 		}
 		if err != nil {
-			return File{}, nil, fmt.Errorf("%w: %w", ErrNotACSV, err)
+			return File{}, CSVReport{}, fmt.Errorf("%w: %w", ErrNotACSV, err)
 		}
 		line, _ := reader.FieldPos(0)
+		b.lines++
+		text := strings.Join(record, string(reader.Comma))
 		if len(record) != len(names) {
-			b.refused = append(b.refused, CSVRefusal{Line: line, Reason: CSVColumns})
+			b.refused = append(b.refused, CSVRefusal{Line: line, Reason: CSVColumns, Text: text})
 			continue
 		}
 		value := func(name string) string {
@@ -114,11 +126,11 @@ func ReadCSV(r io.Reader) (File, []CSVRefusal, error) {
 			return ""
 		}
 		if refusal := b.add(value); refusal != nil {
-			refusal.Line = line
+			refusal.Line, refusal.Text = line, text
 			b.refused = append(b.refused, *refusal)
 		}
 	}
-	return b.file, b.refused, nil
+	return b.file, CSVReport{Lines: b.lines, Separator: string(reader.Comma), Refused: b.refused}, nil
 }
 
 type csvHost struct {
@@ -128,6 +140,7 @@ type csvHost struct {
 
 type csvBuilder struct {
 	file    File
+	lines   int
 	refused []CSVRefusal
 	folders map[string]string  // IDs by path
 	hosts   map[string]csvHost // by connection

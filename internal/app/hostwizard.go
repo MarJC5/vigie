@@ -8,6 +8,7 @@ import (
 	"uuid"
 
 	"github.com/MarJC5/vigie/internal/discover"
+	"github.com/MarJC5/vigie/internal/exchange"
 	"github.com/MarJC5/vigie/internal/hostcheck"
 	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/sshx"
@@ -59,6 +60,17 @@ var problemCodes = []struct {
 	{errKeyNotReceived, "problem.keyNotReceived"},
 	{hostcheck.ErrNoPHP, "problem.noPhp"},
 	{discover.ErrFind, "problem.findFailed"},
+	{exchange.ErrNotAnExport, "problem.notAnExport"},
+	{exchange.ErrNewerVersion, "problem.newerExport"},
+	{exchange.ErrInvalid, "problem.invalidExport"},
+	{exchange.ErrNotACSV, "problem.notACSV"},
+	{errNotExportable, "problem.notExportable"},
+	{errNoImport, "problem.noImport"},
+	{workspace.ErrNotAFolder, "problem.notAFolder"},
+	{workspace.ErrKeyChanged, "problem.keyChanged"},
+	{store.ErrIDTaken, "problem.importChanged"},
+	{workspace.ErrNoSSHConfig, "problem.noSSHConfig"},
+	{sshx.ErrConfigDepth, "problem.sshConfigDepth"},
 }
 
 // ProblemOf turns an error into a Problem the interface can translate; nil gives nil.

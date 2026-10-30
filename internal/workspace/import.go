@@ -47,6 +47,7 @@ const (
 // ImportEntry is a folder, host or site of the file and what the import does with it.
 type ImportEntry struct {
 	Kind   model.NodeKind
+	FileID string // its ID in the file
 	Name   string // in the file
 	Path   string // once imported: the node added, or the one already there
 	Status ImportStatus
@@ -206,8 +207,9 @@ func (p *planner) newID(id model.ID) model.ID {
 	return id
 }
 
-func (p *planner) entry(kind model.NodeKind, name, path string, status ImportStatus, reason ImportReason, detail string) {
-	p.plan.Entries = append(p.plan.Entries, ImportEntry{Kind: kind, Name: name, Path: path, Status: status, Reason: reason, Detail: detail})
+func (p *planner) entry(kind model.NodeKind, fileID, name, path string, status ImportStatus, reason ImportReason, detail string) {
+	p.plan.Entries = append(p.plan.Entries, ImportEntry{Kind: kind, FileID: fileID, Name: name, Path: path, Status: status,
+		Reason: reason, Detail: detail})
 }
 
 // add tries name, then "name (2)", "name (3)"... while a sibling has it; it returns the reason
@@ -256,7 +258,7 @@ func (p *planner) folder(x exchange.Folder) mapped {
 func (p *planner) placeFolder(x exchange.Folder, parent mapped) mapped {
 	path := joinPath(parent.path, x.Name)
 	refused := func(reason ImportReason, detail string) mapped {
-		p.entry(model.KindFolder, x.Name, path, ImportRefused, reason, detail)
+		p.entry(model.KindFolder, x.ID, x.Name, path, ImportRefused, reason, detail)
 		return mapped{path: path, refused: true}
 	}
 	if parent.refused {
@@ -265,14 +267,14 @@ func (p *planner) placeFolder(x exchange.Folder, parent mapped) mapped {
 	f := x.Model()
 	folderPath := func(id model.ID) string { return p.tree.PathOf(model.Node{Kind: model.KindFolder, ID: id}) }
 	if _, ok := p.tree.Folder(f.ID); ok {
-		p.entry(model.KindFolder, x.Name, folderPath(f.ID), ImportPresent, ReasonSameID, "")
+		p.entry(model.KindFolder, x.ID, x.Name, folderPath(f.ID), ImportPresent, ReasonSameID, "")
 		return mapped{id: f.ID, path: folderPath(f.ID)}
 	}
 	if err := model.ValidateName(x.Name); err != nil {
 		return refused(ReasonInvalid, err.Error())
 	}
 	if n, err := p.tree.Resolve(path); err == nil && n.Kind == model.KindFolder && !p.added[n.ID] {
-		p.entry(model.KindFolder, x.Name, folderPath(n.ID), ImportPresent, ReasonSameName, "")
+		p.entry(model.KindFolder, x.ID, x.Name, folderPath(n.ID), ImportPresent, ReasonSameName, "")
 		return mapped{id: n.ID, path: folderPath(n.ID)}
 	}
 	f.ID, f.ParentID = p.newID(f.ID), parent.id
@@ -286,7 +288,7 @@ func (p *planner) placeFolder(x exchange.Folder, parent mapped) mapped {
 	}
 	p.added[f.ID] = true
 	p.plan.batch.Folders = append(p.plan.batch.Folders, f)
-	p.entry(model.KindFolder, x.Name, folderPath(f.ID), ImportAdded, reason, "")
+	p.entry(model.KindFolder, x.ID, x.Name, folderPath(f.ID), ImportAdded, reason, "")
 	return mapped{id: f.ID, path: folderPath(f.ID)}
 }
 
@@ -308,7 +310,7 @@ func (p *planner) host(ctx context.Context, x exchange.Host) error {
 	h := x.Model()
 	hostPath := func(id model.ID) string { return p.tree.PathOf(model.Node{Kind: model.KindHost, ID: id}) }
 	place := func(status ImportStatus, reason ImportReason, detail string, m mapped) {
-		p.entry(model.KindHost, x.Name, m.path, status, reason, detail)
+		p.entry(model.KindHost, x.ID, x.Name, m.path, status, reason, detail)
 		p.hosts[x.ID] = m
 	}
 	if parent.refused {
@@ -427,17 +429,17 @@ func (p *planner) site(x exchange.Site) {
 	s := x.Model()
 	sitePath := func(id model.ID) string { return p.tree.PathOf(model.Node{Kind: model.KindSite, ID: id}) }
 	if host.refused {
-		p.entry(model.KindSite, x.Name, path, ImportRefused, ReasonParentRefused, "")
+		p.entry(model.KindSite, x.ID, x.Name, path, ImportRefused, ReasonParentRefused, "")
 		return
 	}
 	if stored, ok := p.tree.Site(s.ID); ok && !p.added[stored.ID] {
-		p.entry(model.KindSite, x.Name, sitePath(s.ID), ImportPresent, ReasonSameID, "")
+		p.entry(model.KindSite, x.ID, x.Name, sitePath(s.ID), ImportPresent, ReasonSameID, "")
 		return
 	}
 	if !p.added[host.id] {
 		for _, stored := range p.tree.SitesUnder(model.Node{Kind: model.KindHost, ID: host.id}) {
 			if !p.added[stored.ID] && samePath(stored.Path, s.Path) {
-				p.entry(model.KindSite, x.Name, sitePath(stored.ID), ImportPresent, ReasonSamePath, "")
+				p.entry(model.KindSite, x.ID, x.Name, sitePath(stored.ID), ImportPresent, ReasonSamePath, "")
 				return
 			}
 		}
@@ -445,7 +447,7 @@ func (p *planner) site(x exchange.Site) {
 	s.ID, s.HostID = p.newID(s.ID), host.id
 	s.Position = p.position(model.KindSite, host.id, s.Position)
 	if err := model.ValidateName(x.Name); err != nil {
-		p.entry(model.KindSite, x.Name, path, ImportRefused, ReasonInvalid, err.Error())
+		p.entry(model.KindSite, x.ID, x.Name, path, ImportRefused, ReasonInvalid, err.Error())
 		return
 	}
 	reason, err := add(x.Name, func(name string) error {
@@ -453,13 +455,13 @@ func (p *planner) site(x exchange.Site) {
 		return p.tree.AddSite(s)
 	})
 	if err != nil {
-		p.entry(model.KindSite, x.Name, path, ImportRefused, ReasonInvalid, err.Error())
+		p.entry(model.KindSite, x.ID, x.Name, path, ImportRefused, ReasonInvalid, err.Error())
 		return
 	}
 	p.added[s.ID] = true
 	p.sites[x.ID] = s.ID
 	p.plan.batch.Sites = append(p.plan.batch.Sites, s)
-	p.entry(model.KindSite, x.Name, sitePath(s.ID), ImportAdded, reason, "")
+	p.entry(model.KindSite, x.ID, x.Name, sitePath(s.ID), ImportAdded, reason, "")
 }
 
 // samePath compares two WordPress roots, a trailing slash aside.

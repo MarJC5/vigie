@@ -24,7 +24,8 @@ const frenchList = "\uFEFFfolder;Host;Port;User;Path;URL;Color;Notes\n" +
 	"Clients;other.example.test;22\n"
 
 func TestASiteListFromASpreadsheet(t *testing.T) {
-	f, refused, err := exchange.ReadCSV(strings.NewReader(frenchList))
+	f, report, err := exchange.ReadCSV(strings.NewReader(frenchList))
+	refused := report.Refused
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,12 +54,15 @@ func TestASiteListFromASpreadsheet(t *testing.T) {
 	}
 	// Lines counted in the file: the note takes two.
 	want := []exchange.CSVRefusal{
-		{Line: 6, Reason: exchange.CSVOtherFolder},
-		{Line: 7, Reason: exchange.CSVNoConnection},
-		{Line: 8, Reason: exchange.CSVBadPort, Value: "99999"},
-		{Line: 9, Reason: exchange.CSVBadColor, Value: "purple"},
-		{Line: 10, Reason: exchange.CSVSameSite, Value: "~/sites/atelier/"},
-		{Line: 11, Reason: exchange.CSVColumns},
+		{Line: 6, Reason: exchange.CSVOtherFolder, Text: ";ssh.example.test;2222;u12ab;~/sites/autre;;;"},
+		{Line: 7, Reason: exchange.CSVNoConnection, Text: "Clients;;;;~/www;;;"},
+		{Line: 8, Reason: exchange.CSVBadPort, Value: "99999", Text: "Clients;other.example.test;99999;wp;~/www;;;"},
+		{Line: 9, Reason: exchange.CSVBadColor, Value: "purple", Text: "Clients;other.example.test;22;wp;~/www;;purple;"},
+		{Line: 10, Reason: exchange.CSVSameSite, Value: "~/sites/atelier/", Text: "Clients/Valais;ssh.example.test;2222;u12ab;~/sites/atelier/;;;"},
+		{Line: 11, Reason: exchange.CSVColumns, Text: "Clients;other.example.test;22"},
+	}
+	if report.Lines != 9 || report.Separator != ";" {
+		t.Errorf("report = %d lines, separator %q; want 9 and ;", report.Lines, report.Separator)
 	}
 	if !slices.Equal(refused, want) {
 		t.Errorf("refused =\n%+v\nwant\n%+v", refused, want)
@@ -75,14 +79,15 @@ func TestASiteListFromASpreadsheet(t *testing.T) {
 
 func TestAListOfAliases(t *testing.T) {
 	data := "alias,path,name\nshared,~/www/atelier,\nshared,~/www/cave,Cave\nstaging,~/www,\nother,,x\nweb,~/a,A/B\n"
-	f, refused, err := exchange.ReadCSV(strings.NewReader(data))
+	f, report, err := exchange.ReadCSV(strings.NewReader(data))
 	if err != nil {
 		t.Fatal(err)
 	}
+	refused := report.Refused
 	if len(f.Hosts) != 2 || f.Hosts[0].Alias != "shared" || f.Hosts[0].Hostname != "" || len(f.Sites) != 3 || f.Sites[1].Name != "Cave" {
 		t.Errorf("file = %+v", f)
 	}
-	want := []exchange.CSVRefusal{{Line: 5, Reason: exchange.CSVNoPath}, {Line: 6, Reason: exchange.CSVBadName, Value: "A/B"}}
+	want := []exchange.CSVRefusal{{Line: 5, Reason: exchange.CSVNoPath, Text: "other,,x"}, {Line: 6, Reason: exchange.CSVBadName, Value: "A/B", Text: "web,~/a,A/B"}}
 	if !slices.Equal(refused, want) {
 		t.Errorf("refused = %+v, want %+v", refused, want)
 	}

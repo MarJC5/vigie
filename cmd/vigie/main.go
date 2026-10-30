@@ -107,6 +107,7 @@ func openWindow(opts cli.Options) error {
 			application.NewService(app.NewUpdates(ws, emit, scanner)),
 			application.NewService(scanner),
 			application.NewService(app.NewSecurity(ws, time.Now)),
+			application.NewService(app.NewData(ws, picker{app: func() *application.App { return wails }}, time.Now)),
 		},
 		Assets: application.AssetOptions{Handler: application.AssetFileServerFS(frontend.Assets())},
 		Mac:    application.MacOptions{ApplicationShouldTerminateAfterLastWindowClosed: true},
