@@ -7,15 +7,17 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"testing"
 
+	"github.com/MarJC5/vigie/internal/remote"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/sshx/sshxtest"
 	"github.com/MarJC5/vigie/internal/wpcli"
 )
 
 // Fixtures are the recorded sites of the bench.
-var Fixtures = []string{"plain", "parent-config", "network", "outdated", "offline", "broken", "plugin-theme", "updates"}
+var Fixtures = []string{"plain", "parent-config", "network", "outdated", "offline", "broken", "plugin-theme", "updates", "security"}
 
 // commands are the read commands Vigie runs, by the name of their recording.
 var commands = map[string]wpcli.Command{
@@ -36,6 +38,63 @@ var commands = map[string]wpcli.Command{
 	"language-theme":            wpcli.LanguageUpdates(wpcli.LanguagesOfThemes),
 	"language-theme-plugins":    wpcli.LanguageUpdates(wpcli.LanguagesOfThemes).WithPlugins(),
 	"site-list":                 wpcli.SiteList(),
+}
+
+// SecurityReads are the security read commands of a scan, by the name of their recording; the
+// two-factor of each administrator, Wordfence's table and the uploads follow from what they read.
+var SecurityReads = map[string]wpcli.Command{
+	"core-checksums":              wpcli.CoreVerifyChecksums(),
+	"plugin-checksums":            wpcli.PluginVerifyChecksums(),
+	"administrators":              wpcli.Administrators(),
+	"super-admins":                wpcli.SuperAdmins(),
+	"db-prefix":                   wpcli.DatabasePrefix(),
+	"config-names":                wpcli.ConfigNames(),
+	"constant-wp-debug":           wpcli.ConfigConstant("WP_DEBUG"),
+	"constant-wp-debug-display":   wpcli.ConfigConstant("WP_DEBUG_DISPLAY"),
+	"constant-disallow-file-edit": wpcli.ConfigConstant("DISALLOW_FILE_EDIT"),
+	"option-blog-public":          wpcli.OptionGet("blog_public"),
+	"cron-events":                 wpcli.CronEvents(),
+	"option-sizes":                wpcli.OptionSizes(false),
+	"transient-sizes":             wpcli.OptionSizes(true),
+	"db-version":                  wpcli.DatabaseVersion(),
+}
+
+// Derived are the security commands that follow from the recordings of a fixture: the two-factor
+// of each administrator, Wordfence's table with the prefix read, the PHP files in the uploads of
+// the real folder read. A read that failed gives none.
+func Derived(administrators, prefix, realRoot []byte) map[string]Line {
+	lines := map[string]Line{}
+	if admins, err := wpcli.ParseAdministrators(administrators); err == nil {
+		for _, a := range admins {
+			lines["two-factor-"+strconv.Itoa(a.ID)] = Line{Cmd: wpcli.TwoFactorMeta(a.ID)}
+		}
+	}
+	if p, err := wpcli.ParseDatabasePrefix(prefix); err == nil {
+		lines["wordfence-two-factor"] = Line{Cmd: wpcli.WordfenceTwoFactorUsers(p)}
+	}
+	if dir, err := wpcli.ParseDir(realRoot); err == nil {
+		lines["uploads-php"] = Line{Shell: func() (string, error) { return remote.UploadsPHP(dir) }}
+	}
+	return lines
+}
+
+// Line is a command of a scan: WP-CLI's, run at the site's path, or a shell command line.
+type Line struct {
+	Cmd   wpcli.Command
+	Shell func() (string, error)
+}
+
+// Remote is the command line run on the server for a site at root.
+func (l Line) Remote(wp, root string) (string, error) {
+	if l.Shell != nil {
+		return l.Shell()
+	}
+	return l.Cmd.Remote(wp, root)
+}
+
+// RealRoot is the command that reads the site's real folder, recorded as "real-root".
+func RealRoot(root string) Line {
+	return Line{Shell: func() (string, error) { return remote.RealRoot(root) }}
 }
 
 // Recorded returns one recorded call of a fixture.
@@ -61,17 +120,33 @@ func Recorded(t testing.TB, fixture, name string) sshx.Result {
 func Replay(t testing.TB, fake *sshxtest.Fake, fixture, root, wp string) {
 	t.Helper()
 	for name, cmd := range commands {
-		remote, err := cmd.Remote(wp, root)
+		line, err := cmd.Remote(wp, root)
 		if err != nil {
 			t.Fatal(err)
 		}
-		fake.Set(remote, Recorded(t, fixture, name))
+		fake.Set(line, Recorded(t, fixture, name))
 	}
-	remote, err := wpcli.CLIInfo().Remote(wp, "")
+	line, err := wpcli.CLIInfo().Remote(wp, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	fake.Set(remote, Recorded(t, fixture, "cli-info"))
+	fake.Set(line, Recorded(t, fixture, "cli-info"))
+
+	lines := map[string]Line{"real-root": RealRoot(root)}
+	for name, cmd := range SecurityReads {
+		lines[name] = Line{Cmd: cmd}
+	}
+	for name, l := range Derived([]byte(Recorded(t, fixture, "administrators").Stdout), []byte(Recorded(t, fixture, "db-prefix").Stdout),
+		[]byte(Recorded(t, fixture, "real-root").Stdout)) {
+		lines[name] = l
+	}
+	for name, l := range lines {
+		line, err := l.Remote(wp, root)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fake.Set(line, Recorded(t, fixture, name))
+	}
 }
 
 // ReplayUpdates makes fake answer update commands of the updates fixture (at ~/sites/updates,

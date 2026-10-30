@@ -1,8 +1,8 @@
 {
   "args": [
-    "'wp' 'super-admin' 'list' '--format=json' '--path=sites/network' '--skip-plugins' '--skip-themes'"
+    "'wp' 'super-admin' 'list' '--format=json' '--path=sites/security' '--skip-plugins' '--skip-themes'"
   ],
-  "exit": 0,
-  "stdout": "[{\"user_login\":\"admin\"}]",
-  "stderr": ""
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error: This is not a multisite installation.\n"
 }

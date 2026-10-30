@@ -1,8 +1,0 @@
-{
-  "args": [
-    "'wp' 'option' 'get' 'auto_update_core_major' '--path=sites/security' '--skip-plugins' '--skip-themes'"
-  ],
-  "exit": 0,
-  "stdout": "enabled\n",
-  "stderr": ""
-}

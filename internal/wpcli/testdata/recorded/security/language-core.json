@@ -1,0 +1,14 @@
+{
+  "args": [
+    "language",
+    "core",
+    "list",
+    "--update=available",
+    "--format=json",
+    "--skip-plugins",
+    "--skip-themes"
+  ],
+  "exit": 0,
+  "stdout": "[]",
+  "stderr": ""
+}

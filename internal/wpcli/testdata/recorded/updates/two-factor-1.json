@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'user' 'meta' 'list' '1' '--keys=_two_factor_enabled_providers,wp_2fa_enabled_methods' '--format=json' '--unserialize' '--path=sites/updates' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "[]",
+  "stderr": ""
+}

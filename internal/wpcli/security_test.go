@@ -46,7 +46,7 @@ func TestSecurityRecordingsAreCurrent(t *testing.T) {
 		"core-checksums":       {"security", wpcli.CoreVerifyChecksums()},
 		"plugin-checksums":     {"security", wpcli.PluginVerifyChecksums()},
 		"administrators":       {"security", wpcli.Administrators()},
-		"super-admins":         {"network", wpcli.SuperAdmins()},
+		"super-admins":         {"security", wpcli.SuperAdmins()},
 		"two-factor-3":         {"security", wpcli.TwoFactorMeta(3)},
 		"db-prefix":            {"security", wpcli.DatabasePrefix()},
 		"wordfence-two-factor": {"security", wpcli.WordfenceTwoFactorUsers("wp_")},
@@ -81,7 +81,7 @@ func TestParseCoreChecksums(t *testing.T) {
 		t.Fatalf("ParseCoreChecksums() = %+v\nwant %+v", got, want)
 	}
 	// WP-CLI says Success when the only problem is an added file: the warning still counts.
-	got, err = wpcli.ParseCoreChecksums(result(load(t, "security", "core-checksums-clean")))
+	got, err = wpcli.ParseCoreChecksums(result(load(t, "plain", "core-checksums")))
 	if err != nil || !reflect.DeepEqual(got, []wpcli.FileProblem{{File: "wp-config-docker.php", Change: wpcli.FileAdded}}) {
 		t.Fatalf("ParseCoreChecksums(clean) = %+v, %v", got, err)
 	}
@@ -107,17 +107,17 @@ func TestParsePluginChecksums(t *testing.T) {
 			{Plugin: "akismet", File: "fixture-added.php", Change: wpcli.FileAdded},
 			{Plugin: "akismet", File: "akismet.php", Change: wpcli.FileChanged},
 		},
-		Total: 3, Verified: 1, Failed: 1, Skipped: []string{"fixture-premium"},
+		Total: 4, Verified: 1, Failed: 1, Skipped: []string{"fixture-premium", "wordfence"},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("ParsePluginChecksums() = %+v\nwant %+v", got, want)
 	}
-	got, err = wpcli.ParsePluginChecksums(result(load(t, "security", "plugin-checksums-clean")))
+	got, err = wpcli.ParsePluginChecksums(result(load(t, "plain", "plugin-checksums")))
 	if err != nil || !reflect.DeepEqual(got, wpcli.PluginChecksums{Total: 2, Verified: 2}) {
 		t.Fatalf("ParsePluginChecksums(clean) = %+v, %v", got, err)
 	}
 	// Success, with one plugin skipped: it is not verified, and Vigie says so.
-	got, err = wpcli.ParsePluginChecksums(result(load(t, "security", "plugin-checksums-unknown")))
+	got, err = wpcli.ParsePluginChecksums(result(load(t, "plugin-theme", "plugin-checksums")))
 	if err != nil || !reflect.DeepEqual(got, wpcli.PluginChecksums{Total: 3, Verified: 2, Skipped: []string{"fixture-themes"}}) {
 		t.Fatalf("ParsePluginChecksums(unknown) = %+v, %v", got, err)
 	}
@@ -154,11 +154,11 @@ func TestParseAdministrators(t *testing.T) {
 }
 
 func TestParseSuperAdmins(t *testing.T) {
-	got, err := wpcli.ParseSuperAdmins(result(load(t, "security", "super-admins")))
+	got, err := wpcli.ParseSuperAdmins(result(load(t, "network", "super-admins")))
 	if err != nil || !reflect.DeepEqual(got, []string{"admin"}) {
 		t.Fatalf("ParseSuperAdmins() = %v, %v", got, err)
 	}
-	if _, err := wpcli.ParseSuperAdmins(result(load(t, "security", "super-admins-single"))); !errors.Is(err, wpcli.ErrCannotLoad) {
+	if _, err := wpcli.ParseSuperAdmins(result(load(t, "plain", "super-admins"))); !errors.Is(err, wpcli.ErrCannotLoad) {
 		t.Errorf("ParseSuperAdmins() of a single site = %v, want ErrCannotLoad", err)
 	}
 }
@@ -190,7 +190,7 @@ func TestParseWordfenceTwoFactorUsers(t *testing.T) {
 		t.Fatalf("ParseUserIDs() = %v, %v", ids, err)
 	}
 	// No table: Wordfence is not there, and nobody uses its two-factor.
-	ids, err = wpcli.ParseUserIDs(result(load(t, "security", "wordfence-two-factor-none")))
+	ids, err = wpcli.ParseUserIDs(result(load(t, "plain", "wordfence-two-factor")))
 	if err != nil || len(ids) != 0 {
 		t.Fatalf("ParseUserIDs() without the table = %v, %v", ids, err)
 	}
@@ -212,17 +212,14 @@ func TestParseConfigNames(t *testing.T) {
 }
 
 func TestParseConstantAndOption(t *testing.T) {
-	if v, ok, err := wpcli.ParseConstant(result(load(t, "security", "constant-debug"))); err != nil || !ok || v != true {
+	if v, ok, err := wpcli.ParseConstant(result(load(t, "security", "constant-wp-debug"))); err != nil || !ok || v != true {
 		t.Errorf("ParseConstant(WP_DEBUG) = %v, %v, %v", v, ok, err)
 	}
-	if v, ok, err := wpcli.ParseConstant(result(load(t, "security", "constant-missing"))); err != nil || ok || v != nil {
+	if v, ok, err := wpcli.ParseConstant(result(load(t, "security", "constant-disallow-file-edit"))); err != nil || ok || v != nil {
 		t.Errorf("ParseConstant(undefined) = %v, %v, %v", v, ok, err)
 	}
 	if v, ok, err := wpcli.ParseOption(result(load(t, "security", "option-blog-public"))); err != nil || !ok || v != "0" {
 		t.Errorf("ParseOption(blog_public) = %q, %v, %v", v, ok, err)
-	}
-	if v, ok, err := wpcli.ParseOption(result(load(t, "security", "option-auto-update-major"))); err != nil || !ok || v != "enabled" {
-		t.Errorf("ParseOption(auto_update_core_major) = %q, %v, %v", v, ok, err)
 	}
 	if v, ok, err := wpcli.ParseOption(result(load(t, "security", "option-missing"))); err != nil || ok || v != "" {
 		t.Errorf("ParseOption(missing) = %q, %v, %v; want not set", v, ok, err)

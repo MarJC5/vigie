@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'super-admin' 'list' '--format=json' '--path=sites/parent-config/public' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error: This is not a multisite installation.\n"
+}

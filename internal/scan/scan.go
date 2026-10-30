@@ -1,8 +1,10 @@
 // Package scan reads the state of a site over SSH with WP-CLI: versions, pending updates and
-// translations, and whether each update check really reached wordpress.org. It only reads.
+// translations, whether each update check really reached wordpress.org, and what a security scan
+// finds, with outside lookups made from the user's machine. It only reads.
 package scan
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"slices"
@@ -20,6 +22,10 @@ type Job struct {
 	HostKey string // shares the host's limit of commands at a time (the host ID)
 	Max     int    // commands at a time on the host
 	WPCLI   string // the site's effective WP-CLI command
+	// Previous is the site's latest scan, whose comparison of the files is carried over while it
+	// is less than a day old; CheckFiles asks for a new one anyway.
+	Previous   model.Scan
+	CheckFiles bool
 }
 
 // Progress tells how far a scan is.
@@ -33,21 +39,29 @@ type Scanner struct {
 	Runner  sshx.Runner
 	Limiter *sshx.Limiter
 	Now     func() time.Time
+	// Lookups makes the outside lookups; nil makes none, and their checks are "not checked".
+	Lookups Lookups
 }
 
-// steps is the number of commands of a scan, for the progress: 14, and the subsites of a network.
-// A theme in a plugin's folder takes two more, read again with the plugins.
+// filesSteps are the commands of the comparison of the files: WordPress's and the plugins'
+// checksums, the site's real folder, the PHP files in its uploads.
+const filesSteps = 4
+
+// steps is the number of commands of a scan known before it starts, for the progress: 21, and the
+// subsites and super administrators of a network. The comparison of the files, each administrator,
+// each constant read and Wordfence add theirs once known. A theme in a plugin's folder takes two
+// more, read again with the plugins.
 func (j Job) steps() int {
 	if j.Site.Multisite {
-		return 15
+		return 23
 	}
-	return 14
+	return 21
 }
 
 // Site scans one site. The scan is always returned, also when it failed or was cancelled; for a
 // network, the subsites read are returned too.
 func (s Scanner) Site(ctx context.Context, job Job, progress func(Progress)) (model.Scan, []model.Subsite) {
-	r := &run{scanner: s, job: job, progress: progress}
+	r := &run{scanner: s, job: job, progress: progress, total: job.steps()}
 	result := model.Scan{ID: model.NewID(), SiteID: job.Site.ID, Started: s.Now()}
 	subsites, err := r.scan(ctx, &result)
 	result.Finished = s.Now()
@@ -90,6 +104,7 @@ type run struct {
 	job      Job
 	progress func(Progress)
 	done     int
+	total    int // grows as the scan learns what it reads
 	// themesInPlugins: the active theme lives in a plugin's folder, so the theme reads load the
 	// plugins.
 	themesInPlugins bool
@@ -104,17 +119,41 @@ func (r *run) exec(ctx context.Context, cmd wpcli.Command, path string) (sshx.Re
 	if err := ctx.Err(); err != nil {
 		return sshx.Result{}, err
 	}
+	return r.run(ctx, remote)
+}
+
+// run runs one command line within the host's limit and reports the progress.
+func (r *run) run(ctx context.Context, remote string) (sshx.Result, error) {
 	var res sshx.Result
-	err = r.scanner.Limiter.Do(ctx, r.job.HostKey, r.job.Max, func() error {
+	err := r.scanner.Limiter.Do(ctx, r.job.HostKey, r.job.Max, func() error {
 		var runErr error
 		res, runErr = r.scanner.Runner.Run(ctx, r.job.Target, remote)
 		return runErr
 	})
 	r.done++
 	if r.progress != nil {
-		r.progress(Progress{SiteID: r.job.Site.ID, Done: min(r.done, r.job.steps()), Total: r.job.steps()})
+		r.progress(Progress{SiteID: r.job.Site.ID, Done: min(r.done, r.total), Total: r.total})
 	}
 	return res, err
+}
+
+// shell runs a shell command of the remote package and returns its output; a failure is an error.
+func (r *run) shell(ctx context.Context, line func() (string, error)) ([]byte, error) {
+	remote, err := line()
+	if err != nil {
+		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	res, err := r.run(ctx, remote)
+	if err != nil {
+		return nil, err
+	}
+	if err := wpcli.Done(res); err != nil {
+		return nil, err
+	}
+	return res.Stdout, nil
 }
 
 // read runs a read command of the site and returns its output; a WP-CLI error is an error.
@@ -179,6 +218,17 @@ func (r *run) scan(ctx context.Context, result *model.Scan) ([]model.Subsite, er
 	if err := r.languages(ctx, result); err != nil {
 		return nil, err
 	}
+
+	// The outside lookups run from the machine while the server is read.
+	found := make(chan []model.Finding, 1)
+	snapshot := *result
+	go func() { found <- r.scanner.lookups(ctx, snapshot) }()
+	err = r.security(ctx, result)
+	result.Findings = append(result.Findings, <-found...)
+	sortFindings(result.Findings)
+	if err != nil {
+		return nil, err
+	}
 	if !r.job.Site.Multisite {
 		return nil, nil
 	}
@@ -191,8 +241,21 @@ func (r *run) scan(ctx context.Context, result *model.Scan) ([]model.Subsite, er
 // finish reports the end, whatever the number of steps run.
 func (r *run) finish() {
 	if r.progress != nil {
-		r.progress(Progress{SiteID: r.job.Site.ID, Done: r.job.steps(), Total: r.job.steps()})
+		r.progress(Progress{SiteID: r.job.Site.ID, Done: r.total, Total: r.total})
 	}
+}
+
+// levelOrder ranks the levels, the worst first.
+var levelOrder = []model.FindingLevel{model.LevelUrgent, model.LevelAttention, model.LevelNotChecked, model.LevelInfo}
+
+// sortFindings orders the findings the worst first, then by key, the same from one scan to the next.
+func sortFindings(findings []model.Finding) {
+	slices.SortStableFunc(findings, func(a, b model.Finding) int {
+		if c := cmp.Compare(slices.Index(levelOrder, a.Level), slices.Index(levelOrder, b.Level)); c != 0 {
+			return c
+		}
+		return cmp.Compare(a.Key(), b.Key())
+	})
 }
 
 // core reads the WordPress releases, then whether the check reached wordpress.org.

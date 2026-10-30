@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'config' 'get' 'WP_DEBUG' '--type=constant' '--format=json' '--path=sites/plugin-theme' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "false\n",
+  "stderr": ""
+}

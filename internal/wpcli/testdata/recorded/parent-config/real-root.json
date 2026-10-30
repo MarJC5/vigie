@@ -1,0 +1,8 @@
+{
+  "args": [
+    "cd 'sites/parent-config/public' \u0026\u0026 pwd -P"
+  ],
+  "exit": 0,
+  "stdout": "/home/vigie/sites/parent-config/public\n",
+  "stderr": ""
+}

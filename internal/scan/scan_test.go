@@ -4,6 +4,7 @@ import (
 	"context"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -31,11 +32,19 @@ func job(fixture string) scan.Job {
 }
 
 func scanner(runner sshx.Runner) scan.Scanner {
-	clock := time.Date(2026, 10, 29, 9, 0, 0, 0, time.UTC)
-	return scan.Scanner{Runner: runner, Limiter: sshx.NewLimiter(), Now: func() time.Time {
-		clock = clock.Add(time.Second)
-		return clock
-	}}
+	return scan.Scanner{Runner: runner, Limiter: sshx.NewLimiter(), Now: ticking(time.Date(2026, 10, 29, 9, 0, 0, 0, time.UTC))}
+}
+
+// ticking is a clock that moves a second each time it is read, from start; the lookups read it
+// at the same time as the scan.
+func ticking(start time.Time) func() time.Time {
+	var mu sync.Mutex
+	return func() time.Time {
+		mu.Lock()
+		defer mu.Unlock()
+		start = start.Add(time.Second)
+		return start
+	}
 }
 
 func item(s model.Scan, kind model.ItemKind, slug string) (model.ScanItem, bool) {
@@ -148,8 +157,11 @@ func TestProgressCountsTheSteps(t *testing.T) {
 		t.Fatal("no progress reported")
 	}
 	last := steps[len(steps)-1]
-	if last.Total != 14 || len(steps) != 15 { // each command, then the end
-		t.Errorf("progress = %d reports, total %d; want 14 commands and the end", len(steps), last.Total)
+	// 14 commands for the versions and updates; for security, 4 to compare the files, then the
+	// administrators and the one's two-factor, the constants' names and WP_DEBUG, the search
+	// engines, WP-Cron, the options and transients, the database version: 27, then the end.
+	if last.Total != 27 || len(steps) != 28 {
+		t.Errorf("progress = %d reports, total %d; want 27 commands and the end", len(steps), last.Total)
 	}
 	if last.Done != last.Total || !slices.IsSortedFunc(steps, func(a, b scan.Progress) int { return a.Done - b.Done }) {
 		t.Fatalf("progress = %+v, want increasing up to the total", steps)

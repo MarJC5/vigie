@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'config' 'list' '--fields=name,type' '--format=json' '--path=sites/network' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "[{\"name\":\"table_prefix\",\"type\":\"variable\"},{\"name\":\"base\",\"type\":\"variable\"},{\"name\":\"DB_NAME\",\"type\":\"constant\"},{\"name\":\"DB_USER\",\"type\":\"constant\"},{\"name\":\"DB_PASSWORD\",\"type\":\"constant\"},{\"name\":\"DB_HOST\",\"type\":\"constant\"},{\"name\":\"DB_CHARSET\",\"type\":\"constant\"},{\"name\":\"DB_COLLATE\",\"type\":\"constant\"},{\"name\":\"AUTH_KEY\",\"type\":\"constant\"},{\"name\":\"SECURE_AUTH_KEY\",\"type\":\"constant\"},{\"name\":\"LOGGED_IN_KEY\",\"type\":\"constant\"},{\"name\":\"NONCE_KEY\",\"type\":\"constant\"},{\"name\":\"AUTH_SALT\",\"type\":\"constant\"},{\"name\":\"SECURE_AUTH_SALT\",\"type\":\"constant\"},{\"name\":\"LOGGED_IN_SALT\",\"type\":\"constant\"},{\"name\":\"NONCE_SALT\",\"type\":\"constant\"},{\"name\":\"WP_CACHE_KEY_SALT\",\"type\":\"constant\"},{\"name\":\"WP_DEBUG\",\"type\":\"constant\"},{\"name\":\"WP_ALLOW_MULTISITE\",\"type\":\"constant\"},{\"name\":\"MULTISITE\",\"type\":\"constant\"},{\"name\":\"SUBDOMAIN_INSTALL\",\"type\":\"constant\"},{\"name\":\"DOMAIN_CURRENT_SITE\",\"type\":\"constant\"},{\"name\":\"PATH_CURRENT_SITE\",\"type\":\"constant\"},{\"name\":\"SITE_ID_CURRENT_SITE\",\"type\":\"constant\"},{\"name\":\"BLOG_ID_CURRENT_SITE\",\"type\":\"constant\"}]",
+  "stderr": ""
+}

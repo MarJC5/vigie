@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'option' 'list' '--fields=option_name,autoload,size_bytes' '--format=json' '--transients' '--path=sites/outdated' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "[{\"option_name\":\"_site_transient_theme_roots\",\"autoload\":\"off\",\"size_bytes\":\"121\"},{\"option_name\":\"_site_transient_timeout_theme_roots\",\"autoload\":\"off\",\"size_bytes\":\"10\"},{\"option_name\":\"_site_transient_timeout_wp_theme_files_patterns-cefae3cc34c71812665266d790c2b08a\",\"autoload\":\"off\",\"size_bytes\":\"10\"},{\"option_name\":\"_site_transient_update_core\",\"autoload\":\"off\",\"size_bytes\":\"1697\"},{\"option_name\":\"_site_transient_update_plugins\",\"autoload\":\"off\",\"size_bytes\":\"1734\"},{\"option_name\":\"_site_transient_wp_theme_files_patterns-cefae3cc34c71812665266d790c2b08a\",\"autoload\":\"off\",\"size_bytes\":\"30181\"},{\"option_name\":\"_transient_doing_cron\",\"autoload\":\"on\",\"size_bytes\":\"33\"},{\"option_name\":\"_transient_wp_core_block_css_files\",\"autoload\":\"on\",\"size_bytes\":\"23778\"}]",
+  "stderr": ""
+}

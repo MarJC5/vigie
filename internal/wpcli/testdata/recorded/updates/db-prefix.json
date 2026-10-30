@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'db' 'prefix' '--path=sites/updates' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "wp_\n",
+  "stderr": ""
+}

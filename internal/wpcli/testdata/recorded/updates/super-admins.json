@@ -1,6 +1,6 @@
 {
   "args": [
-    "'wp' 'super-admin' 'list' '--format=json' '--path=sites/security' '--skip-plugins' '--skip-themes'"
+    "'wp' 'super-admin' 'list' '--format=json' '--path=sites/updates' '--skip-plugins' '--skip-themes'"
   ],
   "exit": 1,
   "stdout": "",

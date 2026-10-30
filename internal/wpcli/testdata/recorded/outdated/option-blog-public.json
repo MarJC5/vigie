@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'option' 'get' 'blog_public' '--path=sites/outdated' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "1\n",
+  "stderr": ""
+}

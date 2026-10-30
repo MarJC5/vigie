@@ -7,10 +7,12 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/MarJC5/vigie/internal/discover"
+	"github.com/MarJC5/vigie/internal/lookup"
 	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/scan"
 	"github.com/MarJC5/vigie/internal/sshx"
@@ -119,6 +121,53 @@ func TestScanOneSite(t *testing.T) {
 	}
 }
 
+// The next scan carries over the comparison of the files of the latest one, stored with it.
+func TestTheFilesOfTheLatestScanAreCarriedOver(t *testing.T) {
+	ws, fake := benchFake(t)
+	ctx := context.Background()
+	checksums := func() int {
+		n := 0
+		for _, c := range fake.Calls() {
+			if strings.Contains(c, "'verify-checksums'") {
+				n++
+			}
+		}
+		return n
+	}
+	first, err := ws.Scan(ctx, "Clients/Bench/outdated.example.test", nil)
+	if err != nil || checksums() != 2 {
+		t.Fatalf("first scan: %v, %d checksum commands", err, checksums())
+	}
+	second, err := ws.Scan(ctx, "Clients/Bench/outdated.example.test", nil)
+	if err != nil || checksums() != 2 {
+		t.Fatalf("second scan: %v, %d checksum commands; want none more", err, checksums())
+	}
+	if !second[0].Scan.FilesChecked.Equal(first[0].Scan.FilesChecked) {
+		t.Errorf("files checked %v, then %v", first[0].Scan.FilesChecked, second[0].Scan.FilesChecked)
+	}
+}
+
+// Nothing is asked of an outside service before the user agreed, nor of one turned off.
+func TestLookupsNeedTheUsersAgreement(t *testing.T) {
+	ws, db := bench(t)
+	ctx := context.Background()
+	if ws.LookupAllowed(lookup.WPVulnerability) {
+		t.Fatal("allowed before the user agreed")
+	}
+	if err := db.SetSetting(ctx, "lookups.agreed", "2026-10-30T09:00:00Z"); err != nil {
+		t.Fatal(err)
+	}
+	if !ws.LookupAllowed(lookup.WPVulnerability) || !ws.LookupAllowed(lookup.Site) {
+		t.Fatal("not allowed once agreed")
+	}
+	if err := db.SetSetting(ctx, "lookups.off", "site,registry"); err != nil {
+		t.Fatal(err)
+	}
+	if !ws.LookupAllowed(lookup.WordPressOrg) || ws.LookupAllowed(lookup.Site) || ws.LookupAllowed(lookup.Registry) {
+		t.Error("a destination turned off is still allowed, or another is not")
+	}
+}
+
 func TestScanUnknownPath(t *testing.T) {
 	ws, _ := bench(t)
 	if _, err := ws.Scan(context.Background(), "Clients/Nope", nil); !errors.Is(err, model.ErrNotFound) {
@@ -139,9 +188,9 @@ func TestDiscoverAHost(t *testing.T) {
 	for _, f := range found {
 		states[f.Path] = f.State
 	}
-	if len(found) != 8 || states["~/sites/outdated"] != discover.StateAlreadyAdded ||
+	if len(found) != 9 || states["~/sites/outdated"] != discover.StateAlreadyAdded ||
 		states["~/sites/plain"] != discover.StateNew || states["~/sites/broken"] != discover.StateAlreadyAdded {
-		t.Fatalf("Discover() = %v, want eight installs, those in Vigie marked", states)
+		t.Fatalf("Discover() = %v, want nine installs, those in Vigie marked", states)
 	}
 }
 

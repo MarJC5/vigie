@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'config' 'get' 'WP_DEBUG_DISPLAY' '--type=constant' '--format=json' '--path=sites/network' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error: The constant 'WP_DEBUG_DISPLAY' is not defined in the 'wp-config.php' file.\n"
+}

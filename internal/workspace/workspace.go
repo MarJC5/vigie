@@ -57,6 +57,9 @@ type Deps struct {
 	// Checker replaces the real one's checks.
 	Updates func(onStep func(model.Operation, model.OperationStep)) Updates
 	Checker update.Checker
+	// Lookups makes the outside lookups of a scan; nil makes none, and their checks are "not
+	// checked".
+	Lookups scan.Lookups
 }
 
 // Workspace holds the database and the means to reach servers.
@@ -91,6 +94,7 @@ func Open(ctx context.Context, dataDir, version string) (*Workspace, error) {
 		Runner: runner, KeyScanner: sshx.KeyScanner{}, Resolver: runner,
 		KnownHosts: options.KnownHostsFile, Now: time.Now,
 	})
+	ws.deps.Lookups = newLookups(db, version, time.Now, ws.LookupAllowed)
 	ws.close = db.Close
 	return ws, nil
 }
@@ -159,7 +163,11 @@ func (w *Workspace) ScanNode(ctx context.Context, node model.Node, progress func
 		return nil, err
 	}
 	sites := tree.SitesUnder(node)
-	scanner := scan.Scanner{Runner: w.deps.Runner, Limiter: w.limiter, Now: w.deps.Now}
+	latest, err := w.db.LatestScans(ctx)
+	if err != nil {
+		return nil, err
+	}
+	scanner := w.scanner()
 
 	var mu sync.Mutex // progress comes from several scans at once
 	report := func(p scan.Progress) {
@@ -176,7 +184,7 @@ func (w *Workspace) ScanNode(ctx context.Context, node model.Node, progress func
 		host, _ := tree.Host(site.HostID)
 		job := scan.Job{
 			Site: site, Target: sshx.TargetFor(host), HostKey: host.ID.String(),
-			Max: maxConcurrent(host), WPCLI: tree.EffectiveWPCLI(site.ID),
+			Max: maxConcurrent(host), WPCLI: tree.EffectiveWPCLI(site.ID), Previous: latest[site.ID],
 		}
 		results[i].Path = tree.PathOf(model.Node{Kind: model.KindSite, ID: site.ID})
 		wg.Go(func() {

@@ -8,15 +8,20 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/MarJC5/vigie/internal/discover"
 	"github.com/MarJC5/vigie/internal/remote"
 	"github.com/MarJC5/vigie/internal/wpcli"
+	"github.com/MarJC5/vigie/internal/wpcli/wpclitest"
 )
 
-var record = flag.Bool("record", false, "write the WP-CLI outputs of the fixtures to internal/wpcli/testdata/recorded")
+var (
+	record = flag.Bool("record", false, "write the WP-CLI outputs of the fixtures to internal/wpcli/testdata/recorded")
+	only   = flag.String("fixtures", "", "record the read commands of these fixtures only, comma separated")
+)
 
 // recorded is one WP-CLI call on a fixture, as the parsers' tests replay it.
 type recorded struct {
@@ -66,6 +71,7 @@ var fixtureRoots = map[string]string{
 	"broken":        sites + "/broken",
 	"plugin-theme":  sites + "/plugin-theme",
 	"updates":       sites + "/updates",
+	"security":      sites + "/security",
 }
 
 // TestRecord refreshes the recorded outputs; it only runs with -record (make record).
@@ -83,6 +89,9 @@ func TestRecord(t *testing.T) {
 
 	dir := filepath.Join("..", "wpcli", "testdata", "recorded")
 	for fixture, root := range fixtureRoots {
+		if *only != "" && !slices.Contains(strings.Split(*only, ","), fixture) {
+			continue
+		}
 		if err := os.MkdirAll(filepath.Join(dir, fixture), 0o755); err != nil {
 			t.Fatal(err)
 		}
@@ -162,74 +171,61 @@ func TestRecordUpdates(t *testing.T) {
 	}
 }
 
-// The security commands, recorded on the security site and, for comparison, on plain ones; name to
-// site and command line. Remote commands run from the site's real folder, as Vigie runs them.
-var securityRecordings = []struct {
-	name, site string
-	cmd        wpcli.Command
-	shell      func(root string) (string, error)
-}{
-	{"core-checksums", "security", wpcli.CoreVerifyChecksums(), nil},
-	{"core-checksums-clean", "plain", wpcli.CoreVerifyChecksums(), nil},
-	{"plugin-checksums", "security", wpcli.PluginVerifyChecksums(), nil},
-	{"plugin-checksums-clean", "plain", wpcli.PluginVerifyChecksums(), nil},
-	// Every plugin skipped: wordpress.org knows none of them.
-	{"plugin-checksums-unknown", "plugin-theme", wpcli.PluginVerifyChecksums(), nil},
-	{"administrators", "security", wpcli.Administrators(), nil},
-	{"administrators-plain", "plain", wpcli.Administrators(), nil},
-	{"super-admins", "network", wpcli.SuperAdmins(), nil},
-	{"super-admins-single", "security", wpcli.SuperAdmins(), nil},
-	{"two-factor-2", "security", wpcli.TwoFactorMeta(2), nil},
-	{"two-factor-3", "security", wpcli.TwoFactorMeta(3), nil},
-	{"two-factor-4", "security", wpcli.TwoFactorMeta(4), nil},
-	{"two-factor-5", "security", wpcli.TwoFactorMeta(5), nil},
-	{"db-prefix", "security", wpcli.DatabasePrefix(), nil},
-	{"wordfence-two-factor", "security", wpcli.WordfenceTwoFactorUsers("wp_"), nil},
-	// No Wordfence table.
-	{"wordfence-two-factor-none", "plain", wpcli.WordfenceTwoFactorUsers("wp_"), nil},
-	{"config-names", "security", wpcli.ConfigNames(), nil},
-	{"constant-debug", "security", wpcli.ConfigConstant("WP_DEBUG"), nil},
-	{"constant-missing", "security", wpcli.ConfigConstant("DISALLOW_FILE_EDIT"), nil},
-	{"option-blog-public", "security", wpcli.OptionGet("blog_public"), nil},
-	{"option-auto-update-major", "security", wpcli.OptionGet("auto_update_core_major"), nil},
-	{"option-missing", "security", wpcli.OptionGet("fixture_absent"), nil},
-	{"option-sizes", "security", wpcli.OptionSizes(false), nil},
-	{"transient-sizes", "security", wpcli.OptionSizes(true), nil},
-	{"cron-events", "security", wpcli.CronEvents(), nil},
-	{"db-version", "security", wpcli.DatabaseVersion(), nil},
-	{"uploads-php", "security", wpcli.Command{}, remote.UploadsPHP},
-	{"uploads-php-clean", "plain", wpcli.Command{}, remote.UploadsPHP},
-}
-
-// TestRecordSecurity refreshes the recorded outputs of the security commands; with -record only.
+// TestRecordSecurity refreshes the recorded outputs of the security reads of every fixture, as Vigie
+// runs them, and of the commands compared on one site only; with -record only.
 func TestRecordSecurity(t *testing.T) {
 	if !*record {
 		t.Skip("run with -record to refresh the recorded outputs")
 	}
 	ctx := context.Background()
-	dir := filepath.Join("..", "wpcli", "testdata", "recorded", "security")
-	for _, r := range securityRecordings {
-		var line string
-		var err error
-		if r.shell != nil {
-			line, err = r.shell(sites + "/" + r.site)
-		} else {
-			line, err = r.cmd.Remote("wp", "~/sites/"+r.site)
-		}
-		if err != nil {
-			t.Fatal(err)
-		}
+	dir := filepath.Join("..", "wpcli", "testdata", "recorded")
+	run := func(file, line string) recorded {
+		t.Helper()
 		res, err := runAs(ctx, "sh", "-c", line)
 		if err != nil {
 			t.Fatal(err)
 		}
-		// A remote command's recording goes with the package that builds it.
-		to := dir
-		if r.shell != nil {
-			to = filepath.Join("..", "remote", "testdata", "recorded")
+		r := recorded{Args: []string{line}, Exit: res.exit, Stdout: res.stdout, Stderr: res.stderr}
+		writeRecording(t, file, r)
+		return r
+	}
+	for fixture, root := range fixtureRoots {
+		path := "~/" + strings.TrimPrefix(root, "/home/vigie/")
+		lines := map[string]wpclitest.Line{}
+		for name, cmd := range wpclitest.SecurityReads {
+			lines[name] = wpclitest.Line{Cmd: cmd}
 		}
-		writeRecording(t, filepath.Join(to, r.name+".json"),
-			recorded{Args: []string{line}, Exit: res.exit, Stdout: res.stdout, Stderr: res.stderr})
+		lines["real-root"] = wpclitest.RealRoot(path)
+		out := map[string]string{}
+		for name, l := range lines {
+			line, err := l.Remote("wp", path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			out[name] = run(filepath.Join(dir, fixture, name+".json"), line).Stdout
+		}
+		for name, l := range wpclitest.Derived([]byte(out["administrators"]), []byte(out["db-prefix"]), []byte(out["real-root"])) {
+			line, err := l.Remote("wp", path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			run(filepath.Join(dir, fixture, name+".json"), line)
+		}
+	}
+
+	// An option that does not exist.
+	line, err := wpcli.OptionGet("fixture_absent").Remote("wp", "~/sites/security")
+	if err != nil {
+		t.Fatal(err)
+	}
+	run(filepath.Join(dir, "security", "option-missing.json"), line)
+	// The uploads, for the remote package's own tests.
+	for name, site := range map[string]string{"uploads-php": "security", "uploads-php-clean": "plain"} {
+		line, err := remote.UploadsPHP(sites + "/" + site)
+		if err != nil {
+			t.Fatal(err)
+		}
+		run(filepath.Join("..", "remote", "testdata", "recorded", name+".json"), line)
 	}
 }
 

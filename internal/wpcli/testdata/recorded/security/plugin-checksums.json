@@ -4,5 +4,5 @@
   ],
   "exit": 1,
   "stdout": "[{\"plugin_name\":\"akismet\",\"file\":\"fixture-added.php\",\"message\":\"File was added\"},{\"plugin_name\":\"akismet\",\"file\":\"akismet.php\",\"message\":\"Checksum does not match\"}]",
-  "stderr": "Warning: Couldn't fetch response from https://downloads.wordpress.org/plugin-checksums/fixture-premium/1.0.0.json (HTTP code 404).\nWarning: Could not retrieve the checksums for version 1.0.0 of plugin fixture-premium, skipping.\nError: Only verified 1 of 3 plugins (1 failed, 1 skipped).\n"
+  "stderr": "Warning: Couldn't fetch response from https://downloads.wordpress.org/plugin-checksums/fixture-premium/1.0.0.json (HTTP code 404).\nWarning: Could not retrieve the checksums for version 1.0.0 of plugin fixture-premium, skipping.\nWarning: Couldn't fetch response from https://downloads.wordpress.org/plugin-checksums/wordfence/0.0.1.json (HTTP code 404).\nWarning: Could not retrieve the checksums for version 0.0.1 of plugin wordfence, skipping.\nError: Only verified 1 of 4 plugins (1 failed, 2 skipped).\n"
 }

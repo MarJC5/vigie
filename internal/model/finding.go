@@ -19,6 +19,54 @@ const (
 // FindingKind is what a finding is about: a vulnerability, a changed file, a setting...
 type FindingKind string
 
+// The kinds of findings, with their subject, identifier and facts.
+const (
+	// KindVulnerability: Subject "core", "plugin:<slug>", "theme:<slug>" or "php"; Identifier the
+	// record's uuid; Facts name, severity, score, kev, unfixed, fixed, sources (links, space
+	// separated), fetched (when the answer is from an older cache).
+	KindVulnerability FindingKind = "vulnerability"
+	// KindPHPSupport: Subject "php"; Facts status ("s" security fixes only, "d" unmaintained), end.
+	KindPHPSupport FindingKind = "php-support"
+	// KindPluginClosed: Facts date, reason (wordpress.org's, such as "security-issue").
+	KindPluginClosed FindingKind = "plugin-closed"
+	// KindPluginAbandoned: Facts last-release.
+	KindPluginAbandoned FindingKind = "plugin-abandoned"
+	// KindCoreFile and KindPluginFile: Identifier the file's path; Facts change (changed, missing,
+	// added).
+	KindCoreFile   FindingKind = "core-file"
+	KindPluginFile FindingKind = "plugin-file"
+	// KindPluginUnverified: wordpress.org publishes no checksums for the plugin's version.
+	KindPluginUnverified FindingKind = "plugin-unverified"
+	// KindUploadsPHP: Identifier the file, relative to the uploads folder. KindUploadsPHPMore: the
+	// list stopped at its limit.
+	KindUploadsPHP     FindingKind = "uploads-php"
+	KindUploadsPHPMore FindingKind = "uploads-php-more"
+	// KindAdministrator: Subject "user:<login>"; Facts email, registered, two-factor (on, off,
+	// unknown), super.
+	KindAdministrator FindingKind = "administrator"
+	// Settings, Subject "site": file editing allowed from the administration, PHP errors shown on
+	// the pages, hidden from search engines, an address without HTTPS, WP-Cron events overdue
+	// (Facts count, hook, since), autoloaded options too heavy (Facts bytes, limit).
+	KindFileEditing      FindingKind = "file-editing"
+	KindErrorsDisplayed  FindingKind = "errors-displayed"
+	KindHiddenFromSearch FindingKind = "hidden-from-search"
+	KindNoHTTPS          FindingKind = "no-https"
+	KindCronOverdue      FindingKind = "cron-overdue"
+	KindAutoloadSize     FindingKind = "autoload-size"
+	// KindDatabaseVersion: Facts version.
+	KindDatabaseVersion FindingKind = "database-version"
+	// KindCertificate: Version the expiry date; Facts expires, issuer, problem.
+	KindCertificate FindingKind = "certificate"
+	// KindDomain: Version the expiry date; Facts domain, expires, or reason when the registry does
+	// not publish it.
+	KindDomain FindingKind = "domain"
+	// KindDebugLog: the site serves its debug.log to anyone; Facts url.
+	KindDebugLog FindingKind = "debug-log"
+	// KindCheck: a check that could not run, Identifier its name; Facts reason ("off": the
+	// destination is turned off or not agreed to; "error"), error.
+	KindCheck FindingKind = "check"
+)
+
 // Finding is one result of a scan beyond the versions and updates. It holds data, not text: the
 // interface and the command line write it in their language.
 type Finding struct {

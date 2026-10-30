@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'plugin' 'verify-checksums' '--all' '--format=json' '--path=sites/network' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "Success: Verified 2 of 2 plugins.\n",
+  "stderr": ""
+}

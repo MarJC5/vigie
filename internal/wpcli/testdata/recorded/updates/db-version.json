@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'db' 'query' 'SELECT VERSION()' '--skip-column-names' '--path=sites/updates' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "11.8.9-MariaDB-ubu2404\n\n",
+  "stderr": ""
+}

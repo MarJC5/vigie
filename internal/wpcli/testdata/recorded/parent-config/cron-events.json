@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'cron' 'event' 'list' '--fields=hook,next_run_gmt' '--format=json' '--path=sites/parent-config/public' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "[{\"hook\":\"recovery_mode_clean_expired_keys\",\"next_run_gmt\":\"2026-10-30 09:33:30\"},{\"hook\":\"wp_privacy_delete_old_export_files\",\"next_run_gmt\":\"2026-10-30 09:33:30\"},{\"hook\":\"wp_privacy_personal_data_cleanup_requests\",\"next_run_gmt\":\"2026-10-30 09:33:30\"},{\"hook\":\"wp_version_check\",\"next_run_gmt\":\"2026-10-30 10:32:51\"},{\"hook\":\"wp_update_plugins\",\"next_run_gmt\":\"2026-10-30 11:02:51\"},{\"hook\":\"wp_update_themes\",\"next_run_gmt\":\"2026-10-30 11:32:51\"},{\"hook\":\"wp_site_health_scheduled_check\",\"next_run_gmt\":\"2026-10-31 09:33:30\"}]",
+  "stderr": ""
+}

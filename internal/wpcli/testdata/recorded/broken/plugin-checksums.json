@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'plugin' 'verify-checksums' '--all' '--format=json' '--path=sites/broken' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error: Error establishing a database connection.\n"
+}

@@ -226,8 +226,12 @@ func empty(sel update.Selection) bool {
 
 // rescan scans a site after its update and stores the scan; a failure only shows in the history.
 func (w *Workspace) rescan(ctx context.Context, job update.Job) {
-	scanner := scan.Scanner{Runner: w.deps.Runner, Limiter: w.limiter, Now: w.deps.Now}
-	s, subsites := scanner.Site(ctx, scan.Job{Site: job.Site, Target: job.Target, HostKey: job.HostKey, Max: job.Max, WPCLI: job.WPCLI}, nil)
+	latest, err := w.db.LatestScans(ctx)
+	if err != nil {
+		return
+	}
+	s, subsites := w.scanner().Site(ctx, scan.Job{Site: job.Site, Target: job.Target, HostKey: job.HostKey, Max: job.Max,
+		WPCLI: job.WPCLI, Previous: latest[job.Site.ID]}, nil)
 	if err := w.db.SaveScan(ctx, s); err != nil {
 		return
 	}

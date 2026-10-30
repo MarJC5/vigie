@@ -175,7 +175,12 @@ wp user meta update redacteur _two_factor_enabled_providers '["Two_Factor_Email"
 # WP 2FA.
 wp user meta update wp2fa-admin wp_2fa_enabled_methods totp --path="$SITES/security" --quiet
 wp user meta update wp2fa-admin wp_2fa_totp_key fixture-totp-secret --path="$SITES/security" --quiet
-# Wordfence keeps no user meta: a table of secrets, as Wordfence 10 creates it.
+# Wordfence keeps no user meta: a table of secrets, as Wordfence 10 creates it. Its plugin is a
+# stand-in under its slug, active, since Vigie reads the table only when Wordfence is.
+mkdir -p "$SITES/security/wp-content/plugins/wordfence"
+printf '%s\n' '<?php' '/**' ' * Plugin Name: Wordfence (fixture)' ' * Version: 0.0.1' ' */' \
+	> "$SITES/security/wp-content/plugins/wordfence/wordfence.php"
+wp plugin activate wordfence --path="$SITES/security" --quiet
 wp db query "CREATE TABLE wp_wfls_2fa_secrets (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
 	user_id BIGINT UNSIGNED NOT NULL, secret TINYBLOB NOT NULL, recovery BLOB NOT NULL, ctime INT UNSIGNED NOT NULL,
 	vtime INT UNSIGNED NOT NULL, mode ENUM('authenticator') NOT NULL DEFAULT 'authenticator')" --path="$SITES/security"

@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'db' 'query' 'SELECT DISTINCT user_id FROM `wp_wfls_2fa_secrets`' '--skip-column-names' '--path=sites/network' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error: Query failed: --------------\nSELECT DISTINCT user_id FROM `wp_wfls_2fa_secrets`\n--------------\n\nERROR 1146 (42S02) at line 1: Table 'fixture_network.wp_wfls_2fa_secrets' doesn't exist\n\n"
+}

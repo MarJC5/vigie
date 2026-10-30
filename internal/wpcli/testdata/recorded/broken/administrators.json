@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'user' 'list' '--role=administrator' '--fields=ID,user_login,user_email,user_registered' '--format=json' '--path=sites/broken' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error: Error establishing a database connection.\n"
+}

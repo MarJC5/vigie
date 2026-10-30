@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'db' 'query' 'SELECT VERSION()' '--skip-column-names' '--path=sites/broken' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error: Failed to get current SQL modes. Reason: ERROR 1045 (28000): Access denied for user 'root'@'172.20.0.3' (using password: YES)\n\n"
+}

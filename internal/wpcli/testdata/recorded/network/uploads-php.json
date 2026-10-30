@@ -1,0 +1,8 @@
+{
+  "args": [
+    "find '/home/vigie/sites/network/wp-content/uploads' -type f \\( -iname '*.php' -o -iname '*.php[0-9]' -o -iname '*.phtml' -o -iname '*.pht' -o -iname '*.phar' \\) 2\u003e/dev/null | head -n 51"
+  ],
+  "exit": 0,
+  "stdout": "",
+  "stderr": ""
+}

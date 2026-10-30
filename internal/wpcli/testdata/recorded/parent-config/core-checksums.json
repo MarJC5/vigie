@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'core' 'verify-checksums' '--path=sites/parent-config/public' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "Success: WordPress installation verifies against checksums.\n",
+  "stderr": "Warning: File should not exist: wp-config-docker.php\n"
+}

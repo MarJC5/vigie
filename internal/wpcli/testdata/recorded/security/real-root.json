@@ -1,0 +1,8 @@
+{
+  "args": [
+    "cd 'sites/security' \u0026\u0026 pwd -P"
+  ],
+  "exit": 0,
+  "stdout": "/home/vigie/sites/security\n",
+  "stderr": ""
+}
