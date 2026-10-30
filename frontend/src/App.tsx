@@ -3,11 +3,12 @@ import { useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
 
 import { VigieDiscovery, VigieMenu, VigieScans, VigieUpdates } from "../bindings/events";
-import { Editor, HostWizard, Preferences, Scanner, Security, SiteManager, Updates } from "../bindings/github.com/MarJC5/vigie/internal/app";
+import { Data, Editor, HostWizard, Preferences, Scanner, Security, SiteManager, Updates } from "../bindings/github.com/MarJC5/vigie/internal/app";
 import type { LookupsView, Node, ScansState, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { AddHostWizard, type WizardApi } from "./components/AddHostWizard/AddHostWizard";
 import { AppShell, type EditApi, type SecurityApi, type ShellData } from "./components/AppShell/AppShell";
 import { ConsentScreen } from "./components/ConsentScreen/ConsentScreen";
+import { type DataApi, DataFlow, type DataNote, type DataTask } from "./components/DataFlow/DataFlow";
 import type { Section } from "./components/NavRail/NavRail";
 import { SettingsPage, type SettingsTab } from "./components/SettingsPage/SettingsPage";
 import type { UpdatesApi } from "./components/UpdateFlow/UpdateFlow";
@@ -54,6 +55,18 @@ const editApi: EditApi = {
   onDiscovery: (listener) => Events.On(VigieDiscovery, (event) => listener(event.data)),
 };
 
+// What exports and imports, from the data service.
+const dataApi: DataApi = {
+  ExportSummary: Data.ExportSummary,
+  Export: Data.Export,
+  ChooseImport: Data.ChooseImport,
+  PreviewImport: Data.PreviewImport,
+  ApplyImport: Data.ApplyImport,
+  CancelImport: Data.CancelImport,
+  SSHConfig: Data.SSHConfig,
+  ImportSSHConfig: Data.ImportSSHConfig,
+};
+
 // What sets findings aside, from the security service.
 const securityApi: SecurityApi = { Ignore: Security.Ignore, Unignore: Security.Unignore };
 
@@ -87,6 +100,8 @@ export function App() {
   const [waiting, setWaiting] = useState<Waiting>();
   const [section, setSection] = useState<Section>("sites");
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("general");
+  const [dataTask, setDataTask] = useState<DataTask>();
+  const [dataNote, setDataNote] = useState<DataNote>();
 
   useEffect(() => {
     void Promise.all([Preferences.Language(), SiteManager.Tree(), Preferences.Version()]).then(([lang, tree, version]) => {
@@ -141,6 +156,12 @@ export function App() {
     setLoaded((l) => l && { ...l });
   };
 
+  const dataDone = (note?: DataNote, changed?: boolean) => {
+    setDataTask(undefined);
+    if (note) setDataNote(note);
+    if (changed) void reload();
+  };
+
   const hostAdded = async (hostId: string) => {
     await reload();
     setAdded(hostId);
@@ -188,9 +209,13 @@ export function App() {
                 onDestination={(id, on) => void changeLookups(() => Security.SetDestination(id, on))}
                 version={loaded.version}
                 onOpen={openURL}
+                onExport={() => setDataTask({ kind: "export", nodeId: "" })}
+                onImport={(source) => setDataTask(source === "ssh" ? { kind: "ssh" } : { kind: "import", source })}
+                dataNote={dataNote}
               />
             )
           }
+          onExport={(nodeId) => setDataTask({ kind: "export", nodeId })}
           onStopAll={() => void Scanner.CancelAll()}
           commands={menuCommands}
           edit={editApi}
@@ -199,6 +224,7 @@ export function App() {
           updatesApi={updatesApi}
         />
       )}
+      {dataTask && !waiting && !adding && <DataFlow api={dataApi} task={dataTask} nodes={loaded.nodes} onClose={dataDone} />}
     </I18nextProvider>
   );
 }

@@ -27,6 +27,8 @@ const meta = {
     onDestination: fn(),
     version: "0.5.0",
     onOpen: fn(),
+    onExport: fn(),
+    onImport: fn(),
   },
 } satisfies Meta<typeof SettingsPage>;
 export default meta;
@@ -64,6 +66,21 @@ export const General: Story = {
     const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
     await userEvent.selectOptions(page.getByRole("combobox", { name: "Language" }), "fr");
     await expect(args.onLanguage).toHaveBeenCalledWith("fr");
+  },
+};
+
+// Export, and the three sources of an import; what the last one did under its row.
+export const Data: Story = {
+  args: { tab: "data", dataNote: { row: "import", text: "5 folders, hosts and sites added." } },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await userEvent.click(page.getByRole("button", { name: "Export…" }));
+    await expect(args.onExport).toHaveBeenCalled();
+    await userEvent.click(page.getByRole("button", { name: "Choose…" }));
+    await expect(args.onImport).toHaveBeenCalledWith("ssh");
+    await userEvent.click(page.getAllByRole("button", { name: "Import…" })[1]!);
+    await expect(args.onImport).toHaveBeenLastCalledWith("csv");
+    await expect(page.getByText("5 folders, hosts and sites added.")).toBeInTheDocument();
   },
 };
 

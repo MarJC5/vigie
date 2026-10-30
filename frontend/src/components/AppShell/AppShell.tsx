@@ -87,6 +87,8 @@ export interface AppShellProps {
   settingsPage?: ReactNode;
   /** Scans a node comparing its files again, even within the day. */
   onCheckFiles?: (nodeId: string) => void;
+  /** "Export…" in the menu of a folder or host. */
+  onExport?: (nodeId: string) => void;
   /** Without it, findings are listed but not set aside. */
   security?: SecurityApi;
   /** Opens an address in the browser. */
@@ -124,6 +126,7 @@ export function AppShell({
   onSection,
   settingsPage,
   onCheckFiles,
+  onExport,
   security,
   onOpen,
 }: AppShellProps) {
@@ -262,6 +265,7 @@ export function AppShell({
     if (action === "addHost") return onAddHost?.();
     if (action === "scanAll") return scan("");
     if (action === "scan") scan(id);
+    if (action === "export") return onExport?.(id);
     // In the folder itself, or next to a host or site; at the top level from the empty space.
     if (action === "newFolder") void createFolder(folderOf(id));
     if (action === "rename") setEditingId(id);
@@ -490,7 +494,7 @@ export function AppShell({
       {menu && menuNode && (
         <Menu
           label={t("edit.menu.label", { name: menuNode.name })}
-          entries={menuEntries(menuNode, nodes, t)}
+          entries={menuEntries(menuNode, nodes, t, !!onExport)}
           x={menu.x}
           y={menu.y}
           onSelect={(action) => choose(menuNode.id, action)}
@@ -586,7 +590,7 @@ function rootEntries(t: T, canAddHost: boolean, hasSites: boolean): MenuEntry[] 
 }
 
 // The actions on a node, as the menu lists them.
-function menuEntries(node: Node, nodes: Node[], t: T): MenuEntry[] {
+function menuEntries(node: Node, nodes: Node[], t: T, canExport: boolean): MenuEntry[] {
   const item = (id: string, label: string, icon: IconName, extra: Partial<Item> = {}): Item => ({ kind: "item", id, label, icon, ...extra });
   const colors: MenuEntry = {
     kind: "colors",
@@ -606,10 +610,11 @@ function menuEntries(node: Node, nodes: Node[], t: T): MenuEntry[] {
   if (node.kind === "site") {
     return [scan, newFolder, separator, rename, colors, separator, remove("edit.menu.deleteSite")];
   }
+  const exported = canExport ? [item("export", t("edit.menu.export"), "archive")] : [];
   if (node.kind === "host") {
     return [
       scan, newFolder, separator, rename, move, colors,
-      item("host", t("edit.menu.edit"), "host"), item("find", t("edit.menu.find"), "findSites"),
+      item("host", t("edit.menu.edit"), "host"), item("find", t("edit.menu.find"), "findSites"), ...exported,
       separator, remove("edit.menu.deleteHost"),
     ];
   }
@@ -617,7 +622,7 @@ function menuEntries(node: Node, nodes: Node[], t: T): MenuEntry[] {
   const empty = !nodes.some((n) => n.parentId === node.id);
   return [
     scan, newFolder,
-    separator, rename, move, colors, separator, remove("edit.menu.deleteFolder", !empty),
+    separator, rename, move, colors, ...exported, separator, remove("edit.menu.deleteFolder", !empty),
   ];
 }
 

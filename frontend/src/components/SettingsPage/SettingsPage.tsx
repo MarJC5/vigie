@@ -10,7 +10,10 @@ import { Switch } from "../Switch/Switch";
 import { TabBar } from "../TabBar/TabBar";
 import styles from "./SettingsPage.module.css";
 
-export type SettingsTab = "general" | "lookups" | "about";
+export type SettingsTab = "general" | "lookups" | "data" | "about";
+
+/** Where an import reads from. */
+export type ImportSource = "vigie" | "ssh" | "csv";
 
 export interface SettingsPageProps {
   tab: SettingsTab;
@@ -25,16 +28,35 @@ export interface SettingsPageProps {
   version: string;
   /** Opens an address in the browser; links open in a new window without it. */
   onOpen?: (href: string) => void;
+  /** The Data tab: export the site manager, import from a source. */
+  onExport: () => void;
+  onImport: (source: ImportSource) => void;
+  /** What the last export or import did, under its row. */
+  dataNote?: { row: "export" | "import"; text: string };
 }
 
 // An address, not words to translate.
 const wpvulnerability = { href: "https://www.wpvulnerability.com/", name: "wpvulnerability.com" };
 
 /** The settings, in tabs: each row says what it does on the left and holds its control on the right. */
-export function SettingsPage({ tab, onTab, language, onLanguage, lookups, onAgree, onWithdraw, onDestination, version, onOpen }: SettingsPageProps) {
+export function SettingsPage({
+  tab,
+  onTab,
+  language,
+  onLanguage,
+  lookups,
+  onAgree,
+  onWithdraw,
+  onDestination,
+  version,
+  onOpen,
+  onExport,
+  onImport,
+  dataNote,
+}: SettingsPageProps) {
   const { t } = useTranslation();
   const panel = useId();
-  const tabs: SettingsTab[] = ["general", "lookups", "about"];
+  const tabs: SettingsTab[] = ["general", "lookups", "data", "about"];
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>{t("settings.title")}</h1>
@@ -54,6 +76,29 @@ export function SettingsPage({ tab, onTab, language, onLanguage, lookups, onAgre
           </Section>
         )}
         {tab === "lookups" && <Lookups lookups={lookups} onAgree={onAgree} onWithdraw={onWithdraw} onDestination={onDestination} onOpen={onOpen} />}
+        {tab === "data" && (
+          <>
+            <Section title={t("data.backup")}>
+              <Row title={t("data.exportTitle")} desc={t("data.exportDesc")} note={dataNote?.row === "export" ? dataNote.text : undefined}>
+                <Button variant="primary" onClick={onExport}>
+                  {t("data.exportAction")}
+                </Button>
+              </Row>
+            </Section>
+            <Section title={t("data.import")}>
+              {(["vigie", "ssh", "csv"] as const).map((source, i) => (
+                <Row
+                  key={source}
+                  title={t(`data.${source}Title`)}
+                  desc={t(`data.${source}Desc`)}
+                  note={i === 0 && dataNote?.row === "import" ? dataNote.text : undefined}
+                >
+                  <Button onClick={() => onImport(source)}>{t(source === "ssh" ? "data.sshAction" : "data.importAction")}</Button>
+                </Row>
+              ))}
+            </Section>
+          </>
+        )}
         {tab === "about" && (
           <Section>
             <Row title={t("settings.version")} desc={t("settings.versionDesc", { version })} />

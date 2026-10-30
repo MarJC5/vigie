@@ -1,0 +1,19 @@
+/* Over the window: the dialogs place themselves in it. */
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+}
+
+/* Empty while the file dialog is open, so the window stays usable to the eye. */
+.layer:empty,
+.window:empty {
+  display: none;
+}
+
+/* The preview of an import takes the whole window. */
+.window {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+}
