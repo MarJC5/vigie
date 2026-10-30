@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'user' 'list' '--role=administrator' '--fields=ID,user_login,user_email,user_registered' '--format=json' '--path=sites/security' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "[{\"ID\":1,\"user_login\":\"admin\",\"user_email\":\"admin@example.test\",\"user_registered\":\"2026-10-30 09:07:09\"},{\"ID\":2,\"user_login\":\"marie\",\"user_email\":\"marie@example.test\",\"user_registered\":\"2026-10-30 09:07:12\"},{\"ID\":3,\"user_login\":\"totp-admin\",\"user_email\":\"totp-admin@example.test\",\"user_registered\":\"2026-10-30 09:07:12\"},{\"ID\":5,\"user_login\":\"wf-admin\",\"user_email\":\"wf-admin@example.test\",\"user_registered\":\"2026-10-30 09:07:12\"},{\"ID\":4,\"user_login\":\"wp2fa-admin\",\"user_email\":\"wp2fa-admin@example.test\",\"user_registered\":\"2026-10-30 09:07:12\"}]",
+  "stderr": ""
+}

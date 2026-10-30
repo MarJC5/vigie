@@ -175,6 +175,18 @@ var securityRecordings = []struct {
 	{"plugin-checksums-clean", "plain", wpcli.PluginVerifyChecksums(), nil},
 	// Every plugin skipped: wordpress.org knows none of them.
 	{"plugin-checksums-unknown", "plugin-theme", wpcli.PluginVerifyChecksums(), nil},
+	{"administrators", "security", wpcli.Administrators(), nil},
+	{"administrators-plain", "plain", wpcli.Administrators(), nil},
+	{"super-admins", "network", wpcli.SuperAdmins(), nil},
+	{"super-admins-single", "security", wpcli.SuperAdmins(), nil},
+	{"two-factor-2", "security", wpcli.TwoFactorMeta(2), nil},
+	{"two-factor-3", "security", wpcli.TwoFactorMeta(3), nil},
+	{"two-factor-4", "security", wpcli.TwoFactorMeta(4), nil},
+	{"two-factor-5", "security", wpcli.TwoFactorMeta(5), nil},
+	{"db-prefix", "security", wpcli.DatabasePrefix(), nil},
+	{"wordfence-two-factor", "security", wpcli.WordfenceTwoFactorUsers("wp_"), nil},
+	// No Wordfence table.
+	{"wordfence-two-factor-none", "plain", wpcli.WordfenceTwoFactorUsers("wp_"), nil},
 	{"uploads-php", "security", wpcli.Command{}, remote.UploadsPHP},
 	{"uploads-php-clean", "plain", wpcli.Command{}, remote.UploadsPHP},
 }
@@ -215,6 +227,10 @@ func writeRecording(t *testing.T, file string, r recorded) {
 	t.Helper()
 	if strings.Contains(r.Stdout+r.Stderr, dbPassword) {
 		t.Fatalf("%s: output contains the database password", file)
+	}
+	// The fake two-factor secrets of the security site: Vigie never reads them.
+	if strings.Contains(r.Stdout+r.Stderr, "fixture-totp-secret") {
+		t.Fatalf("%s: output contains a two-factor secret", file)
 	}
 	data, err := json.MarshalIndent(r, "", "  ")
 	if err != nil {

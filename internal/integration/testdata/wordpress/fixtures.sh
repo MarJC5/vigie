@@ -161,6 +161,25 @@ mkdir -p "$SITES/security/wp-content/uploads/2026/10"
 printf '%s\n' '<?php' > "$SITES/security/wp-content/uploads/2026/10/fixture-shell.php"
 printf '%s\n' '<?php' > "$SITES/security/wp-content/uploads/fixture-old.PHTML"
 printf 'JFIF' > "$SITES/security/wp-content/uploads/2026/10/photo.jpg"
+# Administrators, in this order (IDs 2 to 5), with each way of storing two-factor; their secrets
+# are fake, and Vigie must never read them. User 6 is an editor: not an administrator.
+for login in marie totp-admin wp2fa-admin wf-admin; do
+	wp user create $login $login@example.test --role=administrator --user_pass=fixture-only --path="$SITES/security" --quiet
+done
+wp user create redacteur redacteur@example.test --role=editor --user_pass=fixture-only --path="$SITES/security" --quiet
+# Two Factor (and Solid Security, which uses the same keys).
+wp user meta update totp-admin _two_factor_enabled_providers '["Two_Factor_Totp","Two_Factor_Backup_Codes"]' --format=json --path="$SITES/security" --quiet
+wp user meta update totp-admin _two_factor_provider Two_Factor_Totp --path="$SITES/security" --quiet
+wp user meta update totp-admin _two_factor_totp_key fixture-totp-secret --path="$SITES/security" --quiet
+wp user meta update redacteur _two_factor_enabled_providers '["Two_Factor_Email"]' --format=json --path="$SITES/security" --quiet
+# WP 2FA.
+wp user meta update wp2fa-admin wp_2fa_enabled_methods totp --path="$SITES/security" --quiet
+wp user meta update wp2fa-admin wp_2fa_totp_key fixture-totp-secret --path="$SITES/security" --quiet
+# Wordfence keeps no user meta: a table of secrets, as Wordfence 10 creates it.
+wp db query "CREATE TABLE wp_wfls_2fa_secrets (id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+	user_id BIGINT UNSIGNED NOT NULL, secret TINYBLOB NOT NULL, recovery BLOB NOT NULL, ctime INT UNSIGNED NOT NULL,
+	vtime INT UNSIGNED NOT NULL, mode ENUM('authenticator') NOT NULL DEFAULT 'authenticator')" --path="$SITES/security"
+wp db query "INSERT INTO wp_wfls_2fa_secrets (user_id, secret, recovery, ctime, vtime) VALUES (5, 'fixture-totp-secret', '', 0, 0)" --path="$SITES/security"
 
 # A server without outbound HTTP, like hosts that block it: every update check fails.
 new_site "$SITES/offline" fixture_offline

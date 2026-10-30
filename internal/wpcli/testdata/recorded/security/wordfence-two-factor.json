@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'db' 'query' 'SELECT DISTINCT user_id FROM `wp_wfls_2fa_secrets`' '--skip-column-names' '--path=sites/security' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "5\n\n",
+  "stderr": ""
+}

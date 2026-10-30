@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/MarJC5/vigie/internal/sshx"
 )
@@ -155,4 +156,165 @@ func failedOf(counts string) int {
 		}
 	}
 	return 0
+}
+
+// Administrators lists the administrators of the site (of the main site of a network).
+func Administrators() Command {
+	return Command{args: []string{"user", "list", "--role=administrator",
+		"--fields=ID,user_login,user_email,user_registered", "--format=json"}, skipPlugins: true, skipThemes: true}
+}
+
+// SuperAdmins lists the super administrators of a network.
+func SuperAdmins() Command {
+	return Command{args: []string{"super-admin", "list", "--format=json"}, skipPlugins: true, skipThemes: true}
+}
+
+// twoFactorKeys are where Two Factor, Solid Security and WP 2FA record the methods a user turned
+// on. Never their secrets (TOTP keys, backup codes): Vigie does not read them.
+const twoFactorKeys = "_two_factor_enabled_providers,wp_2fa_enabled_methods"
+
+// TwoFactorMeta reads which two-factor methods a user turned on, by user ID.
+func TwoFactorMeta(userID int) Command {
+	if userID <= 0 {
+		return Command{err: fmt.Errorf("user %d: %w", userID, ErrBadArgument)}
+	}
+	return Command{args: []string{"user", "meta", "list", strconv.Itoa(userID), "--keys=" + twoFactorKeys,
+		"--format=json", "--unserialize"}, skipPlugins: true, skipThemes: true}
+}
+
+// DatabasePrefix answers the prefix of the site's tables.
+func DatabasePrefix() Command {
+	return Command{args: []string{"db", "prefix"}, skipPlugins: true, skipThemes: true}
+}
+
+var tablePrefix = regexp.MustCompile(`^[A-Za-z0-9_]{1,64}$`)
+
+// WordfenceTwoFactorUsers lists the IDs of the users with Wordfence two-factor: its table holds no
+// user meta. Only the user_id column is read, never the secrets. It needs the mysql client on the
+// server.
+func WordfenceTwoFactorUsers(prefix string) Command {
+	if !tablePrefix.MatchString(prefix) {
+		return Command{err: fmt.Errorf("table prefix %q: %w", prefix, ErrBadArgument)}
+	}
+	return Command{args: []string{"db", "query", "SELECT DISTINCT user_id FROM `" + prefix + "wfls_2fa_secrets`",
+		"--skip-column-names"}, skipPlugins: true, skipThemes: true}
+}
+
+// Account is a user with a role worth watching.
+type Account struct {
+	ID         int
+	Login      string
+	Email      string
+	Registered time.Time // UTC, as WordPress stores it
+}
+
+// ParseAdministrators reads Administrators' output.
+func ParseAdministrators(out []byte) ([]Account, error) {
+	var users []struct {
+		ID         int    `json:"ID"`
+		Login      string `json:"user_login"`
+		Email      string `json:"user_email"`
+		Registered string `json:"user_registered"`
+	}
+	if err := decode(out, &users); err != nil {
+		return nil, fmt.Errorf("user list: %w", err)
+	}
+	accounts := make([]Account, len(users))
+	for i, u := range users {
+		accounts[i] = Account{ID: u.ID, Login: u.Login, Email: u.Email}
+		if u.Registered != "" && u.Registered != "0000-00-00 00:00:00" {
+			at, err := time.ParseInLocation(time.DateTime, u.Registered, time.UTC)
+			if err != nil {
+				return nil, fmt.Errorf("user %s registered %q: %w", u.Login, u.Registered, ErrUnexpectedOutput)
+			}
+			accounts[i].Registered = at
+		}
+	}
+	return accounts, nil
+}
+
+// ParseSuperAdmins reads SuperAdmins' output: the logins. A site that is not a network fails.
+func ParseSuperAdmins(res sshx.Result) ([]string, error) {
+	if err := Check(res); err != nil {
+		return nil, err
+	}
+	var admins []struct {
+		Login string `json:"user_login"`
+	}
+	if err := decode(res.Stdout, &admins); err != nil {
+		return nil, fmt.Errorf("super-admin list: %w", err)
+	}
+	logins := make([]string, len(admins))
+	for i, a := range admins {
+		logins[i] = a.Login
+	}
+	return logins, nil
+}
+
+// TwoFactor is what a user turned on: Two Factor's (and Solid Security's) providers, such as
+// "Two_Factor_Totp", and WP 2FA's method, such as "totp".
+type TwoFactor struct {
+	Providers []string
+	WP2FA     string
+}
+
+// ParseTwoFactorMeta reads TwoFactorMeta's output.
+func ParseTwoFactorMeta(out []byte) (TwoFactor, error) {
+	var meta []struct {
+		Key   string          `json:"meta_key"`
+		Value json.RawMessage `json:"meta_value"`
+	}
+	if err := decode(out, &meta); err != nil {
+		return TwoFactor{}, fmt.Errorf("user meta list: %w", err)
+	}
+	var tf TwoFactor
+	for _, m := range meta {
+		switch m.Key {
+		case "_two_factor_enabled_providers":
+			// An array once unserialized; a string when it was not stored as one.
+			var list []string
+			if err := json.Unmarshal(m.Value, &list); err != nil {
+				var one string
+				if err := json.Unmarshal(m.Value, &one); err != nil {
+					return TwoFactor{}, fmt.Errorf("two-factor providers: %w", ErrUnexpectedOutput)
+				}
+				list = []string{one}
+			}
+			tf.Providers = append(tf.Providers, list...)
+		case "wp_2fa_enabled_methods":
+			if err := json.Unmarshal(m.Value, &tf.WP2FA); err != nil {
+				return TwoFactor{}, fmt.Errorf("WP 2FA method: %w", ErrUnexpectedOutput)
+			}
+		}
+	}
+	return tf, nil
+}
+
+// ParseDatabasePrefix reads DatabasePrefix's output.
+func ParseDatabasePrefix(out []byte) (string, error) {
+	prefix := strings.TrimSpace(string(out))
+	if !tablePrefix.MatchString(prefix) {
+		return "", fmt.Errorf("db prefix %q: %w", prefix, ErrUnexpectedOutput)
+	}
+	return prefix, nil
+}
+
+// ParseUserIDs reads WordfenceTwoFactorUsers' output. A missing table means Wordfence is not
+// there; any other failure (no mysql client) leaves it not verified.
+func ParseUserIDs(res sshx.Result) ([]int, error) {
+	if res.ExitCode != 0 {
+		if strings.Contains(string(res.Stderr), "ERROR 1146") {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("%w: %s", ErrNotVerified, strings.TrimSpace(string(res.Stderr)))
+	}
+	var ids []int
+	for _, line := range strings.Fields(string(res.Stdout)) {
+		id, err := strconv.Atoi(line)
+		if err != nil || id <= 0 {
+			return nil, fmt.Errorf("user ID %q: %w", line, ErrUnexpectedOutput)
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
 }

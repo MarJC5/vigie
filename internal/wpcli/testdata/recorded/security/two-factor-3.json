@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'user' 'meta' 'list' '3' '--keys=_two_factor_enabled_providers,wp_2fa_enabled_methods' '--format=json' '--unserialize' '--path=sites/security' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "[{\"user_id\":3,\"meta_key\":\"_two_factor_enabled_providers\",\"meta_value\":[\"Two_Factor_Totp\",\"Two_Factor_Backup_Codes\"]}]",
+  "stderr": ""
+}
