@@ -25,20 +25,20 @@
   gap: 10px;
 }
 
-/* The lock: a round button with its icon only, its border at 1 px. */
+/* The lock: a button with its icon only. */
 .lock {
-  border-radius: 999px;
-  box-shadow: inset 0 0 0 1px var(--vg-border-strong);
+  border-radius: var(--vg-radius-control);
+  background: var(--vg-control);
 }
 
 .write {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 32px;
+  height: var(--vg-control-height);
   padding: 0 14px;
-  border-radius: 999px;
-  box-shadow: inset 0 0 0 1px var(--vg-border-strong);
+  border-radius: var(--vg-radius-control);
+  background: var(--vg-control);
   color: var(--vg-text);
   font-size: var(--vg-text-small);
   font-weight: var(--vg-weight-strong);

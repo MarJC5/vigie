@@ -23,9 +23,12 @@ export const NeedsAttention: Story = {
     // The plugins whose updates cannot be seen: a count, the names on demand.
     await expect(list).toHaveTextContent("1 plugin");
     await expect(list).not.toHaveTextContent("Theme Builder Pro");
+    // In a dialog, readable however many there are.
     await userEvent.click(within(list!).getByRole("button", { name: "Show" }));
-    await expect(list).toHaveTextContent("Theme Builder Pro");
-    await expect(within(list!).getByRole("button", { name: "Hide" })).toHaveAttribute("aria-expanded", "true");
+    const [dialog] = canvas.getAllByRole("dialog", { name: "Updates not visible" });
+    await expect(dialog).toHaveTextContent("Theme Builder Pro");
+    await userEvent.click(within(dialog!).getByRole("button", { name: "Close" }));
+    await expect(canvas.queryAllByRole("dialog")).toHaveLength(0);
     // Every row with updates carries its status shape, translations included.
     const translations = within(list!).getByText("Translations").closest("div")!;
     await expect(translations.querySelector("[data-shape='square']")).not.toBeNull();

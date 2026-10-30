@@ -16,23 +16,24 @@
   color: var(--vg-text-muted);
 }
 
-.unknown {
-  display: flex;
-  flex-direction: column;
-  gap: var(--vg-space-1);
-  padding: var(--vg-space-2) 0;
-}
-
 .unknownLine {
   display: flex;
   align-items: center;
   gap: var(--vg-space-3);
 }
 
+/* One plugin a line, apart by a line. */
 .unknownList {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: var(--vg-text-small);
-  color: var(--vg-text-muted);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.unknownList li {
+  padding: var(--vg-space-2) 0;
+  overflow-wrap: anywhere;
+}
+
+.unknownList li + li {
+  box-shadow: inset 0 1px 0 var(--vg-raised-stroke);
 }

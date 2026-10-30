@@ -7,8 +7,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   background: var(--vg-surface-rail);
+  box-shadow: inset -1px 0 0 var(--vg-border);
   /* The rail moves the window, as a title bar would; its links and button do not. */
   --wails-draggable: drag;
 }
@@ -18,17 +19,21 @@
   --wails-draggable: no-drag;
 }
 
+/* A tile per section; the one chosen filled with the accent. */
 .item {
   width: 44px;
   height: 44px;
-  border-radius: var(--vg-radius-panel);
+  border-radius: var(--vg-radius-tile);
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--vg-tile);
   color: var(--vg-text-muted);
+  transition: background-color var(--vg-duration-hover) var(--vg-ease), color var(--vg-duration-hover) var(--vg-ease);
 }
 
 .item:hover {
+  background: var(--vg-tile-hover);
   color: var(--vg-text);
 }
 
@@ -37,12 +42,14 @@
 }
 
 .item[aria-disabled="true"]:hover {
+  background: var(--vg-tile);
   color: var(--vg-text-muted);
 }
 
-.item[aria-current="page"] {
-  background: var(--vg-surface-selected);
-  color: var(--vg-accent-text);
+.item[aria-current="page"],
+.item[aria-current="page"]:hover {
+  background: var(--vg-accent);
+  color: var(--vg-text-on-accent);
 }
 
 .item:focus-visible,
@@ -55,21 +62,26 @@
   flex: 1;
 }
 
+/* Add a host: a tile too, its plus in green. */
 .add {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border: 0;
-  border-radius: var(--vg-radius-pill);
+  border-radius: var(--vg-radius-tile);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--vg-accent);
-  color: var(--vg-text-on-accent);
+  background: var(--vg-tile);
+  color: var(--vg-status-ok);
   cursor: pointer;
+  transition: background-color var(--vg-duration-hover) var(--vg-ease);
+}
+
+.add:hover:not(:disabled) {
+  background: var(--vg-tile-hover);
 }
 
 .add:disabled {
-  background: var(--vg-surface-raised);
   color: var(--vg-text-muted);
   cursor: default;
 }

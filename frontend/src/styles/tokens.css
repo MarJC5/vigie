@@ -1,8 +1,10 @@
 /* Vigie design tokens: the only place with raw values. Dark theme by default, light theme when
    the system asks for it or when data-theme="light" is set (data-theme also forces dark).
-   Built on WordPress's own palette: neutral greys and alert colors of @wordpress/base-styles,
-   the Blueberry family of the WordPress.org theme. A value marked "adjusted" differs from the
-   WordPress one only to reach WCAG AA on Vigie's surfaces.
+   Surfaces, lines and controls take the shades of today's Discord, measured on its window (rail,
+   list and title bar #2C2D32, content #323338, lines #37383D to #3E3F44, chosen row and buttons
+   #414248, field #393A3F, secondary text #AEAFB5), the light theme in the same steps; the status
+   colors are WordPress's alert colors, the one blue the Blueberry family of the WordPress.org
+   theme. Every text pair stays at WCAG AA.
    Status and site colors are fills with a thin ring; meaning is carried by shape and label,
    never by color alone. */
 
@@ -10,23 +12,33 @@
 [data-theme="dark"] {
 	color-scheme: dark;
 
-	/* Surfaces: neutral greys in small steps; the site list is one step lighter than the detail,
-	   a selection one step darker */
-	--vg-surface-rail: #232323;
-	--vg-surface-main: #272727;
-	--vg-surface-pane: #2f2f2f;    /* WordPress gray-800 */
-	--vg-surface-row: #2b2b2b;
-	--vg-surface-sunken: #1e1e1e;  /* WordPress gray-900, Charcoal */
-	--vg-surface-raised: #333333;
+	/* Surfaces: cool greys in small steps; the content a step lighter than the rail and the list,
+	   which a line barely lighter than them sets apart */
+	--vg-surface-rail: #2b2c31;
+	--vg-surface-main: #323338;
+	--vg-surface-pane: #2c2d32;
+	--vg-surface-row: #36373d;
+	--vg-surface-sunken: #26272b;
+	--vg-surface-raised: #3c3d45;  /* menus and dialogs: Discord's, lighter than the content */
 	/* A list item under the pointer, then the one selected: a step lighter each, never darker */
-	--vg-surface-hover: #353535;
-	--vg-surface-selected: #3a3a3a;
-	--vg-border: #3c3c3c;
-	--vg-border-strong: #808080;
+	--vg-surface-hover: #35363b;
+	--vg-surface-selected: #414248;
+	--vg-border: #3b3c42;
+	/* For what needs 3:1 against its surface: a switch turned off, a drop target */
+	--vg-border-strong: #888c96;  /* 3.2:1 on a menu */
+
+	/* Controls: filled, no outline */
+	--vg-control: #414248;
+	--vg-control-hover: #4a4b52;
+	--vg-field: #26272b;
+
+	/* The rail: a tile per section, a pill on the left edge for the one chosen */
+	--vg-tile: #36373d;
+	--vg-tile-hover: #414248;
 
 	/* Text */
-	--vg-text: #f0f0f0;            /* WordPress gray-100 */
-	--vg-text-muted: #ababab;      /* adjusted: gray-600 #949494 is under 4.5:1 on the site list */
+	--vg-text: #dbdee1;
+	--vg-text-muted: #aeafb5;      /* 4.6:1 on a selection, 6.3:1 on the list */
 	--vg-text-on-accent: #1e1e1e;  /* gray-900 on Blueberry 2: 8.1:1 */
 
 	/* One blue on dark, Blueberry 2, for fills, text, icons and focus: Blueberry itself is under
@@ -57,30 +69,36 @@
 
 	/* Elevation: menus and dialogs above the window; under a dialog, the window veiled in the
 	   theme's own tone (dimmed here, lightened in the light theme) */
-	--vg-shadow-raised: 0 12px 32px rgb(0 0 0 / 32%);
-	--vg-shadow-dialog: 0 24px 64px rgb(0 0 0 / 40%);
+	--vg-shadow-raised: 0 12px 24px rgb(0 0 0 / 24%);
+	--vg-shadow-dialog: 0 12px 24px rgb(0 0 0 / 24%);
+	--vg-raised-stroke: rgb(255 255 255 / 12%);  /* a menu's outline, separators and hovered item */
 	--vg-scrim: rgb(0 0 0 / 45%);
 }
 
 [data-theme="light"] {
 	color-scheme: light;
-	--vg-surface-rail: #f0f0f0;    /* WordPress gray-100 */
-	--vg-surface-main: #ffffff;
-	--vg-surface-pane: #f6f6f6;    /* Light Grey 2 */
-	--vg-surface-row: #f6f6f6;
-	--vg-surface-sunken: #e0e0e0;  /* WordPress gray-200 */
+	--vg-surface-rail: #e3e4eb;
+	--vg-surface-main: #f8f8fa;  /* the dark theme's cool grays, light */
+	--vg-surface-pane: #efeff3;
+	--vg-surface-row: #efeff3;
+	--vg-surface-sunken: #e9eaef;
 	--vg-surface-raised: #ffffff;
-	--vg-surface-hover: #eeeeee;
-	--vg-surface-selected: #e8e8e8;
-	--vg-border: #e0e0e0;          /* WordPress gray-200 */
-	--vg-border-strong: #8a8a8a;   /* adjusted: gray-600 #949494 is under 3:1 on the site list */
-	--vg-text: #1e1e1e;            /* WordPress gray-900 */
-	--vg-text-muted: #636363;      /* adjusted: gray-700 #757575 is under 4.5:1 on the site list and a selection */
+	--vg-surface-hover: #e7e8ee;
+	--vg-surface-selected: #dadce4;
+	--vg-border: #e0e1e9;
+	--vg-border-strong: #80848e;
+	--vg-control: #e0e1e9;
+	--vg-control-hover: #d4d6e0;
+	--vg-field: #e9eaef;
+	--vg-tile: #f0f1f4;
+	--vg-tile-hover: #fbfbfc;
+	--vg-text: #272830;
+	--vg-text-muted: #585b6a;  /* 4.9:1 on a selection */
 	--vg-text-on-accent: #ffffff;
-	--vg-accent: #3858e9;
-	--vg-accent-hover: #213fd4;
-	--vg-accent-text: #3858e9;
-	--vg-focus: #3858e9;
+	--vg-accent: #4d5fd0;
+	--vg-accent-hover: #3f50bd;
+	--vg-accent-text: #3f52c8;  /* 4.7:1 on a selection */
+	--vg-focus: #4d5fd0;
 	--vg-status-ok: #4ab866;
 	--vg-status-warn: #f0b849;
 	--vg-status-danger: #cc1818;   /* WordPress alert red */
@@ -88,37 +106,43 @@
 	--vg-status-unknown: #949494;
 	--vg-site-red: #cc1818;
 	--vg-site-green: #4ab866;
-	--vg-site-blue: #3858e9;
+	--vg-site-blue: #4d5fd0;
 	--vg-site-yellow: #f0b849;
 	--vg-site-cyan: #0891b2;
 	--vg-site-magenta: #7a00df;    /* Purple 2 */
 	--vg-site-orange: #e26f56;     /* Pomegranate */
 	--vg-swatch-ring: rgba(0, 0, 0, 0.15);  /* Black 15% */
-	--vg-shadow-raised: 0 12px 32px rgb(0 0 0 / 12%);
-	--vg-shadow-dialog: 0 24px 64px rgb(0 0 0 / 16%);
+	--vg-shadow-raised: 0 12px 24px rgb(39 40 60 / 12%);
+	--vg-shadow-dialog: 0 12px 24px rgb(39 40 60 / 12%);
+	--vg-raised-stroke: rgb(39 40 48 / 10%);
 	--vg-scrim: rgb(255 255 255 / 70%);
 }
 
 @media (prefers-color-scheme: light) {
 	:root:not([data-theme]) {
 		color-scheme: light;
-		--vg-surface-rail: #f0f0f0;
-		--vg-surface-main: #ffffff;
-		--vg-surface-pane: #f6f6f6;
-		--vg-surface-row: #f6f6f6;
-		--vg-surface-sunken: #e0e0e0;
+		--vg-surface-rail: #e3e4eb;
+		--vg-surface-main: #f8f8fa;  /* the dark theme's cool grays, light */
+		--vg-surface-pane: #efeff3;
+		--vg-surface-row: #efeff3;
+		--vg-surface-sunken: #e9eaef;
 		--vg-surface-raised: #ffffff;
-		--vg-surface-hover: #eeeeee;
-		--vg-surface-selected: #e8e8e8;
-		--vg-border: #e0e0e0;
-		--vg-border-strong: #8a8a8a;
-		--vg-text: #1e1e1e;
-		--vg-text-muted: #636363;
+		--vg-surface-hover: #e7e8ee;
+		--vg-surface-selected: #dadce4;
+		--vg-border: #e0e1e9;
+		--vg-border-strong: #80848e;
+		--vg-control: #e0e1e9;
+		--vg-control-hover: #d4d6e0;
+		--vg-field: #e9eaef;
+		--vg-tile: #f0f1f4;
+		--vg-tile-hover: #fbfbfc;
+		--vg-text: #272830;
+		--vg-text-muted: #585b6a;  /* 4.9:1 on a selection */
 		--vg-text-on-accent: #ffffff;
-		--vg-accent: #3858e9;
-		--vg-accent-hover: #213fd4;
-		--vg-accent-text: #3858e9;
-		--vg-focus: #3858e9;
+		--vg-accent: #4d5fd0;
+		--vg-accent-hover: #3f50bd;
+		--vg-accent-text: #3f52c8;  /* 4.7:1 on a selection */
+		--vg-focus: #4d5fd0;
 		--vg-status-ok: #4ab866;
 		--vg-status-warn: #f0b849;
 		--vg-status-danger: #cc1818;
@@ -126,14 +150,15 @@
 		--vg-status-unknown: #949494;
 		--vg-site-red: #cc1818;
 		--vg-site-green: #4ab866;
-		--vg-site-blue: #3858e9;
+		--vg-site-blue: #4d5fd0;
 		--vg-site-yellow: #f0b849;
 		--vg-site-cyan: #0891b2;
 		--vg-site-magenta: #7a00df;
 		--vg-site-orange: #e26f56;
 		--vg-swatch-ring: rgba(0, 0, 0, 0.15);
-		--vg-shadow-raised: 0 12px 32px rgb(0 0 0 / 12%);
-		--vg-shadow-dialog: 0 24px 64px rgb(0 0 0 / 16%);
+		--vg-shadow-raised: 0 12px 24px rgb(39 40 60 / 12%);
+		--vg-shadow-dialog: 0 12px 24px rgb(39 40 60 / 12%);
+		--vg-raised-stroke: rgb(39 40 48 / 10%);
 		--vg-scrim: rgb(255 255 255 / 70%);
 	}
 }
@@ -151,7 +176,6 @@
 	--vg-text-display: 40px;
 	--vg-leading-tight: 1.15;
 	--vg-leading-body: 1.45;
-	--vg-tracking-caps: 0.06em;
 
 	/* Space: 4 px steps */
 	--vg-space-1: 4px;
@@ -163,14 +187,15 @@
 	--vg-space-7: 48px;
 
 	/* Shape */
-	--vg-radius-control: 6px;
+	--vg-radius-control: 8px;
+	--vg-radius-tile: 12px;
 	--vg-radius-panel: 10px;
 	--vg-radius-pill: 999px;
 	/* Holds the macOS window buttons (x 9 to 69 in a hidden title bar) with 9 px on either side. */
 	--vg-rail-width: 78px;
 	--vg-pane-width: 264px;
 	--vg-row-height: 44px;
-	--vg-control-height: 32px;
+	--vg-control-height: 36px;
 
 	/* Motion */
 	--vg-duration-hover: 120ms;

@@ -123,7 +123,7 @@ function Row({
         )}
         {finding.ignore && <span className={styles.detail}>{ignoreText(finding, t)}</span>}
       </span>
-      <span>
+      <span className={styles.linkCell}>
         {text.link && (
           <Link href={text.link.href} onOpen={onOpen}>
             {text.link.label}

@@ -5,19 +5,20 @@
   flex-direction: column;
   gap: 1px;
   width: 292px;
-  padding: var(--vg-space-1);
+  padding: var(--vg-space-2);
   box-sizing: border-box;
-  border-radius: var(--vg-radius-panel);
+  border-radius: var(--vg-radius-control);
   background: var(--vg-surface-raised);
-  box-shadow: var(--vg-shadow-raised), 0 0 0 1px var(--vg-border);
+  /* Discord's popover: a light outline, a short soft shadow. */
+  box-shadow: inset 0 0 0 1px var(--vg-raised-stroke), var(--vg-shadow-raised);
 }
 
 .item {
   display: flex;
   align-items: center;
   gap: var(--vg-space-3);
-  height: 32px;
-  padding: 0 var(--vg-space-3);
+  height: 34px;
+  padding: 0 var(--vg-space-2);
   border: 0;
   border-radius: var(--vg-radius-control);
   background: transparent;
@@ -29,8 +30,16 @@
 
 .item:hover:not([aria-disabled="true"]),
 .item:focus-visible {
-  background: var(--vg-surface-sunken);
+  background: var(--vg-raised-stroke);
   outline: none;
+}
+
+/* Under the pointer, the gray parts turn white, as in Discord's menus. */
+.item:hover:not([aria-disabled="true"]) .icon,
+.item:hover:not([aria-disabled="true"]) .shortcut,
+.item:focus-visible .icon,
+.item:focus-visible .shortcut {
+  color: var(--vg-text);
 }
 
 .item[aria-disabled="true"] {
@@ -59,8 +68,8 @@
 
 .separator {
   height: 1px;
-  margin: 5px var(--vg-space-2);
-  background: var(--vg-border);
+  margin: var(--vg-space-1) var(--vg-space-2);
+  background: var(--vg-raised-stroke);
 }
 
 .colors {

@@ -26,6 +26,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The latest scan in the window: a status in the site list, the overview and updates of a site,
   the table of the sites of a host or folder, the scans running with a button to stop them.
 - Search in the site list.
+- The number of pending updates of each host, next to it in the site list.
 - Menu bar in English and French, with shortcuts to add a host, search and scan.
 - Command line: `vigie tree`, `vigie scan [path]` and `vigie discover <host>`, with `--json`
   and exit codes for scripts (0 all good, 1 needs attention or not fully checked, 2 urgent, 3 error).

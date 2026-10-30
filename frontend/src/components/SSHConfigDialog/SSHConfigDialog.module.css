@@ -14,10 +14,8 @@
 
 .head {
   padding: 0 12px 4px;
-  font-size: var(--vg-text-caption);
+  font-size: var(--vg-text-small);
   font-weight: var(--vg-weight-strong);
-  letter-spacing: var(--vg-tracking-caps);
-  text-transform: uppercase;
   color: var(--vg-text-muted);
 }
 

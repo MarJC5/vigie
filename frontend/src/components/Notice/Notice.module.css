@@ -1,14 +1,30 @@
+/* Discord's banner: a tint of its tone, outlined in it, its icon first. */
 .notice {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 18px 20px;
-  border-radius: var(--vg-radius-panel);
-  box-shadow: inset 0 0 0 1px var(--vg-status-danger);
+  --vg-notice-tone: var(--vg-status-danger);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--vg-space-3);
+  padding: 14px 16px;
+  border-radius: var(--vg-radius-control);
+  background: color-mix(in srgb, var(--vg-notice-tone) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vg-notice-tone) 55%, transparent);
 }
 
 .notice[data-tone="warn"] {
-  box-shadow: inset 0 0 0 1px var(--vg-status-warn);
+  --vg-notice-tone: var(--vg-status-warn);
+}
+
+.icon {
+  display: inline-flex;
+  padding-top: 2px;
+  color: var(--vg-notice-tone);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
 }
 
 .title {
@@ -18,6 +34,16 @@
 .detail {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: var(--vg-text-caption);
-  color: var(--vg-text-muted);
+  color: var(--vg-text);
   overflow-wrap: anywhere;
+}
+
+/* Its button takes the banner's tone, not the accent. */
+.notice .action {
+  background: color-mix(in srgb, var(--vg-notice-tone) 22%, transparent);
+  color: var(--vg-text);
+}
+
+.notice .action:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--vg-notice-tone) 34%, transparent);
 }

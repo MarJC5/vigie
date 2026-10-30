@@ -33,11 +33,9 @@
 
 .sectionTitle {
   margin: 0 0 var(--vg-space-1);
-  font-size: var(--vg-text-caption);
+  font-size: var(--vg-text-title);
   font-weight: var(--vg-weight-strong);
-  letter-spacing: var(--vg-tracking-caps);
-  text-transform: uppercase;
-  color: var(--vg-text-muted);
+  line-height: var(--vg-leading-tight);
 }
 
 /* Only a line under each row: no rounded corners. */

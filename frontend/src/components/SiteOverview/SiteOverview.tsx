@@ -7,6 +7,7 @@ import { since } from "../../lib/time";
 import { choicesOf, namesOf, offeredKeys } from "../../lib/updates";
 import { Button } from "../Button/Button";
 import { DetailHeader } from "../DetailHeader/DetailHeader";
+import { Dialog } from "../Dialog/Dialog";
 import { InfoList, InfoRow } from "../InfoList/InfoList";
 import { Notice } from "../Notice/Notice";
 import { SecurityPanel } from "../SecurityPanel/SecurityPanel";
@@ -217,24 +218,34 @@ function Overview({ site }: { site: SiteView }) {
   );
 }
 
-/** The plugins whose updates Vigie cannot see: their count on one line, the list on demand. */
+/** The plugins whose updates Vigie cannot see: their count on one line, the list in a dialog, which
+ * stays readable however many there are. */
 function SourceUnknown({ names }: { names: string[] }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const list = useId();
   return (
-    <span className={styles.unknown}>
-      <span className={styles.unknownLine}>
-        {t("overview.sourceUnknownCount", { count: names.length })}
-        <Button variant="text" aria-expanded={open} aria-controls={list} onClick={() => setOpen(!open)}>
-          {open ? t("overview.hide") : t("overview.show")}
-        </Button>
-      </span>
+    <span className={styles.unknownLine}>
+      {t("overview.sourceUnknownCount", { count: names.length })}
+      <Button variant="text" aria-haspopup="dialog" onClick={() => setOpen(true)}>
+        {t("overview.show")}
+      </Button>
       {open && (
-        <span id={list} className={styles.unknownList}>
-          <span>{names.join(", ")}</span>
-          <span>{t("overview.sourceUnknownHint")}</span>
-        </span>
+        <Dialog
+          title={t("overview.sourceUnknown")}
+          lead={t("overview.sourceUnknownHint")}
+          onClose={() => setOpen(false)}
+          actions={
+            <Button variant="primary" onClick={() => setOpen(false)}>
+              {t("overview.close")}
+            </Button>
+          }
+        >
+          <ul className={styles.unknownList}>
+            {names.map((name) => (
+              <li key={name}>{name}</li>
+            ))}
+          </ul>
+        </Dialog>
       )}
     </span>
   );

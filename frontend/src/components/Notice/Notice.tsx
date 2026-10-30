@@ -1,4 +1,5 @@
 import { Button } from "../Button/Button";
+import { Icon } from "../Icon/Icon";
 import styles from "./Notice.module.css";
 
 export interface NoticeProps {
@@ -17,16 +18,25 @@ export interface NoticeProps {
 export function Notice({ title, text, detail, action, tone = "danger", role = "alert" }: NoticeProps) {
   return (
     <div role={role} className={styles.notice} data-tone={tone}>
-      <span className={styles.title}>{title}</span>
-      <span>{text}</span>
-      {detail && <span className={styles.detail} data-selectable>
-          {detail}
-        </span>}
-      {action && (
-        <span>
-          <Button onClick={action.onClick}>{action.label}</Button>
-        </span>
-      )}
+      <span className={styles.icon} aria-hidden="true">
+        <Icon name={tone === "warn" ? "warning" : "failed"} size={16} />
+      </span>
+      <span className={styles.body}>
+        <span className={styles.title}>{title}</span>
+        <span>{text}</span>
+        {detail && (
+          <span className={styles.detail} data-selectable>
+            {detail}
+          </span>
+        )}
+        {action && (
+          <span>
+            <Button className={styles.action} onClick={action.onClick}>
+              {action.label}
+            </Button>
+          </span>
+        )}
+      </span>
     </div>
   );
 }

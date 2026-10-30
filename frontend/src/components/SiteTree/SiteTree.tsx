@@ -168,6 +168,7 @@ export function SiteTree({
           status={node.kind === "site" ? siteStatus(node.status) : undefined}
           color={node.color === "none" ? undefined : (node.color as SiteColor)}
           meta={node.multisite && node.subsites > 0 ? t("manager.subsites", { count: node.subsites }) : undefined}
+          updates={node.kind === "host" ? node.updates : undefined}
           onSelect={() => onSelect(node.id)}
           onToggle={() => toggle(node.id)}
           itemId={node.id}

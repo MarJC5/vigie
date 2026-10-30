@@ -38,10 +38,8 @@
   align-items: center;
   gap: var(--vg-space-2);
   margin: 0 0 var(--vg-space-1);
-  font-size: var(--vg-text-caption);
+  font-size: var(--vg-text-small);
   font-weight: var(--vg-weight-strong);
-  letter-spacing: var(--vg-tracking-caps);
-  text-transform: uppercase;
   color: var(--vg-text-muted);
 }
 
@@ -61,7 +59,8 @@
 .row {
   display: grid;
   grid-template-columns: 16px minmax(0, 1fr) auto auto;
-  align-items: center;
+  /* At the top: a long finding keeps its icon and its action on its first line. */
+  align-items: start;
   gap: var(--vg-space-4);
   padding: var(--vg-space-2) var(--vg-space-3);
   border-radius: var(--vg-radius-control);
@@ -74,9 +73,22 @@
   color: var(--vg-text-muted);
 }
 
+/* The mark, the link and the action sit on the title's first line. */
+.mark,
+.linkCell,
+.action {
+  min-height: calc(var(--vg-text-body) * var(--vg-leading-body));
+}
+
+.linkCell {
+  display: flex;
+  align-items: center;
+}
+
 .mark {
   display: inline-flex;
   justify-content: center;
+  align-items: center;
   color: var(--vg-text-muted);
 }
 
@@ -121,6 +133,7 @@
 
 .action {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
 }
 

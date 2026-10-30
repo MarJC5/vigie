@@ -27,9 +27,9 @@ export const ChooseAFolder: Story = {
   play: async ({ canvas }) => {
     const [select] = canvas.getAllByLabelText("Folder");
     await expect(select).toHaveValue("");
-    // WebKit draws a native select without the field's outline: the select draws itself.
+    // WebKit draws a native select without the field's fill: the select draws itself.
     await expect(getComputedStyle(select!).appearance).toBe("none");
-    await expect(getComputedStyle(select!).boxShadow).not.toBe("none");
+    await expect(getComputedStyle(select!).backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
     await userEvent.selectOptions(select!, "personal");
     await expect(select).toHaveValue("personal");
   },

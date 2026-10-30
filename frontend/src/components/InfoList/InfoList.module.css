@@ -1,7 +1,10 @@
+/* Discord's grouped rows: each one filled, apart by a line, the group rounded. */
 .list {
   display: flex;
   flex-direction: column;
   margin: 0;
+  border-radius: var(--vg-radius-control);
+  overflow: hidden;
 }
 
 .row {
@@ -9,12 +12,12 @@
   grid-template-columns: 210px minmax(0, 1fr);
   align-items: center;
   min-height: var(--vg-row-height);
-  padding: 0 var(--vg-space-3);
-  border-radius: var(--vg-radius-control);
+  padding: 0 var(--vg-space-4);
+  background: var(--vg-surface-row);
 }
 
-.row:nth-child(odd) {
-  background: var(--vg-surface-row);
+.row + .row {
+  box-shadow: inset 0 1px 0 var(--vg-surface-main);
 }
 
 .label {

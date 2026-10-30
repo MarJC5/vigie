@@ -1,8 +1,11 @@
 /* No scrolling of its own: the page scrolls, and the long column gives way. */
+/* Discord's table: framed, its rows apart by a line. */
 .table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
+  border-radius: var(--vg-radius-control);
+  box-shadow: inset 0 0 0 1px var(--vg-border);
   font-variant-numeric: tabular-nums;
 }
 
@@ -12,13 +15,11 @@
 }
 
 .table th {
-  padding: var(--vg-space-2) 14px;
+  padding: var(--vg-space-3) 14px;
   text-align: left;
-  font-size: var(--vg-text-caption);
+  font-size: var(--vg-text-small);
   font-weight: var(--vg-weight-strong);
-  letter-spacing: var(--vg-tracking-caps);
-  text-transform: uppercase;
-  color: var(--vg-text-muted);
+  color: var(--vg-text);
 }
 
 .table td {
@@ -26,16 +27,8 @@
   padding: 0 14px;
 }
 
-.table tbody tr:nth-child(odd) td {
-  background: var(--vg-surface-row);
-}
-
-.table tbody tr td:first-child {
-  border-radius: var(--vg-radius-control) 0 0 var(--vg-radius-control);
-}
-
-.table tbody tr td:last-child {
-  border-radius: 0 var(--vg-radius-control) var(--vg-radius-control) 0;
+.table td {
+  box-shadow: inset 0 1px 0 var(--vg-border);
 }
 
 .name {

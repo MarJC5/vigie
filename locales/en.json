@@ -18,6 +18,8 @@
     "stopAll": "Stop all",
     "subsites_one": "{{count}} subsite",
     "subsites_other": "{{count}} subsites",
+    "pending_one": "{{count}} pending update",
+    "pending_other": "{{count}} pending updates",
     "nameOf": "Name of {{name}}",
     "updating_one": "{{count}} site updating",
     "updating_other": "{{count}} sites updating"
@@ -380,7 +382,7 @@
     "sourceUnknownCount_one": "{{count}} plugin",
     "sourceUnknownCount_other": "{{count}} plugins",
     "show": "Show",
-    "hide": "Hide",
+    "close": "Close",
     "remove": "Remove from Vigie…",
     "attemptTitle": "The latest scan did not complete",
     "attemptText": "{{reason}}. These results are from the scan of {{date}} at {{time}}."

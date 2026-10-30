@@ -20,6 +20,9 @@
     "subsites_one": "{{count}} sous-site",
     "subsites_many": "{{count}} sous-sites",
     "subsites_other": "{{count}} sous-sites",
+    "pending_one": "{{count}} mise à jour en attente",
+    "pending_many": "{{count}} mises à jour en attente",
+    "pending_other": "{{count}} mises à jour en attente",
     "nameOf": "Nom de {{name}}",
     "updating_one": "{{count}} site en mise à jour",
     "updating_many": "{{count}} sites en mise à jour",
@@ -399,7 +402,7 @@
     "sourceUnknownCount_many": "{{count}} extensions",
     "sourceUnknownCount_other": "{{count}} extensions",
     "show": "Voir",
-    "hide": "Masquer",
+    "close": "Fermer",
     "remove": "Retirer de Vigie…",
     "attemptTitle": "Le dernier relevé n'a pas abouti",
     "attemptText": "{{reason}}. Ces résultats datent du relevé du {{date}} à {{time}}."

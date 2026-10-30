@@ -1,4 +1,5 @@
 import { type CSSProperties, type DragEvent, type KeyboardEvent, type MouseEvent, useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Icon } from "../Icon/Icon";
 import { type Status, StatusDot } from "../StatusDot/StatusDot";
@@ -19,6 +20,8 @@ export interface TreeNodeProps {
   color?: SiteColor;
   /** A short note after the name, for example a count. */
   meta?: string;
+  /** Hosts only: the updates waiting on its sites, in a badge when there are some. */
+  updates?: number;
   onSelect: () => void;
   onToggle?: () => void;
   /** Reachable with Tab; by default only the selected item is (roving focus). */
@@ -47,10 +50,11 @@ export interface TreeNodeProps {
 }
 
 export function TreeNode({
-  kind, name, depth, expanded, selected = false, status, color, meta, onSelect, onToggle, tabbable, itemId, onEdit,
+  kind, name, depth, expanded, selected = false, status, color, meta, updates = 0, onSelect, onToggle, tabbable, itemId, onEdit,
   editing = false, editLabel, onRename, onCancelEdit, draggable = false, dragging = false, dropTarget = false,
   onDragStart, onDragEnd, onDragOver, onDrop, onContextMenu,
 }: TreeNodeProps) {
+  const { t } = useTranslation();
   const branch = kind !== "site";
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Enter" && selected && onEdit) {
@@ -65,7 +69,8 @@ export function TreeNode({
     }
   };
   const style = {
-    "--vg-node-indent": `${depth * 18 + (branch ? 0 : 18)}px`,
+    // A site's mark sits in the column of its host's tile (past the host's caret and gap).
+    "--vg-node-indent": `${depth * 14 + (branch ? 0 : 6)}px`,
     ...(color ? { "--vg-node-color": `var(--vg-site-${color})` } : {}),
   } as CSSProperties;
 
@@ -78,6 +83,9 @@ export function TreeNode({
       tabIndex={(tabbable ?? selected) ? 0 : -1}
       className={styles.node}
       style={style}
+      data-kind={kind}
+      data-colored={color ? true : undefined}
+      data-attention={status === "warn" || status === "danger" || undefined}
       data-id={itemId}
       data-dragging={dragging || undefined}
       data-drop-target={dropTarget || undefined}
@@ -102,19 +110,28 @@ export function TreeNode({
           <Icon name={expanded ? "caretDown" : "caretRight"} size={12} />
         </span>
       )}
-      {branch && (
-        <span className={color ? styles.colored : styles.icon}>
-          <Icon name={kind === "host" ? "host" : expanded ? "folderOpen" : "folder"} size={16} />
+      {kind === "host" && (
+        <span className={styles.tile}>
+          <Icon name="host" size={14} />
         </span>
       )}
-      {status && <StatusDot status={status} />}
+      {status && (
+        <span className={styles.mark}>
+          <StatusDot status={status} />
+        </span>
+      )}
       {editing ? (
         <RenameField label={editLabel} name={name} onRename={onRename} onCancel={onCancelEdit} />
       ) : (
         <span className={styles.name}>{name}</span>
       )}
       {meta && <span className={styles.meta}>{meta}</span>}
-      {!branch && color && <span className={styles.tag} aria-hidden="true" />}
+      {updates > 0 && (
+        <span className={styles.badge} role="img" aria-label={t("manager.pending", { count: updates })}>
+          {updates}
+        </span>
+      )}
+      {kind !== "host" && color && <span className={styles.tag} aria-hidden="true" />}
     </div>
   );
 }

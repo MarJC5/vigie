@@ -6,7 +6,7 @@
   height: var(--vg-control-height);
   padding: 0 var(--vg-space-4);
   border: 0;
-  border-radius: var(--vg-radius-pill);
+  border-radius: var(--vg-radius-control);
   background: transparent;
   font: var(--vg-weight-strong) var(--vg-text-small) / 1 var(--vg-font);
   white-space: nowrap;
@@ -34,7 +34,7 @@
 }
 
 .primary:disabled {
-  background: var(--vg-surface-raised);
+  background: var(--vg-control);
   color: var(--vg-text-muted);
 }
 
@@ -47,14 +47,15 @@
   filter: brightness(1.08);
 }
 
+/* Secondary: filled, no outline. */
 .outline {
   padding: 0 var(--vg-space-3);
-  box-shadow: inset 0 0 0 1px var(--vg-border-strong);
+  background: var(--vg-control);
   color: var(--vg-text);
 }
 
 .outline:hover:not(:disabled) {
-  background: var(--vg-surface-row);
+  background: var(--vg-control-hover);
 }
 
 .text {
@@ -71,11 +72,12 @@
   width: var(--vg-control-height);
   padding: 0;
   border-radius: var(--vg-radius-control);
-  background: var(--vg-surface-row);
+  background: var(--vg-control);
   color: var(--vg-text-muted);
 }
 
 .icon:hover:not(:disabled) {
+  background: var(--vg-control-hover);
   color: var(--vg-text);
 }
 
@@ -85,9 +87,9 @@
   color: var(--vg-text-muted);
 }
 
-/* A disabled outline loses its strong border too, so it never looks like it can be pressed. */
+/* A disabled secondary fades into the surface, so it never looks like it can be pressed. */
 .outline:disabled {
-  box-shadow: inset 0 0 0 1px var(--vg-border);
+  background: var(--vg-surface-row);
 }
 
 .spinner {

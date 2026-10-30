@@ -22,7 +22,7 @@
   box-sizing: border-box;
   border-radius: var(--vg-radius-panel);
   background: var(--vg-surface-raised);
-  box-shadow: var(--vg-shadow-dialog), 0 0 0 1px var(--vg-border);
+  box-shadow: inset 0 0 0 1px var(--vg-raised-stroke), var(--vg-shadow-dialog);
 }
 
 .wide {
