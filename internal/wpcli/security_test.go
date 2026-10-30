@@ -3,6 +3,7 @@ package wpcli_test
 import (
 	"errors"
 	"reflect"
+	"slices"
 	"testing"
 	"time"
 
@@ -23,6 +24,12 @@ func TestSecurityCommandLines(t *testing.T) {
 		{wpcli.TwoFactorMeta(3), "'wp' 'user' 'meta' 'list' '3' '--keys=_two_factor_enabled_providers,wp_2fa_enabled_methods' '--format=json' '--unserialize' '--path=site' '--skip-plugins' '--skip-themes'"},
 		{wpcli.DatabasePrefix(), "'wp' 'db' 'prefix' '--path=site' '--skip-plugins' '--skip-themes'"},
 		{wpcli.WordfenceTwoFactorUsers("wp_"), "'wp' 'db' 'query' 'SELECT DISTINCT user_id FROM `wp_wfls_2fa_secrets`' '--skip-column-names' '--path=site' '--skip-plugins' '--skip-themes'"},
+		// Names only: wp-config.php also holds the database password.
+		{wpcli.ConfigNames(), "'wp' 'config' 'list' '--fields=name,type' '--format=json' '--path=site' '--skip-plugins' '--skip-themes'"},
+		{wpcli.OptionSizes(false), "'wp' 'option' 'list' '--fields=option_name,autoload,size_bytes' '--format=json' '--path=site' '--skip-plugins' '--skip-themes'"},
+		{wpcli.OptionSizes(true), "'wp' 'option' 'list' '--fields=option_name,autoload,size_bytes' '--format=json' '--transients' '--path=site' '--skip-plugins' '--skip-themes'"},
+		{wpcli.CronEvents(), "'wp' 'cron' 'event' 'list' '--fields=hook,next_run_gmt' '--format=json' '--path=site' '--skip-plugins' '--skip-themes'"},
+		{wpcli.DatabaseVersion(), "'wp' 'db' 'query' 'SELECT VERSION()' '--skip-column-names' '--path=site' '--skip-plugins' '--skip-themes'"},
 	} {
 		if got, err := tt.cmd.Remote("wp", "~/site"); err != nil || got != tt.want {
 			t.Errorf("got %s, %v\nwant %s", got, err, tt.want)
@@ -43,6 +50,11 @@ func TestSecurityRecordingsAreCurrent(t *testing.T) {
 		"two-factor-3":         {"security", wpcli.TwoFactorMeta(3)},
 		"db-prefix":            {"security", wpcli.DatabasePrefix()},
 		"wordfence-two-factor": {"security", wpcli.WordfenceTwoFactorUsers("wp_")},
+		"config-names":         {"security", wpcli.ConfigNames()},
+		"option-sizes":         {"security", wpcli.OptionSizes(false)},
+		"transient-sizes":      {"security", wpcli.OptionSizes(true)},
+		"cron-events":          {"security", wpcli.CronEvents()},
+		"db-version":           {"security", wpcli.DatabaseVersion()},
 	} {
 		want, err := rec.cmd.Remote("wp", "~/sites/"+rec.site)
 		if err != nil {
@@ -186,5 +198,72 @@ func TestParseWordfenceTwoFactorUsers(t *testing.T) {
 	noClient := sshx.Result{ExitCode: 1, Stderr: []byte("/usr/bin/env: 'mysql': No such file or directory\n")}
 	if _, err := wpcli.ParseUserIDs(noClient); !errors.Is(err, wpcli.ErrNotVerified) {
 		t.Errorf("ParseUserIDs() without mysql = %v, want ErrNotVerified", err)
+	}
+}
+
+func TestParseConfigNames(t *testing.T) {
+	names, err := wpcli.ParseConfigNames([]byte(load(t, "security", "config-names").Stdout))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(names, "WP_DEBUG") || !slices.Contains(names, "DB_PASSWORD") || slices.Contains(names, "table_prefix") {
+		t.Errorf("constants = %v; want the constants' names, not the variables", names)
+	}
+}
+
+func TestParseConstantAndOption(t *testing.T) {
+	if v, ok, err := wpcli.ParseConstant(result(load(t, "security", "constant-debug"))); err != nil || !ok || v != true {
+		t.Errorf("ParseConstant(WP_DEBUG) = %v, %v, %v", v, ok, err)
+	}
+	if v, ok, err := wpcli.ParseConstant(result(load(t, "security", "constant-missing"))); err != nil || ok || v != nil {
+		t.Errorf("ParseConstant(undefined) = %v, %v, %v", v, ok, err)
+	}
+	if v, ok, err := wpcli.ParseOption(result(load(t, "security", "option-blog-public"))); err != nil || !ok || v != "0" {
+		t.Errorf("ParseOption(blog_public) = %q, %v, %v", v, ok, err)
+	}
+	if v, ok, err := wpcli.ParseOption(result(load(t, "security", "option-auto-update-major"))); err != nil || !ok || v != "enabled" {
+		t.Errorf("ParseOption(auto_update_core_major) = %q, %v, %v", v, ok, err)
+	}
+	if v, ok, err := wpcli.ParseOption(result(load(t, "security", "option-missing"))); err != nil || ok || v != "" {
+		t.Errorf("ParseOption(missing) = %q, %v, %v; want not set", v, ok, err)
+	}
+}
+
+func TestParseAutoloadedSize(t *testing.T) {
+	size, err := wpcli.ParseAutoloadedSize(
+		[]byte(load(t, "security", "option-sizes").Stdout), []byte(load(t, "security", "transient-sizes").Stdout))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The fixture's 900,000-byte option and WordPress's own: above Site Health's 800,000.
+	if size < 900_000 || size > 1_000_000 {
+		t.Errorf("autoloaded size = %d", size)
+	}
+	// Only yes, on, auto-on and auto are loaded on every page (WordPress 6.6 and later).
+	small := `[{"option_name":"a","autoload":"auto","size_bytes":"10"},{"option_name":"b","autoload":"auto-off","size_bytes":"20"},
+		{"option_name":"c","autoload":"yes","size_bytes":"30"},{"option_name":"d","autoload":"no","size_bytes":"40"},
+		{"option_name":"e","autoload":"auto-on","size_bytes":"50"},{"option_name":"f","autoload":"off","size_bytes":"60"}]`
+	if size, err := wpcli.ParseAutoloadedSize([]byte(small), []byte("[]")); err != nil || size != 90 {
+		t.Errorf("ParseAutoloadedSize(small) = %d, %v; want 90", size, err)
+	}
+}
+
+func TestParseCronEvents(t *testing.T) {
+	events, err := wpcli.ParseCronEvents([]byte(load(t, "security", "cron-events").Stdout))
+	if err != nil || len(events) != 9 {
+		t.Fatalf("ParseCronEvents() = %d events, %v", len(events), err)
+	}
+	if e := events[0]; e.Hook != "fixture_overdue" || !e.Next.Equal(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)) {
+		t.Errorf("first event = %+v", e)
+	}
+}
+
+func TestParseDatabaseVersion(t *testing.T) {
+	if v, err := wpcli.ParseDatabaseVersion(result(load(t, "security", "db-version"))); err != nil || v != "11.8.9-MariaDB-ubu2404" {
+		t.Errorf("ParseDatabaseVersion() = %q, %v", v, err)
+	}
+	noClient := sshx.Result{ExitCode: 1, Stderr: []byte("/usr/bin/env: 'mysql': No such file or directory\n")}
+	if _, err := wpcli.ParseDatabaseVersion(noClient); !errors.Is(err, wpcli.ErrNotVerified) {
+		t.Errorf("ParseDatabaseVersion() without mysql = %v, want ErrNotVerified", err)
 	}
 }

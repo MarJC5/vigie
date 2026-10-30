@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'option' 'get' 'fixture_absent' '--path=sites/security' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error: Could not get 'fixture_absent' option. Does it exist?\n"
+}

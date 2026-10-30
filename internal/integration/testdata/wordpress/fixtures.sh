@@ -180,6 +180,13 @@ wp db query "CREATE TABLE wp_wfls_2fa_secrets (id INT UNSIGNED NOT NULL AUTO_INC
 	user_id BIGINT UNSIGNED NOT NULL, secret TINYBLOB NOT NULL, recovery BLOB NOT NULL, ctime INT UNSIGNED NOT NULL,
 	vtime INT UNSIGNED NOT NULL, mode ENUM('authenticator') NOT NULL DEFAULT 'authenticator')" --path="$SITES/security"
 wp db query "INSERT INTO wp_wfls_2fa_secrets (user_id, secret, recovery, ctime, vtime) VALUES (5, 'fixture-totp-secret', '', 0, 0)" --path="$SITES/security"
+# Settings: WP_DEBUG on with WP_DEBUG_DISPLAY left to its default (errors shown), file editing
+# allowed (DISALLOW_FILE_EDIT not set), hidden from search engines, 900 KB of autoloaded options
+# (Site Health's limit is 800,000 bytes), and a WP-Cron event overdue since 2020.
+wp config set WP_DEBUG true --raw --path="$SITES/security" --quiet
+wp option update blog_public 0 --path="$SITES/security" --quiet
+wp eval 'add_option( "fixture_big", str_repeat( "x", 900000 ), "", "yes" );' --path="$SITES/security"
+wp cron event schedule fixture_overdue 2020-01-01 --path="$SITES/security" --quiet
 
 # A server without outbound HTTP, like hosts that block it: every update check fails.
 new_site "$SITES/offline" fixture_offline

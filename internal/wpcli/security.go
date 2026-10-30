@@ -318,3 +318,130 @@ func ParseUserIDs(res sshx.Result) ([]int, error) {
 	}
 	return ids, nil
 }
+
+// ConfigNames lists the names of the constants and variables wp-config.php defines, never their
+// values: it also holds the database password and the salts.
+func ConfigNames() Command {
+	return Command{args: []string{"config", "list", "--fields=name,type", "--format=json"}, skipPlugins: true, skipThemes: true}
+}
+
+// OptionSizes lists every option with its autoload value and size, without the values; transients
+// lists the transients instead, which WP-CLI leaves out otherwise.
+func OptionSizes(transients bool) Command {
+	args := []string{"option", "list", "--fields=option_name,autoload,size_bytes", "--format=json"}
+	if transients {
+		args = append(args, "--transients")
+	}
+	return Command{args: args, skipPlugins: true, skipThemes: true}
+}
+
+// CronEvents lists the scheduled WP-Cron events and when each is due. Not `cron test`: it runs the
+// events due.
+func CronEvents() Command {
+	return Command{args: []string{"cron", "event", "list", "--fields=hook,next_run_gmt", "--format=json"},
+		skipPlugins: true, skipThemes: true}
+}
+
+// DatabaseVersion asks the database server its version; it needs the mysql client on the server.
+func DatabaseVersion() Command {
+	return Command{args: []string{"db", "query", "SELECT VERSION()", "--skip-column-names"}, skipPlugins: true, skipThemes: true}
+}
+
+// ParseConfigNames reads ConfigNames' output: the names of the constants wp-config.php defines.
+func ParseConfigNames(out []byte) ([]string, error) {
+	var entries []struct {
+		Name string `json:"name"`
+		Type string `json:"type"`
+	}
+	if err := decode(out, &entries); err != nil {
+		return nil, fmt.Errorf("config list: %w", err)
+	}
+	var names []string
+	for _, e := range entries {
+		if e.Type == "constant" {
+			names = append(names, e.Name)
+		}
+	}
+	return names, nil
+}
+
+// ParseOption reads OptionGet's result: the value, or not set (an option that does not exist,
+// whose default applies).
+func ParseOption(res sshx.Result) (string, bool, error) {
+	if res.ExitCode != 0 {
+		if strings.Contains(string(res.Stderr), "Could not get '") {
+			return "", false, nil
+		}
+		return "", false, Check(res)
+	}
+	return strings.TrimSpace(string(res.Stdout)), true, nil
+}
+
+// autoloaded are the autoload values WordPress loads on every page (wp_autoload_values_to_autoload,
+// WordPress 6.6 and later; "yes" is the older value).
+var autoloaded = map[string]bool{"yes": true, "on": true, "auto-on": true, "auto": true}
+
+// ParseAutoloadedSize adds up the sizes of the options and transients loaded on every page, as
+// Site Health does; WP-CLI's own total misses "auto" and "auto-on".
+func ParseAutoloadedSize(options, transients []byte) (int64, error) {
+	var total int64
+	for _, out := range [][]byte{options, transients} {
+		var list []struct {
+			Autoload string          `json:"autoload"`
+			Size     json.RawMessage `json:"size_bytes"`
+		}
+		if err := decode(out, &list); err != nil {
+			return 0, fmt.Errorf("option list: %w", err)
+		}
+		for _, o := range list {
+			if !autoloaded[o.Autoload] {
+				continue
+			}
+			// A string in WP-CLI 2.12, perhaps a number elsewhere.
+			n, err := strconv.ParseInt(strings.Trim(string(o.Size), `"`), 10, 64)
+			if err != nil {
+				return 0, fmt.Errorf("option size %s: %w", o.Size, ErrUnexpectedOutput)
+			}
+			total += n
+		}
+	}
+	return total, nil
+}
+
+// CronEvent is a scheduled WP-Cron event.
+type CronEvent struct {
+	Hook string
+	Next time.Time // UTC
+}
+
+// ParseCronEvents reads CronEvents' output.
+func ParseCronEvents(out []byte) ([]CronEvent, error) {
+	var list []struct {
+		Hook string `json:"hook"`
+		Next string `json:"next_run_gmt"`
+	}
+	if err := decode(out, &list); err != nil {
+		return nil, fmt.Errorf("cron event list: %w", err)
+	}
+	events := make([]CronEvent, len(list))
+	for i, e := range list {
+		at, err := time.ParseInLocation(time.DateTime, e.Next, time.UTC)
+		if err != nil {
+			return nil, fmt.Errorf("cron event %s at %q: %w", e.Hook, e.Next, ErrUnexpectedOutput)
+		}
+		events[i] = CronEvent{Hook: e.Hook, Next: at}
+	}
+	return events, nil
+}
+
+// ParseDatabaseVersion reads DatabaseVersion's result; without the mysql client, not verified.
+func ParseDatabaseVersion(res sshx.Result) (string, error) {
+	if res.ExitCode != 0 {
+		return "", fmt.Errorf("%w: %s", ErrNotVerified, strings.TrimSpace(string(res.Stderr)))
+	}
+	v := strings.TrimSpace(string(res.Stdout))
+	if v == "" || strings.ContainsAny(v, "\n\t") {
+		return "", fmt.Errorf("database version %q: %w", v, ErrUnexpectedOutput)
+	}
+	return v, nil
+}

@@ -187,6 +187,16 @@ var securityRecordings = []struct {
 	{"wordfence-two-factor", "security", wpcli.WordfenceTwoFactorUsers("wp_"), nil},
 	// No Wordfence table.
 	{"wordfence-two-factor-none", "plain", wpcli.WordfenceTwoFactorUsers("wp_"), nil},
+	{"config-names", "security", wpcli.ConfigNames(), nil},
+	{"constant-debug", "security", wpcli.ConfigConstant("WP_DEBUG"), nil},
+	{"constant-missing", "security", wpcli.ConfigConstant("DISALLOW_FILE_EDIT"), nil},
+	{"option-blog-public", "security", wpcli.OptionGet("blog_public"), nil},
+	{"option-auto-update-major", "security", wpcli.OptionGet("auto_update_core_major"), nil},
+	{"option-missing", "security", wpcli.OptionGet("fixture_absent"), nil},
+	{"option-sizes", "security", wpcli.OptionSizes(false), nil},
+	{"transient-sizes", "security", wpcli.OptionSizes(true), nil},
+	{"cron-events", "security", wpcli.CronEvents(), nil},
+	{"db-version", "security", wpcli.DatabaseVersion(), nil},
 	{"uploads-php", "security", wpcli.Command{}, remote.UploadsPHP},
 	{"uploads-php-clean", "plain", wpcli.Command{}, remote.UploadsPHP},
 }

@@ -313,11 +313,11 @@ type DebugLog struct {
 // ParseDebugLog reads the constants WP_DEBUG and WP_DEBUG_LOG: WordPress writes its log only with
 // both, to the content folder's debug.log, or to the file WP_DEBUG_LOG names.
 func ParseDebugLog(debug, log sshx.Result) (DebugLog, error) {
-	on, _, err := constant(debug)
+	on, _, err := ParseConstant(debug)
 	if err != nil || on != true {
 		return DebugLog{}, err
 	}
-	value, _, err := constant(log)
+	value, _, err := ParseConstant(log)
 	if err != nil {
 		return DebugLog{}, err
 	}
@@ -332,8 +332,9 @@ func ParseDebugLog(debug, log sshx.Result) (DebugLog, error) {
 	return DebugLog{}, fmt.Errorf("WP_DEBUG_LOG %v: %w", value, ErrUnexpectedOutput)
 }
 
-// constant reads ConfigConstant's result: its JSON value, or not defined (nil, false).
-func constant(res sshx.Result) (any, bool, error) {
+// ParseConstant reads ConfigConstant's result: its JSON value (a bool, string, number or nil), or
+// not defined (nil, false).
+func ParseConstant(res sshx.Result) (any, bool, error) {
 	if res.ExitCode != 0 {
 		if strings.Contains(string(res.Stderr), "is not defined") {
 			return nil, false, nil
