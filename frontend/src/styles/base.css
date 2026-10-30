@@ -39,6 +39,12 @@ textarea,
   cursor: text;
 }
 
+/* WebKit does not start dragging an element whose text cannot be selected unless told it drags as
+   a whole: the folders and hosts of the site list. */
+[draggable="true"] {
+  -webkit-user-drag: element;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
