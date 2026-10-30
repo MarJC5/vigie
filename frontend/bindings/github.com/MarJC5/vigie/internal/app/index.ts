@@ -20,6 +20,7 @@ export {
 
 export type {
     AddResult,
+    AttemptView,
     ChecksView,
     Choice,
     CreateResult,

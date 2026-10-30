@@ -70,50 +70,30 @@ func (db *DB) SaveScan(ctx context.Context, s model.Scan) error {
 	})
 }
 
-// LatestScans returns the latest scan of each scanned site, with its items and its findings, those
-// an ignore of the site covers marked.
+// shownScan is the scan of a site the interface shows: its latest completed one, else its latest.
+const shownScan = `coalesce((SELECT max(id) FROM scans WHERE site_id = s.site_id AND outcome = 'completed'),
+	(SELECT max(id) FROM scans WHERE site_id = s.site_id))`
+
+// latestScan is the latest scan of a site, whatever its outcome.
+const latestScan = `(SELECT max(id) FROM scans WHERE site_id = s.site_id)`
+
+// LatestScans returns, for each scanned site, its latest completed scan with its items and its
+// findings, those an ignore of the site covers marked; a later scan that did not complete (cancelled,
+// failed) is its Attempt. A site never scanned to the end gets its latest scan.
 func (db *DB) LatestScans(ctx context.Context) (map[model.ID]model.Scan, error) {
-	rows, err := db.sql.QueryContext(ctx, `SELECT id, site_id, started_at, finished_at, outcome, failure, error,
-			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
-			files_checked_at
-		FROM scans s WHERE id = (SELECT max(id) FROM scans WHERE site_id = s.site_id)`)
+	scans, byScan, err := db.readScans(ctx, shownScan)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	scans := map[model.ID]model.Scan{}
-	byScan := map[string]model.ID{}
-	for rows.Next() {
-		var s model.Scan
-		var id, site, started, finished, outcome, filesChecked string
-		if err := rows.Scan(&id, &site, &started, &finished, &outcome, &s.Failure, &s.Error,
-			&s.WordPress, &s.PHPCLI, &s.WPCLI, &s.Home,
-			&s.CoreChecked, &s.PluginsChecked, &s.ThemesChecked, &s.LanguagesChecked, &filesChecked); err != nil {
-			return nil, err
-		}
-		if filesChecked != "" {
-			if s.FilesChecked, err = time.Parse(time.RFC3339Nano, filesChecked); err != nil {
-				return nil, err
-			}
-		}
-		if s.ID, err = uuid.Parse(id); err != nil {
-			return nil, err
-		}
-		if s.SiteID, err = uuid.Parse(site); err != nil {
-			return nil, err
-		}
-		if s.Started, err = time.Parse(time.RFC3339Nano, started); err != nil {
-			return nil, err
-		}
-		if s.Finished, err = time.Parse(time.RFC3339Nano, finished); err != nil {
-			return nil, err
-		}
-		s.Outcome = model.ScanOutcome(outcome)
-		scans[s.SiteID] = s
-		byScan[id] = s.SiteID
-	}
-	if err := rows.Err(); err != nil {
+	latest, _, err := db.readScans(ctx, latestScan)
+	if err != nil {
 		return nil, err
+	}
+	for site, l := range latest {
+		if s := scans[site]; s.ID != l.ID {
+			s.Attempt = &l
+			scans[site] = s
+		}
 	}
 	if err := db.loadScanItems(ctx, scans, byScan); err != nil {
 		return nil, err
@@ -132,11 +112,55 @@ func (db *DB) LatestScans(ctx context.Context) (map[model.ID]model.Scan, error) 
 	return scans, nil
 }
 
+// readScans reads, without their items and findings, one scan per site: the one which names.
+func (db *DB) readScans(ctx context.Context, which string) (map[model.ID]model.Scan, map[string]model.ID, error) {
+	rows, err := db.sql.QueryContext(ctx, `SELECT id, site_id, started_at, finished_at, outcome, failure, error,
+			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
+			files_checked_at
+		FROM scans s WHERE id = `+which)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+	scans := map[model.ID]model.Scan{}
+	byScan := map[string]model.ID{}
+	for rows.Next() {
+		var s model.Scan
+		var id, site, started, finished, outcome, filesChecked string
+		if err := rows.Scan(&id, &site, &started, &finished, &outcome, &s.Failure, &s.Error,
+			&s.WordPress, &s.PHPCLI, &s.WPCLI, &s.Home,
+			&s.CoreChecked, &s.PluginsChecked, &s.ThemesChecked, &s.LanguagesChecked, &filesChecked); err != nil {
+			return nil, nil, err
+		}
+		if filesChecked != "" {
+			if s.FilesChecked, err = time.Parse(time.RFC3339Nano, filesChecked); err != nil {
+				return nil, nil, err
+			}
+		}
+		if s.ID, err = uuid.Parse(id); err != nil {
+			return nil, nil, err
+		}
+		if s.SiteID, err = uuid.Parse(site); err != nil {
+			return nil, nil, err
+		}
+		if s.Started, err = time.Parse(time.RFC3339Nano, started); err != nil {
+			return nil, nil, err
+		}
+		if s.Finished, err = time.Parse(time.RFC3339Nano, finished); err != nil {
+			return nil, nil, err
+		}
+		s.Outcome = model.ScanOutcome(outcome)
+		scans[s.SiteID] = s
+		byScan[id] = s.SiteID
+	}
+	return scans, byScan, rows.Err()
+}
+
 // loadScanFindings adds the findings of the given scans, in their order.
 func (db *DB) loadScanFindings(ctx context.Context, scans map[model.ID]model.Scan, byScan map[string]model.ID) error {
 	rows, err := db.sql.QueryContext(ctx, `SELECT f.scan_id, f.kind, f.subject, f.identifier, f.version, f.level, f.facts
 		FROM scan_findings f JOIN scans s ON s.id = f.scan_id
-		WHERE s.id = (SELECT max(id) FROM scans WHERE site_id = s.site_id)
+		WHERE s.id = `+shownScan+`
 		ORDER BY f.scan_id, f.position`)
 	if err != nil {
 		return err
@@ -170,7 +194,7 @@ func (db *DB) loadScanItems(ctx context.Context, scans map[model.ID]model.Scan, 
 	rows, err := db.sql.QueryContext(ctx, `SELECT i.scan_id, i.kind, i.slug, i.title, i.status, i.version, i.language,
 			i.update_state, i.update_version, i.auto_update, i.on_wordpress_org
 		FROM scan_items i JOIN scans s ON s.id = i.scan_id
-		WHERE s.id = (SELECT max(id) FROM scans WHERE site_id = s.site_id)
+		WHERE s.id = `+shownScan+`
 		ORDER BY i.scan_id, i.position`)
 	if err != nil {
 		return err

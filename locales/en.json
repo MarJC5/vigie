@@ -128,7 +128,8 @@
       "refused": "refused: {{reason}}",
       "cancelled": "cancelled",
       "jsonNeedsYes": "--json needs --yes: a script cannot answer the confirmation"
-    }
+    },
+    "attempt": "latest scan did not complete: {{reason}}"
   },
   "outcome": {
     "cannotLoad": "WordPress cannot be loaded: {{message}}",
@@ -296,7 +297,9 @@
     "sourceUnknownCount_other": "{{count}} plugins",
     "show": "Show",
     "hide": "Hide",
-    "remove": "Remove from Vigie…"
+    "remove": "Remove from Vigie…",
+    "attemptTitle": "The latest scan did not complete",
+    "attemptText": "{{reason}}. These results are from the scan of {{date}} at {{time}}."
   },
   "updates": {
     "label": "Pending updates",

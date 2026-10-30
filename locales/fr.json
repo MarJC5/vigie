@@ -140,7 +140,8 @@
       "refused": "refusé : {{reason}}",
       "cancelled": "annulé",
       "jsonNeedsYes": "--json demande --yes : un script ne peut pas répondre à la confirmation"
-    }
+    },
+    "attempt": "dernier relevé non terminé : {{reason}}"
   },
   "outcome": {
     "cannotLoad": "WordPress ne se charge pas : {{message}}",
@@ -313,7 +314,9 @@
     "sourceUnknownCount_other": "{{count}} extensions",
     "show": "Voir",
     "hide": "Masquer",
-    "remove": "Retirer de Vigie…"
+    "remove": "Retirer de Vigie…",
+    "attemptTitle": "Le dernier relevé n'a pas abouti",
+    "attemptText": "{{reason}}. Ces résultats datent du relevé du {{date}} à {{time}}."
   },
   "updates": {
     "label": "Mises à jour en attente",

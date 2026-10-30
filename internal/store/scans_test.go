@@ -108,3 +108,43 @@ func TestSubsitesReadByAScanKeepTheirPins(t *testing.T) {
 		t.Fatalf("subsites = %+v, want %+v (pins kept, new subsites added)", got, want)
 	}
 }
+
+// A scan cancelled or failed after a complete one does not hide it: the complete one is shown, the
+// later one is its attempt. A site never scanned to the end shows its latest scan.
+func TestAnIncompleteScanKeepsTheLatestCompleteOne(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	site := siteOnHost(t, db, "a.example.test")
+	never := siteOnHost(t, db, "b.example.test")
+	start := time.Date(2026, 10, 30, 9, 0, 0, 0, time.UTC)
+	complete := scanOf(site, start, "7.1.3")
+	complete.Findings = []model.Finding{{Kind: model.KindFileEditing, Subject: "site", Level: model.LevelAttention}}
+	must(t, db.SaveScan(ctx, complete))
+	cancelled := model.Scan{ID: model.NewID(), SiteID: site.ID, Started: start.Add(time.Hour), Finished: start.Add(time.Hour + time.Second),
+		Outcome: model.ScanCancelled, Error: "cancelled"}
+	must(t, db.SaveScan(ctx, cancelled))
+	failed := model.Scan{ID: model.NewID(), SiteID: never.ID, Started: start, Finished: start.Add(time.Second),
+		Outcome: model.ScanFailed, Failure: "refused", Error: "Connection refused"}
+	must(t, db.SaveScan(ctx, failed))
+
+	latest, err := db.LatestScans(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := latest[site.ID]
+	if got.ID != complete.ID || len(got.Items) != len(complete.Items) || len(got.Findings) != 1 || got.Status() != model.StatusAttention {
+		t.Fatalf("shown scan = %+v, want the complete one with its items and findings", got)
+	}
+	if got.Attempt == nil || got.Attempt.ID != cancelled.ID || got.Attempt.Outcome != model.ScanCancelled {
+		t.Errorf("attempt = %+v, want the cancelled scan", got.Attempt)
+	}
+	if n := latest[never.ID]; n.ID != failed.ID || n.Attempt != nil || n.Status() != model.StatusUnknown {
+		t.Errorf("never complete = %+v, want its failed scan, unknown", n)
+	}
+	// Scanned again to the end: no attempt any more.
+	again := scanOf(site, start.Add(2*time.Hour), "7.1.4")
+	must(t, db.SaveScan(ctx, again))
+	if latest, _ = db.LatestScans(ctx); latest[site.ID].ID != again.ID || latest[site.ID].Attempt != nil {
+		t.Errorf("after a complete scan: %+v", latest[site.ID])
+	}
+}

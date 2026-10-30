@@ -35,6 +35,22 @@ export const NeedsAttention: Story = {
   },
 };
 
+// A scan cancelled after a complete one: its results stay, a notice says why nothing newer is.
+export const LatestScanCancelled: Story = {
+  args: {
+    site: {
+      ...outdatedSite,
+      scan: { ...outdatedSite.scan!, attempt: { finished: "2026-10-29T09:10:00Z", problem: { code: "outcome.cancelled", detail: "cancelled" } } },
+    },
+  },
+  play: async ({ canvas }) => {
+    const [list] = canvas.getAllByRole("tabpanel");
+    await expect(list).toHaveTextContent("The latest scan did not complete");
+    await expect(list).toHaveTextContent("Scan cancelled. These results are from the scan of 29.10.2026");
+    await expect(list).toHaveTextContent("7.1.3 · 7.1.4 available");
+  },
+};
+
 // The Security tab counts what calls for something; it lists the findings and sets one aside.
 export const SecurityTab: Story = {
   args: {

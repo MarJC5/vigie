@@ -7,10 +7,18 @@ import (
 
 	"github.com/MarJC5/vigie/internal/app"
 	"github.com/MarJC5/vigie/internal/model"
+	"github.com/MarJC5/vigie/internal/store"
 )
 
 // scanned stores the bench host with two sites, one scanned (needs attention), one never scanned.
 func scanned(t *testing.T) (*app.SiteManager, model.Host, model.Site, model.Site) {
+	t.Helper()
+	m, _, host, outdated, fresh := scannedIn(t)
+	return m, host, outdated, fresh
+}
+
+// scannedIn is scanned, with the database.
+func scannedIn(t *testing.T) (*app.SiteManager, *store.DB, model.Host, model.Site, model.Site) {
 	t.Helper()
 	ctx := context.Background()
 	db := repository(t)
@@ -36,7 +44,7 @@ func scanned(t *testing.T) (*app.SiteManager, model.Host, model.Site, model.Site
 	if err != nil {
 		t.Fatal(err)
 	}
-	return app.NewSiteManager(db), host, outdated, fresh
+	return app.NewSiteManager(db), db, host, outdated, fresh
 }
 
 func TestTreeCarriesTheLatestStatus(t *testing.T) {
@@ -129,5 +137,36 @@ func TestHostDetail(t *testing.T) {
 	}
 	if _, err := m.HostDetail(context.Background(), outdated.ID.String()); err == nil {
 		t.Fatal("HostDetail(a site) succeeded, want an error")
+	}
+}
+
+// A cancelled scan does not hide the one before: the tree keeps its status, the detail its results
+// and says the latest scan did not complete.
+func TestACancelledScanKeepsThePreviousResults(t *testing.T) {
+	m, db, _, outdated, _ := scannedIn(t)
+	ctx := context.Background()
+	at := time.Date(2026, 10, 29, 10, 0, 0, 0, time.UTC)
+	if err := db.SaveScan(ctx, model.Scan{ID: model.NewID(), SiteID: outdated.ID, Started: at, Finished: at.Add(time.Second),
+		Outcome: model.ScanCancelled, Error: "cancelled"}); err != nil {
+		t.Fatal(err)
+	}
+	site, err := m.SiteDetail(ctx, outdated.ID.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if site.Scan.Status != "warn" || site.Scan.WordPress != "7.1.3" || site.Scan.Finished != "2026-10-29T09:00:03Z" {
+		t.Errorf("shown scan = %+v, want the complete one", site.Scan)
+	}
+	if a := site.Scan.Attempt; a == nil || a.Finished != "2026-10-29T10:00:01Z" || a.Problem == nil || a.Problem.Code != "outcome.cancelled" {
+		t.Errorf("attempt = %+v, want the cancelled scan", a)
+	}
+	tree, err := m.Tree(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, n := range tree.Nodes {
+		if n.ID == outdated.ID.String() && n.Status != "warn" {
+			t.Errorf("tree status %q, want it kept", n.Status)
+		}
 	}
 }

@@ -42,6 +42,15 @@ type ScanView struct {
 	FilesChecked string            `json:"filesChecked"`
 	Findings     []FindingView     `json:"findings"` // the worst first
 	Counts       FindingCountsView `json:"counts"`
+	// Attempt is a later scan that did not complete: this one stays shown, the attempt says why
+	// nothing newer is. Nil when this scan is the latest.
+	Attempt *AttemptView `json:"attempt"`
+}
+
+// AttemptView is a scan that did not complete after the one shown.
+type AttemptView struct {
+	Finished string   `json:"finished"` // RFC 3339
+	Problem  *Problem `json:"problem"`
 }
 
 // FindingView is a finding as the interface writes it in its language, from its kind and facts.
@@ -143,6 +152,9 @@ func scanView(s model.Scan) *ScanView {
 		SourceUnknown: []string{},
 		FilesChecked:  rfc3339(s.FilesChecked),
 		Findings:      findingViews(s),
+	}
+	if s.Attempt != nil {
+		v.Attempt = &AttemptView{Finished: rfc3339(s.Attempt.Finished), Problem: ScanProblem(*s.Attempt)}
 	}
 	c := s.CountFindings()
 	v.Counts = FindingCountsView{Urgent: c.Urgent, Attention: c.Attention, NotChecked: c.NotChecked}

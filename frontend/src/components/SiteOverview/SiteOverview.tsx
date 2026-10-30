@@ -2,6 +2,7 @@ import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { FindingView, OperationView, ScanView, SiteView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { clock, day } from "../../lib/findings";
 import { since } from "../../lib/time";
 import { choicesOf, namesOf, offeredKeys } from "../../lib/updates";
 import { Button } from "../Button/Button";
@@ -128,6 +129,9 @@ export function SiteOverview({
         {scan?.problem && tab !== "history" && (
           <ScanNotice code={scan.problem.code} detail={scan.problem.detail} onRemove={onRemove} />
         )}
+        {scan?.attempt?.problem && tab !== "history" && (
+          <AttemptNotice finished={scan.finished} problem={scan.attempt.problem} onRemove={onRemove} />
+        )}
         {tab === "overview" && <Overview site={site} />}
         {tab === "updates" &&
           scan?.outcome === "completed" &&
@@ -251,6 +255,24 @@ function newestCore(scan: ScanView): string {
     .map((u) => u.updateVersion)
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
     .at(-1) ?? "";
+}
+
+/** The latest scan did not complete, the results shown are from the one before: why, and since when.
+ A site with no WordPress left at its path can be removed from Vigie at once. */
+function AttemptNotice({ finished, problem, onRemove }: { finished: string; problem: { code: string; detail: string }; onRemove?: () => void }) {
+  const { t } = useTranslation();
+  const reason = t(problem.code, { message: problem.detail });
+  const gone = problem.code === "outcome.notWordPress";
+  return (
+    <Notice
+      title={t("overview.attemptTitle")}
+      // Some reasons end with a full stop, others not: one only.
+      text={t("overview.attemptText", { reason: reason.replace(/\.$/, ""), date: day(finished), time: clock(finished) })}
+      detail={problem.detail && !reason.includes(problem.detail) ? problem.detail : undefined}
+      tone="warn"
+      action={gone && onRemove ? { label: t("overview.remove"), onClick: onRemove } : undefined}
+    />
+  );
 }
 
 /** Why the last scan did not complete; the raw message only when the text does not already say it.

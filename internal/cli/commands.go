@@ -77,6 +77,9 @@ func summary(env Env, s model.Scan) string {
 	if !s.CoreChecked || !s.PluginsChecked || !s.ThemesChecked || !s.LanguagesChecked {
 		parts = append(parts, env.t("cli.unchecked", nil))
 	}
+	if s.Attempt != nil {
+		parts = append(parts, env.t("cli.attempt", map[string]any{"reason": summary(env, *s.Attempt)}))
+	}
 	found := s.CountFindings()
 	for _, c := range []struct {
 		key   string

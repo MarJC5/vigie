@@ -10,6 +10,17 @@ export interface AddResult {
 }
 
 /**
+ * AttemptView is a scan that did not complete after the one shown.
+ */
+export interface AttemptView {
+    /**
+     * RFC 3339
+     */
+    "finished": string;
+    "problem": Problem | null;
+}
+
+/**
  * ChecksView tells which update checks reached wordpress.org.
  */
 export interface ChecksView {
@@ -397,6 +408,12 @@ export interface ScanView {
      */
     "findings": FindingView[] | null;
     "counts": FindingCountsView;
+
+    /**
+     * Attempt is a later scan that did not complete: this one stays shown, the attempt says why
+     * nothing newer is. Nil when this scan is the latest.
+     */
+    "attempt": AttemptView | null;
 }
 
 /**

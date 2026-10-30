@@ -83,6 +83,11 @@ type Scan struct {
 	// a scan in between carries those findings over. Zero when never.
 	FilesChecked time.Time
 	Findings     []Finding
+
+	// Attempt is a later scan of the site that did not complete (cancelled, failed): this scan,
+	// the latest complete one, stays what is shown, and the attempt says why nothing newer is.
+	// Only the storage sets it.
+	Attempt *Scan
 }
 
 // SiteStatus is the summary of a site's latest scan.
