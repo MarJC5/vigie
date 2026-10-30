@@ -18,6 +18,7 @@ import (
 	"github.com/MarJC5/vigie/internal/buildinfo"
 	"github.com/MarJC5/vigie/internal/cli"
 	"github.com/MarJC5/vigie/internal/i18n"
+	"github.com/MarJC5/vigie/internal/schedule"
 	"github.com/MarJC5/vigie/internal/store"
 	"github.com/MarJC5/vigie/internal/workspace"
 	"github.com/MarJC5/vigie/locales"
@@ -136,6 +137,27 @@ func openWindow(opts cli.Options) error {
 		return err
 	}
 	wails.Menu.Set(menu)
+	// Automatic scans of everything while Vigie runs, at the interval the user chose (off by
+	// default); the window sees them as any other scan.
+	watch := &schedule.Schedule{
+		Now: time.Now,
+		Every: func(ctx context.Context) (time.Duration, error) {
+			b, err := preferences.Background(ctx)
+			return time.Duration(b.AutoScan) * time.Hour, err
+		},
+		Last: ws.EverythingScanned,
+		Busy: func() bool { return len(scanner.State().Running) > 0 },
+		Start: func() {
+			if p := scanner.Scan(""); p != nil {
+				wails.Logger.Error("automatic scan", "problem", p.Code, "detail", p.Detail)
+			}
+		},
+		Failed: func(err error) { wails.Logger.Error("automatic scans", "error", err) },
+	}
+	watching, stopWatching := context.WithCancel(context.Background())
+	defer stopWatching()
+	go watch.Run(watching)
+
 	wails.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:     "Vigie",
 		Width:     1280,
