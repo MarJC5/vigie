@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { durationText, rowText, type RowState, type RunRow, seconds } from "../../lib/updates";
@@ -18,8 +19,17 @@ const icons: Record<RowState, IconName> = { done: "ok", running: "spinner", fail
 /** The steps of an update or a rollback as they go: done, under way, failed, or not reached. */
 export function RunSteps({ label, rows, names, ended }: RunStepsProps) {
   const { t } = useTranslation();
+  const list = useRef<HTMLOListElement>(null);
+  // The step under way stays in sight as the run goes, then the last one and what follows it.
+  const running = rows.find((r) => r.state === "running")?.key;
+  useEffect(() => {
+    const items = list.current?.querySelectorAll<HTMLElement>("li");
+    const target = running ? list.current?.querySelector<HTMLElement>("[aria-current=step]") : ended ? items?.[items.length - 1] : undefined;
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target?.scrollIntoView({ block: "nearest", behavior: still ? "auto" : "smooth" });
+  }, [running, ended]);
   return (
-    <ol aria-label={label} className={styles.steps}>
+    <ol ref={list} aria-label={label} className={styles.steps}>
       {rows.map((row) => {
         const { label: text, detail } = rowText(t, row, names, ended);
         const step = row.step;

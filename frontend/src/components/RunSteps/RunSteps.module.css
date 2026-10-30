@@ -7,6 +7,8 @@
 }
 
 .step {
+  /* Scrolled into sight with room below it, for the next step and the sentence under the list. */
+  scroll-margin-bottom: 88px;
   display: grid;
   grid-template-columns: 26px minmax(0, 1.1fr) minmax(0, 1.3fr) 72px;
   align-items: center;

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect } from "storybook/test";
+import { expect, waitFor } from "storybook/test";
 
 import { outdatedSite } from "../../fixtures/scans";
 import { failed, preview, running } from "../../fixtures/updates";
@@ -27,6 +27,27 @@ export const Running: Story = {
     await expect(list!.lastElementChild).toHaveTextContent("Translations");
     await expect(list).toHaveTextContent("Database backup");
     await expect(list).toHaveTextContent("6 s");
+  },
+};
+
+// In a box too short for every step, the step under way is scrolled into sight.
+export const FollowsTheRunningStep: Story = {
+  decorators: [
+    (Story) => (
+      <div data-box tabIndex={0} style={{ height: 160, overflowY: "auto" }}>
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const box = canvasElement.querySelector<HTMLElement>("[data-box]")!;
+    const current = box.querySelector<HTMLElement>("[aria-current=step]")!;
+    await waitFor(() => {
+      const b = box.getBoundingClientRect();
+      const c = current.getBoundingClientRect();
+      expect(box.scrollTop).toBeGreaterThan(0);
+      expect(c.top >= b.top && c.bottom <= b.bottom).toBe(true);
+    });
   },
 };
 

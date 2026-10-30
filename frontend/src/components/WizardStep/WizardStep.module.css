@@ -29,6 +29,8 @@
   display: flex;
   justify-content: center;
   padding: var(--vg-space-2) var(--vg-space-7) var(--vg-space-6);
+  /* What scrolls stops short of the bottom bar, never touching it. */
+  margin-bottom: var(--vg-space-4);
 }
 
 .main:focus-visible {
@@ -42,6 +44,8 @@
   display: flex;
   flex-direction: column;
   gap: 22px;
+  /* Room under the last line, which a scrolling main may not keep from its own padding. */
+  padding-bottom: var(--vg-space-5);
 }
 
 .content[data-width="wide"] {
