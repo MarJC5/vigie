@@ -178,19 +178,24 @@ type importSource struct {
 	sshConfig []workspace.SSHConfigHost
 }
 
-// importFile previews what a file (an export or a CSV site list) or ~/.ssh/config would add,
-// asks, then adds it; each host key is trusted only once confirmed.
+// importFile previews what a file (an export or a CSV site list) or the aliases named of
+// ~/.ssh/config would add, asks, then adds it; each host key is trusted only once confirmed.
+// --ssh-config without aliases lists them and adds nothing: the file names any server, not only
+// the ones of WordPress sites.
 func importFile(ctx context.Context, env Env, ws *workspace.Workspace, o dataOptions) int {
+	if o.sshConfig && len(o.args) == 0 {
+		return listSSHConfig(ctx, env, ws, o.asJSON)
+	}
 	if o.asJSON && !o.yes {
 		return env.fail(env.t("cli.import.jsonNeedsYes", nil))
 	}
-	if o.sshConfig == (len(o.args) == 1) || len(o.args) > 1 {
+	if !o.sshConfig && len(o.args) != 1 {
 		return env.fail(env.t("cli.import.needsFile", nil))
 	}
 	var src importSource
 	var err error
 	if o.sshConfig {
-		src, err = readSSHConfig(ctx, ws)
+		src, err = readSSHConfig(ctx, ws, o.args)
 	} else {
 		src, err = readImport(o.args[0])
 	}
@@ -287,22 +292,74 @@ func readImport(file string) (importSource, error) {
 	return importSource{file: f, lines: report.Refused}, err
 }
 
-// readSSHConfig takes the names of ~/.ssh/config that no host reaches yet and ssh can read.
-func readSSHConfig(ctx context.Context, ws *workspace.Workspace) (importSource, error) {
+// errNotInSSHConfig is returned for an alias that ~/.ssh/config does not name.
+type errNotInSSHConfig struct{ alias string }
+
+func (e errNotInSSHConfig) Error() string { return e.alias }
+
+// readSSHConfig takes the aliases chosen that no host reaches yet and ssh can read; the others
+// are shown with why they are left out.
+func readSSHConfig(ctx context.Context, ws *workspace.Workspace, chosen []string) (importSource, error) {
 	config, err := ws.SSHConfigHosts(ctx)
 	if err != nil {
 		return importSource{}, err
 	}
 	var aliases []string
-	for _, h := range config.Hosts {
-		if h.Present == "" && h.Error == "" {
-			aliases = append(aliases, h.Alias)
+	var shown []workspace.SSHConfigHost
+	for _, alias := range chosen {
+		i := slices.IndexFunc(config.Hosts, func(h workspace.SSHConfigHost) bool { return h.Alias == alias })
+		if i < 0 {
+			return importSource{}, errNotInSSHConfig{alias}
+		}
+		h := config.Hosts[i]
+		shown = append(shown, h)
+		if h.Present == "" && h.Error == "" && !slices.Contains(aliases, alias) {
+			aliases = append(aliases, alias)
 		}
 	}
-	return importSource{file: workspace.SSHConfigFile(aliases), sshConfig: config.Hosts}, nil
+	return importSource{file: workspace.SSHConfigFile(aliases), sshConfig: shown}, nil
+}
+
+// listSSHConfig lists the names of ~/.ssh/config with their account, and adds nothing.
+func listSSHConfig(ctx context.Context, env Env, ws *workspace.Workspace, asJSON bool) int {
+	config, err := ws.SSHConfigHosts(ctx)
+	if err != nil {
+		return env.fail(err.Error())
+	}
+	if asJSON {
+		list := []sshConfigJSON{}
+		for _, h := range config.Hosts {
+			list = append(list, sshConfigJSON{Alias: h.Alias, Hostname: h.Hostname, Port: h.Port, User: h.User,
+				Present: h.Present, Error: h.Error})
+		}
+		writeJSON(env.Out, list)
+		return exitOK
+	}
+	if len(config.Hosts) == 0 {
+		fmt.Fprintln(env.Out, env.t("cli.import.sshNone", nil))
+		return exitOK
+	}
+	w := tabwriter.NewWriter(env.Out, 0, 0, 2, ' ', 0)
+	for _, h := range config.Hosts {
+		switch {
+		case h.Error != "":
+			fmt.Fprintf(w, "  %s\t\t%s\n", h.Alias, env.t("cli.import.sshError", map[string]any{"message": h.Error}))
+		case h.Present != "":
+			fmt.Fprintf(w, "  %s\t%s@%s:%d\t%s\n", h.Alias, h.User, h.Hostname, h.Port,
+				env.t("cli.import.sshPresent", map[string]any{"path": h.Present}))
+		default:
+			fmt.Fprintf(w, "  %s\t%s@%s:%d\n", h.Alias, h.User, h.Hostname, h.Port)
+		}
+	}
+	w.Flush()
+	fmt.Fprintln(env.Out, env.t("cli.import.sshChoose", map[string]any{"alias": config.Hosts[0].Alias}))
+	return exitOK
 }
 
 func importError(env Env, o dataOptions, err error) string {
+	if missing, ok := errors.AsType[errNotInSSHConfig](err); ok {
+		return env.t("cli.import.sshUnknown", map[string]any{"alias": missing.alias})
+	}
 	switch {
 	case errors.Is(err, exchange.ErrNewerVersion):
 		return env.t("cli.import.newer", nil)

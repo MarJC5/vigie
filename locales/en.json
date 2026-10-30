@@ -85,7 +85,7 @@
     "sites_other": "{{name}} · {{count}} sites"
   },
   "cli": {
-    "usage": "Usage: vigie [--data-dir <dir>] [command]\n\nWithout a command, Vigie opens its window.\n\nCommands:\n  tree [--json]                   Print the site manager with each site's status\n  scan [path] [--check-files] [--json]\n                                  Scan a site, a host or a folder (everything without a path);\n                                  --check-files compares the files again, even within the day\n  discover <host path> [--json]   List the WordPress installs of a host (adds nothing)\n  update [path] [--yes] [--json]  Preview, then update a site, a host or a folder (asks first)\n  export [path] [--history] [-o <file>] [--json]\n                                  Export everything, a folder or a host (to the standard output\n                                  without -o); --history adds the scans, updates and rollbacks\n  import <file> [--into <folder>] [--yes] [--trust-keys] [--json]\n  import --ssh-config [--into <folder>] [--yes] [--json]\n                                  Preview, then add what is new from an export, a CSV site list\n                                  or ~/.ssh/config (asks first); host keys are kept only once\n                                  confirmed, or with --trust-keys\n  version                         Print the version\n  help                            Print this help\n\nPaths name folders, hosts and sites: \"Clients/Infomaniak/misits.ch\".\nExit status: 0 all good, 1 needs attention or not fully checked, 2 urgent, 3 error.\n",
+    "usage": "Usage: vigie [--data-dir <dir>] [command]\n\nWithout a command, Vigie opens its window.\n\nCommands:\n  tree [--json]                   Print the site manager with each site's status\n  scan [path] [--check-files] [--json]\n                                  Scan a site, a host or a folder (everything without a path);\n                                  --check-files compares the files again, even within the day\n  discover <host path> [--json]   List the WordPress installs of a host (adds nothing)\n  update [path] [--yes] [--json]  Preview, then update a site, a host or a folder (asks first)\n  export [path] [--history] [-o <file>] [--json]\n                                  Export everything, a folder or a host (to the standard output\n                                  without -o); --history adds the scans, updates and rollbacks\n  import <file> [--into <folder>] [--yes] [--trust-keys] [--json]\n  import --ssh-config [<alias>…] [--into <folder>] [--yes] [--json]\n                                  Preview, then add what is new from an export, a CSV site list\n                                  or the aliases named of ~/.ssh/config, listed when none is named\n                                  (asks first); host keys are kept only once confirmed, or with\n                                  --trust-keys\n  version                         Print the version\n  help                            Print this help\n\nPaths name folders, hosts and sites: \"Clients/Infomaniak/misits.ch\".\nExit status: 0 all good, 1 needs attention or not fully checked, 2 urgent, 3 error.\n",
     "unknownCommand": "unknown command \"{{command}}\"",
     "unknownOption": "unknown option \"{{option}}\"",
     "needsHost": "discover needs the path of a host, for example \"Clients/Infomaniak\"",
@@ -190,7 +190,10 @@
       "nothing": "Nothing to import.",
       "done_one": "{{count}} folder, host or site imported.",
       "done_other": "{{count}} folders, hosts and sites imported.",
-      "keysLeft": "The keys not confirmed were not kept: those hosts ask at their first connection."
+      "keysLeft": "The keys not confirmed were not kept: those hosts ask at their first connection.",
+      "sshNone": "~/.ssh/config names no host.",
+      "sshChoose": "Nothing was added: ~/.ssh/config names any server. Name the hosts of WordPress sites to add, for example: vigie import --ssh-config {{alias}}",
+      "sshUnknown": "\"{{alias}}\" is not a host of ~/.ssh/config"
     }
   },
   "outcome": {

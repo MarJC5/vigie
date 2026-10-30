@@ -217,15 +217,27 @@ func TestImportTheSSHConfig(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(v.home, ".ssh", "config"), []byte("Host shared broken\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	code, out, _ := v.run(t, "en", "y\n", "import", "--ssh-config")
+	// Without aliases: the list, and nothing added.
+	code, out, _ := v.run(t, "en", "", "import", "--ssh-config")
+	if code != 0 || !strings.Contains(out, "shared  u12ab@ssh.example.test:22") || !strings.Contains(out, "ssh cannot read it: exit status 255") ||
+		!strings.Contains(out, "vigie import --ssh-config shared") {
+		t.Fatalf("exit %d\n%s", code, out)
+	}
+	if _, err := v.tree(t).Resolve("shared"); err == nil {
+		t.Fatal("the list added a host")
+	}
+	if code, _, errOut := v.run(t, "en", "", "import", "--ssh-config", "other"); code != 3 || !strings.Contains(errOut, `"other" is not a host of ~/.ssh/config`) {
+		t.Errorf("an unknown alias: exit %d, %s", code, errOut)
+	}
+	code, out, _ = v.run(t, "en", "y\n", "import", "--ssh-config", "shared", "broken")
 	if code != 1 || !strings.Contains(out, "ssh cannot read it: exit status 255") || !strings.Contains(out, "1 folder, host or site imported.") {
 		t.Fatalf("exit %d\n%s", code, out)
 	}
 	if h, _ := v.tree(t).Host(mustNode(t, v.tree(t), "shared").ID); h.Alias != "shared" {
 		t.Errorf("host = %+v", h)
 	}
-	if code, _, errOut := v.run(t, "en", "", "import", "--ssh-config", "file.json"); code != 3 || !strings.Contains(errOut, "import needs one file") {
-		t.Errorf("a file and --ssh-config: exit %d, %s", code, errOut)
+	if code, _, errOut := v.run(t, "en", "", "import", "a.json", "b.json"); code != 3 || !strings.Contains(errOut, "import needs one file") {
+		t.Errorf("two files: exit %d, %s", code, errOut)
 	}
 }
 
