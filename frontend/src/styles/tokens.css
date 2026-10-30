@@ -54,6 +54,12 @@
 
 	/* Thin ring around color fills, so they hold their edge on any surface */
 	--vg-swatch-ring: rgba(255, 255, 255, 0.15);  /* White 15% */
+
+	/* Elevation: menus and dialogs above the window; under a dialog, the window veiled in the
+	   theme's own tone (dimmed here, lightened in the light theme) */
+	--vg-shadow-raised: 0 12px 32px rgb(0 0 0 / 32%);
+	--vg-shadow-dialog: 0 24px 64px rgb(0 0 0 / 40%);
+	--vg-scrim: rgb(0 0 0 / 45%);
 }
 
 [data-theme="light"] {
@@ -88,6 +94,9 @@
 	--vg-site-magenta: #7a00df;    /* Purple 2 */
 	--vg-site-orange: #e26f56;     /* Pomegranate */
 	--vg-swatch-ring: rgba(0, 0, 0, 0.15);  /* Black 15% */
+	--vg-shadow-raised: 0 12px 32px rgb(0 0 0 / 12%);
+	--vg-shadow-dialog: 0 24px 64px rgb(0 0 0 / 16%);
+	--vg-scrim: rgb(255 255 255 / 70%);
 }
 
 @media (prefers-color-scheme: light) {
@@ -123,6 +132,9 @@
 		--vg-site-magenta: #7a00df;
 		--vg-site-orange: #e26f56;
 		--vg-swatch-ring: rgba(0, 0, 0, 0.15);
+		--vg-shadow-raised: 0 12px 32px rgb(0 0 0 / 12%);
+		--vg-shadow-dialog: 0 24px 64px rgb(0 0 0 / 16%);
+		--vg-scrim: rgb(255 255 255 / 70%);
 	}
 }
 
@@ -159,11 +171,6 @@
 	--vg-pane-width: 264px;
 	--vg-row-height: 44px;
 	--vg-control-height: 32px;
-
-	/* Elevation: menus and dialogs above the window, the window dimmed under a dialog */
-	--vg-shadow-raised: 0 12px 32px rgb(0 0 0 / 32%);
-	--vg-shadow-dialog: 0 24px 64px rgb(0 0 0 / 40%);
-	--vg-scrim: rgb(0 0 0 / 45%);
 
 	/* Motion */
 	--vg-duration-hover: 120ms;
