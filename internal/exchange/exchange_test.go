@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/MarJC5/vigie/internal/exchange"
+	"github.com/MarJC5/vigie/internal/model"
 )
 
 // sample is a fictional export with every part filled.
@@ -107,6 +108,9 @@ func TestAnExportMustHoldTogether(t *testing.T) {
 		"folders in a loop":         func(f *exchange.File) { f.Folders[0].Parent = f.Folders[1].ID },
 		"an ignore of another site": func(f *exchange.File) { f.Ignores[0].Site = "01a18cd5-0000-7000-8000-0000000000ff" },
 		"a scan of another site":    func(f *exchange.File) { f.History.Scans[0].Site = "01a18cd5-0000-7000-8000-0000000000ff" },
+		"an unknown color":          func(f *exchange.File) { f.Sites[0].Color = "purple" },
+		"an unknown key type":       func(f *exchange.File) { f.Hosts[0].TrustedKeys[0].Type = "ssh-dss" },
+		"an unknown level":          func(f *exchange.File) { f.History.Scans[0].Findings[0].Level = "critical" },
 	} {
 		f := sample()
 		change(&f)
@@ -119,6 +123,15 @@ func TestAnExportMustHoldTogether(t *testing.T) {
 	f.History, f.Folders, f.Hosts[0].Folder, f.Scope = nil, nil, "", "Clients/Valais/Shared hosting"
 	if _, err := exchange.Read(bytes.NewReader(encode(t, f))); err != nil {
 		t.Errorf("the export of a host alone = %v", err)
+	}
+}
+
+// An operation still running where it was exported runs nowhere on the machine that imports it.
+func TestAnOperationStillRunningComesBackInterrupted(t *testing.T) {
+	op := sample().History.Operations[0]
+	op.Outcome, op.Finished = "running", nil
+	if got := op.Model(model.NewID()); got.Outcome != model.OperationInterrupted || !got.Finished.IsZero() || len(got.Steps) != 1 {
+		t.Errorf("Model() = %+v", got)
 	}
 }
 

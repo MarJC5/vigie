@@ -11,6 +11,8 @@ import (
 	"io"
 	"time"
 	"uuid"
+
+	"github.com/MarJC5/vigie/internal/model"
 )
 
 // The format's name and the version this Vigie writes; every older version stays readable.
@@ -236,12 +238,13 @@ func Read(r io.Reader) (File, error) {
 	if dec.More() {
 		return File{}, fmt.Errorf("data after the export: %w", ErrInvalid)
 	}
-	return f, f.check()
+	return f, f.Check()
 }
 
-// check refuses an export whose parts do not hold together: IDs that are not IDs or come twice,
-// a parent, host or site that is not in the export, a node without a name.
-func (f File) check() error {
+// Check refuses an export whose parts do not hold together: IDs that are not IDs or come twice,
+// a parent, host or site that is not in the export, a node without a name, a value the schema
+// does not list. Read checks what it reads.
+func (f File) Check() error {
 	seen := map[string]bool{}
 	id := func(kind, s string) error {
 		if _, err := uuid.Parse(s); err != nil {
@@ -273,17 +276,22 @@ func (f File) check() error {
 		sites[x.ID] = true
 	}
 	for _, x := range f.Folders {
-		if x.Name == "" || (x.Parent != "" && !folders[x.Parent]) || x.Parent == x.ID {
+		if x.Name == "" || (x.Parent != "" && !folders[x.Parent]) || x.Parent == x.ID || !knownColor(x.Color) {
 			return fmt.Errorf("folder %s: %w", x.ID, ErrInvalid)
 		}
 	}
 	for _, x := range f.Hosts {
-		if x.Name == "" || (x.Folder != "" && !folders[x.Folder]) {
+		if x.Name == "" || (x.Folder != "" && !folders[x.Folder]) || !knownColor(x.Color) {
 			return fmt.Errorf("host %s: %w", x.ID, ErrInvalid)
+		}
+		for _, k := range x.TrustedKeys {
+			if !keyTypes[k.Type] {
+				return fmt.Errorf("host %s, key type %q: %w", x.ID, k.Type, ErrInvalid)
+			}
 		}
 	}
 	for _, x := range f.Sites {
-		if x.Name == "" || x.Path == "" || !hosts[x.Host] {
+		if x.Name == "" || x.Path == "" || !hosts[x.Host] || !knownColor(x.Color) {
 			return fmt.Errorf("site %s: %w", x.ID, ErrInvalid)
 		}
 	}
@@ -300,6 +308,11 @@ func (f File) check() error {
 			if !sites[x.Site] {
 				return fmt.Errorf("scan %s: %w", x.ID, ErrInvalid)
 			}
+			for _, fd := range x.Findings {
+				if !levels[model.FindingLevel(fd.Level)] {
+					return fmt.Errorf("scan %s, level %q: %w", x.ID, fd.Level, ErrInvalid)
+				}
+			}
 		}
 		for _, x := range f.History.Operations {
 			if err := id("operation", x.ID); err != nil {
@@ -311,6 +324,19 @@ func (f File) check() error {
 		}
 	}
 	return f.checkFolderLoops()
+}
+
+// The values the schema lists: what Vigie shows and counts by them.
+var (
+	keyTypes = map[string]bool{"ssh-ed25519": true, "ecdsa-sha2-nistp256": true, "ecdsa-sha2-nistp384": true,
+		"ecdsa-sha2-nistp521": true, "ssh-rsa": true}
+	levels = map[model.FindingLevel]bool{model.LevelUrgent: true, model.LevelAttention: true, model.LevelInfo: true,
+		model.LevelNotChecked: true}
+)
+
+func knownColor(name string) bool {
+	_, err := model.ParseColor(name)
+	return err == nil
 }
 
 // checkFolderLoops refuses folders that are each other's parents.

@@ -57,4 +57,29 @@ the same reason.
 
 When Vigie reads an export, it also checks that it holds together: every `id` an ID, each one once;
 every `parent`, `folder`, `host` and `site` in the file; names and paths given; no folder inside
-itself.
+itself; colors, key types and levels among the values the schema lists.
+
+## Importing
+
+An import adds what is new, into the folder you choose (the top by default), and changes nothing
+already there. Before it adds anything, it shows what it will do with each folder, host and site of
+the file:
+
+* **already there**, left as it is: the same ID; for a folder, one of the same name in the same
+  place, which receives what the file puts in it; for a host, one with the same alias, or the same
+  hostname, port and user, which receives the file's new sites; for a site, one with the same path
+  on the same host;
+* **added**, with the file's ID, or a new one when another node has it, and `(2)`, `(3)`... after
+  its name when a neighbour has that name;
+* **refused**, with the reason, and with it what it holds.
+
+The ignores and the history of the file come with the sites added only. An update or rollback that
+was still running where the file was written comes back as interrupted.
+
+**Trusted host keys** come back only once you confirm them: the preview shows each key's
+fingerprint, for the host it belongs to. A key you leave out, or one Vigie cannot take (not for that
+server, or Vigie already trusts another key for it), is not kept, and the host asks at its first
+connection, as a new host does.
+
+Everything is added in one go: when something changed in between and clashes with the preview,
+nothing is added.

@@ -104,26 +104,28 @@ func (db *DB) SaveFolder(ctx context.Context, f model.Folder) error {
 	if err := f.Validate(); err != nil {
 		return err
 	}
-	return db.withTx(ctx, func(tx *sql.Tx) error {
-		if f.ParentID != model.NoID {
-			if err := checkNoCycle(ctx, tx, f.ID, f.ParentID); err != nil {
-				return err
-			}
-		}
-		taken, err := nameTaken(ctx, tx, folderNamespace, parentArg(f.ParentID), f.ID, f.Name)
-		if err != nil {
+	return db.withTx(ctx, func(tx *sql.Tx) error { return saveFolder(ctx, tx, f) })
+}
+
+func saveFolder(ctx context.Context, tx *sql.Tx, f model.Folder) error {
+	if f.ParentID != model.NoID {
+		if err := checkNoCycle(ctx, tx, f.ID, f.ParentID); err != nil {
 			return err
 		}
-		if taken {
-			return fmt.Errorf("%q: %w", f.Name, model.ErrDuplicateName)
-		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO folders (id, parent_id, name, color, notes, position)
-			VALUES (?, ?, ?, ?, ?, ?)
-			ON CONFLICT (id) DO UPDATE SET parent_id = excluded.parent_id, name = excluded.name,
-				color = excluded.color, notes = excluded.notes, position = excluded.position`,
-			f.ID.String(), parentArg(f.ParentID), f.Name, int(f.Color), f.Notes, f.Position)
-		return duplicate(err, f.Name)
-	})
+	}
+	taken, err := nameTaken(ctx, tx, folderNamespace, parentArg(f.ParentID), f.ID, f.Name)
+	if err != nil {
+		return err
+	}
+	if taken {
+		return fmt.Errorf("%q: %w", f.Name, model.ErrDuplicateName)
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO folders (id, parent_id, name, color, notes, position)
+		VALUES (?, ?, ?, ?, ?, ?)
+		ON CONFLICT (id) DO UPDATE SET parent_id = excluded.parent_id, name = excluded.name,
+			color = excluded.color, notes = excluded.notes, position = excluded.position`,
+		f.ID.String(), parentArg(f.ParentID), f.Name, int(f.Color), f.Notes, f.Position)
+	return duplicate(err, f.Name)
 }
 
 // checkNoCycle walks up from the new parent: it must exist and must not be the folder itself.

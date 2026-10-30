@@ -23,51 +23,53 @@ var _ ScanRepository = (*DB)(nil)
 
 // SaveScan stores a scan and its items.
 func (db *DB) SaveScan(ctx context.Context, s model.Scan) error {
-	return db.withTx(ctx, func(tx *sql.Tx) error {
-		ok, err := exists(ctx, tx, "sites", s.SiteID)
+	return db.withTx(ctx, func(tx *sql.Tx) error { return saveScan(ctx, tx, s) })
+}
+
+func saveScan(ctx context.Context, tx *sql.Tx, s model.Scan) error {
+	ok, err := exists(ctx, tx, "sites", s.SiteID)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return fmt.Errorf("site %s: %w", s.SiteID, model.ErrNotFound)
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO scans (id, site_id, started_at, finished_at, outcome, failure, error,
+			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
+			files_checked_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		s.ID.String(), s.SiteID.String(), timeText(s.Started), timeText(s.Finished), string(s.Outcome), s.Failure, s.Error,
+		s.WordPress, s.PHPCLI, s.WPCLI, s.Home, s.CoreChecked, s.PluginsChecked, s.ThemesChecked, s.LanguagesChecked,
+		optionalTime(s.FilesChecked))
+	if err != nil {
+		return err
+	}
+	for i, item := range s.Items {
+		_, err := tx.ExecContext(ctx, `INSERT INTO scan_items (scan_id, position, kind, slug, title, status, version,
+				language, update_state, update_version, auto_update, on_wordpress_org)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			s.ID.String(), i, string(item.Kind), item.Slug, item.Title, item.Status, item.Version,
+			item.Language, string(item.Update), item.UpdateVersion, item.AutoUpdate, item.OnWordPressOrg)
 		if err != nil {
 			return err
 		}
-		if !ok {
-			return fmt.Errorf("site %s: %w", s.SiteID, model.ErrNotFound)
-		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO scans (id, site_id, started_at, finished_at, outcome, failure, error,
-				wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
-				files_checked_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			s.ID.String(), s.SiteID.String(), timeText(s.Started), timeText(s.Finished), string(s.Outcome), s.Failure, s.Error,
-			s.WordPress, s.PHPCLI, s.WPCLI, s.Home, s.CoreChecked, s.PluginsChecked, s.ThemesChecked, s.LanguagesChecked,
-			optionalTime(s.FilesChecked))
+	}
+	for i, f := range s.Findings {
+		facts, err := json.Marshal(f.Facts)
 		if err != nil {
 			return err
 		}
-		for i, item := range s.Items {
-			_, err := tx.ExecContext(ctx, `INSERT INTO scan_items (scan_id, position, kind, slug, title, status, version,
-					language, update_state, update_version, auto_update, on_wordpress_org)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-				s.ID.String(), i, string(item.Kind), item.Slug, item.Title, item.Status, item.Version,
-				item.Language, string(item.Update), item.UpdateVersion, item.AutoUpdate, item.OnWordPressOrg)
-			if err != nil {
-				return err
-			}
+		if f.Facts == nil {
+			facts = []byte("{}")
 		}
-		for i, f := range s.Findings {
-			facts, err := json.Marshal(f.Facts)
-			if err != nil {
-				return err
-			}
-			if f.Facts == nil {
-				facts = []byte("{}")
-			}
-			_, err = tx.ExecContext(ctx, `INSERT INTO scan_findings (scan_id, position, kind, subject, identifier, version,
-					level, facts) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-				s.ID.String(), i, string(f.Kind), f.Subject, f.Identifier, f.Version, string(f.Level), string(facts))
-			if err != nil {
-				return err
-			}
+		_, err = tx.ExecContext(ctx, `INSERT INTO scan_findings (scan_id, position, kind, subject, identifier, version,
+				level, facts) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+			s.ID.String(), i, string(f.Kind), f.Subject, f.Identifier, f.Version, string(f.Level), string(facts))
+		if err != nil {
+			return err
 		}
-		return nil
-	})
+	}
+	return nil
 }
 
 // shownScan is the scan of a site the interface shows: its latest completed one, else its latest.

@@ -94,7 +94,16 @@ func processAlive(pid int) bool {
 
 // SaveOperationStep stores a step, or updates it when one exists at its position.
 func (db *DB) SaveOperationStep(ctx context.Context, operationID model.ID, st model.OperationStep) error {
-	_, err := db.sql.ExecContext(ctx, `INSERT INTO operation_steps (operation_id, position, step, item_kind, slug,
+	return saveStep(ctx, db.sql, operationID, st)
+}
+
+// execer runs a statement, in a transaction or not.
+type execer interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
+
+func saveStep(ctx context.Context, ex execer, operationID model.ID, st model.OperationStep) error {
+	_, err := ex.ExecContext(ctx, `INSERT INTO operation_steps (operation_id, position, step, item_kind, slug,
 			version_before, version_after, started_at, finished_at, outcome, message)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT (operation_id, position) DO UPDATE SET step = excluded.step, item_kind = excluded.item_kind,

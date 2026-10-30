@@ -15,21 +15,23 @@ func (db *DB) SaveIgnore(ctx context.Context, i model.Ignore) error {
 	if err := i.Validate(); err != nil {
 		return err
 	}
-	return db.withTx(ctx, func(tx *sql.Tx) error {
-		ok, err := exists(ctx, tx, "sites", i.SiteID)
-		if err != nil {
-			return err
-		}
-		if !ok {
-			return fmt.Errorf("site %s: %w", i.SiteID, model.ErrNotFound)
-		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO ignores (site_id, finding_key, until_version, reason, created_at)
-			VALUES (?, ?, ?, ?, ?)
-			ON CONFLICT (site_id, finding_key) DO UPDATE SET
-				until_version = excluded.until_version, reason = excluded.reason, created_at = excluded.created_at`,
-			i.SiteID.String(), i.Key, i.UntilVersion, i.Reason, timeText(i.Created))
+	return db.withTx(ctx, func(tx *sql.Tx) error { return saveIgnore(ctx, tx, i) })
+}
+
+func saveIgnore(ctx context.Context, tx *sql.Tx, i model.Ignore) error {
+	ok, err := exists(ctx, tx, "sites", i.SiteID)
+	if err != nil {
 		return err
-	})
+	}
+	if !ok {
+		return fmt.Errorf("site %s: %w", i.SiteID, model.ErrNotFound)
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO ignores (site_id, finding_key, until_version, reason, created_at)
+		VALUES (?, ?, ?, ?, ?)
+		ON CONFLICT (site_id, finding_key) DO UPDATE SET
+			until_version = excluded.until_version, reason = excluded.reason, created_at = excluded.created_at`,
+		i.SiteID.String(), i.Key, i.UntilVersion, i.Reason, timeText(i.Created))
+	return err
 }
 
 // DeleteIgnore puts a finding of a site back in its status.
