@@ -72,6 +72,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Command line: `vigie export [path] [--history] [-o file]` and `vigie import <file>` or
   `vigie import --ssh-config [alias…]`, which preview, then ask, with `--yes`, `--trust-keys` and
   `--json` for scripts.
+- Add-ons: programs named `vigie-<name>`, installed by you, that Vigie finds on your `PATH` and in
+  the usual install folders. The Add-ons page lists the installed ones and the Library of known
+  ones, each with a page of its own; a source runs from its page, at most two minutes, and what it
+  wrote goes through the import preview. `vigie <name>` runs one from the command line. Vigie
+  never downloads or installs one ([docs/addons.md](docs/addons.md)).
+- The Go module `github.com/MarJC5/vigie/addon`, shared with add-ons: the export format, the
+  description of an add-on, and the checks an add-on runs in its own tests.
 
 ### Changed
 

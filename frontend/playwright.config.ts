@@ -16,10 +16,12 @@ export const e2eFiles = (browser: string) => {
 // End-to-end test of the window: the Go binary, built in server mode for the test only, serves the
 // interface to a browser, on a data directory prepared by cmd/vigie/testdata/seed.
 // The interface is built first (make frontend-build): the binary embeds frontend/dist.
-const server = (port: number, seed: string, files?: string) => ({
+// With addon, a test add-on (the fake of package addons, as vigie-good) is on a PATH of its own.
+const server = (port: number, seed: string, files?: string, addon = false) => ({
   command:
     `sh -c 'd="$(mktemp -d)" && go build -tags server -o "$d/vigie" ./cmd/vigie` +
     ` && go run ./cmd/vigie/testdata/seed ${seed} "$d/data"` +
+    (addon ? ` && go build -o "$d/addons/vigie-good" ./internal/addons/testdata/fake && export PATH="$d/addons:$PATH"` : "") +
     ` && WAILS_SERVER_PORT=${port} exec "$d/vigie" --data-dir "$d/data"'`,
   cwd: "..",
   url: `http://localhost:${port}/`,
@@ -53,5 +55,8 @@ export default defineConfig({
     server(34122, "-lang en -empty", e2eFiles("chromium")),
     server(34123, "-lang en", e2eFiles("webkit")),
     server(34124, "-lang en -empty", e2eFiles("webkit")),
+    // The add-on test: a source run from its page, its hosts imported.
+    server(34125, "-lang en -empty", undefined, true),
+    server(34126, "-lang en -empty", undefined, true),
   ],
 });
