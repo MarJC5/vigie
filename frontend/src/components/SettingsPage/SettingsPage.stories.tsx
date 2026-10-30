@@ -21,6 +21,8 @@ const meta = {
     onTab: fn(),
     language: "en",
     onLanguage: fn(),
+    theme: "system",
+    onTheme: fn(),
     lookups,
     onAgree: fn(),
     onWithdraw: fn(),
@@ -66,6 +68,9 @@ export const General: Story = {
     const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
     await userEvent.selectOptions(page.getByRole("combobox", { name: "Language" }), "fr");
     await expect(args.onLanguage).toHaveBeenCalledWith("fr");
+    await expect(page.getByRole("combobox", { name: "Appearance" })).toHaveValue("system");
+    await userEvent.selectOptions(page.getByRole("combobox", { name: "Appearance" }), "light");
+    await expect(args.onTheme).toHaveBeenCalledWith("light");
   },
 };
 

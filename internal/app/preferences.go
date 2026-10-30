@@ -14,7 +14,17 @@ type settingsStore interface {
 	SetSetting(ctx context.Context, key, value string) error
 }
 
-const languageSetting = "language"
+const (
+	languageSetting = "language"
+	themeSetting    = "theme"
+)
+
+// The themes the window can take: the system's, or one the user chose.
+const (
+	ThemeSystem = "system"
+	ThemeLight  = "light"
+	ThemeDark   = "dark"
+)
 
 // Preferences serves the user's choices to the interface.
 type Preferences struct {
@@ -45,6 +55,26 @@ func (p *Preferences) SetLanguage(ctx context.Context, lang string) error {
 		return fmt.Errorf("unsupported language %q", lang)
 	}
 	return p.store.SetSetting(ctx, languageSetting, lang)
+}
+
+// Theme returns the theme chosen for the window: ThemeSystem until the user chose another.
+func (p *Preferences) Theme(ctx context.Context) (string, error) {
+	value, ok, err := p.store.Setting(ctx, themeSetting)
+	if err != nil {
+		return "", err
+	}
+	if ok && (value == ThemeLight || value == ThemeDark) {
+		return value, nil
+	}
+	return ThemeSystem, nil
+}
+
+// SetTheme stores the theme chosen for the window.
+func (p *Preferences) SetTheme(ctx context.Context, theme string) error {
+	if theme != ThemeSystem && theme != ThemeLight && theme != ThemeDark {
+		return fmt.Errorf("unknown theme %q", theme)
+	}
+	return p.store.SetSetting(ctx, themeSetting, theme)
 }
 
 // Version is Vigie's version, for the About tab of the settings.

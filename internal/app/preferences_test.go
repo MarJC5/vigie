@@ -29,6 +29,24 @@ func TestLanguageChoiceIsStored(t *testing.T) {
 	}
 }
 
+func TestThemeFollowsTheSystemUntilChosen(t *testing.T) {
+	ctx := context.Background()
+	db := repository(t)
+	prefs := app.NewPreferences(db, func() string { return "fr" })
+	if got, err := prefs.Theme(ctx); err != nil || got != app.ThemeSystem {
+		t.Fatalf("Theme() = %q, %v; want the system's", got, err)
+	}
+	if err := prefs.SetTheme(ctx, app.ThemeLight); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := app.NewPreferences(db, nil).Theme(ctx); got != app.ThemeLight {
+		t.Fatalf("Theme() after SetTheme(light) = %q", got)
+	}
+	if err := prefs.SetTheme(ctx, "sepia"); err == nil {
+		t.Fatal("SetTheme(sepia): want an error, the theme does not exist")
+	}
+}
+
 func TestVersionForTheAboutTab(t *testing.T) {
 	if got := app.NewPreferences(repository(t), func() string { return "fr" }).Version(); got != "dev" {
 		t.Errorf("Version() = %q, want dev in tests", got)

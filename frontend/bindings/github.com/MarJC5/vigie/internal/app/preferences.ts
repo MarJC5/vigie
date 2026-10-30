@@ -25,6 +25,20 @@ export function SetLanguage(lang: string): $CancellablePromise<void> {
 }
 
 /**
+ * SetTheme stores the theme chosen for the window.
+ */
+export function SetTheme(theme: string): $CancellablePromise<void> {
+    return $Call.ByID(9889960, theme);
+}
+
+/**
+ * Theme returns the theme chosen for the window: ThemeSystem until the user chose another.
+ */
+export function Theme(): $CancellablePromise<string> {
+    return $Call.ByID(1739854230);
+}
+
+/**
  * Version is Vigie's version, for the About tab of the settings.
  */
 export function Version(): $CancellablePromise<string> {

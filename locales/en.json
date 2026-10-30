@@ -944,6 +944,13 @@
       "en": "English",
       "fr": "Français"
     },
+    "theme": {
+      "title": "Appearance",
+      "desc": "The colors of the window. The system's lists and file dialogs follow from the next launch.",
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
     "lookupsLead": "What Vigie asks, from your computer, during a security scan. A lookup turned off leaves its checks “not checked”, never “up to date”.",
     "services": "Services asked during a security scan",
     "consentSection": "Consent and sources",

@@ -980,6 +980,13 @@
       "en": "English",
       "fr": "Français"
     },
+    "theme": {
+      "title": "Apparence",
+      "desc": "Les couleurs de la fenêtre. Les listes et les dialogues de fichiers du système suivent au prochain lancement.",
+      "system": "Système",
+      "light": "Clair",
+      "dark": "Sombre"
+    },
     "lookupsLead": "Ce que Vigie interroge, depuis votre ordinateur, pendant un relevé de sécurité. Une recherche désactivée laisse ses vérifications « non vérifiées », jamais « à jour ».",
     "services": "Services interrogés pendant un relevé de sécurité",
     "consentSection": "Accord et sources",

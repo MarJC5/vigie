@@ -96,6 +96,12 @@ func openWindow(opts cli.Options) error {
 	if err != nil {
 		return err
 	}
+	// The native parts of the window take the theme chosen when the window is created: Wails sets
+	// a window's appearance only then. The page itself follows a new choice at once.
+	theme, err := preferences.Theme(context.Background())
+	if err != nil {
+		return err
+	}
 
 	wails = application.New(application.Options{
 		Name: "Vigie",
@@ -128,7 +134,18 @@ func openWindow(opts cli.Options) error {
 		URL:       "/",
 		// The window buttons keep their standard place, on the navigation rail; the rail and the
 		// header of the site list move the window (--wails-draggable in their styles).
-		Mac: application.MacWindow{TitleBar: application.MacTitleBarHidden},
+		Mac: application.MacWindow{TitleBar: application.MacTitleBarHidden, Appearance: appearance(theme)},
 	})
 	return wails.Run()
+}
+
+// appearance is the macOS appearance of a theme; the system's by default.
+func appearance(theme string) application.MacAppearanceType {
+	switch theme {
+	case app.ThemeLight:
+		return application.NSAppearanceNameAqua
+	case app.ThemeDark:
+		return application.NSAppearanceNameDarkAqua
+	}
+	return application.DefaultAppearance
 }

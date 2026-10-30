@@ -13,7 +13,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Desktop window for macOS and Linux, with the site manager: folders, hosts and sites in a tree
   that folds and works from the keyboard, and the stored details of the selected item.
 - Interface in English and French, following the system language.
-- Dark and light themes, following the system appearance.
+- Dark and light themes, following the system appearance, or the one chosen in the settings.
 - Add a host with a wizard: an SSH host name and user, or an alias from `~/.ssh/config`; the
   server's key is shown to be checked, then kept in Vigie's own `known_hosts` (your SSH files are
   not changed); a connection test of SSH, PHP and WP-CLI; then the WordPress installs of the account

@@ -111,3 +111,14 @@ test("a cancelled scan keeps the results of the complete one before", async ({ p
   await expect(page.getByRole("tabpanel")).toContainText("7.1.3");
   await expect(tree.getByRole("treeitem", { name: /atelier-exemple\.ch/ }).getByRole("img", { name: "Up to date" })).toBeVisible();
 });
+
+test("the appearance chosen in the settings applies at once, the system's when none is", async ({ page }) => {
+  await page.goto(empty);
+  await page.getByRole("navigation", { name: "Navigation" }).getByRole("link", { name: "Réglages" }).click();
+  // Both browsers share this server: the test does not rely on the choice it finds.
+  const appearance = page.getByRole("combobox", { name: "Apparence" });
+  await appearance.selectOption("light");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await appearance.selectOption("system");
+  await expect(page.locator("html")).not.toHaveAttribute("data-theme");
+});

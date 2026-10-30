@@ -10,7 +10,7 @@ import { AppShell, type EditApi, type SecurityApi, type ShellData } from "./comp
 import { ConsentScreen } from "./components/ConsentScreen/ConsentScreen";
 import { type DataApi, DataFlow, type DataNote, type DataTask } from "./components/DataFlow/DataFlow";
 import type { Section } from "./components/NavRail/NavRail";
-import { SettingsPage, type SettingsTab } from "./components/SettingsPage/SettingsPage";
+import { SettingsPage, type SettingsTab, type Theme } from "./components/SettingsPage/SettingsPage";
 import type { UpdatesApi } from "./components/UpdateFlow/UpdateFlow";
 import { createI18n } from "./i18n";
 
@@ -76,8 +76,15 @@ const openURL = (href: string) => void Browser.OpenURL(href);
 // The commands of the native menu bar.
 const menuCommands = (handler: (action: string) => void) => Events.On(VigieMenu, (event) => handler(event.data.action));
 
+// The theme chosen goes on the root element, which the tokens follow over the system's.
+const applyTheme = (theme: Theme) => {
+  if (theme === "system") delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = theme;
+};
+
 interface Loaded {
   i18n: ReturnType<typeof createI18n>;
+  theme: Theme;
   nodes: Node[];
   version: string;
 }
@@ -106,10 +113,12 @@ export function App() {
   const [dataWindow, setDataWindow] = useState(false);
 
   useEffect(() => {
-    void Promise.all([Preferences.Language(), SiteManager.Tree(), Preferences.Version()]).then(([lang, tree, version]) => {
+    void Promise.all([Preferences.Language(), SiteManager.Tree(), Preferences.Version(), Preferences.Theme()]).then(([lang, tree, version, theme]) => {
       const i18n = createI18n(lang);
       document.documentElement.lang = i18n.language;
-      setLoaded({ i18n, nodes: tree.nodes ?? [], version });
+      // Before the first render: the window never shows the system's theme first.
+      applyTheme(theme as Theme);
+      setLoaded({ i18n, nodes: tree.nodes ?? [], version, theme: theme as Theme });
     });
     void Security.Lookups().then(setLookups);
     void Scanner.State().then(setScans);
@@ -167,6 +176,12 @@ export function App() {
 
   const showDataWindow = useCallback(() => setDataWindow(true), []);
 
+  const changeTheme = async (theme: Theme) => {
+    applyTheme(theme);
+    setLoaded((l) => l && { ...l, theme });
+    await Preferences.SetTheme(theme);
+  };
+
   const hostAdded = async (hostId: string) => {
     await reload();
     setAdded(hostId);
@@ -208,6 +223,8 @@ export function App() {
                 onTab={setSettingsTab}
                 language={loaded.i18n.language}
                 onLanguage={(lang) => void changeLanguage(lang)}
+                theme={loaded.theme}
+                onTheme={(theme) => void changeTheme(theme)}
                 lookups={lookups}
                 onAgree={() => void changeLookups(() => Security.Agree((lookups.destinations ?? []).filter((d) => d.on).map((d) => d.id)))}
                 onWithdraw={() => void changeLookups(() => Security.Withdraw())}

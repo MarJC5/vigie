@@ -12,6 +12,9 @@ import styles from "./SettingsPage.module.css";
 
 export type SettingsTab = "general" | "lookups" | "data" | "about";
 
+/** The theme of the window: the system's, or one chosen. */
+export type Theme = "system" | "light" | "dark";
+
 /** Where an import reads from. */
 export type ImportSource = "vigie" | "ssh" | "csv";
 
@@ -20,6 +23,8 @@ export interface SettingsPageProps {
   onTab: (tab: SettingsTab) => void;
   language: string;
   onLanguage: (lang: string) => void;
+  theme: Theme;
+  onTheme: (theme: Theme) => void;
   lookups: LookupsView;
   onAgree: () => void;
   onWithdraw: () => void;
@@ -44,6 +49,8 @@ export function SettingsPage({
   onTab,
   language,
   onLanguage,
+  theme,
+  onTheme,
   lookups,
   onAgree,
   onWithdraw,
@@ -71,6 +78,15 @@ export function SettingsPage({
                 value={language}
                 options={["en", "fr"].map((l) => ({ value: l, label: t(`settings.language.${l}`) }))}
                 onChange={onLanguage}
+              />
+            </Row>
+            <Row title={t("settings.theme.title")} desc={t("settings.theme.desc")}>
+              <SelectField
+                label={t("settings.theme.title")}
+                hideLabel
+                value={theme}
+                options={(["system", "light", "dark"] as const).map((v) => ({ value: v, label: t(`settings.theme.${v}`) }))}
+                onChange={(v) => onTheme(v as Theme)}
               />
             </Row>
           </Section>
