@@ -62,6 +62,22 @@ func TestTreeCarriesTheLatestStatus(t *testing.T) {
 	}
 }
 
+// A site counts its pending updates (WordPress and Akismet here); its host, the sum of its sites.
+func TestTreeCountsThePendingUpdates(t *testing.T) {
+	m, host, outdated, fresh := scanned(t)
+	tree, err := m.Tree(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	updates := map[string]int{}
+	for _, n := range tree.Nodes {
+		updates[n.ID] = n.Updates
+	}
+	if updates[outdated.ID.String()] != 2 || updates[fresh.ID.String()] != 0 || updates[host.ID.String()] != 2 {
+		t.Fatalf("updates = %v, want 2 for the outdated site and its host", updates)
+	}
+}
+
 func TestSiteDetail(t *testing.T) {
 	m, _, outdated, fresh := scanned(t)
 	got, err := m.SiteDetail(context.Background(), outdated.ID.String())

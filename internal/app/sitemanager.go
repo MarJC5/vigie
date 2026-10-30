@@ -21,6 +21,8 @@ type Node struct {
 	Multisite bool   `json:"multisite"`
 	Subsites  int    `json:"subsites"`
 	Status    string `json:"status"` // sites: ok, warn or unknown from the latest scan; empty when never scanned
+	// Updates pending from the latest scan: a site's, or the sum of a host's sites.
+	Updates int `json:"updates"`
 }
 
 // Tree lists the nodes depth first, parents before their children.
@@ -55,6 +57,7 @@ func (s *SiteManager) Tree(ctx context.Context) (Tree, error) {
 		return Tree{}, err
 	}
 	nodes := []Node{}
+	hostUpdates := map[string]int{}
 	tree.Walk(func(n model.Node, _ int) {
 		node := Node{ID: n.ID.String(), Kind: n.Kind.String(), Path: tree.PathOf(n)}
 		switch n.Kind {
@@ -73,10 +76,18 @@ func (s *SiteManager) Tree(ctx context.Context) (Tree, error) {
 			node.Multisite, node.Subsites = site.Multisite, len(site.Subsites)
 			if scan, ok := latest[site.ID]; ok {
 				node.Status = string(scan.Status())
+				c := scan.PendingUpdates()
+				node.Updates = c.Core + c.Plugins + c.Themes + c.Languages
+				hostUpdates[node.ParentID] += node.Updates
 			}
 		}
 		nodes = append(nodes, node)
 	})
+	for i, n := range nodes {
+		if n.Kind == "host" {
+			nodes[i].Updates = hostUpdates[n.ID]
+		}
+	}
 	return Tree{Nodes: nodes}, nil
 }
 

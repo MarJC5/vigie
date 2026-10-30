@@ -520,6 +520,11 @@ export interface Node {
      * sites: ok, warn or unknown from the latest scan; empty when never scanned
      */
     "status": string;
+
+    /**
+     * Updates pending from the latest scan: a site's, or the sum of a host's sites.
+     */
+    "updates": number;
 }
 
 /**
