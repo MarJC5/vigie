@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MarJC5/vigie/addon/info/info-v1.schema.json",
+  "title": "Description of a Vigie add-on, version 1",
+  "description": "What vigie-<name> --vigie-info prints. Vigie draws the add-on's page from it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "name",
+    "title",
+    "author",
+    "release",
+    "kind",
+    "summary",
+    "description",
+    "details",
+    "settings"
+  ],
+  "properties": {
+    "format": {
+      "const": "vigie-addon"
+    },
+    "version": {
+      "const": 1
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "the program's name after vigie-"
+    },
+    "title": {
+      "$ref": "#/$defs/text"
+    },
+    "author": {
+      "type": "string"
+    },
+    "release": {
+      "type": "string",
+      "description": "the add-on's own version"
+    },
+    "kind": {
+      "enum": [
+        "source",
+        "destination"
+      ]
+    },
+    "summary": {
+      "$ref": "#/$defs/text"
+    },
+    "description": {
+      "$ref": "#/$defs/text"
+    },
+    "details": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/detail"
+      }
+    },
+    "image": {
+      "type": "string",
+      "pattern": "^data:image/(png|svg\\+xml);base64,",
+      "description": "PNG or SVG, 256 KB at most decoded; absent: Vigie's default image"
+    },
+    "settings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/setting"
+      }
+    }
+  },
+  "$defs": {
+    "text": {
+      "type": "object",
+      "description": "a text by language: en always, fr when the add-on has one",
+      "required": [
+        "en"
+      ],
+      "propertyNames": {
+        "pattern": "^[a-z]{2}$"
+      },
+      "additionalProperties": {
+        "type": "string"
+      },
+      "properties": {
+        "en": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "detail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "value"
+      ],
+      "properties": {
+        "label": {
+          "$ref": "#/$defs/text"
+        },
+        "value": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "setting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "label",
+        "flag",
+        "default",
+        "required"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "kind": {
+          "enum": [
+            "file",
+            "text",
+            "checkbox",
+            "choice"
+          ]
+        },
+        "label": {
+          "$ref": "#/$defs/text"
+        },
+        "help": {
+          "$ref": "#/$defs/text"
+        },
+        "flag": {
+          "type": "string",
+          "pattern": "^--[a-z0-9][a-z0-9-]*$",
+          "not": {
+            "enum": [
+              "--vigie-info",
+              "--vigie-export"
+            ]
+          }
+        },
+        "default": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "choices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/choice"
+          }
+        }
+      }
+    },
+    "choice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "label"
+      ],
+      "properties": {
+        "value": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    }
+  }
+}

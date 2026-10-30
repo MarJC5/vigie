@@ -1,0 +1,53 @@
+# Add-ons
+
+An add-on is a program of its own, named `vigie-<name>`, that you install like any other (for
+example with Homebrew) and that Vigie finds on your `PATH`. It brings data into Vigie (a source,
+which writes a Vigie export) or takes what Vigie writes somewhere else (a destination). Vigie never
+downloads one, gives it no data and no access to anything, and runs one only when you start it.
+
+## Writing an add-on
+
+An add-on answers two options, reserved for Vigie; every other option is its own.
+
+* `--vigie-info` prints its description as JSON on the standard output, and exits with 0. Vigie
+  draws the add-on's page from it: its title, author, version, kind, a sentence for its card, the
+  text of its page, details (what it reads, writes, connects to), an image, and the settings a run
+  asks for. Its exact shape is the JSON Schema
+  [`info-v1.schema.json`](../addon/info/info-v1.schema.json).
+* `--vigie-export <path>`, for a source, writes a Vigie export to that path, readable by its owner
+  only, then exits with 0. What it writes on its standard error is shown to the user word for word,
+  as its report. Vigie stops a run after two minutes. The export's shape is described in
+  [data.md](data.md).
+
+**Texts** are given in English (`"en"`), and in French (`"fr"`) when the add-on has them; Vigie
+shows the user's language, else English.
+
+**The image** is a data URI of a PNG or an SVG, 256 KB at most once decoded. Vigie shows it as an
+image, where an SVG runs no script and loads nothing. Without one, the add-on shows Vigie's default
+image.
+
+**Settings**: a file, a text, a checkbox or a choice, each with its label and the flag it is passed
+as. Vigie passes each value as its own argument, after the flag (`--file /path/to/file`), never
+through a shell; a checkbox is its flag alone, when checked. A setting not changed takes its
+default.
+
+## In Go
+
+The module `github.com/MarJC5/vigie/addon` (directory `addon/` of Vigie, versions tagged
+`addon/vX.Y.Z`) holds the only definition of what Vigie and its add-ons exchange:
+
+* `addon/export`: the export format (types, `Write`, `WriteFile`, `Read`, `Check`);
+* `addon/info`: the description of an add-on (types, `Write`, `Read`, `Check`, the two flags);
+* `addon/addontest`: the checks an add-on runs in its own tests.
+
+```go
+func TestTheContract(t *testing.T) {
+	program := addontest.Build(t, "./cmd/vigie-example")
+	addontest.Info(t, program) // the description reads back and names the program
+	f, report := addontest.Export(t, program, map[string]string{"file": "testdata/list.xml"})
+	// the export holds together and is readable by its owner only
+}
+```
+
+An add-on that no longer matches Vigie's format fails to compile or fails these checks, rather
+than the user's import.

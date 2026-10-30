@@ -14,7 +14,7 @@ JSON Schema [`export-v1.schema.json`](../addon/export/export-v1.schema.json).
 The format is defined once, in the Go module `github.com/MarJC5/vigie/addon` (directory `addon/`
 of this repository, versions tagged `addon/vX.Y.Z`): Vigie compiles against it, and so does an
 add-on written in Go, which imports `github.com/MarJC5/vigie/addon/export` instead of copying the
-format. An add-on in another language reads the JSON Schema.
+format. An add-on in another language reads the JSON Schema. See [addons.md](addons.md) for what an add-on answers.
 
 ```json
 {
