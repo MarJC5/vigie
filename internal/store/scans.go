@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 	"uuid"
@@ -31,10 +32,12 @@ func (db *DB) SaveScan(ctx context.Context, s model.Scan) error {
 			return fmt.Errorf("site %s: %w", s.SiteID, model.ErrNotFound)
 		}
 		_, err = tx.ExecContext(ctx, `INSERT INTO scans (id, site_id, started_at, finished_at, outcome, failure, error,
-				wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
+				files_checked_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			s.ID.String(), s.SiteID.String(), timeText(s.Started), timeText(s.Finished), string(s.Outcome), s.Failure, s.Error,
-			s.WordPress, s.PHPCLI, s.WPCLI, s.Home, s.CoreChecked, s.PluginsChecked, s.ThemesChecked, s.LanguagesChecked)
+			s.WordPress, s.PHPCLI, s.WPCLI, s.Home, s.CoreChecked, s.PluginsChecked, s.ThemesChecked, s.LanguagesChecked,
+			optionalTime(s.FilesChecked))
 		if err != nil {
 			return err
 		}
@@ -48,6 +51,21 @@ func (db *DB) SaveScan(ctx context.Context, s model.Scan) error {
 				return err
 			}
 		}
+		for i, f := range s.Findings {
+			facts, err := json.Marshal(f.Facts)
+			if err != nil {
+				return err
+			}
+			if f.Facts == nil {
+				facts = []byte("{}")
+			}
+			_, err = tx.ExecContext(ctx, `INSERT INTO scan_findings (scan_id, position, kind, subject, identifier, version,
+					level, facts) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+				s.ID.String(), i, string(f.Kind), f.Subject, f.Identifier, f.Version, string(f.Level), string(facts))
+			if err != nil {
+				return err
+			}
+		}
 		return nil
 	})
 }
@@ -55,7 +73,8 @@ func (db *DB) SaveScan(ctx context.Context, s model.Scan) error {
 // LatestScans returns the latest scan of each scanned site, with its items.
 func (db *DB) LatestScans(ctx context.Context) (map[model.ID]model.Scan, error) {
 	rows, err := db.sql.QueryContext(ctx, `SELECT id, site_id, started_at, finished_at, outcome, failure, error,
-			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked
+			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
+			files_checked_at
 		FROM scans s WHERE id = (SELECT max(id) FROM scans WHERE site_id = s.site_id)`)
 	if err != nil {
 		return nil, err
@@ -65,11 +84,16 @@ func (db *DB) LatestScans(ctx context.Context) (map[model.ID]model.Scan, error) 
 	byScan := map[string]model.ID{}
 	for rows.Next() {
 		var s model.Scan
-		var id, site, started, finished, outcome string
+		var id, site, started, finished, outcome, filesChecked string
 		if err := rows.Scan(&id, &site, &started, &finished, &outcome, &s.Failure, &s.Error,
 			&s.WordPress, &s.PHPCLI, &s.WPCLI, &s.Home,
-			&s.CoreChecked, &s.PluginsChecked, &s.ThemesChecked, &s.LanguagesChecked); err != nil {
+			&s.CoreChecked, &s.PluginsChecked, &s.ThemesChecked, &s.LanguagesChecked, &filesChecked); err != nil {
 			return nil, err
+		}
+		if filesChecked != "" {
+			if s.FilesChecked, err = time.Parse(time.RFC3339Nano, filesChecked); err != nil {
+				return nil, err
+			}
 		}
 		if s.ID, err = uuid.Parse(id); err != nil {
 			return nil, err
@@ -90,7 +114,43 @@ func (db *DB) LatestScans(ctx context.Context) (map[model.ID]model.Scan, error) 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	return scans, db.loadScanItems(ctx, scans, byScan)
+	if err := db.loadScanItems(ctx, scans, byScan); err != nil {
+		return nil, err
+	}
+	return scans, db.loadScanFindings(ctx, scans, byScan)
+}
+
+// loadScanFindings adds the findings of the given scans, in their order.
+func (db *DB) loadScanFindings(ctx context.Context, scans map[model.ID]model.Scan, byScan map[string]model.ID) error {
+	rows, err := db.sql.QueryContext(ctx, `SELECT f.scan_id, f.kind, f.subject, f.identifier, f.version, f.level, f.facts
+		FROM scan_findings f JOIN scans s ON s.id = f.scan_id
+		WHERE s.id = (SELECT max(id) FROM scans WHERE site_id = s.site_id)
+		ORDER BY f.scan_id, f.position`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var scanID, kind, level, facts string
+		var f model.Finding
+		if err := rows.Scan(&scanID, &kind, &f.Subject, &f.Identifier, &f.Version, &level, &facts); err != nil {
+			return err
+		}
+		f.Kind, f.Level = model.FindingKind(kind), model.FindingLevel(level)
+		if facts != "{}" {
+			if err := json.Unmarshal([]byte(facts), &f.Facts); err != nil {
+				return fmt.Errorf("facts of a finding of scan %s: %w", scanID, err)
+			}
+		}
+		site, ok := byScan[scanID]
+		if !ok {
+			continue
+		}
+		s := scans[site]
+		s.Findings = append(s.Findings, f)
+		scans[site] = s
+	}
+	return rows.Err()
 }
 
 // loadScanItems adds the items of the given scans, in their order.

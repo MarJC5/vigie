@@ -78,6 +78,11 @@ type Scan struct {
 	LanguagesChecked bool
 
 	Items []ScanItem
+
+	// FilesChecked is when the files were last compared with wordpress.org's: at most once a day,
+	// a scan in between carries those findings over. Zero when never.
+	FilesChecked time.Time
+	Findings     []Finding
 }
 
 // SiteStatus is the summary of a site's latest scan.
