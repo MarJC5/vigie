@@ -8,6 +8,8 @@
     "help": "Aide"
   },
   "manager": {
+    "nextScan": "Prochain relevé : {{time}}",
+    "nextScanOn": "Prochain relevé : {{day}} {{time}}",
     "label": "Gestionnaire de sites",
     "search": "Rechercher",
     "collapse": "Masquer la liste des sites",
@@ -996,6 +998,23 @@
     "agree": "Accepter"
   },
   "settings": {
+    "background": {
+      "section": "En arrière-plan",
+      "onTitle": "Garder Vigie ouverte",
+      "onDesc": "Fermer la fenêtre laisse Vigie dans la barre des menus, où son œil montre le prochain relevé et les sites urgents.",
+      "loginTitle": "Ouvrir à l'ouverture de session",
+      "loginDesc": "Vigie démarre fenêtre fermée, dans la barre des menus.",
+      "loginNeedsBackground": "Demande de garder Vigie ouverte.",
+      "autoTitle": "Relevés automatiques",
+      "autoDesc": "Relève tous les sites à l'intervalle choisi, tant que Vigie est ouverte. Ne met jamais rien à jour.",
+      "never": "Jamais",
+      "every_one": "Toutes les heures",
+      "every_many": "Toutes les {{count}} heures",
+      "every_other": "Toutes les {{count}} heures",
+      "daily": "Chaque jour",
+      "notifyTitle": "Notifications",
+      "notifyDesc": "Vous prévient quand un relevé rend un site urgent ou un hébergement injoignable."
+    },
     "title": "Réglages",
     "tabs": {
       "general": "Général",

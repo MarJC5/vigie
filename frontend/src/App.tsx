@@ -3,8 +3,20 @@ import { useCallback, useEffect, useState } from "react";
 import { I18nextProvider } from "react-i18next";
 
 import { VigieDiscovery, VigieMenu, VigieScans, VigieUpdates } from "../bindings/events";
-import { Addons, Data, Editor, HostWizard, Preferences, Scanner, Security, SiteManager, Updates } from "../bindings/github.com/MarJC5/vigie/internal/app";
-import type { LookupsView, Node, ScansState, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
+import {
+  Addons,
+  Data,
+  Editor,
+  HostWizard,
+  LoginItem,
+  Preferences,
+  Scanner,
+  Security,
+  SiteManager,
+  Updates,
+  Watch,
+} from "../bindings/github.com/MarJC5/vigie/internal/app";
+import type { BackgroundSettings, LoginItemState, LookupsView, Node, ScansState, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { AddHostWizard, type WizardApi } from "./components/AddHostWizard/AddHostWizard";
 import { type AddonsApi, AddonsFlow } from "./components/AddonsFlow/AddonsFlow";
 import { AppShell, type EditApi, type SecurityApi, type ShellData } from "./components/AppShell/AppShell";
@@ -115,6 +127,9 @@ export function App() {
   const [dataNote, setDataNote] = useState<DataNote>();
   // The preview of an import takes the whole window, as the wizard does.
   const [dataWindow, setDataWindow] = useState(false);
+  const [background, setBackground] = useState<BackgroundSettings>({ on: false, autoScan: 0, notify: false });
+  const [loginItem, setLoginItem] = useState<LoginItemState>({ supported: false, on: false });
+  const [nextScan, setNextScan] = useState("");
 
   useEffect(() => {
     void Promise.all([Preferences.Language(), SiteManager.Tree(), Preferences.Version(), Preferences.Theme()]).then(([lang, tree, version, theme]) => {
@@ -125,6 +140,8 @@ export function App() {
       setLoaded({ i18n, nodes: tree.nodes ?? [], version, theme: theme as Theme });
     });
     void Security.Lookups().then(setLookups);
+    void Preferences.Background().then(setBackground);
+    void LoginItem.State().then(setLoginItem);
     void Scanner.State().then(setScans);
     void Updates.State().then(setUpdates);
     const offScans = Events.On(VigieScans, (event) => setScans(event.data));
@@ -141,6 +158,26 @@ export function App() {
     if (ended === 0) return;
     void SiteManager.Tree().then((tree) => setLoaded((l) => l && { ...l, nodes: tree.nodes ?? [] }));
   }, [ended]);
+
+  // The next automatic scan: read again after each scan, each change of the settings, and each minute.
+  const readNextScan = useCallback(() => void Watch.State().then((w) => setNextScan(w.next)), []);
+  useEffect(() => {
+    readNextScan();
+    const timer = setInterval(readNextScan, 60_000);
+    return () => clearInterval(timer);
+  }, [readNextScan, ended]);
+
+  const changeBackground = async (b: BackgroundSettings) => {
+    setBackground(b);
+    await Preferences.SetBackground(b);
+    // Turning the mode off also removes the login item.
+    setLoginItem(await LoginItem.State());
+    readNextScan();
+  };
+  const changeLoginItem = async (on: boolean) => {
+    await LoginItem.Set(on);
+    setLoginItem(await LoginItem.State());
+  };
 
   // Reads the tree again, after an edit or a host added.
   const reload = async () => {
@@ -240,6 +277,10 @@ export function App() {
                 onExport={() => setDataTask({ kind: "export", nodeId: "" })}
                 onImport={(source) => setDataTask(source === "ssh" ? { kind: "ssh" } : { kind: "import", source })}
                 dataNote={dataNote}
+                background={background}
+                onBackground={(b) => void changeBackground(b)}
+                loginItem={loginItem}
+                onLoginItem={(on) => void changeLoginItem(on)}
               />
             )
           }
@@ -251,6 +292,7 @@ export function App() {
           onChanged={reload}
           updates={updates}
           updatesApi={updatesApi}
+          nextScan={nextScan}
         />
       )}
       {dataTask && !waiting && !adding && <DataFlow api={dataApi} task={dataTask} nodes={loaded.nodes} onClose={dataDone} onWindow={showDataWindow} />}

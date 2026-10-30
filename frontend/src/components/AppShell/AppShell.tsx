@@ -15,6 +15,7 @@ import type {
   SiteView,
   UpdatesState,
 } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { clock, day } from "../../lib/findings";
 import { namesOf } from "../../lib/updates";
 import { BulkDialog } from "../BulkDialog/BulkDialog";
 import { Button } from "../Button/Button";
@@ -95,6 +96,8 @@ export interface AppShellProps {
   security?: SecurityApi;
   /** Opens an address in the browser. */
   onOpen?: (href: string) => void;
+  /** When the next automatic scan is due (RFC 3339), at the foot of the site list; none while off. */
+  nextScan?: string;
 }
 
 const idle: ScansState = { running: [], completed: 0 };
@@ -132,6 +135,7 @@ export function AppShell({
   onExport,
   security,
   onOpen,
+  nextScan,
 }: AppShellProps) {
   const { t } = useTranslation();
   // Something to show at once: the item asked for, else the first host, else the first item.
@@ -321,7 +325,13 @@ export function AppShell({
         </>
       );
     }
-    return selected && <Summary node={selected} nodes={nodes} />;
+    if (!nextScan) return selected && <Summary node={selected} nodes={nodes} />;
+    return (
+      <span className={styles.lines}>
+        {selected && <Summary node={selected} nodes={nodes} />}
+        <NextScan at={nextScan} />
+      </span>
+    );
   };
 
   const inert = (dialog !== null || bulkDialog !== null || ignoring !== null) || undefined;
@@ -783,4 +793,16 @@ function Summary({ node, nodes }: { node: Node; nodes: Node[] }) {
   const prefix = `${node.path}/`;
   const count = nodes.filter((n) => n.kind === "site" && n.path.startsWith(prefix)).length;
   return <span>{t("bottom.sites", { name: node.name, count })}</span>;
+}
+
+/** When the next automatic scan is due: its time today, else its day and time. */
+function NextScan({ at }: { at: string }) {
+  const { t } = useTranslation();
+  const when = new Date(at);
+  const today = when.toDateString() === new Date().toDateString();
+  return (
+    <span className={styles.next}>
+      {today ? t("manager.nextScan", { time: clock(at) }) : t("manager.nextScanOn", { day: day(at), time: clock(at) })}
+    </span>
+  );
 }

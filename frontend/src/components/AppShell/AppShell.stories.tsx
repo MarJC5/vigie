@@ -107,6 +107,17 @@ export const HostWithItsSites: Story = {
   },
 };
 
+// The next automatic scan at the foot of the site list: its time today, its day otherwise.
+const today = new Date();
+today.setHours(18, 0, 0, 0);
+export const NextAutomaticScan: Story = {
+  args: { data, initialSelectedId: "shared", nextScan: today.toISOString() },
+  globals: { lang: "fr" },
+  play: async ({ canvas }) => {
+    await expect((await canvas.findAllByText("Prochain relevé : 18:00"))[0]).toBeInTheDocument();
+  },
+};
+
 const updatesApi = (): UpdatesApi => ({
   Preview: fn(async () => [preview]),
   Update: fn(async () => null),

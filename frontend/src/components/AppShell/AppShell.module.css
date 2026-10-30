@@ -112,3 +112,15 @@
   flex: 1;
   color: var(--vg-text);
 }
+
+/* The summary of the selection, then the next automatic scan on a line of its own. */
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.next {
+  white-space: nowrap;
+}

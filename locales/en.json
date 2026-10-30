@@ -8,6 +8,8 @@
     "help": "Help"
   },
   "manager": {
+    "nextScan": "Next scan: {{time}}",
+    "nextScanOn": "Next scan: {{day}} {{time}}",
     "label": "Site manager",
     "search": "Search",
     "collapse": "Hide the site list",
@@ -956,6 +958,22 @@
     "agree": "Agree"
   },
   "settings": {
+    "background": {
+      "section": "In the background",
+      "onTitle": "Keep Vigie running",
+      "onDesc": "Closing the window leaves Vigie in the menu bar, where its eye shows the next scan and the urgent sites.",
+      "loginTitle": "Open at login",
+      "loginDesc": "Vigie starts with its window closed, in the menu bar.",
+      "loginNeedsBackground": "Needs Vigie to keep running.",
+      "autoTitle": "Automatic scans",
+      "autoDesc": "Scans every site at the interval chosen, while Vigie runs. Never updates anything.",
+      "never": "Never",
+      "every_one": "Every hour",
+      "every_other": "Every {{count}} hours",
+      "daily": "Every day",
+      "notifyTitle": "Notifications",
+      "notifyDesc": "Tells you when a scan turns a site urgent or a host unreachable."
+    },
     "title": "Settings",
     "tabs": {
       "general": "General",

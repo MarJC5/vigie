@@ -1,7 +1,7 @@
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { LookupsView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { BackgroundSettings, LoginItemState, LookupsView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { clock, day, keyOf } from "../../lib/findings";
 import { Button } from "../Button/Button";
 import { Icon } from "../Icon/Icon";
@@ -38,7 +38,16 @@ export interface SettingsPageProps {
   onImport: (source: ImportSource) => void;
   /** What the last export or import did, under its row. */
   dataNote?: { row: "export" | "import"; text: string };
+  /** Vigie in the background: kept running, automatic scans, notifications. */
+  background: BackgroundSettings;
+  onBackground: (b: BackgroundSettings) => void;
+  /** Start at login: the system's state; not offered where the system has none. */
+  loginItem: LoginItemState;
+  onLoginItem: (on: boolean) => void;
 }
+
+// The intervals of automatic scans, in hours; 0 is never (app.AutoScanHours).
+const autoScanHours = [0, 1, 3, 6, 12, 24];
 
 // An address, not words to translate.
 const wpvulnerability = { href: "https://www.wpvulnerability.com/", name: "wpvulnerability.com" };
@@ -60,6 +69,10 @@ export function SettingsPage({
   onExport,
   onImport,
   dataNote,
+  background,
+  onBackground,
+  loginItem,
+  onLoginItem,
 }: SettingsPageProps) {
   const { t } = useTranslation();
   const panel = useId();
@@ -88,6 +101,42 @@ export function SettingsPage({
                 options={(["system", "light", "dark"] as const).map((v) => ({ value: v, label: t(`settings.theme.${v}`) }))}
                 onChange={(v) => onTheme(v as Theme)}
               />
+            </Row>
+          </Section>
+        )}
+        {tab === "general" && (
+          <Section title={t("settings.background.section")}>
+            <Row title={t("settings.background.onTitle")} desc={t("settings.background.onDesc")}>
+              <Switch label={t("settings.background.onTitle")} on={background.on} onChange={(on) => onBackground({ ...background, on })} />
+            </Row>
+            {loginItem.supported && (
+              <Row
+                title={t("settings.background.loginTitle")}
+                desc={t("settings.background.loginDesc")}
+                note={background.on ? undefined : t("settings.background.loginNeedsBackground")}
+              >
+                <Switch
+                  label={t("settings.background.loginTitle")}
+                  on={background.on && loginItem.on}
+                  disabled={!background.on}
+                  onChange={onLoginItem}
+                />
+              </Row>
+            )}
+            <Row title={t("settings.background.autoTitle")} desc={t("settings.background.autoDesc")}>
+              <SelectField
+                label={t("settings.background.autoTitle")}
+                hideLabel
+                value={String(background.autoScan)}
+                options={autoScanHours.map((h) => ({
+                  value: String(h),
+                  label: h === 0 ? t("settings.background.never") : h === 24 ? t("settings.background.daily") : t("settings.background.every", { count: h }),
+                }))}
+                onChange={(v) => onBackground({ ...background, autoScan: Number(v) })}
+              />
+            </Row>
+            <Row title={t("settings.background.notifyTitle")} desc={t("settings.background.notifyDesc")}>
+              <Switch label={t("settings.background.notifyTitle")} on={background.notify} onChange={(notify) => onBackground({ ...background, notify })} />
             </Row>
           </Section>
         )}

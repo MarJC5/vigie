@@ -31,6 +31,10 @@ const meta = {
     onOpen: fn(),
     onExport: fn(),
     onImport: fn(),
+    background: { on: false, autoScan: 0, notify: false },
+    onBackground: fn(),
+    loginItem: { supported: true, on: false },
+    onLoginItem: fn(),
   },
 } satisfies Meta<typeof SettingsPage>;
 export default meta;
@@ -71,6 +75,45 @@ export const General: Story = {
     await expect(page.getByRole("combobox", { name: "Appearance" })).toHaveValue("system");
     await userEvent.selectOptions(page.getByRole("combobox", { name: "Appearance" }), "light");
     await expect(args.onTheme).toHaveBeenCalledWith("light");
+  },
+};
+
+// Everything off by default; start at login waits for the background mode.
+export const BackgroundOff: Story = {
+  args: { tab: "general" },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    const login = page.getByRole("switch", { name: "Open at login" });
+    await expect(login).toBeDisabled();
+    await expect(page.getByText("Needs Vigie to keep running.")).toBeInTheDocument();
+    await expect(page.getByRole("combobox", { name: "Automatic scans" })).toHaveValue("0");
+    await userEvent.click(page.getByRole("switch", { name: "Keep Vigie running" }));
+    await expect(args.onBackground).toHaveBeenCalledWith({ on: true, autoScan: 0, notify: false });
+    await userEvent.selectOptions(page.getByRole("combobox", { name: "Automatic scans" }), "6");
+    await expect(args.onBackground).toHaveBeenCalledWith({ on: false, autoScan: 6, notify: false });
+  },
+};
+
+// Kept running, at login, every 6 hours, with notifications.
+export const BackgroundOn: Story = {
+  args: { tab: "general", background: { on: true, autoScan: 6, notify: true }, loginItem: { supported: true, on: true } },
+  globals: { lang: "fr" },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=light]")!);
+    const login = page.getByRole("switch", { name: "Ouvrir à l'ouverture de session" });
+    await expect(login).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByRole("combobox", { name: "Relevés automatiques" })).toHaveValue("6");
+    await userEvent.click(login);
+    await expect(args.onLoginItem).toHaveBeenCalledWith(false);
+  },
+};
+
+// Where the system has no login items, the switch is not offered.
+export const NoLoginItems: Story = {
+  args: { tab: "general", loginItem: { supported: false, on: false } },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.queryByRole("switch", { name: "Open at login" })).toBeNull();
   },
 };
 
