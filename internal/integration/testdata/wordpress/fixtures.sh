@@ -142,6 +142,26 @@ package fixture-breaks 1.0.0 "$SITES/updates/wp-content/plugins/fixture-breaks/f
 rm -r "$WORK"
 wp plugin activate fixture-pro fixture-breaks fixture-missing --path="$SITES/updates" --quiet
 
+# What a security scan must find. WordPress files: one changed, one added where only WordPress's
+# own files belong, one missing. Akismet, from wordpress.org: one file changed, one added. A plugin
+# wordpress.org does not know, skipped by the checksums. PHP files among the uploads.
+new_site "$SITES/security" fixture_security
+wp db create --path="$SITES/security" --quiet
+wp core install --path="$SITES/security" --url=https://security.example.test --title=Security $ADMIN
+echo '// fixture: changed' >> "$SITES/security/wp-includes/functions.php"
+printf '%s\n' '<?php' > "$SITES/security/wp-includes/fixture-added.php"
+rm "$SITES/security/wp-admin/freedoms.php"
+wp plugin install akismet --force --activate --path="$SITES/security" --quiet
+echo '// fixture: changed' >> "$SITES/security/wp-content/plugins/akismet/akismet.php"
+printf '%s\n' '<?php' > "$SITES/security/wp-content/plugins/akismet/fixture-added.php"
+mkdir -p "$SITES/security/wp-content/plugins/fixture-premium"
+printf '%s\n' '<?php' '/**' ' * Plugin Name: Fixture Premium' ' * Version: 1.0.0' ' */' \
+	> "$SITES/security/wp-content/plugins/fixture-premium/fixture-premium.php"
+mkdir -p "$SITES/security/wp-content/uploads/2026/10"
+printf '%s\n' '<?php' > "$SITES/security/wp-content/uploads/2026/10/fixture-shell.php"
+printf '%s\n' '<?php' > "$SITES/security/wp-content/uploads/fixture-old.PHTML"
+printf 'JFIF' > "$SITES/security/wp-content/uploads/2026/10/photo.jpg"
+
 # A server without outbound HTTP, like hosts that block it: every update check fails.
 new_site "$SITES/offline" fixture_offline
 wp db create --path="$SITES/offline" --quiet

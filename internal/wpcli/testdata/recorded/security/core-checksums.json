@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'core' 'verify-checksums' '--path=sites/security' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Warning: File doesn't exist: wp-admin/freedoms.php\nWarning: File doesn't verify against checksum: wp-includes/functions.php\nWarning: File should not exist: wp-config-docker.php\nWarning: File should not exist: wp-includes/fixture-added.php\nError: WordPress installation doesn't verify against checksums.\n"
+}

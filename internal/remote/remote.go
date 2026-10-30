@@ -178,6 +178,40 @@ func FatalsSince(file string, offset int64) (string, error) {
 	return "tail -c +" + strconv.FormatInt(offset+1, 10) + " " + q + " | grep -m 3 'PHP Fatal error'", err
 }
 
+// UploadsPHP lists the PHP files under a site's uploads folder, where WordPress never puts any:
+// one path per line, at most uploadsShown and one more to tell there are more. A site without the
+// folder lists nothing.
+func UploadsPHP(root string) (string, error) {
+	if err := folder(root); err != nil {
+		return "", err
+	}
+	q, err := quoted(root + "/wp-content/uploads")
+	if err != nil {
+		return "", err
+	}
+	return "find " + q + ` -type f \( -iname '*.php' -o -iname '*.php[0-9]' -o -iname '*.phtml' -o -iname '*.pht' -o -iname '*.phar' \) 2>/dev/null | head -n ` +
+		strconv.Itoa(UploadsShown+1), nil
+}
+
+// UploadsShown is how many PHP files in uploads are listed.
+const UploadsShown = 50
+
+// ParseUploadsPHP reads UploadsPHP's answer: the files relative to the uploads folder, and whether
+// there are more than UploadsShown.
+func ParseUploadsPHP(root string, out []byte) (files []string, more bool) {
+	prefix := root + "/wp-content/uploads/"
+	for _, line := range strings.Split(string(out), "\n") {
+		if line = strings.TrimSpace(line); line == "" {
+			continue
+		}
+		if len(files) == UploadsShown {
+			return files, true
+		}
+		files = append(files, strings.TrimPrefix(line, prefix))
+	}
+	return files, false
+}
+
 // ListBackups lists the runs of a site that have backups.
 func ListBackups(site uuid.UUID) (string, error) {
 	return quotedLine("ls -1", ".vigie/backups/"+site.String())

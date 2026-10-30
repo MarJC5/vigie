@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/MarJC5/vigie/internal/discover"
+	"github.com/MarJC5/vigie/internal/remote"
 	"github.com/MarJC5/vigie/internal/wpcli"
 )
 
@@ -158,6 +159,55 @@ func TestRecordUpdates(t *testing.T) {
 		}
 		writeRecording(t, filepath.Join(dir, r.name+".json"),
 			recorded{Args: []string{remote}, Exit: res.exit, Stdout: res.stdout, Stderr: res.stderr})
+	}
+}
+
+// The security commands, recorded on the security site and, for comparison, on plain ones; name to
+// site and command line. Remote commands run from the site's real folder, as Vigie runs them.
+var securityRecordings = []struct {
+	name, site string
+	cmd        wpcli.Command
+	shell      func(root string) (string, error)
+}{
+	{"core-checksums", "security", wpcli.CoreVerifyChecksums(), nil},
+	{"core-checksums-clean", "plain", wpcli.CoreVerifyChecksums(), nil},
+	{"plugin-checksums", "security", wpcli.PluginVerifyChecksums(), nil},
+	{"plugin-checksums-clean", "plain", wpcli.PluginVerifyChecksums(), nil},
+	// Every plugin skipped: wordpress.org knows none of them.
+	{"plugin-checksums-unknown", "plugin-theme", wpcli.PluginVerifyChecksums(), nil},
+	{"uploads-php", "security", wpcli.Command{}, remote.UploadsPHP},
+	{"uploads-php-clean", "plain", wpcli.Command{}, remote.UploadsPHP},
+}
+
+// TestRecordSecurity refreshes the recorded outputs of the security commands; with -record only.
+func TestRecordSecurity(t *testing.T) {
+	if !*record {
+		t.Skip("run with -record to refresh the recorded outputs")
+	}
+	ctx := context.Background()
+	dir := filepath.Join("..", "wpcli", "testdata", "recorded", "security")
+	for _, r := range securityRecordings {
+		var line string
+		var err error
+		if r.shell != nil {
+			line, err = r.shell(sites + "/" + r.site)
+		} else {
+			line, err = r.cmd.Remote("wp", "~/sites/"+r.site)
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		res, err := runAs(ctx, "sh", "-c", line)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// A remote command's recording goes with the package that builds it.
+		to := dir
+		if r.shell != nil {
+			to = filepath.Join("..", "remote", "testdata", "recorded")
+		}
+		writeRecording(t, filepath.Join(to, r.name+".json"),
+			recorded{Args: []string{line}, Exit: res.exit, Stdout: res.stdout, Stderr: res.stderr})
 	}
 }
 

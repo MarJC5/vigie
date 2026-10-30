@@ -1,8 +1,14 @@
 package remote_test
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"reflect"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 	"uuid"
@@ -109,5 +115,57 @@ func TestParsers(t *testing.T) {
 	// grep finds nothing: exit 1, no line.
 	if got := remote.ParseFatals(sshx.Result{ExitCode: 1}); len(got) != 0 {
 		t.Errorf("ParseFatals(none) = %q", got)
+	}
+}
+
+func TestUploadsPHP(t *testing.T) {
+	got, err := remote.UploadsPHP("/home/u/sites/a")
+	want := "find '/home/u/sites/a/wp-content/uploads' -type f \\( -iname '*.php' -o -iname '*.php[0-9]' -o -iname '*.phtml' -o -iname '*.pht' -o -iname '*.phar' \\) 2>/dev/null | head -n 51"
+	if err != nil || got != want {
+		t.Errorf("UploadsPHP() = %s, %v\nwant %s", got, err, want)
+	}
+	if _, err := remote.UploadsPHP("sites/a"); !errors.Is(err, remote.ErrBadPath) {
+		t.Errorf("UploadsPHP(relative) = %v, want ErrBadPath", err)
+	}
+}
+
+func recordedResult(t *testing.T, name string) (string, sshx.Result) {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join("testdata", "recorded", name+".json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var r struct {
+		Args           []string
+		Exit           int
+		Stdout, Stderr string
+	}
+	if err := json.Unmarshal(data, &r); err != nil {
+		t.Fatal(err)
+	}
+	return r.Args[0], sshx.Result{ExitCode: r.Exit, Stdout: []byte(r.Stdout), Stderr: []byte(r.Stderr)}
+}
+
+func TestParseUploadsPHP(t *testing.T) {
+	const root = "/home/vigie/sites/security"
+	line, res := recordedResult(t, "uploads-php")
+	if want, _ := remote.UploadsPHP(root); line != want {
+		t.Fatalf("recorded %s, Vigie runs %s: run make record", line, want)
+	}
+	files, more := remote.ParseUploadsPHP(root, res.Stdout)
+	if !reflect.DeepEqual(files, []string{"2026/10/fixture-shell.php", "fixture-old.PHTML"}) || more {
+		t.Errorf("ParseUploadsPHP() = %v, %v", files, more)
+	}
+	_, clean := recordedResult(t, "uploads-php-clean")
+	if files, more := remote.ParseUploadsPHP("/home/vigie/sites/plain", clean.Stdout); len(files) != 0 || more {
+		t.Errorf("ParseUploadsPHP(clean) = %v, %v", files, more)
+	}
+	// One more than shown: there are more.
+	var many strings.Builder
+	for i := range remote.UploadsShown + 1 {
+		fmt.Fprintf(&many, "%s/wp-content/uploads/f%d.php\n", root, i)
+	}
+	if files, more := remote.ParseUploadsPHP(root, []byte(many.String())); len(files) != remote.UploadsShown || !more {
+		t.Errorf("ParseUploadsPHP(51 files) = %d files, more %v", len(files), more)
 	}
 }

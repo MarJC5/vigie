@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'plugin' 'verify-checksums' '--all' '--format=json' '--path=sites/plugin-theme' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "Success: Verified 2 of 3 plugins (1 skipped).\n",
+  "stderr": "Warning: Couldn't fetch response from https://downloads.wordpress.org/plugin-checksums/fixture-themes/1.0.0.json (HTTP code 404).\nWarning: Could not retrieve the checksums for version 1.0.0 of plugin fixture-themes, skipping.\n"
+}
