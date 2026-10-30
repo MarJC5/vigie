@@ -49,7 +49,7 @@
 
 .outline {
   padding: 0 var(--vg-space-3);
-  box-shadow: inset 0 0 0 1.5px var(--vg-border-strong);
+  box-shadow: inset 0 0 0 1px var(--vg-border-strong);
   color: var(--vg-text);
 }
 

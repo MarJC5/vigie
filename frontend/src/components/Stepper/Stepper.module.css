@@ -29,7 +29,7 @@
   justify-content: center;
   font-size: var(--vg-text-caption);
   font-weight: var(--vg-weight-strong);
-  box-shadow: inset 0 0 0 1.5px var(--vg-border-strong);
+  box-shadow: inset 0 0 0 1px var(--vg-border-strong);
 }
 
 .step[data-state="current"] .badge {

@@ -89,7 +89,7 @@
 /* "None": an empty ring crossed by a line. */
 .swatch[data-none] {
   background: linear-gradient(135deg, transparent 45%, var(--vg-text-muted) 45%, var(--vg-text-muted) 55%, transparent 55%);
-  box-shadow: inset 0 0 0 1.5px var(--vg-border-strong);
+  box-shadow: inset 0 0 0 1px var(--vg-border-strong);
 }
 
 .swatch[aria-checked="true"] {
@@ -97,7 +97,7 @@
 }
 
 .swatch[data-none][aria-checked="true"] {
-  box-shadow: inset 0 0 0 1.5px var(--vg-border-strong), 0 0 0 2px var(--vg-surface-raised), 0 0 0 4px var(--vg-focus);
+  box-shadow: inset 0 0 0 1px var(--vg-border-strong), 0 0 0 2px var(--vg-surface-raised), 0 0 0 4px var(--vg-focus);
 }
 
 .swatch:focus-visible {

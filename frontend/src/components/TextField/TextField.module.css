@@ -19,7 +19,7 @@
   padding: 0 var(--vg-space-3);
   border: 0;
   border-radius: var(--vg-radius-control);
-  box-shadow: inset 0 0 0 1.5px var(--vg-border-strong);
+  box-shadow: inset 0 0 0 1px var(--vg-border-strong);
   background: var(--vg-surface-main);
   color: var(--vg-text);
   font: var(--vg-text-body) var(--vg-font);
@@ -35,7 +35,7 @@
 }
 
 .input[aria-invalid="true"] {
-  box-shadow: inset 0 0 0 1.5px var(--vg-status-danger);
+  box-shadow: inset 0 0 0 1px var(--vg-status-danger);
 }
 
 .hint,

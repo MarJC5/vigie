@@ -25,7 +25,7 @@
 /* The item being dragged: muted and dashed, still readable (no opacity under the contrast). */
 .node[data-dragging] {
   color: var(--vg-text-muted);
-  outline: 1.5px dashed var(--vg-border-strong);
+  outline: 1px dashed var(--vg-border-strong);
   outline-offset: -2px;
 }
 
