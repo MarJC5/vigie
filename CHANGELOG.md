@@ -28,7 +28,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Search in the site list.
 - Menu bar in English and French, with shortcuts to add a host, search and scan.
 - Command line: `vigie tree`, `vigie scan [path]` and `vigie discover <host>`, with `--json`
-  and exit codes for scripts (0 all good, 1 needs attention, 3 error).
+  and exit codes for scripts (0 all good, 1 needs attention or not fully checked, 2 urgent, 3 error).
 - Edit the site manager: create folders, rename in place, move by drag and drop or from a dialog,
   give a color to a folder, host or site, and delete a site, a host with its sites, or an empty
   folder (servers are not touched). Edit a host's connection, and find the new WordPress installs
@@ -43,3 +43,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The history of the updates and rollbacks of each site, with their steps.
 - Command line: `vigie update [path]`, which prints the preview and asks before writing anything
   (`--yes` for scripts, `--json`).
+- Security scans, read-only, with every scan: known vulnerabilities of WordPress, plugins, themes
+  and PHP; plugins closed or abandoned on wordpress.org; WordPress and plugin files compared with
+  wordpress.org's (at most once a day, or on demand); PHP files in the uploads folder;
+  administrators and their two-factor; risky settings; overdue WP-Cron events; heavy autoloaded
+  options; the database version; the TLS certificate, the domain's expiry and a public
+  `debug.log`. See [docs/security.md](docs/security.md).
+- Lookups outside, made from your computer and only after you agreed: WPVulnerability,
+  wordpress.org, the domain registries and the site itself, each one listed with what it receives
+  and each one can be turned off. Nothing about your sites is sent to a third party.
+- Findings ranked urgent, needs attention, information or not checked, and a site status from the
+  worst one: urgent, needs attention, not fully checked or up to date. A finding can be ignored
+  until the next version, or permanently with a reason.
+- The Security tab of a site, the worst finding of each site in the tables, and the settings in
+  tabs (language, lookups outside, about), opened from the rail or with ⌘,.
+- Command line: `vigie scan` exits with 2 when a site is urgent, lists the findings with `--json`,
+  and compares the files again with `--check-files`.
+
+### Changed
+
+- A scan cancelled or failed after a complete one no longer hides it: the complete one stays shown,
+  and the window says why nothing newer is.
+- Whether wordpress.org knows a plugin is asked from your computer when you agreed to it: a server
+  without outbound access no longer shows every plugin as closed.

@@ -22,7 +22,8 @@ to protect. Vigie takes another route:
 ## Planned features
 
 - A site manager with nested folders, hosts (one SSH account each) and sites, with colors and
-  notes; discovery of every WordPress install on a host; import from FileZilla and `~/.ssh/config`.
+  notes; discovery of every WordPress install on a host; hosts from `~/.ssh/config` (an import from
+  FileZilla is planned as an optional add-on).
 - A scan of each site: WordPress, PHP and database versions, pending updates (core, plugins,
   themes, translations), known vulnerabilities, abandoned plugins, file integrity, administrators
   and two-factor status, TLS certificate and domain expiry.
@@ -32,6 +33,14 @@ to protect. Vigie takes another route:
 - English and French interface.
 - A `vigie` command line with JSON output, for scripts and scheduled scans.
 
+## Privacy
+
+Vigie keeps your data on your computer: no account, no hosted service, no telemetry. A security
+scan asks a few outside services what the server cannot tell (known vulnerabilities, closed
+plugins, domain expiry), from your computer and only after you agreed: each one is listed with
+exactly what it receives, and each one can be turned off in the settings. Your sites' addresses
+are never sent to a third party. See [docs/security.md](docs/security.md).
+
 ## Requirements
 
 - macOS or Linux.
@@ -40,3 +49,6 @@ to protect. Vigie takes another route:
 ## License
 
 [MIT](LICENSE).
+
+Vigie is not affiliated with or endorsed by the WordPress Foundation. WordPress is a trademark of
+the WordPress Foundation.
