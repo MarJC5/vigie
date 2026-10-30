@@ -50,6 +50,15 @@ export const WithSites: Story = {
   },
 };
 
+// The window opens on the first host, never on an empty page.
+export const OpensOnTheFirstHost: Story = {
+  play: async ({ canvas }) => {
+    await expect(canvas.getAllByRole("heading", { level: 1, name: "Shared hosting" })).toHaveLength(2);
+    const [host] = canvas.getAllByRole("treeitem", { name: /^Shared hosting/ });
+    await expect(host).toHaveAttribute("aria-selected", "true");
+  },
+};
+
 export const FirstLaunch: Story = {
   args: { nodes: [], onAddHost: fn() },
   play: async ({ canvas, args }) => {

@@ -104,7 +104,10 @@ export function AppShell({
   updatesApi,
 }: AppShellProps) {
   const { t } = useTranslation();
-  const [selectedId, setSelectedId] = useState<string | undefined>(initialSelectedId);
+  // Something to show at once: the item asked for, else the first host, else the first item.
+  const [selectedId, setSelectedId] = useState<string | undefined>(
+    () => initialSelectedId ?? (nodes.find((n) => n.kind === "host") ?? nodes[0])?.id,
+  );
   const [paneOpen, setPaneOpen] = useState(true);
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState("");

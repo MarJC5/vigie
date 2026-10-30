@@ -23,14 +23,19 @@ test("the window has one of each landmark", async ({ page }) => {
   await expect(page.getByRole("main")).toHaveCount(1);
 });
 
-test("the tree works from the keyboard", async ({ page }) => {
+test("the window opens on the first host, and the tree works from the keyboard", async ({ page }) => {
   await page.goto(seeded);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Shared hosting");
   const tree = page.getByRole("tree", { name: "Site manager" });
-  await tree.getByRole("treeitem", { name: /^Clients/ }).focus();
+  await tree.getByRole("treeitem", { name: /^Shared hosting/ }).focus();
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Shared hosting");
-  await expect(page.getByRole("complementary")).toContainText("Shared hosting · 3 sites");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("atelier-exemple.ch");
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Clients");
+  await expect(page.getByRole("complementary")).toContainText("Clients · 3 sites");
 });
 
 test("a first launch invites to add a host, in the stored language", async ({ page }) => {
