@@ -35,11 +35,20 @@ function ratio(a: string, b: string): number {
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
 }
 
-const surfaces = ["surface-rail", "surface-main", "surface-pane", "surface-row", "surface-sunken", "surface-raised"];
+const surfaces = [
+  "surface-rail",
+  "surface-main",
+  "surface-pane",
+  "surface-row",
+  "surface-sunken",
+  "surface-raised",
+  "surface-hover",
+  "surface-selected",
+];
 const pairs: Array<[string, string[], number]> = [
   ["text", surfaces, 4.5],
   ["text-muted", surfaces, 4.5],
-  ["accent-text", ["surface-main", "surface-pane", "surface-row", "surface-raised"], 4.5],
+  ["accent-text", ["surface-main", "surface-pane", "surface-row", "surface-raised", "surface-selected"], 4.5],
   ["text-on-accent", ["accent", "accent-hover"], 4.5],
   ["focus", ["surface-main", "surface-pane", "surface-row"], 3],
   ["border-strong", ["surface-main", "surface-raised"], 3],

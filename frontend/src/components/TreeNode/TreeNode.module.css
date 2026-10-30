@@ -10,11 +10,11 @@
 }
 
 .node:hover {
-  background: var(--vg-surface-row);
+  background: var(--vg-surface-hover);
 }
 
 .node[aria-selected="true"] {
-  background: var(--vg-surface-sunken);
+  background: var(--vg-surface-selected);
 }
 
 .node[aria-selected="true"] .name,
@@ -30,7 +30,7 @@
 }
 
 .node[data-drop-target] {
-  background: var(--vg-surface-sunken);
+  background: var(--vg-surface-selected);
   box-shadow: inset 0 0 0 2px var(--vg-accent);
 }
 

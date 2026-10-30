@@ -18,17 +18,21 @@
 	--vg-surface-row: #2b2b2b;
 	--vg-surface-sunken: #1e1e1e;  /* WordPress gray-900, Charcoal */
 	--vg-surface-raised: #333333;
+	/* A list item under the pointer, then the one selected: a step lighter each, never darker */
+	--vg-surface-hover: #353535;
+	--vg-surface-selected: #3a3a3a;
 	--vg-border: #3c3c3c;
 	--vg-border-strong: #808080;
 
 	/* Text */
 	--vg-text: #f0f0f0;            /* WordPress gray-100 */
 	--vg-text-muted: #ababab;      /* adjusted: gray-600 #949494 is under 4.5:1 on the site list */
-	--vg-text-on-accent: #ffffff;
+	--vg-text-on-accent: #1e1e1e;  /* gray-900 on Blueberry 2: 8.1:1 */
 
-	/* Blueberry: fills; Blueberry 2 for text, icons and focus on dark */
-	--vg-accent: #3858e9;          /* Blueberry */
-	--vg-accent-hover: #213fd4;    /* Deep Blueberry */
+	/* One blue on dark, Blueberry 2, for fills, text, icons and focus: Blueberry itself is under
+	   4.5:1 as text on the dark greys, so the fills take the light blue with dark text */
+	--vg-accent: #9fb1ff;          /* Blueberry 2 */
+	--vg-accent-hover: #b4c3ff;    /* adjusted: one step lighter for the hover */
 	--vg-accent-text: #9fb1ff;     /* Blueberry 2 */
 	--vg-focus: #9fb1ff;
 
@@ -42,7 +46,7 @@
 	/* Site manager colors (FileZilla order, none excluded) */
 	--vg-site-red: #f2555a;
 	--vg-site-green: #4ab866;
-	--vg-site-blue: #7b93ff;
+	--vg-site-blue: #9fb1ff;       /* the accent's blue */
 	--vg-site-yellow: #fff972;     /* Lemon */
 	--vg-site-cyan: #22c3e6;
 	--vg-site-magenta: #d7a7ff;    /* Purple 3 */
@@ -60,6 +64,8 @@
 	--vg-surface-row: #f6f6f6;
 	--vg-surface-sunken: #e0e0e0;  /* WordPress gray-200 */
 	--vg-surface-raised: #ffffff;
+	--vg-surface-hover: #eeeeee;
+	--vg-surface-selected: #e8e8e8;
 	--vg-border: #e0e0e0;          /* WordPress gray-200 */
 	--vg-border-strong: #8a8a8a;   /* adjusted: gray-600 #949494 is under 3:1 on the site list */
 	--vg-text: #1e1e1e;            /* WordPress gray-900 */
@@ -93,6 +99,8 @@
 		--vg-surface-row: #f6f6f6;
 		--vg-surface-sunken: #e0e0e0;
 		--vg-surface-raised: #ffffff;
+		--vg-surface-hover: #eeeeee;
+		--vg-surface-selected: #e8e8e8;
 		--vg-border: #e0e0e0;
 		--vg-border-strong: #8a8a8a;
 		--vg-text: #1e1e1e;

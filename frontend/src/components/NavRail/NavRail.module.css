@@ -33,7 +33,7 @@
 }
 
 .item[aria-current="page"] {
-  background: var(--vg-surface-sunken);
+  background: var(--vg-surface-selected);
   color: var(--vg-accent-text);
 }
 
