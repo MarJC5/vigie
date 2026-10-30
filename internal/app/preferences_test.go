@@ -74,3 +74,21 @@ func TestTheBackgroundSettingsAreOffUntilChosen(t *testing.T) {
 		}
 	}
 }
+
+// A change of the background settings is told at once: the menu bar icon follows it.
+func TestAChangeOfTheBackgroundSettingsIsTold(t *testing.T) {
+	ctx := context.Background()
+	prefs := app.NewPreferences(repository(t), nil)
+	var told []app.BackgroundSettings
+	prefs.OnBackground = func(b app.BackgroundSettings) { told = append(told, b) }
+	want := app.BackgroundSettings{On: true, AutoScan: 1}
+	if err := prefs.SetBackground(ctx, want); err != nil {
+		t.Fatal(err)
+	}
+	if err := prefs.SetBackground(ctx, app.BackgroundSettings{AutoScan: 5}); err == nil {
+		t.Fatal("SetBackground(every 5 hours): want an error")
+	}
+	if len(told) != 1 || told[0] != want {
+		t.Fatalf("told %+v, want only the stored change", told)
+	}
+}

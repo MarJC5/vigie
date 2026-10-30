@@ -898,3 +898,18 @@ export interface UpdatesState {
      */
     "sites": string[] | null;
 }
+
+/**
+ * WatchState is the state the menu bar icon and the window show.
+ */
+export interface WatchState {
+    /**
+     * RFC 3339; "" while automatic scans are off
+     */
+    "next": string;
+
+    /**
+     * sites whose latest scan is urgent
+     */
+    "urgent": number;
+}

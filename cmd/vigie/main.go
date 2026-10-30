@@ -114,32 +114,9 @@ func openWindow(opts cli.Options) error {
 		return err
 	}
 
-	wails = application.New(application.Options{
-		Name: "Vigie",
-		Services: []application.Service{
-			application.NewService(app.NewSiteManager(db)),
-			application.NewService(preferences),
-			application.NewService(app.NewHostWizard(ws, emit)),
-			application.NewService(app.NewEditor(ws)),
-			application.NewService(app.NewUpdates(ws, emit, scanner)),
-			application.NewService(scanner),
-			application.NewService(app.NewSecurity(ws, time.Now)),
-			application.NewService(data),
-			application.NewService(app.NewAddons(data, files, func() string { return addons.Folders(os.Getenv("PATH"), home) })),
-		},
-		Assets: application.AssetOptions{Handler: application.AssetFileServerFS(frontend.Assets())},
-		Mac:    application.MacOptions{ApplicationShouldTerminateAfterLastWindowClosed: true},
-	})
-	// Built by Vigie in the interface language, with its shortcuts; after application.New, which
-	// the standard items (About) read.
-	menu, err := menuBar(texts, lang, emit)
-	if err != nil {
-		return err
-	}
-	wails.Menu.Set(menu)
 	// Automatic scans of everything while Vigie runs, at the interval the user chose (off by
 	// default); the window sees them as any other scan.
-	watch := &schedule.Schedule{
+	auto := &schedule.Schedule{
 		Now: time.Now,
 		Every: func(ctx context.Context) (time.Duration, error) {
 			b, err := preferences.Background(ctx)
@@ -154,11 +131,41 @@ func openWindow(opts cli.Options) error {
 		},
 		Failed: func(err error) { wails.Logger.Error("automatic scans", "error", err) },
 	}
+	sites := app.NewSiteManager(db)
+	watch := app.NewWatch(sites, auto.Next)
+	docked := newDock()
+
+	wails = application.New(application.Options{
+		Name: "Vigie",
+		Services: []application.Service{
+			application.NewService(sites),
+			application.NewService(watch),
+			application.NewService(preferences),
+			application.NewService(app.NewHostWizard(ws, emit)),
+			application.NewService(app.NewEditor(ws)),
+			application.NewService(app.NewUpdates(ws, emit, scanner)),
+			application.NewService(scanner),
+			application.NewService(app.NewSecurity(ws, time.Now)),
+			application.NewService(data),
+			application.NewService(app.NewAddons(data, files, func() string { return addons.Folders(os.Getenv("PATH"), home) })),
+		},
+		Assets: application.AssetOptions{Handler: application.AssetFileServerFS(frontend.Assets())},
+		// Not left to macOS, which also quits when the last window is only hidden: the keeper quits
+		// when the window closes with the background mode off.
+		Mac: application.MacOptions{ApplicationShouldTerminateAfterLastWindowClosed: false},
+	})
+	// Built by Vigie in the interface language, with its shortcuts; after application.New, which
+	// the standard items (About) read.
+	menu, err := menuBar(texts, lang, emit)
+	if err != nil {
+		return err
+	}
+	wails.Menu.Set(menu)
 	watching, stopWatching := context.WithCancel(context.Background())
 	defer stopWatching()
-	go watch.Run(watching)
+	go auto.Run(watching)
 
-	wails.Window.NewWithOptions(application.WebviewWindowOptions{
+	window := wails.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:     "Vigie",
 		Width:     1280,
 		Height:    800,
@@ -169,6 +176,18 @@ func openWindow(opts cli.Options) error {
 		// header of the site list move the window (--wails-draggable in their styles).
 		Mac: application.MacWindow{TitleBar: application.MacTitleBarHidden, Appearance: appearance(theme)},
 	})
+	// The background mode: the eye in the menu bar, the window hidden instead of closed.
+	keep := &keeper{
+		wails: wails, window: window, dock: docked, prefs: preferences, watch: watch, scanner: scanner,
+		label: func(key string, vars map[string]any) string {
+			all := map[string]any{"app": "Vigie"}
+			for k, v := range vars {
+				all[k] = v
+			}
+			return texts.T(lang, key, all)
+		},
+	}
+	keep.start(watching)
 	return wails.Run()
 }
 

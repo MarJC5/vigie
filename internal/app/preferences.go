@@ -38,6 +38,8 @@ const (
 type Preferences struct {
 	store  settingsStore
 	system func() string
+	// OnBackground, when set, hears each change of the background settings once stored.
+	OnBackground func(BackgroundSettings)
 }
 
 // NewPreferences returns the service; system gives the system language (i18n.SystemLanguage).
@@ -131,6 +133,9 @@ func (p *Preferences) SetBackground(ctx context.Context, b BackgroundSettings) e
 		if err := p.store.SetSetting(ctx, key, value); err != nil {
 			return err
 		}
+	}
+	if p.OnBackground != nil {
+		p.OnBackground(b)
 	}
 	return nil
 }

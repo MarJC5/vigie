@@ -432,6 +432,17 @@
     "ok": "À jour",
     "partial": "Pas entièrement vérifiés"
   },
+  "tray": {
+    "open": "Ouvrir {{app}}",
+    "scanAll": "Relever tous les sites",
+    "next": "Prochain relevé : {{time}}",
+    "nextOff": "Relevés automatiques désactivés",
+    "urgent_one": "{{count}} site urgent",
+    "urgent_many": "{{count}} sites urgents",
+    "urgent_other": "{{count}} sites urgents",
+    "noneUrgent": "Aucun site urgent",
+    "quit": "Quitter {{app}}"
+  },
   "menu": {
     "about": "À propos de {{app}}",
     "settings": "Réglages…",

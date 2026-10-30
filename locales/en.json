@@ -412,6 +412,16 @@
     "ok": "Up to date",
     "partial": "Not fully checked"
   },
+  "tray": {
+    "open": "Open {{app}}",
+    "scanAll": "Scan all sites",
+    "next": "Next scan: {{time}}",
+    "nextOff": "Automatic scans off",
+    "urgent_one": "{{count}} site urgent",
+    "urgent_other": "{{count}} sites urgent",
+    "noneUrgent": "No site urgent",
+    "quit": "Quit {{app}}"
+  },
   "menu": {
     "about": "About {{app}}",
     "settings": "Settings…",

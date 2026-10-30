@@ -10,6 +10,7 @@ import * as Scanner from "./scanner.js";
 import * as Security from "./security.js";
 import * as SiteManager from "./sitemanager.js";
 import * as Updates from "./updates.js";
+import * as Watch from "./watch.js";
 export {
     Addons,
     Data,
@@ -19,7 +20,8 @@ export {
     Scanner,
     Security,
     SiteManager,
-    Updates
+    Updates,
+    Watch
 };
 
 export type {
@@ -74,5 +76,6 @@ export type {
     Tree,
     UpdateItemView,
     UpdateView,
-    UpdatesState
+    UpdatesState,
+    WatchState
 } from "./models.js";
