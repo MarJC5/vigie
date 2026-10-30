@@ -11,9 +11,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/MarJC5/vigie/addon/export"
 )
 
 var (
@@ -34,15 +37,6 @@ type HostKey struct {
 	Key  string // base64 of the public key
 }
 
-// The key types Vigie asks for (ed25519, ecdsa, rsa).
-var hostKeyTypes = map[string]bool{
-	"ssh-ed25519":         true,
-	"ecdsa-sha2-nistp256": true,
-	"ecdsa-sha2-nistp384": true,
-	"ecdsa-sha2-nistp521": true,
-	"ssh-rsa":             true,
-}
-
 // Fingerprint returns the fingerprint OpenSSH shows: "SHA256:" and the unpadded base64 of the
 // SHA-256 of the key.
 func (k HostKey) Fingerprint() (string, error) {
@@ -57,7 +51,8 @@ func (k HostKey) Fingerprint() (string, error) {
 // blob decodes the key and checks that it starts with its own type name, as every SSH public
 // key does.
 func (k HostKey) blob() ([]byte, error) {
-	if !hostKeyTypes[k.Type] {
+	// The key types Vigie asks for (ed25519, ecdsa, rsa), the ones its exports carry.
+	if !slices.Contains(export.KeyTypes, k.Type) {
 		return nil, fmt.Errorf("type %q: %w", k.Type, ErrBadHostKey)
 	}
 	blob, err := base64.StdEncoding.DecodeString(k.Key)

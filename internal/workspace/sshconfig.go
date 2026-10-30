@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/MarJC5/vigie/internal/exchange"
+	"github.com/MarJC5/vigie/addon/export"
 	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/sshx"
 )
@@ -78,11 +78,11 @@ func (w *Workspace) SSHConfigHosts(ctx context.Context) (SSHConfig, error) {
 
 // SSHConfigFile is a file to import holding a host for each alias, named after it: the import
 // shows what it adds and adds it as it does any export.
-func SSHConfigFile(aliases []string) exchange.File {
-	f := exchange.File{Folders: []exchange.Folder{}, Hosts: []exchange.Host{}, Sites: []exchange.Site{}, Ignores: []exchange.Ignore{}}
+func SSHConfigFile(aliases []string) export.File {
+	f := export.File{Folders: []export.Folder{}, Hosts: []export.Host{}, Sites: []export.Site{}, Ignores: []export.Ignore{}}
 	for i, alias := range aliases {
-		f.Hosts = append(f.Hosts, exchange.Host{ID: model.NewID().String(), Name: alias, Alias: alias, Color: model.ColorNone.String(),
-			Position: i, TrustedKeys: []exchange.HostKey{}})
+		f.Hosts = append(f.Hosts, export.Host{ID: model.NewID().String(), Name: alias, Alias: alias, Color: model.ColorNone.String(),
+			Position: i, TrustedKeys: []export.HostKey{}})
 	}
 	return f
 }

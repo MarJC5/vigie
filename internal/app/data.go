@@ -12,6 +12,7 @@ import (
 	"time"
 	"uuid"
 
+	"github.com/MarJC5/vigie/addon/export"
 	"github.com/MarJC5/vigie/internal/exchange"
 	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/workspace"
@@ -50,7 +51,7 @@ type Data struct {
 
 type pendingImport struct {
 	source ImportPreview // what the file says, without the plan
-	file   exchange.File
+	file   export.File
 	plan   workspace.ImportPlan
 }
 
@@ -94,9 +95,9 @@ func (d *Data) ExportSummary(ctx context.Context, nodeID string) ExportSummary {
 		Ignores: len(f.Ignores), HistoryBytes: with - without}
 }
 
-func size(f exchange.File) (int, error) {
+func size(f export.File) (int, error) {
 	var buf bytes.Buffer
-	err := exchange.Write(&buf, f)
+	err := export.Write(&buf, f)
 	return buf.Len(), err
 }
 
@@ -140,7 +141,7 @@ func (d *Data) Export(ctx context.Context, nodeID string, history bool) ExportRe
 	if err != nil || target == "" {
 		return ExportResult{Problem: ProblemOf(err)}
 	}
-	if err := exchange.WriteFile(target, f); err != nil {
+	if err := export.WriteFile(target, f); err != nil {
 		return ExportResult{Problem: ProblemOf(err)}
 	}
 	return ExportResult{File: target}
@@ -229,7 +230,7 @@ func (d *Data) ChooseImport(ctx context.Context, kind string) ImportPreview {
 	}
 	p := pendingImport{source: ImportPreview{Source: kind, File: filepath.Base(file)}}
 	if kind == FileVigie {
-		f, err := exchange.Read(bytes.NewReader(data))
+		f, err := export.Read(bytes.NewReader(data))
 		if err != nil {
 			return ImportPreview{Problem: ProblemOf(err)}
 		}
@@ -296,8 +297,8 @@ func (d *Data) intoPath(ctx context.Context, intoID string) (string, error) {
 	return tree.PathOf(n), nil
 }
 
-func itemsOf(plan workspace.ImportPlan, f exchange.File) []ImportItem {
-	hosts, sites := map[string]exchange.Host{}, map[string]exchange.Site{}
+func itemsOf(plan workspace.ImportPlan, f export.File) []ImportItem {
+	hosts, sites := map[string]export.Host{}, map[string]export.Site{}
 	for _, h := range f.Hosts {
 		hosts[h.ID] = h
 	}
@@ -332,7 +333,7 @@ func itemsOf(plan workspace.ImportPlan, f exchange.File) []ImportItem {
 }
 
 // account is how a host reaches its server: its alias, or user@hostname, with the port when not 22.
-func account(h exchange.Host) string {
+func account(h export.Host) string {
 	if h.Alias != "" {
 		return h.Alias
 	}

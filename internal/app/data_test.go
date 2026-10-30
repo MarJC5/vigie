@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/MarJC5/vigie/addon/export"
 	"github.com/MarJC5/vigie/internal/app"
-	"github.com/MarJC5/vigie/internal/exchange"
 	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/workspace"
@@ -92,18 +92,18 @@ func testKey(t *testing.T) sshx.HostKey {
 func anExport(t *testing.T, key sshx.HostKey) string {
 	t.Helper()
 	folder, host, site := model.NewID().String(), model.NewID().String(), model.NewID().String()
-	f := exchange.File{
+	f := export.File{
 		Exported: day, App: "0.6.0",
-		Folders: []exchange.Folder{{ID: folder, Name: "Valais", Color: "none"}},
-		Hosts: []exchange.Host{{ID: host, Folder: folder, Name: "Atelier", Hostname: "ssh.example.test", Port: 2222, User: "atelier",
-			Color: "none", TrustedKeys: []exchange.HostKey{{Name: "[ssh.example.test]:2222", Type: key.Type, Key: key.Key}}}},
-		Sites:   []exchange.Site{{ID: site, Host: host, Name: "atelier.example.test", Path: "~/www", Color: "none"}},
-		Ignores: []exchange.Ignore{},
-		History: &exchange.History{Scans: []exchange.Scan{{ID: model.NewID().String(), Site: site, Started: day, Finished: day,
-			Outcome: "completed", Items: []exchange.Item{}, Findings: []exchange.Finding{}}}, Operations: []exchange.Operation{}},
+		Folders: []export.Folder{{ID: folder, Name: "Valais", Color: "none"}},
+		Hosts: []export.Host{{ID: host, Folder: folder, Name: "Atelier", Hostname: "ssh.example.test", Port: 2222, User: "atelier",
+			Color: "none", TrustedKeys: []export.HostKey{{Name: "[ssh.example.test]:2222", Type: key.Type, Key: key.Key}}}},
+		Sites:   []export.Site{{ID: site, Host: host, Name: "atelier.example.test", Path: "~/www", Color: "none"}},
+		Ignores: []export.Ignore{},
+		History: &export.History{Scans: []export.Scan{{ID: model.NewID().String(), Site: site, Started: day, Finished: day,
+			Outcome: "completed", Items: []export.Item{}, Findings: []export.Finding{}}}, Operations: []export.Operation{}},
 	}
 	path := filepath.Join(t.TempDir(), "vigie-2026-10-30.json")
-	if err := exchange.WriteFile(path, f); err != nil {
+	if err := export.WriteFile(path, f); err != nil {
 		t.Fatal(err)
 	}
 	return path

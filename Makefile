@@ -7,8 +7,10 @@ WAILS_BIN := $(CURDIR)/.task/bin
 # Container tests (Docker needed): make test-integration; make record refreshes the WP-CLI outputs.
 .PHONY: test-integration record test vet fmt-check vuln go-check frontend-install frontend-browsers frontend-lint frontend-test frontend-build frontend-e2e bindings bindings-check app check
 
+# The module shared with add-ons (./addon) is a module of its own: ./... does not reach it.
 test:
 	go test -race ./...
+	cd addon && go test -race ./...
 
 # ./... skips testdata: the program that prepares the end-to-end test is named as well.
 GO_TESTDATA := ./cmd/vigie/testdata/seed
@@ -17,10 +19,11 @@ vet:
 	go vet ./... $(GO_TESTDATA)
 	go vet -tags integration ./internal/integration
 	go vet -tags server ./cmd/vigie
+	cd addon && go vet ./...
 
 # Only the module's packages: gofmt alone would also walk frontend/node_modules.
 fmt-check:
-	@unformatted="$$(gofmt -l $$(go list -f '{{.Dir}}' ./... $(GO_TESTDATA)))"; \
+	@unformatted="$$(gofmt -l $$(go list -f '{{.Dir}}' ./... $(GO_TESTDATA)) addon)"; \
 	if [ -n "$$unformatted" ]; then echo "Not formatted with gofmt:"; echo "$$unformatted"; exit 1; fi
 
 vuln:

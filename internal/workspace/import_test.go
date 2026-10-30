@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MarJC5/vigie/internal/exchange"
+	"github.com/MarJC5/vigie/addon/export"
 	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/store"
@@ -24,7 +24,7 @@ func emptyVigie(t *testing.T) (*workspace.Workspace, *store.DB, string) {
 	return workspace.New(db, workspace.Deps{Now: time.Now, KnownHosts: known}), db, known
 }
 
-func plan(t *testing.T, ws *workspace.Workspace, f exchange.File, into string) workspace.ImportPlan {
+func plan(t *testing.T, ws *workspace.Workspace, f export.File, into string) workspace.ImportPlan {
 	t.Helper()
 	p, err := ws.PlanImport(context.Background(), f, into)
 	if err != nil {
@@ -108,9 +108,9 @@ func TestAnImportAddsOnlyWhatIsNew(t *testing.T) {
 		f.Sites[i].ID, f.Sites[i].Host = model.NewID().String(), ids[f.Sites[i].Host]
 	}
 	f.Ignores = nil
-	bench := f.Hosts[slices.IndexFunc(f.Hosts, func(h exchange.Host) bool { return h.Name == "Bench" })]
-	f.Sites = append(f.Sites, exchange.Site{ID: model.NewID().String(), Host: bench.ID, Name: "new.example.test", Path: "~/sites/new", Color: "none"})
-	f.Hosts = append(f.Hosts, exchange.Host{ID: model.NewID().String(), Folder: f.Folders[0].ID, Name: "Bench", Alias: "other", Color: "none"})
+	bench := f.Hosts[slices.IndexFunc(f.Hosts, func(h export.Host) bool { return h.Name == "Bench" })]
+	f.Sites = append(f.Sites, export.Site{ID: model.NewID().String(), Host: bench.ID, Name: "new.example.test", Path: "~/sites/new", Color: "none"})
+	f.Hosts = append(f.Hosts, export.Host{ID: model.NewID().String(), Folder: f.Folders[0].ID, Name: "Bench", Alias: "other", Color: "none"})
 	p = plan(t, ws, f, "")
 	want := []string{
 		"Clients present same-name",
@@ -164,13 +164,13 @@ func mustResolve(t *testing.T, tree *model.Tree, path string) model.Node {
 }
 
 // A file to import: a folder, and a host with a key for the name given.
-func keyFile(t *testing.T, name string, key sshx.HostKey) exchange.File {
+func keyFile(t *testing.T, name string, key sshx.HostKey) export.File {
 	t.Helper()
 	folder, host := model.NewID().String(), model.NewID().String()
-	return exchange.File{
-		Folders: []exchange.Folder{{ID: folder, Name: "Imported", Color: "none"}},
-		Hosts: []exchange.Host{{ID: host, Folder: folder, Name: "Server", Hostname: "ssh.example.test", Port: 2222, User: "u1",
-			Color: "none", TrustedKeys: []exchange.HostKey{{Name: name, Type: key.Type, Key: key.Key}}}},
+	return export.File{
+		Folders: []export.Folder{{ID: folder, Name: "Imported", Color: "none"}},
+		Hosts: []export.Host{{ID: host, Folder: folder, Name: "Server", Hostname: "ssh.example.test", Port: 2222, User: "u1",
+			Color: "none", TrustedKeys: []export.HostKey{{Name: name, Type: key.Type, Key: key.Key}}}},
 	}
 }
 
@@ -202,7 +202,7 @@ func TestKeysThatCannotBeTrusted(t *testing.T) {
 	key, other := testKey(t), testKey(t)
 	for _, tc := range []struct {
 		name string
-		file exchange.File
+		file export.File
 		want workspace.KeyRefusal
 	}{
 		{"for another server", keyFile(t, "ssh.example.test", key), workspace.KeyOtherServer},
@@ -232,13 +232,13 @@ func TestKeysThatCannotBeTrusted(t *testing.T) {
 func TestWhatCannotBeAddedIsRefusedWithWhatItHolds(t *testing.T) {
 	ws, _, _ := emptyVigie(t)
 	folder, host, bad := model.NewID().String(), model.NewID().String(), model.NewID().String()
-	f := exchange.File{
-		Folders: []exchange.Folder{{ID: folder, Name: "A/B", Color: "none"}},
-		Hosts: []exchange.Host{
+	f := export.File{
+		Folders: []export.Folder{{ID: folder, Name: "A/B", Color: "none"}},
+		Hosts: []export.Host{
 			{ID: host, Folder: folder, Name: "Server", Alias: "server", Color: "none"},
 			{ID: bad, Name: "No address", Color: "none"},
 		},
-		Sites: []exchange.Site{
+		Sites: []export.Site{
 			{ID: model.NewID().String(), Host: host, Name: "a.example.test", Path: "~/a", Color: "none"},
 			{ID: model.NewID().String(), Host: bad, Name: "b.example.test", Path: "~/b", Color: "none"},
 		},

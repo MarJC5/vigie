@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MarJC5/vigie/addon/export"
 	"github.com/MarJC5/vigie/internal/buildinfo"
 	"github.com/MarJC5/vigie/internal/exchange"
 	"github.com/MarJC5/vigie/internal/model"
@@ -18,22 +19,22 @@ var ErrNotExportable = errors.New("only everything, a folder or a host is export
 
 // Export reads the site manager at path ("" for everything, a folder or a host) into an export,
 // with the keys trusted for its hosts, the ignores of its sites, and their history when asked.
-func (w *Workspace) Export(ctx context.Context, path string, history bool) (exchange.File, error) {
+func (w *Workspace) Export(ctx context.Context, path string, history bool) (export.File, error) {
 	tree, err := w.db.LoadTree(ctx)
 	if err != nil {
-		return exchange.File{}, err
+		return export.File{}, err
 	}
 	scope := model.Root
 	if path != "" {
 		if scope, err = tree.Resolve(path); err != nil {
-			return exchange.File{}, err
+			return export.File{}, err
 		}
 	}
 	if scope.Kind == model.KindSite {
-		return exchange.File{}, fmt.Errorf("%q: %w", path, ErrNotExportable)
+		return export.File{}, fmt.Errorf("%q: %w", path, ErrNotExportable)
 	}
-	f := exchange.File{Exported: w.deps.Now().UTC().Truncate(time.Second), App: buildinfo.Version(), Scope: tree.PathOf(scope),
-		Folders: []exchange.Folder{}, Hosts: []exchange.Host{}, Sites: []exchange.Site{}, Ignores: []exchange.Ignore{}}
+	f := export.File{Exported: w.deps.Now().UTC().Truncate(time.Second), App: buildinfo.Version(), Scope: tree.PathOf(scope),
+		Folders: []export.Folder{}, Hosts: []export.Host{}, Sites: []export.Site{}, Ignores: []export.Ignore{}}
 	if path == "" {
 		f.Scope = ""
 	}
@@ -69,12 +70,12 @@ func (w *Workspace) Export(ctx context.Context, path string, history bool) (exch
 		}
 	})
 	if history {
-		f.History = &exchange.History{Scans: []exchange.Scan{}, Operations: []exchange.Operation{}}
+		f.History = &export.History{Scans: []export.Scan{}, Operations: []export.Operation{}}
 	}
 	for _, site := range sites {
 		ignores, err := w.db.Ignores(ctx, site.ID)
 		if err != nil {
-			return exchange.File{}, err
+			return export.File{}, err
 		}
 		for _, i := range ignores {
 			f.Ignores = append(f.Ignores, exchange.IgnoreOf(i))
@@ -84,14 +85,14 @@ func (w *Workspace) Export(ctx context.Context, path string, history bool) (exch
 		}
 		scans, err := w.db.Scans(ctx, site.ID)
 		if err != nil {
-			return exchange.File{}, err
+			return export.File{}, err
 		}
 		for _, s := range scans {
 			f.History.Scans = append(f.History.Scans, exchange.ScanOf(s))
 		}
 		ops, err := w.db.Operations(ctx, site.ID)
 		if err != nil {
-			return exchange.File{}, err
+			return export.File{}, err
 		}
 		// Stored the newest first; an export keeps the order they were made in.
 		for i := len(ops) - 1; i >= 0; i-- {
@@ -104,7 +105,7 @@ func (w *Workspace) Export(ctx context.Context, path string, history bool) (exch
 // trustedKeys returns the keys of Vigie's known_hosts for a host, the one the host trusted when
 // its fingerprint is known. A host whose name cannot be read (an alias ssh does not resolve any
 // more) gets none: it asks again at its first connection after an import.
-func (w *Workspace) trustedKeys(ctx context.Context, h model.Host) []exchange.HostKey {
+func (w *Workspace) trustedKeys(ctx context.Context, h model.Host) []export.HostKey {
 	name := sshx.KnownHostsName(h.Hostname, h.EffectivePort())
 	if h.Alias != "" {
 		if w.deps.Resolver == nil {
@@ -120,10 +121,10 @@ func (w *Workspace) trustedKeys(ctx context.Context, h model.Host) []exchange.Ho
 	if err != nil {
 		return nil
 	}
-	var out []exchange.HostKey
+	var out []export.HostKey
 	for _, k := range keys {
 		if fp, err := k.Fingerprint(); err == nil && (h.HostKeyFingerprint == "" || fp == h.HostKeyFingerprint) {
-			out = append(out, exchange.HostKey{Name: name, Type: k.Type, Key: k.Key})
+			out = append(out, export.HostKey{Name: name, Type: k.Type, Key: k.Key})
 		}
 	}
 	return out

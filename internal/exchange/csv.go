@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/MarJC5/vigie/addon/export"
 	"github.com/MarJC5/vigie/internal/model"
 )
 
@@ -58,18 +59,21 @@ type CSVReport struct {
 // address, and optionally its folder, name, color and notes.
 var csvColumns = []string{"folder", "alias", "host", "port", "user", "path", "url", "name", "color", "notes"}
 
+// maxSize bounds what is read: far above a list of thousands of sites.
+const maxSize = 64 << 20
+
 // ReadCSV reads a site list: a header line, then one line per site. Values are separated by commas,
 // or by semicolons when the header has more of them (as spreadsheets write in French), quoted as
 // RFC 4180 says; a leading byte order mark is skipped. Folders are paths ("Clients/Valais");
 // sites of the same account share one host, named after its alias or its hostname. What the file
 // gives becomes an export with new IDs, to import with its preview; the lines refused are listed.
-func ReadCSV(r io.Reader) (File, CSVReport, error) {
+func ReadCSV(r io.Reader) (export.File, CSVReport, error) {
 	data, err := io.ReadAll(io.LimitReader(r, maxSize+1))
 	if err != nil {
-		return File{}, CSVReport{}, err
+		return export.File{}, CSVReport{}, err
 	}
 	if len(data) > maxSize {
-		return File{}, CSVReport{}, fmt.Errorf("larger than %d MB: %w", maxSize>>20, ErrNotACSV)
+		return export.File{}, CSVReport{}, fmt.Errorf("larger than %d MB: %w", maxSize>>20, ErrNotACSV)
 	}
 	data = bytes.TrimPrefix(data, []byte("\uFEFF"))
 	header, _, _ := bufio.NewReader(bytes.NewReader(data)).ReadLine()
@@ -81,16 +85,16 @@ func ReadCSV(r io.Reader) (File, CSVReport, error) {
 	reader.TrimLeadingSpace = true
 	names, err := reader.Read()
 	if err != nil {
-		return File{}, CSVReport{}, fmt.Errorf("header: %w", ErrNotACSV)
+		return export.File{}, CSVReport{}, fmt.Errorf("header: %w", ErrNotACSV)
 	}
 	columns := map[string]int{}
 	for i, name := range names {
 		name = strings.ToLower(strings.TrimSpace(name))
 		if !slices.Contains(csvColumns, name) {
-			return File{}, CSVReport{}, fmt.Errorf("column %q: %w", name, ErrNotACSV)
+			return export.File{}, CSVReport{}, fmt.Errorf("column %q: %w", name, ErrNotACSV)
 		}
 		if _, twice := columns[name]; twice {
-			return File{}, CSVReport{}, fmt.Errorf("column %q twice: %w", name, ErrNotACSV)
+			return export.File{}, CSVReport{}, fmt.Errorf("column %q twice: %w", name, ErrNotACSV)
 		}
 		columns[name] = i
 	}
@@ -98,10 +102,10 @@ func ReadCSV(r io.Reader) (File, CSVReport, error) {
 	_, hasHost := columns["host"]
 	_, hasUser := columns["user"]
 	if _, ok := columns["path"]; !ok || (!hasAlias && !(hasHost && hasUser)) {
-		return File{}, CSVReport{}, fmt.Errorf("a path, and an alias or a host and user, are needed: %w", ErrNotACSV)
+		return export.File{}, CSVReport{}, fmt.Errorf("a path, and an alias or a host and user, are needed: %w", ErrNotACSV)
 	}
 	b := csvBuilder{
-		file:    File{Folders: []Folder{}, Hosts: []Host{}, Sites: []Site{}, Ignores: []Ignore{}},
+		file:    export.File{Folders: []export.Folder{}, Hosts: []export.Host{}, Sites: []export.Site{}, Ignores: []export.Ignore{}},
 		folders: map[string]string{}, hosts: map[string]csvHost{}, sites: map[string]bool{},
 	}
 	for {
@@ -110,7 +114,7 @@ func ReadCSV(r io.Reader) (File, CSVReport, error) {
 			break
 		}
 		if err != nil {
-			return File{}, CSVReport{}, fmt.Errorf("%w: %w", ErrNotACSV, err)
+			return export.File{}, CSVReport{}, fmt.Errorf("%w: %w", ErrNotACSV, err)
 		}
 		line, _ := reader.FieldPos(0)
 		b.lines++
@@ -139,7 +143,7 @@ type csvHost struct {
 }
 
 type csvBuilder struct {
-	file    File
+	file    export.File
 	lines   int
 	refused []CSVRefusal
 	folders map[string]string  // IDs by path
@@ -171,7 +175,7 @@ func (b *csvBuilder) add(value func(string) string) *CSVRefusal {
 	}
 	color := model.ColorNone.String()
 	if c := strings.ToLower(value("color")); c != "" {
-		if !knownColor(c) {
+		if _, err := model.ParseColor(c); err != nil {
 			return refuse(CSVBadColor, value("color"))
 		}
 		color = c
@@ -207,13 +211,13 @@ func (b *csvBuilder) add(value func(string) string) *CSVRefusal {
 			hostName = hostname
 		}
 		host = csvHost{id: model.NewID().String(), folder: folder}
-		b.file.Hosts = append(b.file.Hosts, Host{ID: host.id, Folder: b.folder(folder), Name: hostName, Alias: alias,
-			Hostname: hostname, Port: port, User: user, Color: model.ColorNone.String(), TrustedKeys: []HostKey{},
+		b.file.Hosts = append(b.file.Hosts, export.Host{ID: host.id, Folder: b.folder(folder), Name: hostName, Alias: alias,
+			Hostname: hostname, Port: port, User: user, Color: model.ColorNone.String(), TrustedKeys: []export.HostKey{},
 			Position: len(b.file.Hosts)})
 	}
 	b.sites[siteKey] = true
-	b.file.Sites = append(b.file.Sites, Site{ID: model.NewID().String(), Host: host.id, Name: name, Path: sitePath,
-		URL: value("url"), Color: color, Notes: value("notes"), Tags: []string{}, Subsites: []Subsite{}, Position: host.sites})
+	b.file.Sites = append(b.file.Sites, export.Site{ID: model.NewID().String(), Host: host.id, Name: name, Path: sitePath,
+		URL: value("url"), Color: color, Notes: value("notes"), Tags: []string{}, Subsites: []export.Subsite{}, Position: host.sites})
 	host.sites++
 	b.hosts[key] = host
 	return nil
@@ -233,7 +237,7 @@ func (b *csvBuilder) folder(p string) string {
 	}
 	id := model.NewID().String()
 	b.folders[p] = id
-	b.file.Folders = append(b.file.Folders, Folder{ID: id, Parent: parent, Name: strings.TrimSpace(name),
+	b.file.Folders = append(b.file.Folders, export.Folder{ID: id, Parent: parent, Name: strings.TrimSpace(name),
 		Color: model.ColorNone.String(), Position: len(b.file.Folders)})
 	return id
 }

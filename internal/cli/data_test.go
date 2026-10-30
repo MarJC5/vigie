@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/MarJC5/vigie/addon/export"
 	"github.com/MarJC5/vigie/internal/cli"
-	"github.com/MarJC5/vigie/internal/exchange"
 	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/store"
@@ -88,15 +88,15 @@ func hostKey(t *testing.T) sshx.HostKey {
 func exportFile(t *testing.T, key sshx.HostKey) string {
 	t.Helper()
 	folder, host := model.NewID().String(), model.NewID().String()
-	f := exchange.File{
-		Folders: []exchange.Folder{{ID: folder, Name: "Clients", Color: "blue"}},
-		Hosts: []exchange.Host{{ID: host, Folder: folder, Name: "Shared", Hostname: "ssh.example.test", Port: 2222, User: "u12ab",
-			Color: "none", TrustedKeys: []exchange.HostKey{{Name: "[ssh.example.test]:2222", Type: key.Type, Key: key.Key}}}},
-		Sites:   []exchange.Site{{ID: model.NewID().String(), Host: host, Name: "atelier.example.test", Path: "~/www", Color: "none"}},
-		Ignores: []exchange.Ignore{},
+	f := export.File{
+		Folders: []export.Folder{{ID: folder, Name: "Clients", Color: "blue"}},
+		Hosts: []export.Host{{ID: host, Folder: folder, Name: "Shared", Hostname: "ssh.example.test", Port: 2222, User: "u12ab",
+			Color: "none", TrustedKeys: []export.HostKey{{Name: "[ssh.example.test]:2222", Type: key.Type, Key: key.Key}}}},
+		Sites:   []export.Site{{ID: model.NewID().String(), Host: host, Name: "atelier.example.test", Path: "~/www", Color: "none"}},
+		Ignores: []export.Ignore{},
 	}
 	path := filepath.Join(t.TempDir(), "vigie.json")
-	if err := exchange.WriteFile(path, f); err != nil {
+	if err := export.WriteFile(path, f); err != nil {
 		t.Fatal(err)
 	}
 	return path
@@ -257,7 +257,7 @@ func TestExport(t *testing.T) {
 	}
 	// To the standard output: the export itself, for a script or an add-on.
 	code, out, _ := v.run(t, "en", "", "export", "Clients", "--json")
-	if f, err := exchange.Read(strings.NewReader(out)); code != 0 || err != nil || f.Scope != "Clients" || len(f.Sites) != 1 {
+	if f, err := export.Read(strings.NewReader(out)); code != 0 || err != nil || f.Scope != "Clients" || len(f.Sites) != 1 {
 		t.Fatalf("exit %d, %v\n%s", code, err, out)
 	}
 	file := filepath.Join(t.TempDir(), "backup.json")

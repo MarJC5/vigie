@@ -3,6 +3,7 @@ module github.com/MarJC5/vigie
 go 1.27
 
 require (
+	github.com/MarJC5/vigie/addon v0.0.0
 	github.com/moby/moby/api v1.55.0
 	github.com/testcontainers/testcontainers-go v0.44.0
 	github.com/testcontainers/testcontainers-go/modules/mariadb v0.44.0
@@ -76,3 +77,6 @@ require (
 )
 
 ignore node_modules
+
+// The format shared with add-ons is defined once, in ./addon; add-ons require a tagged version.
+replace github.com/MarJC5/vigie/addon => ./addon

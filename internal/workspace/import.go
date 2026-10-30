@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/MarJC5/vigie/addon/export"
 	"github.com/MarJC5/vigie/internal/exchange"
 	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/sshx"
@@ -100,7 +101,7 @@ func (p ImportPlan) Added() int {
 // PlanImport reads what importing f into the folder at path ("" for the top) would do: what is
 // new is added, what is already there is left as it is, and nothing stored changes. The file's
 // IDs are kept, a new one given only when another node has it.
-func (w *Workspace) PlanImport(ctx context.Context, f exchange.File, into string) (ImportPlan, error) {
+func (w *Workspace) PlanImport(ctx context.Context, f export.File, into string) (ImportPlan, error) {
 	if err := f.Check(); err != nil {
 		return ImportPlan{}, err
 	}
@@ -152,7 +153,7 @@ type slot struct {
 type planner struct {
 	w        *Workspace
 	tree     *model.Tree
-	file     exchange.File
+	file     export.File
 	plan     ImportPlan
 	into     model.ID
 	folders  map[string]mapped   // by the file's ID
@@ -238,7 +239,7 @@ func joinPath(parent, name string) string {
 }
 
 // folder maps a folder of the file, its parents first.
-func (p *planner) folder(x exchange.Folder) mapped {
+func (p *planner) folder(x export.Folder) mapped {
 	if m, ok := p.folders[x.ID]; ok {
 		return m
 	}
@@ -255,7 +256,7 @@ func (p *planner) folder(x exchange.Folder) mapped {
 	return m
 }
 
-func (p *planner) placeFolder(x exchange.Folder, parent mapped) mapped {
+func (p *planner) placeFolder(x export.Folder, parent mapped) mapped {
 	path := joinPath(parent.path, x.Name)
 	refused := func(reason ImportReason, detail string) mapped {
 		p.entry(model.KindFolder, x.ID, x.Name, path, ImportRefused, reason, detail)
@@ -264,7 +265,7 @@ func (p *planner) placeFolder(x exchange.Folder, parent mapped) mapped {
 	if parent.refused {
 		return refused(ReasonParentRefused, "")
 	}
-	f := x.Model()
+	f := exchange.ToFolder(x)
 	folderPath := func(id model.ID) string { return p.tree.PathOf(model.Node{Kind: model.KindFolder, ID: id}) }
 	if _, ok := p.tree.Folder(f.ID); ok {
 		p.entry(model.KindFolder, x.ID, x.Name, folderPath(f.ID), ImportPresent, ReasonSameID, "")
@@ -301,13 +302,13 @@ func sameConnection(a, b model.Host) bool {
 	return strings.EqualFold(a.Hostname, b.Hostname) && a.EffectivePort() == b.EffectivePort() && a.User == b.User
 }
 
-func (p *planner) host(ctx context.Context, x exchange.Host) error {
+func (p *planner) host(ctx context.Context, x export.Host) error {
 	parent := mapped{id: p.into, path: p.plan.Into}
 	if x.Folder != "" {
 		parent = p.folders[x.Folder]
 	}
 	path := joinPath(parent.path, x.Name)
-	h := x.Model()
+	h := exchange.ToHost(x)
 	hostPath := func(id model.ID) string { return p.tree.PathOf(model.Node{Kind: model.KindHost, ID: id}) }
 	place := func(status ImportStatus, reason ImportReason, detail string, m mapped) {
 		p.entry(model.KindHost, x.ID, x.Name, m.path, status, reason, detail)
@@ -354,7 +355,7 @@ func (p *planner) hasHost(id model.ID) bool {
 
 // keys offers the keys of a host added: the first of its server's name, when Vigie trusts no
 // other key for it.
-func (p *planner) keys(ctx context.Context, h model.Host, path string, keys []exchange.HostKey) error {
+func (p *planner) keys(ctx context.Context, h model.Host, path string, keys []export.HostKey) error {
 	if len(keys) == 0 {
 		return nil
 	}
@@ -423,10 +424,10 @@ func (w *Workspace) trustsOther(name, fingerprint string) (bool, error) {
 	return false, nil
 }
 
-func (p *planner) site(x exchange.Site) {
+func (p *planner) site(x export.Site) {
 	host := p.hosts[x.Host]
 	path := joinPath(host.path, x.Name)
-	s := x.Model()
+	s := exchange.ToSite(x)
 	sitePath := func(id model.ID) string { return p.tree.PathOf(model.Node{Kind: model.KindSite, ID: id}) }
 	if host.refused {
 		p.entry(model.KindSite, x.ID, x.Name, path, ImportRefused, ReasonParentRefused, "")
@@ -473,18 +474,18 @@ func samePath(a, b string) bool {
 func (p *planner) history() {
 	for _, x := range p.file.Ignores {
 		if id, ok := p.sites[x.Site]; ok {
-			p.plan.batch.Ignores = append(p.plan.batch.Ignores, x.Model(id))
+			p.plan.batch.Ignores = append(p.plan.batch.Ignores, exchange.ToIgnore(x, id))
 		}
 	}
 	if p.file.History != nil {
 		for _, x := range p.file.History.Scans {
 			if id, ok := p.sites[x.Site]; ok {
-				p.plan.batch.Scans = append(p.plan.batch.Scans, x.Model(id))
+				p.plan.batch.Scans = append(p.plan.batch.Scans, exchange.ToScan(x, id))
 			}
 		}
 		for _, x := range p.file.History.Operations {
 			if id, ok := p.sites[x.Site]; ok {
-				p.plan.batch.Operations = append(p.plan.batch.Operations, x.Model(id))
+				p.plan.batch.Operations = append(p.plan.batch.Operations, exchange.ToOperation(x, id))
 			}
 		}
 	}

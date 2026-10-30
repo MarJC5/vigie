@@ -1,7 +1,8 @@
-// Package exchange is Vigie's export format: the site manager in a JSON file, read again by an
-// import on this machine or another one, and by add-ons. Version 1 is described in docs/data.md,
-// with its JSON Schema.
-package exchange
+// Package export is Vigie's export format: the site manager in a JSON file, read again by an import
+// on this machine or another one, and written or read by add-ons. Vigie and its add-ons compile
+// against this one definition. Version 1 is described in Vigie's docs/data.md, and its JSON Schema
+// is embedded (Schema).
+package export
 
 import (
 	"bytes"
@@ -9,11 +10,19 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
+	"slices"
 	"time"
 	"uuid"
 
-	"github.com/MarJC5/vigie/internal/model"
+	_ "embed"
 )
+
+// Schema is the JSON Schema of version 1, checked against the types of this package.
+//
+//go:embed export-v1.schema.json
+var Schema []byte
 
 // The format's name and the version this Vigie writes; every older version stays readable.
 const (
@@ -285,7 +294,7 @@ func (f File) Check() error {
 			return fmt.Errorf("host %s: %w", x.ID, ErrInvalid)
 		}
 		for _, k := range x.TrustedKeys {
-			if !keyTypes[k.Type] {
+			if !slices.Contains(KeyTypes, k.Type) {
 				return fmt.Errorf("host %s, key type %q: %w", x.ID, k.Type, ErrInvalid)
 			}
 		}
@@ -309,7 +318,7 @@ func (f File) Check() error {
 				return fmt.Errorf("scan %s: %w", x.ID, ErrInvalid)
 			}
 			for _, fd := range x.Findings {
-				if !levels[model.FindingLevel(fd.Level)] {
+				if !slices.Contains(Levels, fd.Level) {
 					return fmt.Errorf("scan %s, level %q: %w", x.ID, fd.Level, ErrInvalid)
 				}
 			}
@@ -326,17 +335,19 @@ func (f File) Check() error {
 	return f.checkFolderLoops()
 }
 
-// The values the schema lists: what Vigie shows and counts by them.
+// The values the schema lists, in their order: what Vigie shows and counts by them. Vigie checks
+// that they are its own.
 var (
-	keyTypes = map[string]bool{"ssh-ed25519": true, "ecdsa-sha2-nistp256": true, "ecdsa-sha2-nistp384": true,
-		"ecdsa-sha2-nistp521": true, "ssh-rsa": true}
-	levels = map[model.FindingLevel]bool{model.LevelUrgent: true, model.LevelAttention: true, model.LevelInfo: true,
-		model.LevelNotChecked: true}
+	// Colors of folders, hosts and sites.
+	Colors = []string{"none", "red", "green", "blue", "yellow", "cyan", "magenta", "orange"}
+	// KeyTypes of the server keys Vigie trusts.
+	KeyTypes = []string{"ssh-ed25519", "ecdsa-sha2-nistp256", "ecdsa-sha2-nistp384", "ecdsa-sha2-nistp521", "ssh-rsa"}
+	// Levels of findings.
+	Levels = []string{"urgent", "attention", "info", "not-checked"}
 )
 
 func knownColor(name string) bool {
-	_, err := model.ParseColor(name)
-	return err == nil
+	return slices.Contains(Colors, name)
 }
 
 // checkFolderLoops refuses folders that are each other's parents.
@@ -360,4 +371,27 @@ func (f File) checkFolderLoops() error {
 		}
 	}
 	return nil
+}
+
+// WriteFile writes an export readable by its owner only (0600), to a temporary file in the same
+// folder renamed at the end: an existing file never keeps wider permissions, and an interrupted
+// export never leaves half a file.
+func WriteFile(path string, f File) error {
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".vigie-export-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmp.Name())
+	if err := tmp.Chmod(0o600); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := Write(tmp, f); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmp.Name(), path)
 }

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/MarJC5/vigie/addon/export"
 	"github.com/MarJC5/vigie/internal/exchange"
 	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/workspace"
@@ -104,12 +105,12 @@ func exportPath(ctx context.Context, env Env, ws *workspace.Workspace, o dataOpt
 		return env.fail(explain(env, path, err))
 	}
 	if o.output == "" {
-		if err := exchange.Write(env.Out, f); err != nil {
+		if err := export.Write(env.Out, f); err != nil {
 			return env.fail(err.Error())
 		}
 		return exitOK
 	}
-	if err := exchange.WriteFile(o.output, f); err != nil {
+	if err := export.WriteFile(o.output, f); err != nil {
 		return env.fail(err.Error())
 	}
 	summary := exportJSON{File: o.output, Folders: len(f.Folders), Hosts: len(f.Hosts), Sites: len(f.Sites)}
@@ -173,7 +174,7 @@ type importJSON struct {
 
 // importSource is what an import reads, before its preview.
 type importSource struct {
-	file      exchange.File
+	file      export.File
 	lines     []exchange.CSVRefusal
 	sshConfig []workspace.SSHConfigHost
 }
@@ -279,14 +280,14 @@ func readImport(file string) (importSource, error) {
 		return importSource{}, err
 	}
 	if !strings.EqualFold(filepath.Ext(file), ".csv") {
-		f, err := exchange.Read(bytes.NewReader(data))
-		if !errors.Is(err, exchange.ErrNotAnExport) {
+		f, err := export.Read(bytes.NewReader(data))
+		if !errors.Is(err, export.ErrNotAnExport) {
 			return importSource{file: f}, err
 		}
 		if f, report, err := exchange.ReadCSV(bytes.NewReader(data)); err == nil {
 			return importSource{file: f, lines: report.Refused}, nil
 		}
-		return importSource{}, exchange.ErrNotAnExport
+		return importSource{}, export.ErrNotAnExport
 	}
 	f, report, err := exchange.ReadCSV(bytes.NewReader(data))
 	return importSource{file: f, lines: report.Refused}, err
@@ -361,9 +362,9 @@ func importError(env Env, o dataOptions, err error) string {
 		return env.t("cli.import.sshUnknown", map[string]any{"alias": missing.alias})
 	}
 	switch {
-	case errors.Is(err, exchange.ErrNewerVersion):
+	case errors.Is(err, export.ErrNewerVersion):
 		return env.t("cli.import.newer", nil)
-	case errors.Is(err, exchange.ErrNotAnExport):
+	case errors.Is(err, export.ErrNotAnExport):
 		return env.t("cli.import.notAnExport", map[string]any{"file": o.args[0]})
 	}
 	return err.Error()

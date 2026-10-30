@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MarJC5/vigie/internal/exchange"
+	"github.com/MarJC5/vigie/addon/export"
 	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/workspace"
@@ -82,10 +82,10 @@ func TestExportEverythingReadsBack(t *testing.T) {
 		t.Fatal(err)
 	}
 	var buf bytes.Buffer
-	if err := exchange.Write(&buf, f); err != nil {
+	if err := export.Write(&buf, f); err != nil {
 		t.Fatal(err)
 	}
-	got, err := exchange.Read(&buf)
+	got, err := export.Read(&buf)
 	if err != nil {
 		t.Fatalf("Read(Export()) = %v", err)
 	}
@@ -99,7 +99,7 @@ func TestExportEverythingReadsBack(t *testing.T) {
 	for _, h := range got.Hosts {
 		switch h.Name {
 		case "Shared hosting":
-			if len(h.TrustedKeys) != 1 || h.TrustedKeys[0] != (exchange.HostKey{Name: "[ssh.example.test]:2222", Type: key.Type, Key: key.Key}) {
+			if len(h.TrustedKeys) != 1 || h.TrustedKeys[0] != (export.HostKey{Name: "[ssh.example.test]:2222", Type: key.Type, Key: key.Key}) {
 				t.Errorf("trusted keys = %+v", h.TrustedKeys)
 			}
 			if h.Notes != "contrat **2026**" {
@@ -140,7 +140,7 @@ func TestAnExportFileIsTheOwnersOnly(t *testing.T) {
 	if err := os.WriteFile(path, []byte("old"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := exchange.WriteFile(path, f); err != nil {
+	if err := export.WriteFile(path, f); err != nil {
 		t.Fatal(err)
 	}
 	info, err := os.Stat(path)
@@ -152,7 +152,7 @@ func TestAnExportFileIsTheOwnersOnly(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer file.Close()
-	if _, err := exchange.Read(file); err != nil {
+	if _, err := export.Read(file); err != nil {
 		t.Errorf("Read(the file) = %v", err)
 	}
 	entries, err := os.ReadDir(filepath.Dir(path))

@@ -9,7 +9,12 @@ update of its database schema, Vigie writes a copy, `vigie.db.before-<version>`.
 
 An export is a JSON file, UTF-8, that holds your site manager. Vigie writes it, Vigie on this
 computer or another one reads it back, and add-ons can write or read it too. Its exact shape is the
-JSON Schema [`export-v1.schema.json`](export-v1.schema.json).
+JSON Schema [`export-v1.schema.json`](../addon/export/export-v1.schema.json).
+
+The format is defined once, in the Go module `github.com/MarJC5/vigie/addon` (directory `addon/`
+of this repository, versions tagged `addon/vX.Y.Z`): Vigie compiles against it, and so does an
+add-on written in Go, which imports `github.com/MarJC5/vigie/addon/export` instead of copying the
+format. An add-on in another language reads the JSON Schema.
 
 ```json
 {

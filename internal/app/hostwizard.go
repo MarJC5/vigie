@@ -7,6 +7,7 @@ import (
 	"sync"
 	"uuid"
 
+	"github.com/MarJC5/vigie/addon/export"
 	"github.com/MarJC5/vigie/internal/discover"
 	"github.com/MarJC5/vigie/internal/exchange"
 	"github.com/MarJC5/vigie/internal/hostcheck"
@@ -60,9 +61,9 @@ var problemCodes = []struct {
 	{errKeyNotReceived, "problem.keyNotReceived"},
 	{hostcheck.ErrNoPHP, "problem.noPhp"},
 	{discover.ErrFind, "problem.findFailed"},
-	{exchange.ErrNotAnExport, "problem.notAnExport"},
-	{exchange.ErrNewerVersion, "problem.newerExport"},
-	{exchange.ErrInvalid, "problem.invalidExport"},
+	{export.ErrNotAnExport, "problem.notAnExport"},
+	{export.ErrNewerVersion, "problem.newerExport"},
+	{export.ErrInvalid, "problem.invalidExport"},
 	{exchange.ErrNotACSV, "problem.notACSV"},
 	{errNotExportable, "problem.notExportable"},
 	{errNoImport, "problem.noImport"},

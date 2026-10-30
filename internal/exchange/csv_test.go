@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/MarJC5/vigie/addon/export"
 	"github.com/MarJC5/vigie/internal/exchange"
 )
 
@@ -69,10 +70,10 @@ func TestASiteListFromASpreadsheet(t *testing.T) {
 	}
 	// What it gives is an export like any other.
 	var buf bytes.Buffer
-	if err := exchange.Write(&buf, f); err != nil {
+	if err := export.Write(&buf, f); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := exchange.Read(&buf); err != nil {
+	if _, err := export.Read(&buf); err != nil {
 		t.Errorf("Read(the list as an export) = %v", err)
 	}
 }
