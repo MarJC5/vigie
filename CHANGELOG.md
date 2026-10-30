@@ -59,6 +59,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   tabs (language, lookups outside, about), opened from the rail or with ⌘,.
 - Command line: `vigie scan` exits with 2 when a site is urgent, lists the findings with `--json`,
   and compares the files again with `--check-files`.
+- Export the site manager, everything or a folder or host, with or without the history, to a JSON
+  file readable by you only; its format is documented with a JSON Schema
+  ([docs/data.md](docs/data.md)). Keys and passwords are never in it.
+- Import an export, from this computer or another one: a preview shows what is added, what is
+  already there and left as it is, and what is refused with why; nothing existing is changed, and
+  the server keys the file brings are kept only once you check them.
+- Import hosts from `~/.ssh/config`, the aliases you choose (none is chosen at first, since the file
+  names every server), and sites from a CSV list, with the lines refused and their numbers.
+- The Data tab of the settings, and Export… in the menu of a folder or host.
+- Command line: `vigie export [path] [--history] [-o file]` and `vigie import <file>` or
+  `vigie import --ssh-config [alias…]`, which preview, then ask, with `--yes`, `--trust-keys` and
+  `--json` for scripts.
 
 ### Changed
 
