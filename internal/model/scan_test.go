@@ -68,6 +68,13 @@ func TestUpdateSourceUnknown(t *testing.T) {
 	if theme.UpdateSourceUnknown() {
 		t.Error("themes have no wordpress.org status: never flagged")
 	}
+	// WordPress never updates them: no update to miss.
+	for _, status := range []string{"must-use", "dropin"} {
+		item := model.ScanItem{Kind: model.ItemPlugin, Slug: "advanced-cache.php", Status: status, Update: model.UpdateNone}
+		if item.UpdateSourceUnknown() {
+			t.Errorf("a %s plugin is never flagged", status)
+		}
+	}
 }
 
 func TestPendingUpdates(t *testing.T) {

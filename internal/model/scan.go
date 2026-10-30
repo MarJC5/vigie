@@ -49,9 +49,11 @@ type ScanItem struct {
 }
 
 // UpdateSourceUnknown tells that no update can be seen for this plugin: wordpress.org does not
-// know it, and the code of a premium plugin's own updater does not run during a scan.
+// know it, and the code of a premium plugin's own updater does not run during a scan. Must-use
+// plugins and drop-ins are left out: WordPress never updates them.
 func (i ScanItem) UpdateSourceUnknown() bool {
-	return i.Kind == ItemPlugin && !i.OnWordPressOrg && i.Update == UpdateNone
+	return i.Kind == ItemPlugin && !i.OnWordPressOrg && i.Update == UpdateNone &&
+		i.Status != "must-use" && i.Status != "dropin"
 }
 
 // Scan is one scan of a site; every scan is kept.
