@@ -803,7 +803,7 @@ function NextScan({ at }: { at: string }) {
   const sentence = today ? t("manager.nextScan", { time: clock(at) }) : t("manager.nextScanOn", { day: day(at), time: clock(at) });
   return (
     <span className={styles.next} title={sentence}>
-      <Icon name="activity" size={12} />
+      <Icon name="clock" size={12} />
       <span aria-hidden="true">{today ? clock(at) : `${day(at)} ${clock(at)}`}</span>
       <span className={styles.hidden}>{sentence}</span>
     </span>
