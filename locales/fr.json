@@ -89,7 +89,7 @@
     "sites_other": "{{name}} · {{count}} sites"
   },
   "cli": {
-    "usage": "Usage : vigie [--data-dir <dossier>] [commande]\n\nSans commande, Vigie ouvre sa fenêtre.\n\nCommandes :\n  tree [--json]                     Affiche le gestionnaire de sites avec l'état de chaque site\n  scan [chemin] [--check-files] [--json]\n                                    Relève un site, un hébergement ou un dossier (tout sans chemin) ;\n                                    --check-files compare de nouveau les fichiers, même dans la journée\n  discover <hébergement> [--json]   Liste les installations WordPress d'un hébergement (n'ajoute rien)\n  update [chemin] [--yes] [--json]  Aperçu, puis mise à jour d'un site, d'un hébergement ou d'un dossier (demande d'abord)\n  export [chemin] [--history] [-o <fichier>] [--json]\n                                    Exporte tout, un dossier ou un hébergement (sur la sortie standard\n                                    sans -o) ; --history ajoute relevés, mises à jour et retours en arrière\n  import <fichier> [--into <dossier>] [--yes] [--trust-keys] [--json]\n  import --ssh-config [<alias>…] [--into <dossier>] [--yes] [--json]\n                                    Aperçu, puis ajout de ce qui est nouveau d'un export, d'une liste de\n                                    sites CSV ou des alias nommés de ~/.ssh/config, listés si aucun n'est\n                                    nommé (demande d'abord) ; les clés d'hôte ne sont gardées qu'une fois\n                                    confirmées, ou avec --trust-keys\n  version                           Affiche la version\n  help                              Affiche cette aide\n\nLes chemins nomment dossiers, hébergements et sites : « Clients/Infomaniak/misits.ch ».\nCode de sortie : 0 tout va bien, 1 à surveiller ou pas entièrement vérifié, 2 urgent, 3 erreur.\n",
+    "usage": "Usage : vigie [--data-dir <dossier>] [commande]\n\nSans commande, Vigie ouvre sa fenêtre.\n\nCommandes :\n  tree [--json]                     Affiche le gestionnaire de sites avec l'état de chaque site\n  scan [chemin] [--check-files] [--json]\n                                    Relève un site, un hébergement ou un dossier (tout sans chemin),\n                                    --check-files compare de nouveau les fichiers, même dans la journée\n  discover <hébergement> [--json]   Liste les installations WordPress d'un hébergement (n'ajoute rien)\n  update [chemin] [--yes] [--json]  Aperçu, puis mise à jour d'un site, d'un hébergement ou d'un dossier (demande d'abord)\n  export [chemin] [--history] [-o <fichier>] [--json]\n                                    Exporte tout, un dossier ou un hébergement (sur la sortie standard\n                                    sans -o), --history ajoute relevés, mises à jour et retours en arrière\n  import <fichier> [--into <dossier>] [--yes] [--trust-keys] [--json]\n  import --ssh-config [<alias>…] [--into <dossier>] [--yes] [--json]\n                                    Aperçu, puis ajout de ce qui est nouveau d'un export, d'une liste de\n                                    sites CSV ou des alias nommés de ~/.ssh/config, listés si aucun n'est\n                                    nommé (demande d'abord). Les clés d'hôte ne sont gardées qu'une fois\n                                    confirmées, ou avec --trust-keys\n  version                           Affiche la version\n  help                              Affiche cette aide\n\nLes chemins nomment dossiers, hébergements et sites : « Clients/Infomaniak/misits.ch ».\nCode de sortie : 0 tout va bien, 1 à surveiller ou pas entièrement vérifié, 2 urgent, 3 erreur.\n",
     "unknownCommand": "commande inconnue « {{command}} »",
     "unknownOption": "option inconnue « {{option}} »",
     "needsHost": "discover attend le chemin d'un hébergement, par exemple « Clients/Infomaniak »",
@@ -322,7 +322,7 @@
     "keyOf": "Clé de {{host}}",
     "otherKeys": "Le serveur présente aussi :",
     "compared": "J'ai comparé cette empreinte avec celle de mon hébergeur",
-    "keyWhere": "Vigie la garde dans son propre known_hosts ; vos fichiers SSH ne sont pas modifiés.",
+    "keyWhere": "Vigie la garde dans son propre known_hosts. Vos fichiers SSH ne sont pas modifiés.",
     "checks": "Contrôles",
     "check": {
       "ssh": "Connexion SSH",
@@ -384,7 +384,7 @@
     "updates_other": "{{count}} mises à jour",
     "unchecked": "non vérifié : wordpress.org est injoignable",
     "sourceUnknown": "Mises à jour invisibles",
-    "sourceUnknownHint": "Absentes de wordpress.org ; leur propre outil de mise à jour ne tourne pas pendant un relevé.",
+    "sourceUnknownHint": "Absentes de wordpress.org. Leur propre outil de mise à jour ne tourne pas pendant un relevé.",
     "neverScanned": "Ce site n'a pas encore été relevé.",
     "scanning": "Relevé en cours…",
     "scanProblem": "Le dernier relevé n'a pas abouti",
@@ -611,7 +611,7 @@
       "rollbackCore": "Revenir en arrière remet les fichiers de WordPress et la base de données telles qu'elles étaient avant la mise à jour, puis vérifie à nouveau le site.",
       "nothingToRollBack": "Aucun élément n'a été changé : il n'y a rien à remettre.",
       "cancelledTitle": "Mise à jour arrêtée",
-      "cancelledLead": "Les éléments déjà mis à jour restent à jour ; les suivants n'ont pas été lancés.",
+      "cancelledLead": "Les éléments déjà mis à jour restent à jour, les suivants n'ont pas été lancés.",
       "interruptedTitle": "Mise à jour interrompue",
       "interruptedLead": "L'application a été fermée pendant la mise à jour. Relevez le site pour voir où il en est.",
       "rolledBackTitle": "{{name}} est revenu en arrière",
@@ -704,7 +704,7 @@
     "follow": "Suivre la mise à jour",
     "bulkDialog": {
       "title": "Tout mettre à jour dans {{name}}",
-      "lead": "Les sites d'un même hébergement passent l'un après l'autre, chacun sauvegardé et vérifié comme seul ; un hébergement s'arrête au premier site cassé.",
+      "lead": "Les sites d'un même hébergement passent l'un après l'autre, chacun sauvegardé et vérifié comme seul. Un hébergement s'arrête au premier site cassé.",
       "loading": "Vigie lit sur le serveur ce que chaque site va changer.",
       "items_one": "{{count}} élément",
       "items_many": "{{count}} éléments",
@@ -941,7 +941,7 @@
       },
       "registry": {
         "name": "Registre du domaine (.com, .fr…)",
-        "sent": "le nom de domaine ; aucune requête pour .ch, .li, .de",
+        "sent": "le nom de domaine (aucune requête pour .ch, .li, .de)",
         "kept": "1 semaine"
       },
       "site": {
@@ -991,7 +991,7 @@
     "services": "Services interrogés pendant un relevé de sécurité",
     "consentSection": "Accord et sources",
     "consentTitle": "Accord",
-    "agreedDesc": "Donné le {{date}} à {{time}}. Le retirer coupe toutes les recherches extérieures ; ces vérifications deviennent « non vérifiées ».",
+    "agreedDesc": "Donné le {{date}} à {{time}}. Le retirer coupe toutes les recherches extérieures, et ces vérifications deviennent « non vérifiées ».",
     "notAgreedDesc": "Pas donné : rien n'est envoyé, et les vérifications qui en ont besoin sont « non vérifiées ».",
     "withdraw": "Retirer l'accord",
     "agree": "Accepter",
@@ -1015,7 +1015,7 @@
     "importAction": "Importer…",
     "sshAction": "Choisir…",
     "vigieTitle": "Un fichier Vigie",
-    "vigieDesc": "Un export de Vigie, de cet ordinateur ou d'un autre. Seul ce qui est nouveau est ajouté ; rien d'existant n'est modifié.",
+    "vigieDesc": "Un export de Vigie, de cet ordinateur ou d'un autre. Seul ce qui est nouveau est ajouté, rien d'existant n'est modifié.",
     "sshTitle": "Configuration SSH",
     "sshDesc": "Les hôtes de ~/.ssh/config que vous choisissez deviennent des hébergements dans Vigie. Vigie ne modifie jamais votre configuration SSH.",
     "csvTitle": "Un fichier CSV",
@@ -1060,7 +1060,7 @@
     },
     "ssh": {
       "title": "Importer des hébergements de ~/.ssh/config",
-      "lead": "Ce fichier nomme tous les serveurs que vous atteignez, pas seulement ceux de sites WordPress : cochez seulement les hôtes à suivre dans Vigie. Leurs réglages sont lus par ssh lui-même (ssh -G) ; aucune connexion n'est faite pour l'instant.",
+      "lead": "Ce fichier nomme tous les serveurs que vous atteignez, pas seulement ceux de sites WordPress : cochez seulement les hôtes à suivre dans Vigie. Leurs réglages sont lus par ssh lui-même (ssh -G), aucune connexion n'est faite pour l'instant.",
       "loading": "Lecture de ~/.ssh/config…",
       "alias": "Alias",
       "account": "Compte",
@@ -1095,7 +1095,7 @@
       "history": "avec {{counts}}",
       "line": "Ligne {{line}} : {{reason}}",
       "keys": "Clés des serveurs",
-      "keysLead": "Le fichier apporte la clé de confiance de ces hébergements. Ne gardez que celles que vous reconnaissez ; les autres seront demandées à leur première connexion.",
+      "keysLead": "Le fichier apporte la clé de confiance de ces hébergements. Ne gardez que celles que vous reconnaissez, les autres seront demandées à leur première connexion.",
       "keyRefused": "Pas gardée : {{reason}}.",
       "failed": "Pas importé",
       "nothingYet": "Rien n'est encore ajouté.",
