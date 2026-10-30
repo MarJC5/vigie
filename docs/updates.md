@@ -1,0 +1,86 @@
+# Updates: what Vigie does on a server
+
+Vigie updates a site over SSH with WP-CLI, like the scans. Nothing is installed on the site. This
+page lists what an update writes on the server, how long it keeps it, and how to remove it.
+
+## Before anything is written
+
+- Vigie reads the preview first: the updates WordPress offers, with the plugins loaded, so premium
+  plugins show their own updates.
+- The server must have a database dump tool (`mariadb-dump` or `mysqldump`). Without one, nothing
+  is updated: Vigie dumps the database before every update.
+- Only one update or rollback runs on a site at a time.
+
+## The steps of an update
+
+1. **Backups**, in a new folder of the account (see below): the database dump, then an archive of
+   the folder of each plugin or theme to update, and of the WordPress files when WordPress itself is
+   updated.
+2. **WordPress itself** first, if chosen: in maintenance mode (the `.maintenance` file of WordPress,
+   through WP-CLI), then its database upgrade; the maintenance mode is always turned off at the end.
+3. **The plugins, then the themes**, one at a time.
+4. **The translations** last.
+
+After each item, Vigie **checks the site**: the home page, `wp-login.php` and the subsites pinned in
+a network must not answer a server error (5xx), WordPress's critical error page, or nothing at all,
+and no new `PHP Fatal error` may appear in `debug.log` (when WordPress keeps one). Redirects and
+4xx answers pass. The first check comes 3 seconds after the item, then one each second for 3
+seconds, so PHP's OPcache serves the new code.
+
+The update **stops at the first failure**: the next items are not started. Stopping a run from the
+window or with Ctrl-C lets the current item end; an item is never left halfway.
+
+## What Vigie writes on the server
+
+The backups of one update go in a folder of the SSH account's home directory, outside the site's
+folder:
+
+```
+~/.vigie/backups/<site ID>/<date and time, UTC>/
+    database.sql.gz          the whole database, compressed
+    plugin-<slug>.tar.gz     the folder of each plugin updated
+    theme-<slug>.tar.gz      the folder of each theme updated
+    core.tar.gz              the WordPress files, when WordPress is updated
+```
+
+- The folder is created readable by the account only (`umask 077`).
+- `core.tar.gz` leaves out `wp-content`, `wp-config.php` (which holds the database password) and
+  `.maintenance`.
+- **The dump holds the whole database**: user accounts with their password hashes, orders, form
+  entries. If the home directory of the account is itself served on the web, move the backups or
+  remove them (below).
+- The site ID is the one Vigie gave the site; the window shows the folder in the preview of an
+  update and in the history of the site.
+
+Besides the backups, an update writes only what the update itself changes (the files of the items,
+the database upgrade of WordPress or of a plugin) and, for a WordPress update, the `.maintenance`
+file while it runs.
+
+## How long backups are kept
+
+Vigie keeps the backups of the **last 3 updates of each site**. At the end of each update, even a
+stopped one, the older folders of that site are removed. The history of the updates stays in
+Vigie's own database, on your computer.
+
+## Rolling back
+
+A rollback is offered on the latest update of a site, when it failed:
+
+- **A plugin or theme**: its folder is removed, then put back from its archive; the site is checked
+  again. The database is not touched: a plugin that changed its tables during the update keeps
+  them.
+- **WordPress itself**: its files and the database are put back as they were before the update, in
+  maintenance mode. What was written to the database in between (orders, comments) is lost.
+
+Only the item that failed is put back: the items updated before it keep their new version.
+
+## Removing the backups
+
+The backups are ordinary files: remove them over SSH when you no longer need them.
+
+```sh
+rm -rf ~/.vigie/backups/<site ID>   # the backups of one site
+rm -rf ~/.vigie                     # everything Vigie wrote on this account
+```
+
+A rollback is then no longer possible for those updates.
