@@ -63,7 +63,8 @@ test("the tree shows the latest scans, a site its overview and its updates", asy
 
   await tree.getByRole("treeitem", { name: /boulangerie-exemple\.ch/ }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("boulangerie-exemple.ch");
-  await expect(page.getByText("Last scan: 3 minutes ago")).toBeVisible();
+  // The seed's scan is 3 minutes old when its server starts; the servers of a slow run start earlier.
+  await expect(page.getByText(/^Last scan: \d+ minutes ago$/)).toBeVisible();
   await expect(page.getByRole("tabpanel")).toContainText("7.1.3 · 7.1.4 available");
   await page.getByRole("tab", { name: /Updates/ }).click();
   await expect(page.getByRole("tabpanel")).toContainText("5.3 → 5.7.2");
