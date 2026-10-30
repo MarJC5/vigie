@@ -27,15 +27,19 @@ const (
 	KindVulnerability FindingKind = "vulnerability"
 	// KindPHPSupport: Subject "php"; Facts status ("s" security fixes only, "d" unmaintained), end.
 	KindPHPSupport FindingKind = "php-support"
-	// KindPluginClosed: Facts date, reason (wordpress.org's, such as "security-issue").
+	// KindPluginClosed: Facts date, reason (wordpress.org's, such as "security-issue"), other-plugin
+	// ("true" when the files say the closed plugin is another one of the same name).
 	KindPluginClosed FindingKind = "plugin-closed"
 	// KindPluginAbandoned: Facts last-release.
 	KindPluginAbandoned FindingKind = "plugin-abandoned"
-	// KindCoreFile: Identifier the file's path; Facts change (changed, missing, added).
+	// KindCoreFile: the WordPress files that differ from wordpress.org's, in one finding; Facts
+	// changed, missing, added (counts), files (the first ones, comma separated). A file often
+	// deleted on purpose has its own finding: Identifier its path, Facts change.
 	KindCoreFile FindingKind = "core-file"
 	// KindPluginFile: the files of a plugin that differ from wordpress.org's, one finding per
 	// plugin; Facts added, changed (counts), files (the first ones, comma separated), mismatch
-	// ("true" when nearly every file differs: another plugin of the same name).
+	// ("true" when nearly every file differs: another plugin of the same name), uncomparable
+	// ("true" when wordpress.org's list does not match this version's files at all).
 	KindPluginFile FindingKind = "plugin-file"
 	// KindPluginUnverified: wordpress.org publishes no checksums for the plugin's version.
 	KindPluginUnverified FindingKind = "plugin-unverified"

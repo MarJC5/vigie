@@ -44,8 +44,7 @@ func TestScanOverSSH(t *testing.T) {
 		found[f.Key()] = f.Level
 	}
 	for key, want := range map[string]model.FindingLevel{
-		"core-file|core|wp-includes/functions.php":   model.LevelUrgent,
-		"core-file|core|wp-admin/freedoms.php":       model.LevelUrgent,
+		"core-file|core|":                            model.LevelUrgent,
 		"plugin-file|plugin:akismet|":                model.LevelAttention,
 		"uploads-php|site|2026/10/fixture-shell.php": model.LevelUrgent,
 		"administrator|user:marie|":                  model.LevelAttention,

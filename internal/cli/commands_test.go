@@ -79,7 +79,7 @@ func (b byHost) Run(ctx context.Context, target sshx.Target, remote string) (ssh
 }
 
 // The bench's image adds wp-config-docker.php where only WordPress's own files belong: urgent.
-const dockerFile = "core-file|core|wp-config-docker.php"
+const dockerFile = "core-file|core|"
 
 // runIn runs a command on a workspace.
 func runIn(t *testing.T, ws *workspace.Workspace, lang string, args ...string) (int, string) {
@@ -219,7 +219,7 @@ func TestScanJSON(t *testing.T) {
 	var docker, vulnerabilities *finding
 	for i, f := range first.Findings {
 		switch {
-		case f.Kind == "core-file" && f.Identifier == "wp-config-docker.php":
+		case f.Kind == "core-file" && f.Facts["files"] == "wp-config-docker.php":
 			docker = &first.Findings[i]
 		case f.Kind == "check" && f.Identifier == "vulnerabilities":
 			vulnerabilities = &first.Findings[i]

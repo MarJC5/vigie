@@ -1,8 +1,8 @@
 {
   "args": [
-    "find '/home/vigie/sites/security/wp-content/uploads' -type f \\( -iname '*.php' -o -iname '*.php[0-9]' -o -iname '*.phtml' -o -iname '*.pht' -o -iname '*.phar' \\) 2\u003e/dev/null | head -n 51 | while IFS= read -r f; do case \"$f\" in */index.php) printf '%s\\t%s\\n' \"$f\" \"$(head -c 120 \"$f\" | tr '\\t\\r\\n' '   ')\";; *) printf '%s\\n' \"$f\";; esac; done"
+    "find '/home/vigie/sites/security/wp-content/uploads' -type f \\( -iname '*.php' -o -iname '*.php[0-9]' -o -iname '*.phtml' -o -iname '*.pht' -o -iname '*.phar' \\) 2\u003e/dev/null | head -n 51 | while IFS= read -r f; do s=$(wc -c \u003c \"$f\" | tr -d ' '); case \"$f\" in */index.php) c=$(head -c 120 \"$f\");; *) c=$(head -n 1 \"$f\" | head -c 120);; esac; printf '%s\\t%s\\t%s\\n' \"$f\" \"$s\" \"$(printf '%s' \"$c\" | tr '\\t\\r\\n' '   ')\"; done"
   ],
   "exit": 0,
-  "stdout": "/home/vigie/sites/security/wp-content/uploads/2026/10/fixture-shell.php\n/home/vigie/sites/security/wp-content/uploads/ithemes-security/backups/index.php\t\u003c?php // Silence is golden. phpinfo(); \n/home/vigie/sites/security/wp-content/uploads/ithemes-security/logs/index.php\t\u003c?php // Silence is golden. \n/home/vigie/sites/security/wp-content/uploads/fixture-old.PHTML\n",
+  "stdout": "/home/vigie/sites/security/wp-content/uploads/2026/10/fixture-shell.php\t6\t\u003c?php\n/home/vigie/sites/security/wp-content/uploads/matomo/config/config.ini.php\t51\t; \u003c?php exit; ?\u003e DO NOT REMOVE THIS LINE\n/home/vigie/sites/security/wp-content/uploads/ithemes-security/backups/index.php\t39\t\u003c?php // Silence is golden. phpinfo();\n/home/vigie/sites/security/wp-content/uploads/ithemes-security/logs/index.php\t28\t\u003c?php // Silence is golden.\n/home/vigie/sites/security/wp-content/uploads/fixture-old.PHTML\t6\t\u003c?php\n",
   "stderr": ""
 }

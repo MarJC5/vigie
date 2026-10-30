@@ -125,9 +125,10 @@ func TestSecurityScanOfTheSecuritySite(t *testing.T) {
 		level             model.FindingLevel
 	}{
 		// On the server.
-		{model.KindCoreFile, "core", "wp-includes/functions.php", "change=changed", model.LevelUrgent},
-		{model.KindCoreFile, "core", "wp-includes/fixture-added.php", "change=added", model.LevelUrgent},
-		{model.KindCoreFile, "core", "wp-admin/freedoms.php", "change=missing", model.LevelUrgent},
+		// One finding for WordPress's files: functions.php changed, freedoms.php missing, fixture-added.php
+		// and the container image's wp-config-docker.php added.
+		{model.KindCoreFile, "core", "", "added=2", model.LevelUrgent},
+		{model.KindCoreFile, "core", "", "missing=1", model.LevelUrgent},
 		{model.KindPluginFile, "plugin:akismet", "", "added=1", model.LevelAttention},
 		{model.KindPluginUnverified, "plugin:fixture-premium", "", "", model.LevelInfo},
 		{model.KindUploadsPHP, "site", "2026/10/fixture-shell.php", "", model.LevelUrgent},
@@ -291,7 +292,7 @@ func TestFilesAreComparedAtMostOnceADay(t *testing.T) {
 	if n != 0 || !got.FilesChecked.Equal(first.FilesChecked) {
 		t.Errorf("an hour later: %d checksum commands, files checked %v; want none, %v", n, got.FilesChecked, first.FilesChecked)
 	}
-	if f := find(t, got, model.KindCoreFile, "core", "wp-admin/freedoms.php"); f.Level != model.LevelUrgent {
+	if f := find(t, got, model.KindCoreFile, "core", ""); f.Level != model.LevelUrgent || f.Facts["missing"] != "1" {
 		t.Errorf("carried finding = %+v", f)
 	}
 	if _, n := at(time.Hour, true, first); n != 2 {
@@ -388,30 +389,38 @@ func TestFilesDeletedOnPurposeAndAPluginOfTheSameName(t *testing.T) {
 		files = append(files, fmt.Sprintf(`{"plugin_name":"akismet","file":"app/f%d.php","message":"File was added"}`, i))
 	}
 	files = append(files, `{"plugin_name":"akismet","file":"akismet.php","message":"Checksum does not match"}`)
+	// wordpress.org's list matches none of hello's files: they cannot be compared.
+	for i := range 10 {
+		files = append(files, fmt.Sprintf(`{"plugin_name":"hello","file":"h%d.php","message":"File was added"}`, i))
+	}
 	fake.Set(plugins, sshx.Result{ExitCode: 1, Stdout: []byte("[" + strings.Join(files, ",") + "]"),
-		Stderr: []byte("Error: No plugins verified (1 failed).\n")})
+		Stderr: []byte("Error: No plugins verified (2 failed).\n")})
 
-	got, _ := scanner(fake).Site(context.Background(), job("plain"), nil)
-	for file, want := range map[string]model.FindingLevel{
-		"wp-config-sample.php": model.LevelInfo, "readme.html": model.LevelInfo, "wp-login.php": model.LevelUrgent,
-	} {
-		if f := find(t, got, model.KindCoreFile, "core", file); f.Level != want {
-			t.Errorf("%s missing: %q, want %q", file, f.Level, want)
+	s := scanner(fake)
+	s.Lookups = &lookups{info: map[string]lookup.PluginInfo{
+		"akismet": {OnWordPressOrg: true, Closed: true, ClosedReason: "security-issue"},
+		"hello":   {OnWordPressOrg: true},
+	}}
+	got, _ := s.Site(context.Background(), job("plain"), nil)
+	for _, file := range []string{"wp-config-sample.php", "readme.html"} {
+		if f := find(t, got, model.KindCoreFile, "core", file); f.Level != model.LevelInfo {
+			t.Errorf("%s missing: %q, want only shown", file, f.Level)
 		}
+	}
+	if f := find(t, got, model.KindCoreFile, "core", ""); f.Level != model.LevelUrgent || f.Facts["missing"] != "1" || f.Facts["files"] != "wp-login.php" {
+		t.Errorf("WordPress's files = %+v, want wp-login.php missing, urgent", f)
 	}
 	plugin := find(t, got, model.KindPluginFile, "plugin:akismet", "")
 	if plugin.Facts["added"] != "12" || plugin.Facts["changed"] != "1" || plugin.Facts["mismatch"] != "true" ||
 		strings.Count(plugin.Facts["files"], ",") != 9 {
 		t.Errorf("akismet's files = %+v, want one finding, 12 added, 1 changed, a mismatch, 10 files named", plugin.Facts)
 	}
-	n := 0
-	for _, f := range got.Findings {
-		if f.Kind == model.KindPluginFile {
-			n++
-		}
+	// The closed akismet of wordpress.org is not the one installed: the closure is only shown.
+	if f := find(t, got, model.KindPluginClosed, "plugin:akismet", ""); f.Level != model.LevelInfo || f.Facts["other-plugin"] != "true" {
+		t.Errorf("closure of another plugin of the same name = %+v, want only shown", f)
 	}
-	if n != 1 {
-		t.Errorf("%d plugin file findings, want one per plugin", n)
+	if f := find(t, got, model.KindPluginFile, "plugin:hello", ""); f.Level != model.LevelInfo || f.Facts["uncomparable"] != "true" || f.Facts["mismatch"] != "" {
+		t.Errorf("hello's files = %+v, want not comparable, only shown", f)
 	}
 }
 

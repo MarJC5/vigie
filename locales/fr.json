@@ -718,7 +718,8 @@
       },
       "pluginClosed": {
         "title": "{{name}} est fermée sur wordpress.org",
-        "on": "Fermée le {{date}} : {{reason}}"
+        "on": "Fermée le {{date}} : {{reason}}",
+        "otherPlugin": "Les fichiers installés sont ceux d'une autre extension : celle qui est fermée porte seulement le même nom."
       },
       "closeReason": {
         "security-issue": "problème de sécurité",
@@ -733,12 +734,14 @@
         "detail": "Dernière version le {{date}}"
       },
       "coreFile": {
-        "changed": "Fichier de WordPress modifié : {{file}}",
-        "changedDetail": "Il diffère du fichier que wordpress.org publie pour cette version.",
-        "missing": "Fichier de WordPress manquant : {{file}}",
-        "missingDetail": "WordPress le publie pour cette version ; il n'est pas sur le serveur.",
-        "added": "Fichier ajouté à WordPress : {{file}}",
-        "addedDetail": "Seuls les fichiers de WordPress ont leur place ici."
+        "title_one": "WordPress : {{count}} fichier diffère de celui de wordpress.org",
+        "title_many": "WordPress : {{count}} fichiers diffèrent de ceux de wordpress.org",
+        "title_other": "WordPress : {{count}} fichiers diffèrent de ceux de wordpress.org",
+        "counts": "{{changed}} modifiés, {{missing}} manquants, {{added}} ajoutés",
+        "files": "dont {{files}}",
+        "detail": "Les fichiers de WordPress doivent être exactement ceux qu'il publie pour cette version.",
+        "removed": "Fichier de WordPress supprimé : {{file}}",
+        "removedDetail": "Souvent supprimé exprès, car il donne la version de WordPress."
       },
       "pluginFile": {
         "title_one": "{{name}} : {{count}} fichier diffère de celui de wordpress.org",
@@ -747,7 +750,8 @@
         "counts": "{{added}} ajoutés, {{changed}} modifiés",
         "files": "dont {{files}}",
         "detail": "Une extension est parfois modifiée exprès : vérifiez si c'est le cas.",
-        "mismatch": "Presque tous les fichiers diffèrent : probablement une autre extension que celle du même nom sur wordpress.org."
+        "mismatch": "Presque tous les fichiers diffèrent : probablement une autre extension que celle du même nom sur wordpress.org.",
+        "uncomparable": "La liste de wordpress.org ne correspond à aucun fichier de cette version : ils n'ont pas pu être comparés."
       },
       "pluginUnverified": {
         "title": "{{name}} : fichiers non comparés",

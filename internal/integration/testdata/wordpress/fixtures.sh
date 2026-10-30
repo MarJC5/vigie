@@ -161,6 +161,9 @@ mkdir -p "$SITES/security/wp-content/uploads/2026/10"
 printf '%s\n' '<?php' > "$SITES/security/wp-content/uploads/2026/10/fixture-shell.php"
 printf '%s\n' '<?php' > "$SITES/security/wp-content/uploads/fixture-old.PHTML"
 printf 'JFIF' > "$SITES/security/wp-content/uploads/2026/10/photo.jpg"
+# Matomo keeps its configuration in the uploads, behind a first line that stops PHP: not reported.
+mkdir -p "$SITES/security/wp-content/uploads/matomo/config"
+printf '%s\n' '; <?php exit; ?> DO NOT REMOVE THIS LINE' '[General]' > "$SITES/security/wp-content/uploads/matomo/config/config.ini.php"
 # Solid Security's "Silence is golden" file, which stops folder listings: not reported. An
 # index.php beside it with anything more is.
 mkdir -p "$SITES/security/wp-content/uploads/ithemes-security/logs" "$SITES/security/wp-content/uploads/ithemes-security/backups"

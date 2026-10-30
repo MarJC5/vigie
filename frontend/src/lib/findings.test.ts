@@ -38,6 +38,17 @@ describe("findingText", () => {
       detail:
         "231 added, 1 changed · including app/blocks/home-hero/block.json, gutenblocks.php · Nearly every file differs: probably another plugin than the one of the same name on wordpress.org.",
     });
+    const core = { ...exploited, kind: "core-file", subject: "core", name: "", identifier: "", facts: { changed: "51", missing: "0", added: "1", files: "wp-login.php" } };
+    expect(findingText(core, t("en"), "en")).toEqual({
+      title: "WordPress: 52 files differ from wordpress.org's",
+      detail: "51 changed, 0 missing, 1 added · including wp-login.php · WordPress's own files should be exactly the ones it publishes for this version.",
+    });
+    const removed = { ...core, identifier: "readme.html", level: "info", facts: { change: "missing" } };
+    expect(findingText(removed, t("fr"), "fr").title).toBe("Fichier de WordPress supprimé\u00a0: readme.html");
+    const uncomparable = { ...sameName, level: "info", facts: { added: "72", changed: "0", files: "donate.png", uncomparable: "true" } };
+    expect(findingText(uncomparable, t("en"), "en").detail).toContain("they could not be compared");
+    const other = { ...closed, level: "info", facts: { ...closed.facts, "other-plugin": "true" } };
+    expect(findingText(other, t("en"), "en").detail).toContain("the closed one has only the same name");
     expect(findingText(domainSilent, t("fr"), "fr").detail).toBe("Expiration non publiée par le registre du .ch");
     expect(findingText(certificate, t("en"), "en").title).toBe("TLS certificate valid until 25.12.2026");
     expect(findingText(notChecked, t("fr"), "fr").title).toBe("wordpress.org non interrogé");

@@ -88,7 +88,7 @@ func TestScanOfAnOutdatedSite(t *testing.T) {
 		t.Errorf("PendingUpdates() = %+v", counts)
 	}
 	// The bench's image adds wp-config-docker.php where only WordPress's own files belong.
-	if got.Status() != model.StatusUrgent || find(t, got, model.KindCoreFile, "core", "wp-config-docker.php").Level != model.LevelUrgent {
+	if got.Status() != model.StatusUrgent || find(t, got, model.KindCoreFile, "core", "").Facts["files"] != "wp-config-docker.php" {
 		t.Errorf("Status() = %q, want urgent for the added file", got.Status())
 	}
 }

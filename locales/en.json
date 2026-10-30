@@ -688,7 +688,8 @@
       },
       "pluginClosed": {
         "title": "{{name}} is closed on wordpress.org",
-        "on": "Closed on {{date}}: {{reason}}"
+        "on": "Closed on {{date}}: {{reason}}",
+        "otherPlugin": "The files installed are another plugin's: the closed one has only the same name."
       },
       "closeReason": {
         "security-issue": "security issue",
@@ -703,12 +704,13 @@
         "detail": "Last release on {{date}}"
       },
       "coreFile": {
-        "changed": "WordPress file changed: {{file}}",
-        "changedDetail": "It differs from the file wordpress.org publishes for this version.",
-        "missing": "WordPress file missing: {{file}}",
-        "missingDetail": "WordPress publishes it for this version; it is not on the server.",
-        "added": "File added to WordPress: {{file}}",
-        "addedDetail": "Only WordPress's own files belong there."
+        "title_one": "WordPress: {{count}} file differs from wordpress.org's",
+        "title_other": "WordPress: {{count}} files differ from wordpress.org's",
+        "counts": "{{changed}} changed, {{missing}} missing, {{added}} added",
+        "files": "including {{files}}",
+        "detail": "WordPress's own files should be exactly the ones it publishes for this version.",
+        "removed": "WordPress file removed: {{file}}",
+        "removedDetail": "Often deleted on purpose, since it tells WordPress's version."
       },
       "pluginFile": {
         "title_one": "{{name}}: {{count}} file differs from wordpress.org's",
@@ -716,7 +718,8 @@
         "counts": "{{added}} added, {{changed}} changed",
         "files": "including {{files}}",
         "detail": "Plugins are sometimes patched on purpose: check whether this one was.",
-        "mismatch": "Nearly every file differs: probably another plugin than the one of the same name on wordpress.org."
+        "mismatch": "Nearly every file differs: probably another plugin than the one of the same name on wordpress.org.",
+        "uncomparable": "wordpress.org's list matches none of this version's files: they could not be compared."
       },
       "pluginUnverified": {
         "title": "{{name}}: files not compared",

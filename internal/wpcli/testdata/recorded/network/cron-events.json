@@ -3,6 +3,6 @@
     "'wp' 'cron' 'event' 'list' '--fields=hook,next_run_gmt' '--format=json' '--path=sites/network' '--skip-plugins' '--skip-themes'"
   ],
   "exit": 0,
-  "stdout": "[{\"hook\":\"wp_privacy_delete_old_export_files\",\"next_run_gmt\":\"2026-10-30 10:50:00\"},{\"hook\":\"wp_privacy_personal_data_cleanup_requests\",\"next_run_gmt\":\"2026-10-30 10:50:00\"},{\"hook\":\"wp_version_check\",\"next_run_gmt\":\"2026-10-30 11:50:00\"},{\"hook\":\"wp_update_plugins\",\"next_run_gmt\":\"2026-10-30 12:20:00\"},{\"hook\":\"wp_update_themes\",\"next_run_gmt\":\"2026-10-30 12:50:00\"},{\"hook\":\"wp_site_health_scheduled_check\",\"next_run_gmt\":\"2026-10-31 10:50:00\"}]",
+  "stdout": "[{\"hook\":\"wp_privacy_delete_old_export_files\",\"next_run_gmt\":\"2026-10-30 13:03:09\"},{\"hook\":\"wp_privacy_personal_data_cleanup_requests\",\"next_run_gmt\":\"2026-10-30 13:03:09\"},{\"hook\":\"wp_version_check\",\"next_run_gmt\":\"2026-10-30 14:03:09\"},{\"hook\":\"wp_update_plugins\",\"next_run_gmt\":\"2026-10-30 14:33:09\"},{\"hook\":\"wp_update_themes\",\"next_run_gmt\":\"2026-10-30 15:03:09\"},{\"hook\":\"wp_site_health_scheduled_check\",\"next_run_gmt\":\"2026-10-31 13:03:09\"}]",
   "stderr": ""
 }

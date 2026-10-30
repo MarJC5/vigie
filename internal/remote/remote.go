@@ -178,10 +178,12 @@ func FatalsSince(file string, offset int64) (string, error) {
 	return "tail -c +" + strconv.FormatInt(offset+1, 10) + " " + q + " | grep -m 3 'PHP Fatal error'", err
 }
 
-// UploadsPHP lists the PHP files under a site's uploads folder, where WordPress never puts any:
-// one path per line, at most uploadsShown and one more to tell there are more. An index.php comes
-// with the start of its content after a tab, so that the empty files plugins drop to stop folder
-// listings ("Silence is golden") are told apart. A site without the folder lists nothing.
+// UploadsPHP lists the PHP files under a site's uploads folder, where WordPress never puts any: one
+// line per file, at most uploadsShown and one more to tell there are more. Each comes with its size
+// and the start of its content after tabs (the first stubBytes of an index.php, the first line of
+// another file), so that the files plugins drop on purpose are told apart: the empty index.php that
+// stops folder listings, and files that stop PHP at once. Nothing more of a file is read. A site
+// without the folder lists nothing.
 func UploadsPHP(root string) (string, error) {
 	if err := folder(root); err != nil {
 		return "", err
@@ -190,24 +192,45 @@ func UploadsPHP(root string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	n := strconv.Itoa(stubBytes)
 	return "find " + q + ` -type f \( -iname '*.php' -o -iname '*.php[0-9]' -o -iname '*.phtml' -o -iname '*.pht' -o -iname '*.phar' \) 2>/dev/null | head -n ` +
 		strconv.Itoa(UploadsShown+1) +
-		` | while IFS= read -r f; do case "$f" in */index.php) printf '%s\t%s\n' "$f" "$(head -c ` + strconv.Itoa(stubBytes) +
-		` "$f" | tr '\t\r\n' '   ')";; *) printf '%s\n' "$f";; esac; done`, nil
+		` | while IFS= read -r f; do s=$(wc -c < "$f" | tr -d ' '); case "$f" in */index.php) c=$(head -c ` + n + ` "$f");; *) c=$(head -n 1 "$f" | head -c ` + n +
+		`);; esac; printf '%s\t%s\t%s\n' "$f" "$s" "$(printf '%s' "$c" | tr '\t\r\n' '   ')"; done`, nil
 }
 
 // UploadsShown is how many PHP files in uploads are listed.
 const UploadsShown = 50
 
-// stubBytes is how much of an index.php is read: more than any "Silence is golden" file.
+// stubBytes is how much of a file is read: more than any file dropped on purpose.
 const stubBytes = 120
 
-// silence is the empty index.php WordPress and plugins put in folders so they cannot be listed:
-// "<?php // Silence is golden." and its variants, nothing else.
-var silence = regexp.MustCompile(`(?i)^<\?php\s*(//|#|/\*)?\s*silence is golden\.?\s*(\*/)?\s*(\?>)?\s*$`)
+var (
+	// silence is the empty index.php WordPress and plugins put in folders so they cannot be listed:
+	// "<?php // Silence is golden." and its variants, nothing else.
+	silence = regexp.MustCompile(`(?i)^<\?php\s*(//|#|/\*)?\s*silence is golden\.?\s*(\*/)?\s*(\?>)?\s*$`)
+	// forbidden is an index.php that only answers 403 or 404, nothing else.
+	forbidden = regexp.MustCompile(`(?i)^<\?php\s+header\s*\(\s*['"]HTTP/1\.[01]\s+40[34][^'"]*['"]\s*\)\s*;\s*((exit|die)\s*(\(\s*\))?\s*;\s*)?(\?>)?\s*$`)
+	// stops is a file whose first statement stops PHP: nothing after it runs, as in Matomo's
+	// config.ini.php ("; <?php exit; ?> DO NOT REMOVE THIS LINE").
+	stops = regexp.MustCompile(`(?i)^;?\s*<\?php\s+(exit|die)\s*(\(\s*(['"][^'"]*['"])?\s*\))?\s*;`)
+)
 
-// ParseUploadsPHP reads UploadsPHP's answer: the files relative to the uploads folder, without the
-// "Silence is golden" ones, and whether there are more than UploadsShown.
+// dropped tells whether a file found in the uploads was put there on purpose and runs nothing: a file
+// whose first statement stops PHP, or a whole index.php that only stops folder listings.
+func dropped(path, size, content string) bool {
+	content = strings.TrimSpace(content)
+	if stops.MatchString(content) {
+		return true
+	}
+	// The whole file must have been read, or code could follow the part that looks harmless.
+	n, err := strconv.Atoi(size)
+	whole := err == nil && n <= stubBytes && strings.HasSuffix(path, "/index.php")
+	return whole && (silence.MatchString(content) || forbidden.MatchString(content))
+}
+
+// ParseUploadsPHP reads UploadsPHP's answer: the files relative to the uploads folder, without
+// those put there on purpose that run nothing, and whether there are more than UploadsShown.
 func ParseUploadsPHP(root string, out []byte) (files []string, more bool) {
 	prefix := root + "/wp-content/uploads/"
 	lines := 0
@@ -218,11 +241,12 @@ func ParseUploadsPHP(root string, out []byte) (files []string, more bool) {
 		if lines++; lines > UploadsShown {
 			return files, true
 		}
-		path, content, sampled := strings.Cut(line, "\t")
-		if sampled && silence.MatchString(strings.TrimSpace(content)) {
+		fields := strings.SplitN(line, "\t", 3)
+		path := strings.TrimSpace(fields[0])
+		if len(fields) == 3 && dropped(path, fields[1], fields[2]) {
 			continue
 		}
-		files = append(files, strings.TrimPrefix(strings.TrimSpace(path), prefix))
+		files = append(files, strings.TrimPrefix(path, prefix))
 	}
 	return files, false
 }

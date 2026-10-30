@@ -163,7 +163,7 @@ func TestAScanAppliesTheIgnoresOfItsSite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	key := "core-file|core|wp-config-docker.php"
+	key := "core-file|core|"
 	if err := db.SaveIgnore(ctx, model.Ignore{SiteID: node.ID, Key: key, Reason: "the container image's", Created: time.Now()}); err != nil {
 		t.Fatal(err)
 	}

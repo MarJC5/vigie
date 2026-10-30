@@ -100,7 +100,11 @@ export function findingText(f: FindingView, t: T, lang: string): FindingText {
       const reason = closeReasons.includes(facts.reason ?? "") ? k(`closeReason.${facts.reason}`) : (facts.reason ?? "");
       return {
         title: k("pluginClosed.title", { name }),
-        detail: join(facts.date ? k("pluginClosed.on", { date: day(facts.date), reason }) : reason, stale),
+        detail: join(
+          facts.date ? k("pluginClosed.on", { date: day(facts.date), reason }) : reason,
+          facts["other-plugin"] === "true" && k("pluginClosed.otherPlugin"),
+          stale,
+        ),
         link: wporg,
       };
     }
@@ -110,8 +114,17 @@ export function findingText(f: FindingView, t: T, lang: string): FindingText {
         detail: k("pluginAbandoned.detail", { date: day(facts["last-release"] ?? "") }),
         link: wporg,
       };
-    case "core-file":
-      return { title: k(`coreFile.${facts.change}`, { file: f.identifier }), detail: k(`coreFile.${facts.change}Detail`) };
+    case "core-file": {
+      // A file often deleted on purpose has its own finding; the others are counted together.
+      if (f.identifier) return { title: k("coreFile.removed", { file: f.identifier }), detail: k("coreFile.removedDetail") };
+      const changed = Number(facts.changed ?? 0);
+      const missing = Number(facts.missing ?? 0);
+      const added = Number(facts.added ?? 0);
+      return {
+        title: k("coreFile.title", { count: changed + missing + added }),
+        detail: join(k("coreFile.counts", { changed, missing, added }), facts.files && k("coreFile.files", { files: facts.files }), k("coreFile.detail")),
+      };
+    }
     case "plugin-file": {
       const added = Number(facts.added ?? 0);
       const changed = Number(facts.changed ?? 0);
@@ -120,7 +133,11 @@ export function findingText(f: FindingView, t: T, lang: string): FindingText {
         detail: join(
           k("pluginFile.counts", { added, changed }),
           facts.files && k("pluginFile.files", { files: facts.files }),
-          facts.mismatch === "true" ? k("pluginFile.mismatch") : k("pluginFile.detail"),
+          facts.uncomparable === "true"
+            ? k("pluginFile.uncomparable")
+            : facts.mismatch === "true"
+              ? k("pluginFile.mismatch")
+              : k("pluginFile.detail"),
         ),
       };
     }

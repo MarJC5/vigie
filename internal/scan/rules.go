@@ -1,12 +1,10 @@
 package scan
 
 import (
-	"slices"
 	"time"
 
 	"github.com/MarJC5/vigie/internal/lookup"
 	"github.com/MarJC5/vigie/internal/model"
-	"github.com/MarJC5/vigie/internal/wpcli"
 )
 
 // The thresholds of the rules: Vigie's choices, named in the interface's help texts.
@@ -37,17 +35,8 @@ func closedLevel(reason string) model.FindingLevel {
 }
 
 // removable are WordPress files often deleted on purpose, since they tell its version: missing,
-// they are only shown.
+// they are only shown. Any other WordPress file changed, missing or added is urgent.
 var removable = []string{"readme.html", "license.txt", "wp-config-sample.php"}
-
-// coreFileLevel: a WordPress file changed, missing or added is urgent, except one of the files
-// often deleted on purpose.
-func coreFileLevel(p wpcli.FileProblem) model.FindingLevel {
-	if p.Change == wpcli.FileMissing && slices.Contains(removable, p.File) {
-		return model.LevelInfo
-	}
-	return model.LevelUrgent
-}
 
 // A plugin's files that differ need attention, since plugins are sometimes patched on purpose.
 // Nearly all of them added means another plugin of the same name as wordpress.org's: at least

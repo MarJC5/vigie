@@ -127,10 +127,7 @@ func (r *run) files(ctx context.Context, result *model.Scan) error {
 	if err != nil {
 		result.Findings = append(result.Findings, notChecked(checkCoreFiles, err))
 	}
-	for _, p := range core {
-		result.Findings = append(result.Findings, model.Finding{Kind: model.KindCoreFile, Subject: "core", Identifier: p.File,
-			Version: result.WordPress, Level: coreFileLevel(p), Facts: map[string]string{"change": string(p.Change)}})
-	}
+	result.Findings = append(result.Findings, coreFiles(core, result.WordPress)...)
 
 	if res, err = r.exec(ctx, wpcli.PluginVerifyChecksums(), r.job.Site.Path); err != nil {
 		return err
@@ -147,8 +144,38 @@ func (r *run) files(ctx context.Context, result *model.Scan) error {
 	return r.uploads(ctx, result)
 }
 
+// coreFiles makes one finding of the WordPress files that differ, how many changed, went missing
+// or were added, and the first ones; each of the files often deleted on purpose has its own
+// finding, only shown.
+func coreFiles(problems []wpcli.FileProblem, wordpress string) []model.Finding {
+	var findings []model.Finding
+	counts := map[wpcli.FileChange]int{}
+	var files []string
+	for _, p := range problems {
+		if p.Change == wpcli.FileMissing && slices.Contains(removable, p.File) {
+			findings = append(findings, model.Finding{Kind: model.KindCoreFile, Subject: "core", Identifier: p.File,
+				Version: wordpress, Level: model.LevelInfo, Facts: map[string]string{"change": string(p.Change)}})
+			continue
+		}
+		counts[p.Change]++
+		if len(files) < filesShown {
+			files = append(files, p.File)
+		}
+	}
+	if len(files) == 0 {
+		return findings
+	}
+	return append(findings, model.Finding{Kind: model.KindCoreFile, Subject: "core", Version: wordpress, Level: model.LevelUrgent,
+		Facts: map[string]string{
+			"changed": strconv.Itoa(counts[wpcli.FileChanged]), "missing": strconv.Itoa(counts[wpcli.FileMissing]),
+			"added": strconv.Itoa(counts[wpcli.FileAdded]), "files": strings.Join(files, ", "),
+		}})
+}
+
 // pluginFiles makes one finding per plugin of its files that differ: how many were added and
-// changed, the first ones, and whether nearly all differ.
+// changed, and the first ones. Many added and none changed means wordpress.org's list does not
+// match this version's files at all: they could not be compared, which is only shown. Many added
+// and few changed means another plugin of the same name as wordpress.org's.
 func pluginFiles(problems []wpcli.FileProblem, versions map[string]string) []model.Finding {
 	var order []string
 	byPlugin := map[string][]wpcli.FileProblem{}
@@ -173,11 +200,15 @@ func pluginFiles(problems []wpcli.FileProblem, versions map[string]string) []mod
 			}
 		}
 		facts := map[string]string{"added": strconv.Itoa(added), "changed": strconv.Itoa(changed), "files": strings.Join(files, ", ")}
-		if added >= mismatchAdded && added > mismatchRatio*changed {
+		level := model.LevelAttention
+		switch {
+		case added >= mismatchAdded && changed == 0:
+			facts["uncomparable"], level = "true", model.LevelInfo
+		case added >= mismatchAdded && added > mismatchRatio*changed:
 			facts["mismatch"] = "true"
 		}
 		findings = append(findings, model.Finding{Kind: model.KindPluginFile, Subject: "plugin:" + plugin,
-			Version: versions[plugin], Level: model.LevelAttention, Facts: facts})
+			Version: versions[plugin], Level: level, Facts: facts})
 	}
 	return findings
 }

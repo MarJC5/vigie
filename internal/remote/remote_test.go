@@ -120,9 +120,13 @@ func TestParsers(t *testing.T) {
 
 func TestUploadsPHP(t *testing.T) {
 	got, err := remote.UploadsPHP("/home/u/sites/a")
-	want := "find '/home/u/sites/a/wp-content/uploads' -type f \\( -iname '*.php' -o -iname '*.php[0-9]' -o -iname '*.phtml' -o -iname '*.pht' -o -iname '*.phar' \\) 2>/dev/null | head -n 51 | while IFS= read -r f; do case \"$f\" in */index.php) printf '%s\\t%s\\n' \"$f\" \"$(head -c 120 \"$f\" | tr '\\t\\r\\n' '   ')\";; *) printf '%s\\n' \"$f\";; esac; done"
-	if err != nil || got != want {
-		t.Errorf("UploadsPHP() = %s, %v\nwant %s", got, err, want)
+	// Each file with its size and the start of its content: a whole small index.php, the first line
+	// of another file, never more than 120 bytes.
+	for _, part := range []string{"find '/home/u/sites/a/wp-content/uploads' -type f", "| head -n 51 |", "wc -c < \"$f\"",
+		"*/index.php) c=$(head -c 120 \"$f\")", "*) c=$(head -n 1 \"$f\" | head -c 120)"} {
+		if err != nil || !strings.Contains(got, part) {
+			t.Errorf("UploadsPHP() = %s, %v\nwant it with %s", got, err, part)
+		}
 	}
 	if _, err := remote.UploadsPHP("sites/a"); !errors.Is(err, remote.ErrBadPath) {
 		t.Errorf("UploadsPHP(relative) = %v, want ErrBadPath", err)
@@ -152,7 +156,8 @@ func TestParseUploadsPHP(t *testing.T) {
 	if want, _ := remote.UploadsPHP(root); line != want {
 		t.Fatalf("recorded %s, Vigie runs %s: run make record", line, want)
 	}
-	// The "Silence is golden" file of Solid Security is not one; an index.php with anything more is.
+	// Dropped on purpose and running nothing: Solid Security's "Silence is golden", Matomo's
+	// config.ini.php that stops PHP on its first line. An index.php with anything more is listed.
 	files, more := remote.ParseUploadsPHP(root, res.Stdout)
 	slices.Sort(files)
 	if !reflect.DeepEqual(files, []string{"2026/10/fixture-shell.php", "fixture-old.PHTML", "ithemes-security/backups/index.php"}) || more {
@@ -165,18 +170,33 @@ func TestParseUploadsPHP(t *testing.T) {
 	// One more than shown: there are more.
 	var many strings.Builder
 	for i := range remote.UploadsShown + 1 {
-		fmt.Fprintf(&many, "%s/wp-content/uploads/f%d.php\n", root, i)
+		fmt.Fprintf(&many, "%s/wp-content/uploads/f%d.php\t9\t<?php x\n", root, i)
 	}
 	if files, more := remote.ParseUploadsPHP(root, []byte(many.String())); len(files) != remote.UploadsShown || !more {
 		t.Errorf("ParseUploadsPHP(51 files) = %d files, more %v", len(files), more)
 	}
-	for content, stub := range map[string]bool{
-		"<?php // Silence is golden.": true, "<?php  # silence is golden ?>": true, "<?php /* Silence is golden */": true,
-		"<?php // Silence is golden. phpinfo();": false, "<?php phpinfo(); // Silence is golden": false, "": false,
+	for _, tc := range []struct {
+		file, size, content string
+		dropped             bool
+	}{
+		{"a/index.php", "28", "<?php // Silence is golden.", true},
+		{"a/index.php", "30", "<?php  # silence is golden ?>", true},
+		{"a/index.php", "30", "<?php /* Silence is golden */", true},
+		{"a/index.php", "45", "<?php header('HTTP/1.0 403 Forbidden'); exit; ?>", true},
+		{"m/config/config.ini.php", "900", "; <?php exit; ?> DO NOT REMOVE THIS LINE", true},
+		{"a/cache.php", "500", "<?php die(); ?>", true},
+		{"a/index.php", "40", "<?php // Silence is golden. phpinfo();", false},
+		{"a/index.php", "40", "<?php phpinfo(); // Silence is golden", false},
+		// Looks harmless, but longer than what was read: code may follow.
+		{"a/index.php", "5000", "<?php // Silence is golden.", false},
+		// Only an index.php is read whole.
+		{"a/other.php", "28", "<?php // Silence is golden.", false},
+		{"a/x.php", "12", "<?php exit_handler(); phpinfo();", false},
+		{"a/index.php", "0", "", false},
 	} {
-		files, _ := remote.ParseUploadsPHP(root, []byte(root+"/wp-content/uploads/a/index.php\t"+content+"\n"))
-		if (len(files) == 0) != stub {
-			t.Errorf("index.php %q: listed %v, want stub %v", content, files, stub)
+		line := root + "/wp-content/uploads/" + tc.file + "\t" + tc.size + "\t" + tc.content + "\n"
+		if files, _ := remote.ParseUploadsPHP(root, []byte(line)); (len(files) == 0) != tc.dropped {
+			t.Errorf("%s (%s bytes) %q: listed %v, want dropped %v", tc.file, tc.size, tc.content, files, tc.dropped)
 		}
 	}
 }

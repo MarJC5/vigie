@@ -226,6 +226,7 @@ func (r *run) scan(ctx context.Context, result *model.Scan) ([]model.Subsite, er
 	err = r.security(ctx, result)
 	done := <-found
 	result.Findings = append(result.Findings, done.findings...)
+	sameName(result.Findings)
 	sortFindings(result.Findings)
 	// wordpress.org's own answer, from the machine, replaces what the server read: a server that
 	// cannot reach wordpress.org reads every plugin as closed. Without an answer, the server's stays.
@@ -250,6 +251,23 @@ func (r *run) scan(ctx context.Context, result *model.Scan) ([]model.Subsite, er
 func (r *run) finish() {
 	if r.progress != nil {
 		r.progress(Progress{SiteID: r.job.Site.ID, Done: r.total, Total: r.total})
+	}
+}
+
+// sameName makes the closure of a plugin on wordpress.org only shown when its files say it is
+// another plugin of the same name: the closed one is not the one installed.
+func sameName(findings []model.Finding) {
+	other := map[string]bool{}
+	for _, f := range findings {
+		if f.Kind == model.KindPluginFile && f.Facts["mismatch"] == "true" {
+			other[f.Subject] = true
+		}
+	}
+	for i, f := range findings {
+		if f.Kind == model.KindPluginClosed && other[f.Subject] {
+			findings[i].Level = model.LevelInfo
+			findings[i].Facts["other-plugin"] = "true"
+		}
 	}
 }
 
