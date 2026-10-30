@@ -42,7 +42,20 @@ type Scanner struct {
 type running struct {
 	cancel context.CancelFunc
 	sites  int
+	ids    map[model.ID]bool // the sites of the scan
 	done   map[model.ID]bool
+}
+
+// scanning tells whether a scan running now has a site not done yet.
+func (s *Scanner) scanning(site model.ID) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, r := range s.running {
+		if r.ids[site] && !r.done[site] {
+			return true
+		}
+	}
+	return false
 }
 
 // NewScanner returns the service; emit sends an event to the interface.
@@ -78,7 +91,12 @@ func (s *Scanner) start(nodeID string, opts workspace.ScanOptions) *Problem {
 		cancel()
 		return nil
 	}
-	s.running[nodeID] = &running{cancel: cancel, sites: len(tree.SitesUnder(node)), done: map[model.ID]bool{}}
+	sites := tree.SitesUnder(node)
+	ids := map[model.ID]bool{}
+	for _, site := range sites {
+		ids[site.ID] = true
+	}
+	s.running[nodeID] = &running{cancel: cancel, sites: len(sites), ids: ids, done: map[model.ID]bool{}}
 	s.order = append(s.order, nodeID)
 	s.mu.Unlock()
 	s.send()

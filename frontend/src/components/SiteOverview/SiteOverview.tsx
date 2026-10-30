@@ -115,7 +115,7 @@ export function SiteOverview({
         ) : tab === "updates" && onUpdate && offered > 0 ? (
           <>
             <span className={styles.selected}>{t("update.selected", { count: chosen.size, total: offered })}</span>
-            <Button variant="primary" icon="update" onClick={() => onUpdate(chosen)} disabled={chosen.size === 0 || updating}>
+            <Button variant="primary" icon="update" onClick={() => onUpdate(chosen)} disabled={chosen.size === 0 || updating || scanning} aria-busy={scanning || undefined}>
               {t("update.updateSelected", { count: chosen.size })}
             </Button>
           </>

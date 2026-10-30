@@ -120,12 +120,30 @@ type Updates struct {
 	cancels   map[int]context.CancelFunc
 	next      int
 	busy      map[model.ID]bool // the sites of the runs not over yet
+	scanner   *Scanner          // a site being scanned is not updated
 }
 
-// NewUpdates returns the service; emit sends an event to the interface.
-func NewUpdates(ws *workspace.Workspace, emit func(name string, data any)) *Updates {
+// errScanning refuses to update a site while it is being scanned: the scan would read it halfway.
+var errScanning = errors.New("the site is being scanned")
+
+// NewUpdates returns the service; emit sends an event to the interface. A site the scanner is
+// scanning is not updated nor rolled back; without a scanner, nothing is refused for that.
+func NewUpdates(ws *workspace.Workspace, emit func(name string, data any), scanner *Scanner) *Updates {
 	return &Updates{ws: ws, emit: emit, previews: map[model.ID]workspace.SitePreview{},
-		running: map[model.ID]*OperationView{}, cancels: map[int]context.CancelFunc{}, busy: map[model.ID]bool{}}
+		running: map[model.ID]*OperationView{}, cancels: map[int]context.CancelFunc{}, busy: map[model.ID]bool{}, scanner: scanner}
+}
+
+// scanning tells whether one of the sites is being scanned.
+func (u *Updates) scanning(sites ...model.ID) bool {
+	if u.scanner == nil {
+		return false
+	}
+	for _, id := range sites {
+		if u.scanner.scanning(id) {
+			return true
+		}
+	}
+	return false
 }
 
 // Preview reads what an update of a site, or of the sites of a host or folder, would change.
@@ -187,6 +205,8 @@ func (u *Updates) Update(siteID string, sel SelectionView) *Problem {
 	p, ok := u.previews[id]
 	u.mu.Unlock()
 	switch {
+	case u.scanning(id):
+		return ProblemOf(errScanning)
 	case !ok:
 		return ProblemOf(errPreviewFirst)
 	case p.Err != nil:
@@ -210,6 +230,11 @@ func (u *Updates) UpdateAll(nodeID string) *Problem {
 	node, err := nodeByID(tree, nodeID)
 	if err != nil {
 		return ProblemOf(errNodeNotFound)
+	}
+	for _, site := range tree.SitesUnder(node) {
+		if u.scanning(site.ID) {
+			return ProblemOf(errScanning)
+		}
 	}
 	var previews []workspace.SitePreview
 	u.mu.Lock()
@@ -287,6 +312,9 @@ func (u *Updates) Rollback(siteID, operationID string) *Problem {
 	op, err := uuid.Parse(operationID)
 	if err != nil {
 		return ProblemOf(update.ErrNothingToRollBack)
+	}
+	if u.scanning(site) {
+		return ProblemOf(errScanning)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	u.mu.Lock()

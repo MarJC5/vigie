@@ -192,7 +192,8 @@
     "nothingToRollBack": "Il n'y a rien à annuler.",
     "error": "Une erreur s'est produite : {{message}}",
     "reasonRequired": "Une raison est demandée pour ignorer un constat définitivement.",
-    "unknownDestination": "Vigie ne connaît pas ce service."
+    "unknownDestination": "Vigie ne connaît pas ce service.",
+    "scanning": "Un relevé de ce site est en cours : attendez sa fin pour le mettre à jour."
   },
   "wizard": {
     "close": "Fermer",

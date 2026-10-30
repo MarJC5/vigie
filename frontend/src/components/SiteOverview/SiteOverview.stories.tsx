@@ -51,6 +51,17 @@ export const LatestScanCancelled: Story = {
   },
 };
 
+// A site being scanned is not updated until the scan ends.
+export const UpdatesWhileScanning: Story = {
+  args: { onUpdate: fn(), scanning: true },
+  play: async ({ canvas }) => {
+    const [tab] = canvas.getAllByRole("tab", { name: /Updates/ });
+    await userEvent.click(tab!);
+    const [update] = canvas.getAllByRole("button", { name: /^Update \(\d+\)$/ });
+    await expect(update).toBeDisabled();
+  },
+};
+
 // The Security tab counts what calls for something; it lists the findings and sets one aside.
 export const SecurityTab: Story = {
   args: {

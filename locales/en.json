@@ -180,7 +180,8 @@
     "nothingToRollBack": "There is nothing to roll back.",
     "error": "Something went wrong: {{message}}",
     "reasonRequired": "A reason is required to ignore a finding permanently.",
-    "unknownDestination": "Vigie does not know this service."
+    "unknownDestination": "Vigie does not know this service.",
+    "scanning": "This site is being scanned: wait for the scan to end before updating it."
   },
   "wizard": {
     "close": "Close",

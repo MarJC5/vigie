@@ -173,3 +173,35 @@ func TestCheckFilesAgain(t *testing.T) {
 		}
 	}
 }
+
+// A site being scanned is not updated nor rolled back, alone or with its host, until its scan ends.
+func TestNoUpdateWhileScanning(t *testing.T) {
+	runner := blocking{started: make(chan struct{}), once: &sync.Once{}}
+	ws, _, host := benchSites(t, runner)
+	ev := newEvents()
+	s := app.NewScanner(ws, ev.emit)
+	u := app.NewUpdates(ws, func(string, any) {}, s)
+	if p := s.Scan(host.ID.String()); p != nil {
+		t.Fatal(p)
+	}
+	<-runner.started
+	tree, err := ws.DB().LoadTree(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	site := tree.SitesUnder(model.Node{Kind: model.KindHost, ID: host.ID})[0].ID.String()
+	for name, p := range map[string]*app.Problem{
+		"Update":    u.Update(site, app.SelectionView{Core: true}),
+		"UpdateAll": u.UpdateAll(host.ID.String()),
+		"Rollback":  u.Rollback(site, model.NewID().String()),
+	} {
+		if code(p) != "problem.scanning" {
+			t.Errorf("%s during a scan = %+v, want problem.scanning", name, p)
+		}
+	}
+	s.CancelAll()
+	ev.idle(t)
+	if p := u.Update(site, app.SelectionView{Core: true}); code(p) == "problem.scanning" {
+		t.Errorf("Update after the scan = %+v, want it no longer refused for the scan", p)
+	}
+}

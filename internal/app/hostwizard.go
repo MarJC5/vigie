@@ -52,6 +52,7 @@ var problemCodes = []struct {
 	{store.ErrCycle, "problem.moveIntoItself"},
 	{errNodeNotFound, "problem.notFound"},
 	{model.ErrReasonRequired, "problem.reasonRequired"},
+	{errScanning, "problem.scanning"},
 	{workspace.ErrUnknownDestination, "problem.unknownDestination"},
 	{model.ErrNotFound, "problem.folderNotFound"},
 	{sshx.ErrNoHostKey, "problem.noHostKey"},

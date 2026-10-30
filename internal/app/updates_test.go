@@ -134,7 +134,7 @@ func updatesService(t *testing.T, fail map[string]bool, gate chan struct{}) (*ap
 			return fakeUpdater{db: db, onStep: onStep, fail: fail, gate: gate}
 		}})
 	ev := &updateEvents{sent: make(chan struct{}, 200)}
-	return app.NewUpdates(ws, ev.emit), ev, ids
+	return app.NewUpdates(ws, ev.emit, nil), ev, ids
 }
 
 func TestPreviewAHost(t *testing.T) {

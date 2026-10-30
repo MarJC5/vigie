@@ -104,7 +104,7 @@ func openWindow(opts cli.Options) error {
 			application.NewService(preferences),
 			application.NewService(app.NewHostWizard(ws, emit)),
 			application.NewService(app.NewEditor(ws)),
-			application.NewService(app.NewUpdates(ws, emit)),
+			application.NewService(app.NewUpdates(ws, emit, scanner)),
 			application.NewService(scanner),
 			application.NewService(app.NewSecurity(ws, time.Now)),
 		},
