@@ -103,7 +103,6 @@ func TestAnExportMustHoldTogether(t *testing.T) {
 		"a parent not in the file":  func(f *exchange.File) { f.Folders[1].Parent = "01a18cd5-0000-7000-8000-0000000000ff" },
 		"a host in no folder of it": func(f *exchange.File) { f.Hosts[0].Folder = "01a18cd5-0000-7000-8000-0000000000ff" },
 		"a site without its host":   func(f *exchange.File) { f.Sites[0].Host = "01a18cd5-0000-7000-8000-0000000000ff" },
-		"a site without a path":     func(f *exchange.File) { f.Sites[0].Path = "" },
 		"a folder without a name":   func(f *exchange.File) { f.Folders[0].Name = "" },
 		"folders in a loop":         func(f *exchange.File) { f.Folders[0].Parent = f.Folders[1].ID },
 		"an ignore of another site": func(f *exchange.File) { f.Ignores[0].Site = "01a18cd5-0000-7000-8000-0000000000ff" },
@@ -118,8 +117,14 @@ func TestAnExportMustHoldTogether(t *testing.T) {
 			t.Errorf("%s: Read() = %v, want ErrInvalid", name, err)
 		}
 	}
-	// Without history, the export of a host alone: its folder is outside the file.
+	// A site without a path, as Vigie stores it, reads back.
 	f := sample()
+	f.Sites[0].Path = ""
+	if _, err := exchange.Read(bytes.NewReader(encode(t, f))); err != nil {
+		t.Errorf("a site without a path = %v", err)
+	}
+	// Without history, the export of a host alone: its folder is outside the file.
+	f = sample()
 	f.History, f.Folders, f.Hosts[0].Folder, f.Scope = nil, nil, "", "Clients/Valais/Shared hosting"
 	if _, err := exchange.Read(bytes.NewReader(encode(t, f))); err != nil {
 		t.Errorf("the export of a host alone = %v", err)

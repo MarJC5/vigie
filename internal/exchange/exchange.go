@@ -291,7 +291,7 @@ func (f File) Check() error {
 		}
 	}
 	for _, x := range f.Sites {
-		if x.Name == "" || x.Path == "" || !hosts[x.Host] || !knownColor(x.Color) {
+		if x.Name == "" || !hosts[x.Host] || !knownColor(x.Color) {
 			return fmt.Errorf("site %s: %w", x.ID, ErrInvalid)
 		}
 	}

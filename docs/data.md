@@ -56,7 +56,7 @@ with a message, rather than dropping what it does not know: a field it does not 
 the same reason.
 
 When Vigie reads an export, it also checks that it holds together: every `id` an ID, each one once;
-every `parent`, `folder`, `host` and `site` in the file; names and paths given; no folder inside
+every `parent`, `folder`, `host` and `site` in the file; names given; no folder inside
 itself; colors, key types and levels among the values the schema lists.
 
 ## Importing

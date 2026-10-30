@@ -284,8 +284,7 @@
           "minLength": 1
         },
         "path": {
-          "type": "string",
-          "minLength": 1
+          "type": "string"
         },
         "url": {
           "type": "string"
