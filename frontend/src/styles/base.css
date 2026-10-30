@@ -19,6 +19,26 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* A window, not a page: labels, titles and buttons cannot be selected. Fields can, and so can the
+   raw details worth copying (errors, server paths, fingerprints), marked data-selectable. */
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+
+input,
+textarea,
+[contenteditable="true"],
+[data-selectable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+[data-selectable] {
+  cursor: text;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

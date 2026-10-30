@@ -13,7 +13,7 @@ import { Button } from "../Button/Button";
 import { Dialog } from "../Dialog/Dialog";
 import { InstallList } from "../InstallList/InstallList";
 import { Notice } from "../Notice/Notice";
-import { Progress } from "../Progress/Progress";
+import type { ProgressProps } from "../Progress/Progress";
 
 /** The Go service the dialog calls (app.HostWizard); stories give a fake. */
 export interface FindSitesApi {
@@ -78,9 +78,22 @@ export function FindSitesDialog({ api, hostId, hostName, onClose, onAdded }: Fin
     }
   };
 
+  // The search under way, its bar along the bottom of the dialog.
+  const progress: ProgressProps | undefined =
+    installs !== null || problem
+      ? undefined
+      : checking && checking.total > 0
+        ? {
+            label: t("wizard.progress.checking", { checked: checking.checked, total: checking.total }),
+            value: checking.checked,
+            max: checking.total,
+          }
+        : { label: t("edit.find.searching") };
+
   return (
     <Dialog
       wide
+      progress={progress}
       title={t("edit.find.title")}
       lead={t("edit.find.lead", { name: hostName })}
       onClose={onClose}
@@ -90,23 +103,13 @@ export function FindSitesDialog({ api, hostId, hostName, onClose, onAdded }: Fin
             {offered ? t("edit.cancel") : t("edit.find.close")}
           </Button>
           {offered && (
-            <Button variant="primary" disabled={chosen.length === 0 || busy} onClick={() => void add()}>
+            <Button variant="primary" disabled={chosen.length === 0 || busy} aria-busy={busy || undefined} onClick={() => void add()}>
               {t("edit.find.add", { count: chosen.length })}
             </Button>
           )}
         </>
       }
     >
-      {installs === null && !problem &&
-        (checking && checking.total > 0 ? (
-          <Progress
-            label={t("wizard.progress.checking", { checked: checking.checked, total: checking.total })}
-            value={checking.checked}
-            max={checking.total}
-          />
-        ) : (
-          <Progress label={t("edit.find.searching")} />
-        ))}
       {installs !== null && installs.length > 0 && (
         <InstallList
           label={t("wizard.found")}

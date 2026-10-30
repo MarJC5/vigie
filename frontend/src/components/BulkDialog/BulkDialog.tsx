@@ -27,18 +27,19 @@ export function BulkDialog({ name, previews, onConfirm, onClose }: BulkDialogPro
       lead={t("update.bulkDialog.lead")}
       onClose={onClose}
       wide
+      progress={previews ? undefined : { label: t("update.bulkDialog.loading") }}
       actions={
         <>
           <Button variant="outline" onClick={onClose}>
             {t("action.cancel")}
           </Button>
           <Button variant="primary" icon="update" onClick={onConfirm} disabled={ready === 0} aria-busy={!previews || undefined}>
-            {t("update.bulkDialog.confirm", { count: ready })}
+            {previews ? t("update.bulkDialog.confirm", { count: ready }) : t("update.updateAll")}
           </Button>
         </>
       }
     >
-      {previews ? (
+      {previews && (
         <ul aria-label={t("update.bulkDialog.sites")} className={styles.sites}>
           {previews.map((p) => {
             const count = pendingOf(p);
@@ -58,10 +59,6 @@ export function BulkDialog({ name, previews, onConfirm, onClose }: BulkDialogPro
             );
           })}
         </ul>
-      ) : (
-        <p role="status" className={styles.loading}>
-          {t("update.bulkDialog.loading")}
-        </p>
       )}
     </Dialog>
   );

@@ -66,12 +66,16 @@ export function InstallList({ label, columns, addLabel, items, onToggle, onRenam
                 <span className={styles.fixed}>{item.name}</span>
               )}
             </td>
-            <td className={styles.path}>{item.path}</td>
+            <td className={styles.path} data-selectable>
+              {item.path}
+            </td>
             <td>
               <span className={styles.state}>
                 {item.problem ? <StatusDot status="danger" label={item.state} withLabel /> : item.state}
               </span>
-              {item.detail && <span className={styles.detail}>{item.detail}</span>}
+              {item.detail && <span className={styles.detail} data-selectable>
+                  {item.detail}
+                </span>}
             </td>
           </tr>
         ))}

@@ -20,6 +20,14 @@
   background: var(--vg-surface-raised);
 }
 
+/* Along the edge of a window or a dialog: the whole width, square, over its border line. */
+.track[data-placement="edge"] {
+  width: 100%;
+  height: 3px;
+  border-radius: 0;
+  background: transparent;
+}
+
 .fill {
   position: absolute;
   inset: 0 auto 0 0;

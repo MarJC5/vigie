@@ -24,12 +24,14 @@ export function Fingerprint({ label, type, value, others = [], othersLabel, note
         </h2>
         <span className={styles.type}>{type}</span>
       </div>
-      <p className={styles.value}>{value}</p>
+      <p className={styles.value} data-selectable>
+        {value}
+      </p>
       {others.length > 0 && (
         <div className={styles.others}>
           <span>{othersLabel}</span>
           {others.map((o) => (
-            <span key={o.value} className={styles.other}>
+            <span key={o.value} className={styles.other} data-selectable>
               {o.type} · {o.value}
             </span>
           ))}

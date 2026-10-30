@@ -200,7 +200,7 @@
     "lead": {
       "connection": "Un hébergement est un compte SSH. Vigie utilise les clés de votre agent SSH et ne demande jamais de mot de passe.",
       "key": "Première connexion à {{host}}. Comparez cette empreinte avec celle publiée par votre hébergeur avant de l'approuver.",
-      "test": "Vigie vérifie la connexion, PHP en ligne de commande et WP-CLI. Rien n'est écrit sur le serveur.",
+      "test": "Vigie vérifie la connexion, PHP en ligne de commande et WP-CLI, puis cherche les installations WordPress du compte. Rien n'est écrit sur le serveur.",
       "sites_one": "{{count}} installation WordPress trouvée sur le compte. Vigie n'ajoute que celles que vous cochez.",
       "sites_many": "{{count}} installations WordPress trouvées sur le compte. Vigie n'ajoute que celles que vous cochez.",
       "sites_other": "{{count}} installations WordPress trouvées sur le compte. Vigie n'ajoute que celles que vous cochez."
@@ -267,7 +267,8 @@
       "search": "Recherche des installations WordPress sur le compte…",
       "checking": "Vérification des installations trouvées : {{checked}} sur {{total}}",
       "adding": "Ajout de l'hébergement et de ses sites…"
-    }
+    },
+    "searchFailed": "La recherche des sites a échoué"
   },
   "overview": {
     "wordpress": "WordPress",
@@ -293,7 +294,12 @@
     "sourceUnknownHint": "Absentes de wordpress.org ; leur propre outil de mise à jour ne tourne pas pendant un relevé.",
     "neverScanned": "Ce site n'a pas encore été relevé.",
     "scanning": "Relevé en cours…",
-    "scanProblem": "Le dernier relevé n'a pas abouti"
+    "scanProblem": "Le dernier relevé n'a pas abouti",
+    "sourceUnknownCount_one": "{{count}} extension",
+    "sourceUnknownCount_many": "{{count}} extensions",
+    "sourceUnknownCount_other": "{{count}} extensions",
+    "show": "Voir",
+    "hide": "Masquer"
   },
   "updates": {
     "label": "Mises à jour en attente",
@@ -419,7 +425,9 @@
         "cyan": "Cyan",
         "magenta": "Magenta",
         "orange": "Orange"
-      }
+      },
+      "addHost": "Ajouter un hébergement…",
+      "scanAll": "Tout relever"
     },
     "more": "Plus d'actions",
     "dropInto": "Relâchez pour déplacer {{name}} dans {{folder}}",
@@ -451,7 +459,7 @@
     },
     "preview": {
       "title": "Mettre à jour {{name}}",
-      "lead": "Vigie sauvegarde d'abord, puis met à jour un élément à la fois et vérifie le site après chacun. Il s'arrête au premier problème.",
+      "lead": "Vigie fait d'abord une sauvegarde, puis met à jour les éléments un par un et vérifie le site après chaque mise à jour. Au premier problème, tout s'arrête.",
       "loading": "Vigie lit sur le serveur ce qui va changer.",
       "whatChanges": "Ce qui change",
       "backupsFirst": "Sauvegardé d'abord, sur le serveur",
@@ -484,13 +492,17 @@
       "running": "En cours…",
       "rollbackTitle": "Retour en arrière de {{name}}",
       "stepsLabel": "Étapes de la mise à jour",
-      "notStarted": "Vigie n'a pas pu lancer cette mise à jour. Relevez le site, puis réessayez."
+      "notStarted": "Vigie n'a pas pu lancer cette mise à jour. Relevez le site, puis réessayez.",
+      "progress_one": "{{done}} élément sur {{total}} mis à jour et vérifié",
+      "progress_many": "{{done}} éléments sur {{total}} mis à jour et vérifiés",
+      "progress_other": "{{done}} éléments sur {{total}} mis à jour et vérifiés",
+      "rollingBack": "Retour en arrière en cours…"
     },
     "result": {
       "doneTitle": "{{name}} est à jour",
       "doneLead": "Chaque élément a été vérifié après sa mise à jour.",
       "failedTitle": "La mise à jour a cassé le site",
-      "failedLead": "Vigie s'est arrêté au premier problème : rien d'autre n'a été lancé.",
+      "failedLead": "La mise à jour s'est arrêtée au premier problème : rien d'autre n'a été lancé.",
       "failedOn": "{{item}} : le site ne passe plus les vérifications",
       "failedStep": "L'étape « {{step}} » a échoué",
       "rollbackFiles": "Revenir en arrière remet le dossier de {{item}} tel qu'il était, puis vérifie à nouveau le site. La base de données n'est pas touchée : seule une mise à jour de WordPress la restaure.",
@@ -499,7 +511,7 @@
       "cancelledTitle": "Mise à jour arrêtée",
       "cancelledLead": "Les éléments déjà mis à jour restent à jour ; les suivants n'ont pas été lancés.",
       "interruptedTitle": "Mise à jour interrompue",
-      "interruptedLead": "Vigie a été fermé pendant la mise à jour. Relevez le site pour voir où il en est.",
+      "interruptedLead": "L'application a été fermée pendant la mise à jour. Relevez le site pour voir où il en est.",
       "rolledBackTitle": "{{name}} est revenu en arrière",
       "rolledBackLead": "{{item}} est revenu à sa version d'avant, et le site passe à nouveau les vérifications.",
       "rollbackFailedTitle": "Le retour en arrière a échoué",
@@ -529,10 +541,11 @@
       "languages": "Traductions",
       "update-database": "Base de WordPress mise à niveau",
       "check": "Vérifications",
-      "checksOk": "pages publiques et connexion répondent, aucune nouvelle erreur fatale",
       "restore-files": "Retour de {{item}} à {{version}}",
       "restore-database": "Base de données restaurée",
-      "notStarted": "pas lancé"
+      "notStarted": "pas lancé",
+      "rescan": "Nouveau relevé du site",
+      "rescanDetail": "versions relues sur le serveur, anciennes sauvegardes retirées"
     },
     "duration": {
       "seconds": "{{s}} s",
@@ -601,6 +614,7 @@
       "sites": "Sites concernés"
     },
     "updateAll": "Tout mettre à jour",
-    "updatingAll": "Mise à jour en cours…"
+    "updatingAll": "Mise à jour en cours…",
+    "upToDateOne": "À jour"
   }
 }

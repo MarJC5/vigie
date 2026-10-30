@@ -40,7 +40,7 @@ type Story = StoryObj<typeof meta>;
 export const Loading: Story = {
   args: { preview: null },
   play: async ({ canvas }) => {
-    await expect(canvas.getAllByRole("status")[0]).toHaveTextContent("Vigie reads on the server what will change.");
+    await expect(canvas.getAllByRole("progressbar", { name: "Vigie reads on the server what will change." })).toHaveLength(2);
     await expect(canvas.getAllByRole("button", { name: "Back up and update" })[0]).toBeDisabled();
   },
 };
@@ -68,6 +68,8 @@ export const Starting: Story = {
     await expect(canvas.getAllByRole("button", { name: "Stop after this item" })[0]).toBeDisabled();
     // Every planned item waits.
     await expect(canvas.getAllByRole("img", { name: "Not run" })).toHaveLength(6);
+    const [bar] = canvas.getAllByRole("progressbar", { name: "0 of 3 items updated and checked" });
+    await expect(bar).toHaveAttribute("aria-valuemax", "3");
   },
 };
 
@@ -76,8 +78,24 @@ export const Running: Story = {
   play: async ({ canvas, args }) => {
     await expect(canvas.getAllByRole("heading", { level: 1 })[0]).toHaveTextContent("Updating boulangerie-exemple.ch");
     await expect(canvas.getAllByRole("button", { name: "Updating…" })[0]).toBeDisabled();
+    await expect(canvas.getAllByRole("button", { name: "Updating…" })[0]).toHaveAttribute("aria-busy", "true");
+    // Akismet is checked; WooCommerce is under way.
+    await expect(canvas.getAllByRole("progressbar", { name: "1 of 3 items updated and checked" })[0]).toHaveAttribute("aria-valuenow", "1");
     await userEvent.click(canvas.getAllByRole("button", { name: "Stop after this item" })[0]!);
     await expect(args.onStop).toHaveBeenCalled();
+  },
+};
+
+// Every step over, the run is not: Vigie scans the site again, and the last row says so.
+export const Rescanning: Story = {
+  args: { operation: { ...completed, outcome: "running", finished: "" }, planned: planned.filter((it) => it.kind === "plugin" && it.slug === "akismet") },
+  play: async ({ canvas }) => {
+    const [list] = canvas.getAllByRole("list", { name: "Steps of the update" });
+    await expect(list!.lastElementChild).toHaveTextContent("New scan of the site");
+    await expect(list!.lastElementChild).toHaveAttribute("aria-current", "step");
+    await expect(canvas.getAllByRole("button", { name: "Stop after this item" })[0]).toBeDisabled();
+    // The translations count once their last step is over: here only Akismet was planned.
+    await expect(canvas.getAllByRole("progressbar", { name: "1 of 1 items updated and checked" })).toHaveLength(2);
   },
 };
 
@@ -107,6 +125,7 @@ export const RollingBack: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.getAllByRole("heading", { level: 1 })[0]).toHaveTextContent("Rolling back boulangerie-exemple.ch");
     await expect(canvas.queryAllByRole("button", { name: "Stop after this item" })).toHaveLength(0);
+    await expect(canvas.getAllByRole("progressbar", { name: "Rolling back…" })).toHaveLength(2);
   },
 };
 

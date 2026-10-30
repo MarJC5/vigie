@@ -15,3 +15,24 @@
   font-size: var(--vg-text-small);
   color: var(--vg-text-muted);
 }
+
+.unknown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-1);
+  padding: var(--vg-space-2) 0;
+}
+
+.unknownLine {
+  display: flex;
+  align-items: center;
+  gap: var(--vg-space-3);
+}
+
+.unknownList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--vg-text-small);
+  color: var(--vg-text-muted);
+}

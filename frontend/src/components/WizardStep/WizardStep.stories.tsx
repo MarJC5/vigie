@@ -76,3 +76,21 @@ export const Busy: Story = {
     await expect(primary).toBeDisabled();
   },
 };
+
+// A wait: the button turns, the bar runs along the whole bottom of the window, its sentence stays
+// with the content.
+export const Waiting: Story = {
+  args: {
+    primary: { label: "Search for sites", onClick: fn(), busy: true },
+    progress: { label: "Checking the installs found: 2 of 6", value: 2, max: 6 },
+  },
+  play: async ({ canvas, canvasElement }) => {
+    const [primary] = canvas.getAllByRole("button", { name: "Search for sites" });
+    await expect(primary!.querySelector("svg")).not.toBeNull();
+    const [bar] = canvas.getAllByRole("progressbar", { name: "Checking the installs found: 2 of 6" });
+    await expect(bar).toHaveAttribute("aria-valuenow", "2");
+    // As wide as the window.
+    const window = canvasElement.querySelector("[data-theme] > div > div")!.getBoundingClientRect();
+    await expect(Math.round(bar!.getBoundingClientRect().width)).toBe(Math.round(window.width));
+  },
+};

@@ -15,6 +15,8 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
 }
 
 export function Button({ variant = "outline", icon, trailingIcon, label, children, className, ...rest }: ButtonProps) {
+  // A button waiting for an answer turns its icon into a spinner.
+  const busy = rest["aria-busy"] === true || rest["aria-busy"] === "true";
   return (
     <button
       type="button"
@@ -22,7 +24,13 @@ export function Button({ variant = "outline", icon, trailingIcon, label, childre
       aria-label={label}
       className={[styles.button, styles[variant], className].filter(Boolean).join(" ")}
     >
-      {icon && <Icon name={icon} size={16} />}
+      {busy ? (
+        <span className={styles.spinner}>
+          <Icon name="spinner" size={16} />
+        </span>
+      ) : (
+        icon && <Icon name={icon} size={16} />
+      )}
       {children}
       {trailingIcon && <Icon name={trailingIcon} size={14} />}
     </button>

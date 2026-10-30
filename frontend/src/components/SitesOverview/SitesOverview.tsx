@@ -20,6 +20,8 @@ export interface SitesOverviewProps {
   onSelect: (siteId: string) => void;
   /** Opens the host's or folder's menu under the point given. */
   onMore?: (point: { x: number; y: number }) => void;
+  /** Opens the menu of one of the sites, at the point of a right-click on its row. */
+  onSiteMenu?: (siteId: string, point: { x: number; y: number }) => void;
   /** Asks to update every site; without it, no such button. */
   onUpdateAll?: () => void;
   /** A site here is in an update not over yet. */
@@ -41,6 +43,7 @@ export function SitesOverview({
   onScan,
   onSelect,
   onMore,
+  onSiteMenu,
   onUpdateAll,
   updating = false,
   bulk,
@@ -51,21 +54,41 @@ export function SitesOverview({
   if (bulk && bulk.length > 0) {
     return (
       <>
-        <DetailHeader title={title} icon={icon} subtitle={subtitle} />
+        <DetailHeader
+          title={title}
+          icon={icon}
+          subtitle={subtitle}
+          actions={
+            onDismissBulk && (
+              <Button variant="outline" onClick={onDismissBulk}>
+                {t("update.bulk.dismiss")}
+              </Button>
+            )
+          }
+        />
         <BulkSummary results={bulk} onOpen={onSelect} />
-        {onDismissBulk && (
-          <div>
-            <Button variant="outline" onClick={onDismissBulk}>
-              {t("update.bulk.dismiss")}
-            </Button>
-          </div>
-        )}
       </>
     );
   }
   return (
     <>
-      <DetailHeader title={title} icon={icon} subtitle={subtitle}>
+      <DetailHeader
+        title={title}
+        icon={icon}
+        subtitle={subtitle}
+        actions={
+          <>
+            {onUpdateAll && (
+              <Button icon="update" onClick={onUpdateAll} disabled={updating || scanning || pending === 0} aria-busy={updating || undefined}>
+                {updating ? t("update.updatingAll") : t("update.updateAll")}
+              </Button>
+            )}
+            <Button variant="primary" icon="refresh" onClick={onScan} disabled={scanning || updating} aria-busy={scanning || undefined}>
+              {scanning ? t("overview.scanning") : scanLabel}
+            </Button>
+          </>
+        }
+      >
         {onMore && (
           <Button
             variant="icon"
@@ -86,16 +109,7 @@ export function SitesOverview({
           { label: t("host.attention"), value: rows.filter((r) => r.status === "warn").length, tone: "warn" },
           { label: t("host.notScanned"), value: rows.filter((r) => r.status === "").length },
         ]}
-      >
-        {onUpdateAll && (
-          <Button icon="update" onClick={onUpdateAll} disabled={updating || scanning || pending === 0} aria-busy={updating || undefined}>
-            {updating ? t("update.updatingAll") : t("update.updateAll")}
-          </Button>
-        )}
-        <Button variant="primary" icon="refresh" onClick={onScan} disabled={scanning || updating} aria-busy={scanning || undefined}>
-          {scanning ? t("overview.scanning") : scanLabel}
-        </Button>
-      </Counts>
+      />
       {rows.length === 0 ? (
         <p className={styles.empty}>{t(icon === "host" ? "edit.emptyHost" : "edit.emptyFolder")}</p>
       ) : (
@@ -111,6 +125,7 @@ export function SitesOverview({
           notScanned={t("detail.notScanned")}
           rows={rows.map((r) => ({ id: r.id, name: r.name, status: r.status, wordpress: r.wordpress, php: r.phpCli, pending: r.pending }))}
           onSelect={onSelect}
+          onMenu={onSiteMenu}
         />
       )}
     </>

@@ -23,7 +23,10 @@
   font-weight: var(--vg-weight-strong);
   line-height: var(--vg-leading-tight);
   letter-spacing: -0.01em;
-  overflow-wrap: anywhere;
+  /* One line: a long name ends in an ellipsis, the whole of it in the tooltip. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .meta {
@@ -34,6 +37,14 @@
   gap: 6px;
   font-size: var(--vg-text-small);
   color: var(--vg-text-muted);
+}
+
+.actions {
+  margin-left: auto;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--vg-space-2);
 }
 
 .subtitle {

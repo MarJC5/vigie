@@ -1,6 +1,7 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useId } from "react";
 
 import { Button } from "../Button/Button";
+import { ProgressBar, type ProgressProps } from "../Progress/Progress";
 import { Stepper } from "../Stepper/Stepper";
 import styles from "./WizardStep.module.css";
 
@@ -25,6 +26,8 @@ export interface WizardStepProps {
   primary: WizardAction;
   /** "wide" for tables, "narrow" (default) for forms and checks. */
   width?: "narrow" | "wide";
+  /** A wait: its sentence under the content, its bar along the whole bottom of the window. */
+  progress?: ProgressProps;
   children: ReactNode;
 }
 
@@ -41,8 +44,10 @@ export function WizardStep({
   back,
   primary,
   width = "narrow",
+  progress,
   children,
 }: WizardStepProps) {
+  const progressId = useId();
   return (
     <div className={styles.window}>
       <div className={styles.top}>
@@ -56,9 +61,19 @@ export function WizardStep({
             <p className={styles.lead}>{lead}</p>
           </div>
           {children}
+          {progress && (
+            <p id={progressId} className={styles.progress}>
+              {progress.label}
+            </p>
+          )}
         </div>
       </main>
       <div className={styles.bar}>
+        {progress && (
+          <div className={styles.edge}>
+            <ProgressBar labelledBy={progressId} value={progress.value} max={progress.max} placement="edge" />
+          </div>
+        )}
         <div className={styles.side}>
           {back && (
             <Button variant="text" onClick={back.onClick} disabled={back.disabled}>

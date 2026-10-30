@@ -135,12 +135,20 @@ export function canStart(preview: SitePreviewView, planned: UpdateItemView[]): b
 
 export type RowState = "done" | "running" | "failed" | "waiting";
 
-/** One row of a run: a step recorded, or an item not reached yet. */
+/** One row of a run: a step recorded, an item not reached yet, or the scan that ends a run. */
 export interface RunRow {
   key: string;
   state: RowState;
   step?: StepView;
   item?: UpdateItemView;
+  rescan?: boolean;
+}
+
+/** The last row of a run going on: once every step is over, Vigie removes the older backups and
+ scans the site again, which the steps do not show. */
+export function rescanRow(rows: RunRow[]): RunRow {
+  const over = rows.length > 0 && rows.every((r) => r.state === "done");
+  return { key: "rescan", state: over ? "running" : "waiting", rescan: true };
 }
 
 /** The rows of a run: its steps so far, then the planned items it has not reached. */
@@ -177,6 +185,15 @@ function stateOf(step: StepView): RowState {
   return "waiting";
 }
 
+/** The items of a run done so far: each one checked after its update, and the translations once
+ the last of their three steps (those of the themes) is over. */
+export function itemsDone(op: OperationView | null): number {
+  const steps = op?.steps ?? [];
+  const checked = steps.filter((st) => st.step === "check" && st.outcome === "done").length;
+  const translated = steps.some((st) => st.step === "update" && st.itemKind === "language" && st.slug === "theme" && st.outcome === "done");
+  return checked + (translated ? 1 : 0);
+}
+
 /** The last step that failed in an operation. */
 export function failedStep(op: OperationView): StepView | undefined {
   return (op.steps ?? []).filter((st) => st.outcome === "failed").at(-1);
@@ -195,6 +212,11 @@ export function itemsOf(op: OperationView): number {
 /** The step of a rollback that put the item back, which names it and its version. */
 export function restoredStep(op: OperationView): StepView | undefined {
   return (op.steps ?? []).find((st) => st.step === "restore-files");
+}
+
+/** A backups folder as the window shows it: Vigie stores it relative to the account's home. */
+export function backupPath(dir: string): string {
+  return dir.startsWith("/") || dir.startsWith("~") ? dir : `~/${dir}`;
 }
 
 /** Seconds between two times of Vigie (RFC 3339); 0 while the second is empty. */
@@ -236,6 +258,7 @@ export function itemName(t: T, kind: string, slug: string, names: Map<string, st
 
 /** The label and detail of a row of a run. */
 export function rowText(t: T, row: RunRow, names: Map<string, string>, ended: boolean): { label: string; detail: string } {
+  if (row.rescan) return { label: t("update.step.rescan"), detail: row.state === "running" ? t("update.step.rescanDetail") : "" };
   if (row.item) {
     const it = row.item;
     const label =
@@ -257,7 +280,8 @@ export function rowText(t: T, row: RunRow, names: Map<string, string>, ended: bo
         detail: failure || (st.outcome === "done" ? st.message : ""),
       };
     case "check":
-      return { label: t("update.step.check"), detail: failure || (st.outcome === "done" ? t("update.step.checksOk") : "") };
+      // A check that passed says nothing more than its mark.
+      return { label: t("update.step.check"), detail: failure };
     case "restore-files":
       return { label: t("update.step.restore-files", { item, version: st.versionAfter }), detail: failure };
   }

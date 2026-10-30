@@ -35,8 +35,3 @@
   font-size: var(--vg-text-small);
   color: var(--vg-text-muted);
 }
-
-.loading {
-  margin: 0;
-  color: var(--vg-text-muted);
-}

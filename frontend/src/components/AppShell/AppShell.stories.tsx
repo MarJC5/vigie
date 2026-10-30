@@ -241,7 +241,7 @@ export const MoveFromTheMenu: Story = {
     await userEvent.pointer({ keys: "[MouseRight]", target: shell.getByRole("treeitem", { name: /Managed VPS/ }) });
     const menu = shell.getByRole("menu", { name: "Actions on Managed VPS" });
     await expect(within(menu).getAllByRole("menuitem").map((i) => i.textContent)).toEqual([
-      "Scan⌘R", "Rename↩", "Move to…", "Edit the connection…", "Find new sites…", "Delete the host…⌘⌫",
+      "Scan⌘R", "New folder⇧⌘N", "Rename↩", "Move to…", "Edit the connection…", "Find new sites…", "Delete the host…⌘⌫",
     ]);
     await userEvent.click(within(menu).getByRole("menuitem", { name: "Move to…" }));
     const dialog = shell.getByRole("dialog", { name: 'Move "Managed VPS"' });
@@ -295,5 +295,46 @@ export const DeleteFromTheTitleMenu: Story = {
     const dialog = shell.getByRole("dialog", { name: 'Delete "Shared hosting"?' });
     await userEvent.click(within(dialog).getByRole("button", { name: "Delete the host" }));
     await waitFor(() => expect(args.edit!.Delete).toHaveBeenCalledWith("shared"));
+  },
+};
+
+// The empty space of the site list has its own menu: a folder at the top level, a host.
+export const MenuOfTheEmptySpace: Story = {
+  args: { edit: fakeEdit(), onChanged: fn(), onAddHost: fn() },
+  play: async ({ canvas, args }) => {
+    const [pane] = canvas.getAllByRole("complementary", { name: "Site manager" });
+    const empty = pane!.querySelector<HTMLElement>("[data-pane-body]")!;
+    const box = empty.getBoundingClientRect();
+    empty.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: box.left + 20, clientY: box.bottom - 20 }));
+    const [menu] = await canvas.findAllByRole("menu", { name: "Site manager" });
+    await expect(within(menu!).getByRole("menuitem", { name: /Add a host/ })).toBeInTheDocument();
+    await userEvent.click(within(menu!).getByRole("menuitem", { name: /New folder/ }));
+    await waitFor(() => expect(args.edit!.CreateFolder).toHaveBeenCalledWith("", "New folder"));
+  },
+};
+
+// A host's menu also makes a folder, next to the host.
+export const NewFolderNextToAHost: Story = {
+  args: { edit: fakeEdit(), onChanged: fn(), initialSelectedId: "shared" },
+  play: async ({ canvas, args }) => {
+    const [host] = canvas.getAllByRole("treeitem", { name: /^Shared hosting/ });
+    host!.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 40, clientY: 40 }));
+    const [menu] = await canvas.findAllByRole("menu", { name: "Actions on Shared hosting" });
+    await userEvent.click(within(menu!).getByRole("menuitem", { name: /New folder/ }));
+    await waitFor(() => expect(args.edit!.CreateFolder).toHaveBeenCalledWith("clients", "New folder"));
+  },
+};
+
+// A row of a host's table opens the menu of its site, and the page stays on the host.
+export const MenuOfATableRow: Story = {
+  args: { data, edit: fakeEdit(), onChanged: fn(), initialSelectedId: "shared" },
+  play: async ({ canvas }) => {
+    const [table] = await canvas.findAllByRole("table", { name: "Sites of Shared hosting" });
+    // atelier-exemple.ch has the same id in the table and in the tree, as in the window.
+    const row = within(table!).getByRole("button", { name: "atelier-exemple.ch" }).closest("tr")!;
+    row.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 600, clientY: 300 }));
+    const [menu] = await canvas.findAllByRole("menu", { name: "Actions on atelier-exemple.ch" });
+    await expect(within(menu!).getByRole("menuitem", { name: /Rename/ })).toBeInTheDocument();
+    await expect(canvas.getAllByRole("heading", { level: 1, name: "Shared hosting" })[0]).toBeInTheDocument();
   },
 };

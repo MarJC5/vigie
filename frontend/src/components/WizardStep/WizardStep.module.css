@@ -73,6 +73,7 @@
 }
 
 .bar {
+  position: relative;
   height: 72px;
   flex: none;
   box-sizing: border-box;
@@ -90,4 +91,17 @@
 
 .end {
   justify-content: flex-end;
+}
+
+.progress {
+  margin: 0;
+  text-align: center;
+  color: var(--vg-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The bar of a wait, over the top line of the bottom bar, from one side of the window to the other. */
+.edge {
+  position: absolute;
+  inset: -2px 0 auto;
 }

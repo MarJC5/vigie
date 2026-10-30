@@ -81,7 +81,9 @@ export function UpdatePreview({ preview, planned, names }: UpdatePreviewProps) {
             ))}
           </ul>
           <p className={styles.where}>{t("update.preview.where")}</p>
-          <p className={styles.path}>{preview.backups}</p>
+          <p className={styles.path} data-selectable>
+            {preview.backups}
+          </p>
         </section>
       </div>
       {planned.some((it) => it.kind === "core") && (

@@ -40,7 +40,9 @@ export const Sites: Story = {
 export const Loading: Story = {
   args: { previews: null },
   play: async ({ canvas }) => {
-    await expect(canvas.getAllByRole("status")[0]).toHaveTextContent("Vigie reads on the server what each site will change.");
-    await expect(canvas.getAllByRole("button", { name: "Update 0 sites" })[0]).toBeDisabled();
+    await expect(canvas.getAllByRole("progressbar", { name: "Vigie reads on the server what each site will change." })).toHaveLength(2);
+    const [confirm] = canvas.getAllByRole("button", { name: "Update all" });
+    await expect(confirm).toBeDisabled();
+    await expect(confirm).toHaveAttribute("aria-busy", "true");
   },
 };

@@ -3,14 +3,17 @@ import { describe, expect, it } from "vitest";
 import { outdatedSite } from "../fixtures/scans";
 import { bulk, completed, failed, preview, rolledBack, running } from "../fixtures/updates";
 import {
+  backupPath,
   bulkCounts,
   choicesOf,
   durationText,
   failedStep,
+  itemsDone,
   itemsOf,
   namesOf,
   offeredKeys,
   plannedItems,
+  rescanRow,
   restoredStep,
   rowText,
   runRows,
@@ -79,6 +82,18 @@ describe("runRows", () => {
     expect(rows.map((r) => r.state)).toEqual(["done", "done", "done", "done", "done", "running", "waiting"]);
     expect(rows.at(-1)!.item).toMatchObject({ kind: "language" });
   });
+  it("counts the items done, the translations once their last step is over", () => {
+    expect(itemsDone(null)).toBe(0);
+    expect(itemsDone(running)).toBe(1);
+    expect(itemsDone(failed)).toBe(1);
+    expect(itemsDone(completed)).toBe(1);
+    const theme = { ...completed.steps![4]!, position: 5, slug: "theme" };
+    expect(itemsDone({ ...completed, steps: [...completed.steps!, theme] })).toBe(2);
+  });
+  it("ends a run with the scan of the site, under way once every step is over", () => {
+    expect(rescanRow(runRows(running, planned))).toMatchObject({ state: "waiting", rescan: true });
+    expect(rescanRow(runRows({ ...running, steps: running.steps!.slice(0, 5) }, []))).toMatchObject({ state: "running" });
+  });
   it("marks the step that failed", () => {
     expect(runRows(failed, planned).map((r) => r.state).slice(-2)).toEqual(["failed", "waiting"]);
     expect(failedStep(failed)).toMatchObject({ step: "check", slug: "woocommerce" });
@@ -92,6 +107,10 @@ describe("history", () => {
   });
   it("finds what a rollback put back", () => {
     expect(restoredStep(rolledBack)).toMatchObject({ slug: "woocommerce", versionAfter: "9.8.1" });
+  });
+  it("shows a backups folder from the home", () => {
+    expect(backupPath(".vigie/backups/a/20261029-141203")).toBe("~/.vigie/backups/a/20261029-141203");
+    expect(backupPath("~/.vigie/backups/a/")).toBe("~/.vigie/backups/a/");
   });
   it("measures a step", () => {
     expect(seconds("2026-10-29T14:12:03Z", "2026-10-29T14:12:09Z")).toBe(6);
@@ -114,8 +133,8 @@ describe("rowText", () => {
     expect(rowText(t, rows[1]!, names, true).label).toBe('update.step.backup-files {"item":"Akismet Anti-spam"}');
     expect(rowText(t, rows[3]!, names, true).label).toBe('update.step.update {"item":"Akismet Anti-spam","from":"5.3","to":"5.7.2"}');
   });
-  it("says a check passed, or why it failed", () => {
-    expect(rowText(t, rows[4]!, names, true).detail).toBe("update.step.checksOk");
+  it("says why a check failed, and nothing when it passed", () => {
+    expect(rowText(t, rows[4]!, names, true).detail).toBe("");
     expect(rowText(t, rows[6]!, names, true).detail).toContain("wc_get_page_id");
   });
   it("marks what a run that ended did not start", () => {

@@ -19,7 +19,9 @@ export function Notice({ title, text, detail, action, tone = "danger", role = "a
     <div role={role} className={styles.notice} data-tone={tone}>
       <span className={styles.title}>{title}</span>
       <span>{text}</span>
-      {detail && <span className={styles.detail}>{detail}</span>}
+      {detail && <span className={styles.detail} data-selectable>
+          {detail}
+        </span>}
       {action && (
         <span>
           <Button onClick={action.onClick}>{action.label}</Button>

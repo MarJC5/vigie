@@ -117,10 +117,8 @@ export const AddAHost: Story = {
     await userEvent.click(trust);
     await expect(calls.trust).toEqual([["ssh.example-host.ch", "SHA256:AKG7lYcQ7GZjus73uQl64gwWFRJRYApWtKiZEr5f5Cg"]]);
 
-    // The test runs at once; WP-CLI was found under another command, which the host keeps.
-    await expect(await ui.findByText("2.12.0 (wp-cli)")).toBeInTheDocument();
-    await userEvent.click(ui.getByRole("button", { name: "Search for sites" }));
-
+    // The test runs at once, then the search, with no click; WP-CLI was found under another
+    // command, which the host keeps.
     await expect(await ui.findByRole("heading", { level: 1, name: "Choose the sites to add" })).toBeInTheDocument();
     await expect(ui.queryByRole("checkbox", { name: "Add broken" })).toBeNull();
     await userEvent.click(ui.getByRole("checkbox", { name: "Add plain.example.test" }));
@@ -150,8 +148,9 @@ export const ServerDoesNotAnswer: Story = {
     await expect(alert).toHaveTextContent("allow yours in the host's control panel");
     await expect(alert).toHaveTextContent("Operation timed out");
     await expect(ui.getByRole("button", { name: "Search for sites" })).toBeDisabled();
+    // Once the test passes, the search follows by itself.
     await userEvent.click(ui.getByRole("button", { name: "Try again" }));
-    await waitFor(() => expect(ui.getByRole("button", { name: "Search for sites" })).toBeEnabled());
+    await expect(await ui.findByRole("heading", { level: 1, name: "Choose the sites to add" })).toBeInTheDocument();
   },
 };
 
@@ -197,8 +196,9 @@ export const SearchShowsProgress: Story = {
     await userEvent.click(ui.getByRole("button", { name: "Continue" }));
     await userEvent.click(await ui.findByLabelText("I compared this fingerprint with the one of my host"));
     await userEvent.click(ui.getByRole("button", { name: "Trust and continue" }));
-    await userEvent.click(await ui.findByRole("button", { name: "Search for sites" }, { timeout: 3000 }));
 
+    // The search follows the test by itself; its button turns meanwhile.
+    await expect(await ui.findByRole("button", { name: "Search for sites" })).toHaveAttribute("aria-busy", "true");
     await expect(await ui.findByRole("progressbar", { name: "Searching the account for WordPress installs…" })).toBeInTheDocument();
     slow.progress(1, 3);
     const bar = await ui.findByRole("progressbar", { name: "Checking the installs found: 1 of 3" });
@@ -206,5 +206,38 @@ export const SearchShowsProgress: Story = {
     slow.release();
     await expect(await ui.findByRole("heading", { level: 1, name: "Choose the sites to add" })).toBeInTheDocument();
     await expect(ui.queryByRole("progressbar")).toBeNull();
+  },
+};
+
+// A search that failed stays on the test, which passed: the button searches again.
+const searchFails = (() => {
+  const base = fake();
+  let searches = 0;
+  const api: WizardApi = {
+    ...base.api,
+    Discover: async () =>
+      searches++ === 0 ? { installs: [], truncated: false, problem: { code: "problem.findFailed", detail: "find: Permission denied" } } : found,
+  };
+  return { api };
+})();
+
+export const SearchFailsThenRetried: Story = {
+  args: { api: searchFails.api },
+  play: async ({ canvasElement }) => {
+    const ui = first(canvasElement);
+    await userEvent.type(ui.getByLabelText("Name in Vigie"), "Bench");
+    await userEvent.type(ui.getByLabelText("Host name"), "ssh.example-host.ch");
+    await userEvent.type(ui.getByLabelText("User"), "u12ab");
+    await userEvent.click(ui.getByRole("button", { name: "Continue" }));
+    await userEvent.click(await ui.findByLabelText("I compared this fingerprint with the one of my host"));
+    await userEvent.click(ui.getByRole("button", { name: "Trust and continue" }));
+
+    const alert = await ui.findByRole("alert");
+    await expect(alert).toHaveTextContent("The search for sites failed");
+    await expect(alert).toHaveTextContent("Permission denied");
+    await expect(ui.getByRole("heading", { level: 1 })).toHaveTextContent("Test the connection");
+    // Try again searches again, without testing again.
+    await userEvent.click(ui.getByRole("button", { name: "Try again" }));
+    await expect(await ui.findByRole("heading", { level: 1, name: "Choose the sites to add" })).toBeInTheDocument();
   },
 };

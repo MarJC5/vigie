@@ -6,13 +6,12 @@ import type {
   SitePreviewView,
   UpdateItemView,
 } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
-import { canStart, failedStep, itemName, restoredStep, rowText, runRows } from "../../lib/updates";
+import { backupPath, canStart, failedStep, itemName, itemsDone, rescanRow, restoredStep, rowText, runRows } from "../../lib/updates";
 import { Notice } from "../Notice/Notice";
 import { RunSteps } from "../RunSteps/RunSteps";
 import { UpdatePreview } from "../UpdatePreview/UpdatePreview";
 import type { WizardAction } from "../WizardStep/WizardStep";
 import { WizardStep } from "../WizardStep/WizardStep";
-import styles from "./UpdateWindow.module.css";
 
 export interface UpdateWindowProps {
   /** The site's name. */
@@ -91,20 +90,20 @@ export function UpdateWindow({
           busy: !preview,
         }}
         width="wide"
+        progress={preview || problem ? undefined : { label: t("update.preview.loading") }}
       >
         {refused}
-        {preview ? (
-          <UpdatePreview preview={preview} planned={planned} names={names} />
-        ) : (
-          <p role="status" className={styles.loading}>
-            {t("update.preview.loading")}
-          </p>
-        )}
+        {preview && <UpdatePreview preview={preview} planned={planned} names={names} />}
       </WizardStep>
     );
   }
 
-  const rows = runRows(operation, rollback ? [] : planned);
+  const recorded = runRows(operation, rollback ? [] : planned);
+  // While it runs, the list ends with the scan that closes every run.
+  const rows = running && operation ? [...recorded, rescanRow(recorded)] : recorded;
+  // Every item planned is checked after its update, the translations once at the end.
+  const total = planned.filter((it) => it.kind !== "language").length + (planned.some((it) => it.kind === "language") ? 1 : 0);
+  const done = Math.min(itemsDone(operation), total);
   const list = <RunSteps label={t("update.run.stepsLabel")} rows={rows} names={names} ended={ended} />;
 
   if (running) {
@@ -121,10 +120,20 @@ export function UpdateWindow({
         back={
           rollback
             ? undefined
-            : { label: stopping ? t("update.run.stopping") : t("update.run.stopAfter"), onClick: onStop, disabled: stopping || starting }
+            : {
+                label: stopping ? t("update.run.stopping") : t("update.run.stopAfter"),
+                onClick: onStop,
+                // Nothing left to stop once the closing scan runs.
+                disabled: stopping || starting || rescanRow(recorded).state === "running",
+              }
         }
         primary={{ label: t("update.run.running"), onClick: () => {}, busy: true }}
         width="wide"
+        progress={
+          rollback
+            ? { label: t("update.run.rollingBack") }
+            : { label: t("update.run.progress", { count: done, done, total }), value: done, max: total }
+        }
       >
         {list}
       </WizardStep>
@@ -146,7 +155,7 @@ export function UpdateWindow({
       lead = t("update.result.rolledBackLead", { item });
     } else {
       title = t("update.result.rollbackFailedTitle");
-      lead = `${t("update.result.rollbackFailedLead")} ${op.backupDir}`;
+      lead = `${t("update.result.rollbackFailedLead")} ${backupPath(op.backupDir)}`;
       if (failed) notice = <Notice title={rowText(t, { key: "", state: "failed", step: failed }, names, true).label} text={failed.message} />;
     }
   } else if (op.outcome === "completed") {

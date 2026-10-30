@@ -217,17 +217,21 @@ export function AppShell({
     setBulkFor(id);
   };
 
-  // Opens the menu of a node at a point of the window.
-  const openMenu = (id: string, point: { x: number; y: number }) => {
+  // Opens the menu of a node at a point of the window; "" is the site list itself (its empty space).
+  // A row of a table keeps the page shown; the tree selects what it opens the menu of.
+  const openMenu = (id: string, point: { x: number; y: number }, select = true) => {
     const rect = shell.current?.getBoundingClientRect();
-    setSelectedId(id);
+    if (select && id) setSelectedId(id);
     setMenu({ id, x: point.x - (rect?.left ?? 0), y: point.y - (rect?.top ?? 0) });
   };
 
   const choose = (id: string, action: string) => {
     setMenu(null);
+    if (action === "addHost") return onAddHost?.();
+    if (action === "scanAll") return scan("");
     if (action === "scan") scan(id);
-    if (action === "newFolder") void createFolder(id);
+    // In the folder itself, or next to a host or site; at the top level from the empty space.
+    if (action === "newFolder") void createFolder(folderOf(id));
     if (action === "rename") setEditingId(id);
     if (action === "move" || action === "delete" || action === "host" || action === "find") setDialog({ kind: action, id });
   };
@@ -320,7 +324,16 @@ export function AppShell({
               />
             </div>
           )}
-          <div className={styles.paneBody}>
+          <div
+            className={styles.paneBody}
+            data-pane-body
+            onContextMenu={(event) => {
+              // A node handled its own right-click; the empty space opens the list's menu.
+              if (!edit || event.defaultPrevented) return;
+              event.preventDefault();
+              openMenu("", { x: event.clientX, y: event.clientY });
+            }}
+          >
             {nodes.length > 0 ? (
               <SiteTree
                 label={t("manager.label")}
@@ -371,6 +384,7 @@ export function AppShell({
                 onScan={() => scan(selected.id)}
                 onSelect={setSelectedId}
                 onMore={edit && ((point) => openMenu(selected.id, point))}
+                onSiteMenu={edit && ((id, point) => openMenu(id, point, false))}
                 updating={updating(selected)}
                 {...(updatesApi && {
                   onUpdate: (site: SiteView, keys: Set<string>) =>
@@ -396,6 +410,17 @@ export function AppShell({
         )}
       </main>
 
+      {menu && menu.id === "" && (
+        <Menu
+          label={t("manager.label")}
+          entries={rootEntries(t, !!onAddHost, nodes.length > 0)}
+          x={menu.x}
+          y={menu.y}
+          onSelect={(action) => choose("", action)}
+          onColor={() => setMenu(null)}
+          onClose={() => setMenu(null)}
+        />
+      )}
       {menu && menuNode && (
         <Menu
           label={t("edit.menu.label", { name: menuNode.name })}
@@ -475,6 +500,16 @@ type T = (key: string, vars?: Record<string, unknown>) => string;
 
 type Item = Extract<MenuEntry, { kind: "item" }>;
 
+// The actions of the site list itself, from its empty space.
+function rootEntries(t: T, canAddHost: boolean, hasSites: boolean): MenuEntry[] {
+  const entries: MenuEntry[] = [
+    { kind: "item", id: "newFolder", label: t("edit.menu.newFolder"), icon: "folder", shortcut: "⇧⌘N", keyshortcuts: "Shift+Meta+N" },
+  ];
+  if (canAddHost) entries.push({ kind: "item", id: "addHost", label: t("edit.menu.addHost"), icon: "plus", shortcut: "⌘N", keyshortcuts: "Meta+N" });
+  if (hasSites) entries.push({ kind: "separator" }, { kind: "item", id: "scanAll", label: t("edit.menu.scanAll"), icon: "refresh" });
+  return entries;
+}
+
 // The actions on a node, as the menu lists them.
 function menuEntries(node: Node, nodes: Node[], t: T): MenuEntry[] {
   const item = (id: string, label: string, icon: IconName, extra: Partial<Item> = {}): Item => ({ kind: "item", id, label, icon, ...extra });
@@ -492,12 +527,13 @@ function menuEntries(node: Node, nodes: Node[], t: T): MenuEntry[] {
   const scan = item("scan", t("edit.menu.scan"), "refresh", { shortcut: "⌘R", keyshortcuts: "Meta+R" });
   const remove = (key: string, disabled = false) =>
     item("delete", t(key), "trash", { danger: true, shortcut: "⌘⌫", keyshortcuts: "Meta+Backspace", disabled });
+  const newFolder = item("newFolder", t("edit.menu.newFolder"), "folder", { shortcut: "⇧⌘N", keyshortcuts: "Shift+Meta+N" });
   if (node.kind === "site") {
-    return [scan, separator, rename, colors, separator, remove("edit.menu.deleteSite")];
+    return [scan, newFolder, separator, rename, colors, separator, remove("edit.menu.deleteSite")];
   }
   if (node.kind === "host") {
     return [
-      scan, separator, rename, move, colors,
+      scan, newFolder, separator, rename, move, colors,
       item("host", t("edit.menu.edit"), "host"), item("find", t("edit.menu.find"), "findSites"),
       separator, remove("edit.menu.deleteHost"),
     ];
@@ -505,7 +541,7 @@ function menuEntries(node: Node, nodes: Node[], t: T): MenuEntry[] {
   // Only an empty folder can be deleted.
   const empty = !nodes.some((n) => n.parentId === node.id);
   return [
-    scan, item("newFolder", t("edit.menu.newFolder"), "folder", { shortcut: "⇧⌘N", keyshortcuts: "Shift+Meta+N" }),
+    scan, newFolder,
     separator, rename, move, colors, separator, remove("edit.menu.deleteFolder", !empty),
   ];
 }
@@ -519,6 +555,7 @@ function Loaded({
   onScan,
   onSelect,
   onMore,
+  onSiteMenu,
   updating,
   onUpdate,
   onFollow,
@@ -534,6 +571,7 @@ function Loaded({
   onScan: () => void;
   onSelect: (id: string) => void;
   onMore?: (point: { x: number; y: number }) => void;
+  onSiteMenu?: (id: string, point: { x: number; y: number }) => void;
   updating: boolean;
   onUpdate?: (site: SiteView, keys: Set<string>) => void;
   onFollow?: (site: SiteView) => void;
@@ -586,7 +624,7 @@ function Loaded({
       />
     );
   }
-  const bulkProps = { onUpdateAll, updating, bulk, onDismissBulk };
+  const bulkProps = { onUpdateAll, updating, bulk, onDismissBulk, onSiteMenu };
   if (v.kind === "host") {
     const h = v.host;
     const subtitle = h.alias

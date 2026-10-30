@@ -176,7 +176,7 @@ export function HostDialog({ api, hostId, sites, onClose, onSaved }: HostDialogP
             <Button variant="outline" onClick={onClose}>
               {t("edit.cancel")}
             </Button>
-            <Button variant="primary" disabled={!compared || busy} onClick={() => void trust()}>
+            <Button variant="primary" disabled={!compared || busy} aria-busy={busy || undefined} onClick={() => void trust()}>
               {t("edit.key.trust")}
             </Button>
           </>
@@ -207,7 +207,7 @@ export function HostDialog({ api, hostId, sites, onClose, onSaved }: HostDialogP
           <Button variant="outline" onClick={onClose}>
             {t("edit.cancel")}
           </Button>
-          <Button variant="primary" disabled={busy} onClick={() => void save()}>
+          <Button variant="primary" disabled={busy} aria-busy={busy || undefined} onClick={() => void save()}>
             {t("edit.host.save")}
           </Button>
         </>

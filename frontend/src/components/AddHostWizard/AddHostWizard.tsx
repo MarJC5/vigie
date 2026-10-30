@@ -19,7 +19,7 @@ import { Column, Columns } from "../Columns/Columns";
 import { Fingerprint } from "../Fingerprint/Fingerprint";
 import { InstallList } from "../InstallList/InstallList";
 import { Notice } from "../Notice/Notice";
-import { Progress } from "../Progress/Progress";
+import type { ProgressProps } from "../Progress/Progress";
 import { SelectField } from "../SelectField/SelectField";
 import { TextField } from "../TextField/TextField";
 import { WizardStep } from "../WizardStep/WizardStep";
@@ -101,6 +101,8 @@ export function AddHostWizard({ api, folders, onClose, onAdded }: AddHostWizardP
   const [busy, setBusy] = useState(false);
   // What the wizard waits for, shown with a progress bar.
   const [waiting, setWaiting] = useState<"keys" | "search" | "adding" | null>(null);
+  // The test passed but the search of the account failed: the notice and its retry are the search's.
+  const [searchFailed, setSearchFailed] = useState(false);
   const [checking, setChecking] = useState<DiscoveryProgress | null>(null);
   const [keys, setKeys] = useState<KeysResult | null>(null);
   const [compared, setCompared] = useState(false);
@@ -152,6 +154,7 @@ export function AddHostWizard({ api, folders, onClose, onAdded }: AddHostWizardP
     setStep("key");
   };
 
+  // Tests the connection, then, when it passes, searches the account at once: both only read.
   const runTest = async () => {
     setTest(null);
     const result = await call(() => api.TestConnection(details(form)));
@@ -159,7 +162,9 @@ export function AddHostWizard({ api, folders, onClose, onAdded }: AddHostWizardP
     setTest(result);
     if (result.problem) return setProblem(result.problem);
     // WP-CLI may answer under another command than the one entered: the host keeps that one.
-    if (result.wpCli) setForm((f) => ({ ...f, wpCli: result.wpCli }));
+    const tested = result.wpCli ? { ...form, wpCli: result.wpCli } : form;
+    setForm(tested);
+    await search(tested);
   };
 
   const trust = async () => {
@@ -171,15 +176,19 @@ export function AddHostWizard({ api, folders, onClose, onAdded }: AddHostWizardP
     await runTest();
   };
 
-  const search = async () => {
+  const search = async (of: Form = form) => {
+    setSearchFailed(false);
     setWaiting("search");
     const unsubscribe = api.onDiscovery?.(setChecking);
-    const result = await call(() => api.Discover(details(form)));
+    const result = await call(() => api.Discover(details(of)));
     unsubscribe?.();
     setChecking(null);
     setWaiting(null);
-    if (!result) return;
-    if (result.problem) return setProblem(result.problem);
+    if (!result || result.problem) {
+      setSearchFailed(true);
+      if (result?.problem) setProblem(result.problem);
+      return;
+    }
     setInstalls((result.installs ?? []).map((i) => ({ ...i, checked: i.state === "new" })));
     setStep("sites");
   };
@@ -209,7 +218,8 @@ export function AddHostWizard({ api, folders, onClose, onAdded }: AddHostWizardP
   const primary = {
     connection: { label: t("wizard.action.continue"), onClick: connect, disabled: !ready },
     key: { label: t("wizard.action.trust"), onClick: trust, disabled: !compared },
-    test: { label: t("wizard.action.search"), onClick: search, disabled: !testPassed },
+    // Searches again after a search that failed; a passing test searches by itself.
+    test: { label: t("wizard.action.search"), onClick: () => void search(), disabled: !testPassed },
     sites: {
       label: chosen.length > 0 ? t("wizard.action.add", { count: chosen.length }) : t("wizard.action.addHostOnly"),
       onClick: add,
@@ -219,23 +229,24 @@ export function AddHostWizard({ api, folders, onClose, onAdded }: AddHostWizardP
   const previous: Partial<Record<Step, Step>> = { key: "connection", test: "key", sites: "test" };
   const backTo = previous[step];
 
-  const progress =
-    waiting === "search" && checking && checking.total > 0 ? (
-      <Progress
-        label={t("wizard.progress.checking", { checked: checking.checked, total: checking.total })}
-        value={checking.checked}
-        max={checking.total}
-      />
-    ) : (
-      waiting && <Progress label={t(`wizard.progress.${waiting}`)} />
-    );
+  // The wait under way, its bar along the bottom of the window.
+  const progress: ProgressProps | undefined =
+    waiting === "search" && checking && checking.total > 0
+      ? {
+          label: t("wizard.progress.checking", { checked: checking.checked, total: checking.total }),
+          value: checking.checked,
+          max: checking.total,
+        }
+      : waiting
+        ? { label: t(`wizard.progress.${waiting}`) }
+        : undefined;
 
   const notice = problem && (
     <Notice
-      title={step === "test" ? t("wizard.testFailed") : t("wizard.title." + step)}
+      title={step === "test" ? (searchFailed ? t("wizard.searchFailed") : t("wizard.testFailed")) : t("wizard.title." + step)}
       text={say(problem)}
       detail={problem.detail && problem.detail !== say(problem) ? problem.detail : undefined}
-      action={step === "test" ? { label: t("wizard.retry"), onClick: () => void runTest() } : undefined}
+      action={step === "test" ? { label: t("wizard.retry"), onClick: () => void (searchFailed ? search() : runTest()) } : undefined}
     />
   );
 
@@ -256,6 +267,7 @@ export function AddHostWizard({ api, folders, onClose, onAdded }: AddHostWizardP
       back={backTo && { label: t("wizard.back"), onClick: back(backTo), disabled: busy }}
       primary={{ ...primary, busy }}
       width={step === "sites" ? "wide" : "narrow"}
+      progress={progress}
     >
       {step === "connection" && (
         <>
@@ -321,7 +333,6 @@ export function AddHostWizard({ api, folders, onClose, onAdded }: AddHostWizardP
               <TextField label={t("wizard.field.wpCli")} value={form.wpCli} onChange={set("wpCli")} hint={t("wizard.field.wpCliHint")} />
             </Column>
           </Columns>
-          {progress}
           {notice}
         </>
       )}
@@ -339,7 +350,6 @@ export function AddHostWizard({ api, folders, onClose, onAdded }: AddHostWizardP
             note={t("wizard.keyWhere")}
           />
           <Checkbox label={t("wizard.compared")} checked={compared} onChange={setCompared} />
-          {progress}
           {notice}
         </>
       )}
@@ -352,7 +362,6 @@ export function AddHostWizard({ api, folders, onClose, onAdded }: AddHostWizardP
             waiting: t("wizard.state.waiting"),
             running: t("wizard.state.running"),
           }} />
-          {progress}
           {notice}
         </>
       )}
@@ -372,7 +381,6 @@ export function AddHostWizard({ api, folders, onClose, onAdded }: AddHostWizardP
             onToggle={(path) => setInstalls((list) => list.map((i) => (i.path === path ? { ...i, checked: !i.checked } : i)))}
             onRename={(path, name) => setInstalls((list) => list.map((i) => (i.path === path ? { ...i, name } : i)))}
           />
-          {progress}
           {notice}
         </>
       )}

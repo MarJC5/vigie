@@ -74,7 +74,9 @@ export function BulkSummary({ results, onOpen }: BulkSummaryProps) {
                     {t(`update.bulk.outcome.${outcome}`)}
                   </span>
                 </td>
-                <td className={styles.detail}>{detailOf(t, r)}</td>
+                <td className={styles.detail} data-selectable>
+                  {detailOf(t, r)}
+                </td>
               </tr>
             );
           })}

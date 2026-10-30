@@ -37,7 +37,7 @@ export function UpdateChoices({ groups, chosen, onChange, names }: UpdateChoices
               <span className={styles.mark}>
                 <Icon name="ok" />
               </span>
-              <span>{t("update.upToDate")}</span>
+              <span>{t(group.kind === "core" ? "update.upToDateOne" : "update.upToDate")}</span>
             </div>
           ) : (
             group.choices.map((choice) => (

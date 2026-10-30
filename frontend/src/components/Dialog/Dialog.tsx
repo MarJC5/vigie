@@ -1,5 +1,6 @@
 import { type KeyboardEvent, type ReactNode, useEffect, useId, useLayoutEffect, useRef } from "react";
 
+import { ProgressBar, type ProgressProps } from "../Progress/Progress";
 import styles from "./Dialog.module.css";
 
 export interface DialogProps {
@@ -13,6 +14,8 @@ export interface DialogProps {
   onClose: () => void;
   /** For forms: wider than a confirmation. */
   wide?: boolean;
+  /** A wait: its sentence above the buttons, its bar along the bottom edge of the dialog. */
+  progress?: ProgressProps;
 }
 
 const focusables = 'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
@@ -22,7 +25,7 @@ const open: Array<{ current: () => void }> = [];
 
 /** A modal dialog over its positioned parent: the focus starts on its first field (else its first
  * button), stays inside with Tab, and goes back where it was when it closes. */
-export function Dialog({ title, lead, children, actions, onClose, wide = false }: DialogProps) {
+export function Dialog({ title, lead, children, actions, onClose, wide = false, progress }: DialogProps) {
   const id = useId();
   const ref = useRef<HTMLDivElement>(null);
 
@@ -89,7 +92,17 @@ export function Dialog({ title, lead, children, actions, onClose, wide = false }
           )}
         </div>
         {children}
+        {progress && (
+          <p id={`${id}-progress`} className={styles.progress}>
+            {progress.label}
+          </p>
+        )}
         <div className={styles.actions}>{actions}</div>
+        {progress && (
+          <div className={styles.edge}>
+            <ProgressBar labelledBy={`${id}-progress`} value={progress.value} max={progress.max} placement="edge" />
+          </div>
+        )}
       </div>
     </div>
   );

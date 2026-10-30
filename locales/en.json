@@ -191,7 +191,7 @@
     "lead": {
       "connection": "A host is one SSH account. Vigie uses the keys of your SSH agent and never asks for a password.",
       "key": "First connection to {{host}}. Compare this fingerprint with the one your host publishes before trusting it.",
-      "test": "Vigie checks the connection, PHP on the command line and WP-CLI. Nothing is written on the server.",
+      "test": "Vigie checks the connection, PHP on the command line and WP-CLI, then searches the account for WordPress installs. Nothing is written on the server.",
       "sites_one": "{{count}} WordPress install found in the account. Vigie adds only the ones you check.",
       "sites_other": "{{count}} WordPress installs found in the account. Vigie adds only the ones you check."
     },
@@ -256,7 +256,8 @@
       "search": "Searching the account for WordPress installs…",
       "checking": "Checking the installs found: {{checked}} of {{total}}",
       "adding": "Adding the host and its sites…"
-    }
+    },
+    "searchFailed": "The search for sites failed"
   },
   "overview": {
     "wordpress": "WordPress",
@@ -280,7 +281,11 @@
     "sourceUnknownHint": "Not on wordpress.org; their own updater does not run during a scan.",
     "neverScanned": "This site has not been scanned yet.",
     "scanning": "Scanning…",
-    "scanProblem": "The last scan did not complete"
+    "scanProblem": "The last scan did not complete",
+    "sourceUnknownCount_one": "{{count}} plugin",
+    "sourceUnknownCount_other": "{{count}} plugins",
+    "show": "Show",
+    "hide": "Hide"
   },
   "updates": {
     "label": "Pending updates",
@@ -403,7 +408,9 @@
         "cyan": "Cyan",
         "magenta": "Magenta",
         "orange": "Orange"
-      }
+      },
+      "addHost": "Add a host…",
+      "scanAll": "Scan everything"
     },
     "more": "More actions",
     "dropInto": "Drop to move {{name}} into {{folder}}",
@@ -466,13 +473,16 @@
       "running": "Updating…",
       "rollbackTitle": "Rolling back {{name}}",
       "stepsLabel": "Steps of the update",
-      "notStarted": "Vigie could not start this update. Scan the site, then try again."
+      "notStarted": "Vigie could not start this update. Scan the site, then try again.",
+      "progress_one": "{{done}} of {{total}} items updated and checked",
+      "progress_other": "{{done}} of {{total}} items updated and checked",
+      "rollingBack": "Rolling back…"
     },
     "result": {
       "doneTitle": "{{name}} is up to date",
       "doneLead": "Each item was checked after its update.",
       "failedTitle": "The update broke the site",
-      "failedLead": "Vigie stopped at the first problem: nothing else was started.",
+      "failedLead": "The update stopped at the first problem: nothing else was started.",
       "failedOn": "{{item}}: the site no longer passes the checks",
       "failedStep": "The step “{{step}}” failed",
       "rollbackFiles": "Roll back puts the folder of {{item}} back as it was, then checks the site again. The database is not touched: only a WordPress update restores it.",
@@ -511,10 +521,11 @@
       "languages": "Translations",
       "update-database": "WordPress database upgraded",
       "check": "Checks",
-      "checksOk": "public pages and login answer, no new fatal error",
       "restore-files": "{{item}} back to {{version}}",
       "restore-database": "Database restored",
-      "notStarted": "not started"
+      "notStarted": "not started",
+      "rescan": "New scan of the site",
+      "rescanDetail": "versions read again on the server, older backups removed"
     },
     "duration": {
       "seconds": "{{s}} s",
@@ -580,6 +591,7 @@
       "sites": "Sites"
     },
     "updateAll": "Update all",
-    "updatingAll": "Updating…"
+    "updatingAll": "Updating…",
+    "upToDateOne": "Up to date"
   }
 }

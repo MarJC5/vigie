@@ -19,7 +19,12 @@ export const NeedsAttention: Story = {
     const [list] = canvas.getAllByRole("tabpanel");
     await expect(list).toHaveTextContent("7.1.3 · 7.1.4 available");
     await expect(list).toHaveTextContent("12 · 2 updates");
+    // The plugins whose updates cannot be seen: a count, the names on demand.
+    await expect(list).toHaveTextContent("1 plugin");
+    await expect(list).not.toHaveTextContent("Theme Builder Pro");
+    await userEvent.click(within(list!).getByRole("button", { name: "Show" }));
     await expect(list).toHaveTextContent("Theme Builder Pro");
+    await expect(within(list!).getByRole("button", { name: "Hide" })).toHaveAttribute("aria-expanded", "true");
     // Every row with updates carries its status shape, translations included.
     const translations = within(list!).getByText("Translations").closest("div")!;
     await expect(translations.querySelector("[data-shape='square']")).not.toBeNull();

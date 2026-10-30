@@ -166,14 +166,43 @@ function Overview({ site }: { site: SiteView }) {
           </InfoRow>
           {(scan.sourceUnknown ?? []).length > 0 && (
             <InfoRow label={t("overview.sourceUnknown")}>
-              <span title={t("overview.sourceUnknownHint")}>{(scan.sourceUnknown ?? []).join(", ")}</span>
+              <SourceUnknown names={scan.sourceUnknown ?? []} />
             </InfoRow>
           )}
         </>
       )}
-      {(scan?.home || site.url) && <InfoRow label={t("overview.address")}>{scan?.home || site.url}</InfoRow>}
-      <InfoRow label={t("overview.path")}>{site.path}</InfoRow>
+      {(scan?.home || site.url) && (
+        <InfoRow label={t("overview.address")}>
+          <span data-selectable>{scan?.home || site.url}</span>
+        </InfoRow>
+      )}
+      <InfoRow label={t("overview.path")}>
+        <span data-selectable>{site.path}</span>
+      </InfoRow>
     </InfoList>
+  );
+}
+
+/** The plugins whose updates Vigie cannot see: their count on one line, the list on demand. */
+function SourceUnknown({ names }: { names: string[] }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const list = useId();
+  return (
+    <span className={styles.unknown}>
+      <span className={styles.unknownLine}>
+        {t("overview.sourceUnknownCount", { count: names.length })}
+        <Button variant="text" aria-expanded={open} aria-controls={list} onClick={() => setOpen(!open)}>
+          {open ? t("overview.hide") : t("overview.show")}
+        </Button>
+      </span>
+      {open && (
+        <span id={list} className={styles.unknownList}>
+          <span>{names.join(", ")}</span>
+          <span>{t("overview.sourceUnknownHint")}</span>
+        </span>
+      )}
+    </span>
   );
 }
 

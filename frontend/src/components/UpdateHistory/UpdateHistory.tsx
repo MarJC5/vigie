@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { OperationView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
-import { durationText, itemName, itemsOf, restoredStep, rowText, type RowState, seconds } from "../../lib/updates";
+import { backupPath, durationText, itemName, itemsOf, restoredStep, rowText, type RowState, seconds } from "../../lib/updates";
 import { Button } from "../Button/Button";
 import { Icon, type IconName } from "../Icon/Icon";
 import { type Status, StatusDot } from "../StatusDot/StatusDot";
@@ -76,14 +76,18 @@ export function UpdateHistory({ operations, names, onRollback, busy = false }: U
                           <Icon name={icons[state]} label={t(`update.state.${state}`)} />
                         </span>
                         <span className={styles.label}>{label}</span>
-                        <span className={styles.detail}>{detail}</span>
+                        <span className={styles.detail} data-selectable>
+                          {detail}
+                        </span>
                       </li>
                     );
                   })}
                 </ol>
                 <div className={styles.foot}>
                   <p className={styles.backup}>
-                    {t("update.history.backupKept")} <span className={styles.path}>{op.backupDir}</span>
+                    {t("update.history.backupKept")} <span className={styles.path} data-selectable>
+                      {backupPath(op.backupDir)}
+                    </span>
                   </p>
                   {op.rollback && (
                     <Button variant="primary" icon="rollback" onClick={() => onRollback(op.id)} disabled={busy}>

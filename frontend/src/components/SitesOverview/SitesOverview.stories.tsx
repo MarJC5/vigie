@@ -28,10 +28,11 @@ export const Host: Story = {
     await expect(summary).toHaveTextContent("Pending updates4");
     await expect(summary).toHaveTextContent("Need attention1");
     await expect(summary).toHaveTextContent("Not scanned1");
-    // The action sits at the right of the counts, as on the validated screen.
+    // The actions sit on the title line, so the counts keep their row to themselves.
     const scan = canvas.getAllByRole("button", { name: "Scan host" })[0]!;
-    await expect(scan.closest("[data-counts]")).not.toBeNull();
-    await expect(scan.closest("[data-counts]")).toBe(summary!.closest("[data-counts]"));
+    await expect(scan.closest("[data-counts]")).toBeNull();
+    const [title] = canvas.getAllByRole("heading", { level: 1, name: "Shared hosting" });
+    await expect(scan.parentElement!.parentElement).toBe(title!.parentElement);
     await userEvent.click(scan);
     await expect(args.onScan).toHaveBeenCalled();
     await userEvent.click(canvas.getAllByRole("button", { name: "atelier-exemple.ch" })[0]!);
@@ -46,10 +47,12 @@ export const Folder: Story = {
   },
 };
 
+// A scan of the host running: neither another scan nor an update starts.
 export const Scanning: Story = {
-  args: { scanning: true },
+  args: { scanning: true, onUpdateAll: fn() },
   play: async ({ canvas }) => {
     await expect(canvas.getAllByRole("button", { name: "Scanning…" })[0]).toHaveAttribute("aria-busy", "true");
+    await expect(canvas.getAllByRole("button", { name: "Update all" })[0]).toBeDisabled();
     await expect(canvas.queryAllByRole("progressbar")).toHaveLength(0);
   },
 };
@@ -80,3 +83,4 @@ export const AfterAnUpdate: Story = {
     await expect(args.onDismissBulk).toHaveBeenCalled();
   },
 };
+

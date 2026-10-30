@@ -44,7 +44,7 @@ const step = (position: number, at: string, secs: number, s: Partial<StepView>):
   };
 };
 
-const backupDir = "~/.vigie/backups/7c1e4a52-0d55-4f0b-9a8e-3b8c1d2f6a10/20261029-141203";
+const backupDir = ".vigie/backups/7c1e4a52-0d55-4f0b-9a8e-3b8c1d2f6a10/20261029-141203";
 
 const backups = [
   step(0, "03", 6, { step: "backup-database", message: `${backupDir}/database.sql.gz` }),

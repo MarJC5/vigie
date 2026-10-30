@@ -30,7 +30,9 @@ export function RunSteps({ label, rows, names, ended }: RunStepsProps) {
               <Icon name={icons[row.state]} size={18} label={t(`update.state.${row.state}`)} />
             </span>
             <span className={styles.label}>{text}</span>
-            <span className={styles.detail}>{detail}</span>
+            <span className={styles.detail} data-selectable>
+              {detail}
+            </span>
             <span className={styles.time}>{took}</span>
           </li>
         );
