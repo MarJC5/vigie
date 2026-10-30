@@ -506,7 +506,8 @@
         "orange": "Orange"
       },
       "addHost": "Add a host…",
-      "scanAll": "Scan everything"
+      "scanAll": "Scan everything",
+      "export": "Export…"
     },
     "more": "More actions",
     "dropInto": "Drop to move {{name}} into {{folder}}",
@@ -934,6 +935,7 @@
     "tabs": {
       "general": "General",
       "lookups": "Lookups outside",
+      "data": "Data",
       "about": "About"
     },
     "language": {
@@ -958,5 +960,106 @@
     "licenseDesc": "MIT. Not affiliated with the WordPress Foundation.",
     "receives": "Receives: {{sent}} · answer kept {{kept}}",
     "neverRow": "What never leaves your computer"
+  },
+  "data": {
+    "backup": "Backup",
+    "import": "Import",
+    "top": "Top level",
+    "into": "Into",
+    "exportTitle": "Export the site manager",
+    "exportDesc": "Folders, hosts and sites with their colors, notes, tags and findings set aside, in a JSON file. The history if you want it.",
+    "exportAction": "Export…",
+    "importAction": "Import…",
+    "sshAction": "Choose…",
+    "vigieTitle": "A Vigie file",
+    "vigieDesc": "An export of Vigie, from this computer or another one. Only what is new is added; nothing existing is changed.",
+    "sshTitle": "SSH configuration",
+    "sshDesc": "Hosts of ~/.ssh/config, the ones you choose, become hosts in Vigie. Vigie never writes your SSH configuration.",
+    "csvTitle": "A CSV file",
+    "csvDesc": "One line per site: folder, host, port, user, path, url (or alias instead of host, port and user).",
+    "exported": "Saved to {{file}}.",
+    "imported_one": "{{count}} folder, host or site added.",
+    "imported_other": "{{count}} folders, hosts and sites added.",
+    "count": {
+      "folders_one": "{{count}} folder",
+      "folders_other": "{{count}} folders",
+      "hosts_one": "{{count}} host",
+      "hosts_other": "{{count}} hosts",
+      "sites_one": "{{count}} site",
+      "sites_other": "{{count}} sites",
+      "ignores_one": "{{count}} finding set aside",
+      "ignores_other": "{{count}} findings set aside",
+      "scans_one": "{{count}} scan",
+      "scans_other": "{{count}} scans",
+      "operations_one": "{{count}} update or rollback",
+      "operations_other": "{{count}} updates and rollbacks"
+    },
+    "export": {
+      "title": "Export the site manager",
+      "lead": "Saved to a file you choose. Nothing is sent anywhere.",
+      "what": "What",
+      "all": "Everything",
+      "node": "A folder or a host",
+      "history": "Include the history",
+      "historyHint": "Scans with their findings, updates and rollbacks with their steps: about {{size}} more.",
+      "historyHintShort": "Scans with their findings, updates and rollbacks with their steps.",
+      "sensitive": "A sensitive file",
+      "sensitiveText": "It names your servers, your SSH users and holds your notes. Keep it somewhere safe. Keys and passwords are never in it.",
+      "confirm": "Export…",
+      "failed": "Not exported"
+    },
+    "ssh": {
+      "title": "Import hosts from ~/.ssh/config",
+      "lead": "This file names every server you reach, not only the ones of WordPress sites: check only the hosts to follow in Vigie. Their settings are read by ssh itself (ssh -G); nothing is connected to yet.",
+      "loading": "Reading ~/.ssh/config…",
+      "alias": "Alias",
+      "account": "Account",
+      "present": "already in Vigie",
+      "error": "ssh cannot read it",
+      "patterns_one": "{{count}} entry with patterns (*, ?, !) is skipped: it is not a host.",
+      "patterns_other": "{{count}} entries with patterns (*, ?, !) are skipped: they are not hosts.",
+      "none": "~/.ssh/config names no host.",
+      "confirm_one": "Add {{count}} host",
+      "confirm_other": "Add {{count}} hosts",
+      "confirmNone": "Add hosts",
+      "failed": "Not imported"
+    },
+    "preview": {
+      "title": "Import {{file}}",
+      "lead": "Exported on {{date}} at {{time}} by Vigie {{app}}. Nothing is added until you confirm.",
+      "leadHistory": "Exported on {{date}} at {{time}} by Vigie {{app}}, with history. Nothing is added until you confirm.",
+      "leadCSV_one": "{{count}} line read, separated by {{separator}}. Nothing is added until you confirm.",
+      "leadCSV_other": "{{count}} lines read, separated by {{separator}}. Nothing is added until you confirm.",
+      "added": "Added",
+      "present": "Already in Vigie, left as it is",
+      "refused": "Refused",
+      "newFolder": "new folder",
+      "host": "host",
+      "site": "site",
+      "subsites_one": "network, {{count}} subsite",
+      "subsites_other": "network, {{count}} subsites",
+      "history": "with {{counts}}",
+      "line": "Line {{line}}: {{reason}}",
+      "keys": "Server keys",
+      "keysLead": "The file brings the trusted key of these hosts. Keep only the ones you recognize; the others are asked for at their first connection.",
+      "keyRefused": "Not kept: {{reason}}.",
+      "failed": "Not imported",
+      "nothingYet": "Nothing is added yet.",
+      "nothingNew": "Nothing to add: everything is already in Vigie.",
+      "confirm_one": "Add {{count}} item",
+      "confirm_other": "Add {{count}} items"
+    },
+    "separator": {
+      "comma": "commas",
+      "semicolon": "semicolons"
+    },
+    "reason": {
+      "same-id": "same ID",
+      "same-name": "same name: what the file puts in it goes into this folder",
+      "same-connection": "same account",
+      "same-path": "same host and path",
+      "renamed": "its name was taken: renamed",
+      "parent-refused": "what holds it is refused"
+    }
   }
 }

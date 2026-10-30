@@ -1,0 +1,233 @@
+.window {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--vg-surface-main);
+  color: var(--vg-text);
+}
+
+/* Leaves the macOS window buttons alone, moves the window like a title bar. */
+.top {
+  height: 52px;
+  flex: none;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 var(--vg-space-4);
+  --wails-draggable: drag;
+}
+
+.top > * {
+  --wails-draggable: no-drag;
+}
+
+.main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--vg-space-7) var(--vg-space-6);
+}
+
+.main:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: -2px;
+}
+
+.content {
+  width: 100%;
+  max-width: 980px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--vg-space-2);
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--vg-text-display);
+  font-weight: var(--vg-weight-strong);
+  line-height: var(--vg-leading-tight);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.lead {
+  margin: 0;
+  max-width: 72ch;
+  color: var(--vg-text-muted);
+  text-wrap: pretty;
+}
+
+.into {
+  max-width: 360px;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.columns[data-keys] {
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.groupTitle {
+  margin: 0 0 var(--vg-space-1);
+  display: flex;
+  align-items: center;
+  gap: var(--vg-space-2);
+  font-size: var(--vg-text-caption);
+  font-weight: var(--vg-weight-strong);
+  letter-spacing: var(--vg-tracking-caps);
+  text-transform: uppercase;
+  color: var(--vg-text-muted);
+}
+
+.count {
+  font-variant-numeric: tabular-nums;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 3px 12px;
+  border-radius: var(--vg-radius-control);
+}
+
+.item:nth-child(odd) {
+  background: var(--vg-surface-row);
+}
+
+.item > svg {
+  color: var(--vg-text-muted);
+}
+
+.itemText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.name {
+  font-weight: var(--vg-weight-strong);
+  overflow-wrap: anywhere;
+}
+
+.item[data-muted] .name {
+  font-weight: var(--vg-weight-regular);
+  color: var(--vg-text-muted);
+}
+
+.detail {
+  font-size: var(--vg-text-small);
+  color: var(--vg-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.keys {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-2);
+}
+
+.keysLead {
+  margin: 0;
+  font-size: var(--vg-text-small);
+  color: var(--vg-text-muted);
+}
+
+.key {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--vg-radius-control);
+  background: var(--vg-surface-row);
+  cursor: pointer;
+}
+
+.key[data-refused] {
+  cursor: default;
+  color: var(--vg-text-muted);
+}
+
+.box {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin: 2px 0 0;
+  accent-color: var(--vg-accent);
+}
+
+.box:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 2px;
+}
+
+.fingerprint {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--vg-text-caption);
+  color: var(--vg-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.bar {
+  height: 72px;
+  flex: none;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--vg-space-5);
+  padding: 0 var(--vg-space-6);
+  border-top: 1px solid var(--vg-border);
+}
+
+.later {
+  font-size: var(--vg-text-small);
+  color: var(--vg-text-muted);
+}
+
+.actions {
+  display: flex;
+  gap: var(--vg-space-3);
+  margin-left: auto;
+}

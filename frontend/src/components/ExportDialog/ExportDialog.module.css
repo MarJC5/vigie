@@ -1,0 +1,102 @@
+/* The heading above the choices, not on their edge. */
+.group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legend {
+  float: left;
+  width: 100%;
+  padding: 0 0 var(--vg-space-1);
+  font-size: var(--vg-text-caption);
+  font-weight: var(--vg-weight-strong);
+  letter-spacing: var(--vg-tracking-caps);
+  text-transform: uppercase;
+  color: var(--vg-text-muted);
+}
+
+/* A choice: its border at 1 px, at 2 px once chosen. */
+.choice {
+  clear: both;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--vg-radius-control);
+  box-shadow: inset 0 0 0 1px var(--vg-border);
+  cursor: pointer;
+}
+
+.choice[data-selected] {
+  box-shadow: inset 0 0 0 2px var(--vg-accent);
+}
+
+.radio,
+.box {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin: 2px 0 0;
+  accent-color: var(--vg-accent);
+}
+
+.radio:focus-visible,
+.box:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 2px;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.title {
+  font-weight: var(--vg-weight-strong);
+}
+
+.hint {
+  font-size: var(--vg-text-small);
+  color: var(--vg-text-muted);
+}
+
+.select {
+  flex: none;
+  min-width: 240px;
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+/* Neutral: no colored edge, the icon in gray. */
+.sensitive {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vg-space-3);
+  padding: 14px 18px;
+  border-radius: var(--vg-radius-panel);
+  background: var(--vg-surface-row);
+  color: var(--vg-text-muted);
+}
+
+.sensitive > svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+.sensitiveTitle {
+  font-weight: var(--vg-weight-strong);
+  color: var(--vg-text);
+}
