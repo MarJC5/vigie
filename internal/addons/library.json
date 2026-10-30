@@ -1,0 +1,59 @@
+[
+  {
+    "install": "https://github.com/MarJC5/vigie-filezilla",
+    "info": {
+      "format": "vigie-addon",
+      "version": 1,
+      "name": "filezilla",
+      "title": {
+        "en": "FileZilla",
+        "fr": "FileZilla"
+      },
+      "author": "MarJC5",
+      "release": "0.1.0",
+      "kind": "source",
+      "summary": {
+        "en": "Turns FileZilla's site manager into hosts of Vigie. Never reads the passwords.",
+        "fr": "Transforme le gestionnaire de sites de FileZilla en hébergements Vigie. Ne lit jamais les mots de passe."
+      },
+      "description": {
+        "en": "FileZilla keeps your servers in its site manager. This add-on reads it and writes a Vigie export: folders stay folders, each SFTP server becomes a host with its user, port, key file, comments and color. Other servers (FTP, S3, WebDAV) are listed as left out. Vigie then finds the WordPress installs of each host.",
+        "fr": "FileZilla garde vos serveurs dans son gestionnaire de sites. Cet add-on le lit et écrit un export Vigie : les dossiers restent des dossiers, chaque serveur SFTP devient un hébergement avec son utilisateur, son port, son fichier de clé, ses commentaires et sa couleur. Les autres serveurs (FTP, S3, WebDAV) sont listés comme laissés de côté. Vigie trouve ensuite les installations WordPress de chaque hébergement."
+      },
+      "details": [
+        {
+          "label": {
+            "en": "Reads",
+            "fr": "Lit"
+          },
+          "value": {
+            "en": "FileZilla's sitemanager.xml, never the passwords it keeps",
+            "fr": "Le sitemanager.xml de FileZilla, jamais les mots de passe qu'il garde"
+          }
+        },
+        {
+          "label": {
+            "en": "Writes",
+            "fr": "Écrit"
+          },
+          "value": {
+            "en": "A Vigie export",
+            "fr": "Un export Vigie"
+          }
+        },
+        {
+          "label": {
+            "en": "Network",
+            "fr": "Réseau"
+          },
+          "value": {
+            "en": "Connects to nothing",
+            "fr": "Ne se connecte à rien"
+          }
+        }
+      ],
+      "image": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzNjAgMjAwIiB3aWR0aD0iMzYwIiBoZWlnaHQ9IjIwMCI+CiAgPHJlY3Qgd2lkdGg9IjM2MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNlMjZmNTYiLz4KICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICAgIDxwYXRoIGQ9Ik03MCA3MGgyOGwxMCAxMmg0NnY1OEg3MHoiLz4KICAgIDxwYXRoIGQ9Ik0xNjggMTA0aDI2bS0xMC0xMiAxMiAxMi0xMiAxMiIvPgogICAgPHJlY3QgeD0iMjE0IiB5PSI2NiIgd2lkdGg9Ijc2IiBoZWlnaHQ9IjMwIiByeD0iNSIvPgogICAgPHJlY3QgeD0iMjE0IiB5PSIxMDYiIHdpZHRoPSI3NiIgaGVpZ2h0PSIzMCIgcng9IjUiLz4KICA8L2c+CiAgPGcgZmlsbD0iI2ZmZmZmZiI+CiAgICA8Y2lyY2xlIGN4PSIyNzIiIGN5PSI4MSIgcj0iNSIvPgogICAgPGNpcmNsZSBjeD0iMjcyIiBjeT0iMTIxIiByPSI1Ii8+CiAgPC9nPgo8L3N2Zz4K",
+      "settings": []
+    }
+  }
+]

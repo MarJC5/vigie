@@ -6,8 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os/exec"
+	"regexp"
 	"strings"
 
+	"github.com/MarJC5/vigie/internal/addons"
 	"github.com/MarJC5/vigie/internal/buildinfo"
 	"github.com/MarJC5/vigie/internal/i18n"
 	"github.com/MarJC5/vigie/internal/workspace"
@@ -89,6 +92,10 @@ func Run(ctx context.Context, opts Options, env Env) int {
 		return runData(ctx, env, name, rest)
 	case "tree", "scan", "discover", "update":
 	default:
+		// Not a command of Vigie: an add-on's, when vigie-<name> is on the PATH.
+		if code, ok := runAddOn(env, name, rest); ok {
+			return code
+		}
 		fmt.Fprintf(env.Err, "vigie: %s\n\n%s", env.t("cli.unknownCommand", map[string]any{"command": name}), env.t("cli.usage", nil))
 		return exitError
 	}
@@ -125,6 +132,32 @@ func Run(ctx context.Context, opts Options, env Env) int {
 		return updatePath(ctx, env, ws, path, asJSON, yes)
 	}
 	return discoverHost(ctx, env, ws, path, asJSON)
+}
+
+// addOnName is the name of an add-on: no path, no option.
+var addOnName = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
+
+// runAddOn runs vigie-<name> from the PATH with the arguments as they are, as Git runs its external
+// commands, and returns its exit status; ok is false when there is no such program. Never through a
+// shell, never a program of the current folder (exec.ErrDot).
+func runAddOn(env Env, name string, args []string) (int, bool) {
+	if !addOnName.MatchString(name) {
+		return 0, false
+	}
+	program, err := exec.LookPath(addons.Prefix + name)
+	if err != nil {
+		return 0, false
+	}
+	cmd := exec.Command(program, args...)
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = env.In, env.Out, env.Err
+	err = cmd.Run()
+	if exit, ok := errors.AsType[*exec.ExitError](err); ok {
+		return exit.ExitCode(), true
+	}
+	if err != nil {
+		return env.fail(err.Error()), true
+	}
+	return exitOK, true
 }
 
 // commandArgs separates --json from the path; any other option is refused (returned as the error).

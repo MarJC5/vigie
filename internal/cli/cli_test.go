@@ -3,10 +3,13 @@ package cli_test
 import (
 	"bytes"
 	"context"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 
+	"github.com/MarJC5/vigie/addon/addontest"
 	"github.com/MarJC5/vigie/internal/cli"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/workspace"
@@ -97,6 +100,42 @@ func TestEveryFailureIsExplained(t *testing.T) {
 			if c.T(lang, key, nil) == key {
 				t.Errorf("%s: %s has no text", lang, key)
 			}
+		}
+	}
+}
+
+// A name that is not a command of Vigie runs vigie-<name> from the PATH, as Git does.
+func TestAnAddOnRunsFromThePATH(t *testing.T) {
+	program := addontest.Build(t, "../addons/testdata/fake")
+	dir := t.TempDir()
+	data, err := os.ReadFile(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"vigie-good", "vigie-fails"} {
+		if err := os.WriteFile(filepath.Join(dir, name), data, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Setenv("PATH", dir)
+	run := func(args ...string) (int, string, string) {
+		opts, err := cli.Parse(args)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var out, errOut bytes.Buffer
+		code := cli.Run(context.Background(), opts, cli.Env{Out: &out, Err: &errOut, Lang: "en", Texts: texts(t)})
+		return code, out.String(), errOut.String()
+	}
+	if code, out, _ := run("good", "--vigie-info"); code != 0 || !strings.Contains(out, `"name": "good"`) {
+		t.Errorf("vigie good --vigie-info: exit %d\n%s", code, out)
+	}
+	if code, _, errOut := run("fails", "--names", "x"); code != 3 || errOut != "vigie-fails: the list cannot be read\n" {
+		t.Errorf("vigie fails: exit %d, %q", code, errOut)
+	}
+	for _, name := range []string{"missing", "../good", "-good"} {
+		if code, _, errOut := run(name); code != 3 || !strings.Contains(errOut, "unknown command") {
+			t.Errorf("vigie %s: exit %d, %s", name, code, errOut)
 		}
 	}
 }

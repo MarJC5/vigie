@@ -5,6 +5,21 @@ example with Homebrew) and that Vigie finds on your `PATH`. It brings data into 
 which writes a Vigie export) or takes what Vigie writes somewhere else (a destination). Vigie never
 downloads one, gives it no data and no access to anything, and runs one only when you start it.
 
+## How Vigie finds and runs them
+
+* **On the command line**, `vigie <name> [arguments]` runs `vigie-<name>` found on your `PATH` with
+  the arguments as they are, and exits with its exit status, as Git runs its external commands.
+* **The add-ons installed** are the programs named `vigie-<name>` in the folders of your `PATH`, the
+  first of each name in the order of the folders. A folder that is not absolute is skipped, so a
+  program of the current folder is never run. Each one is asked for its description
+  (`--vigie-info`, ten seconds at most).
+* **A run of a source** gets `--vigie-export` with a file in a folder of its own, readable by you
+  only, then each setting as its own argument; never a shell. It is stopped after two minutes. Its
+  export is read, shown in the import preview, then deleted.
+* **The Library** lists the known add-ons, installed or not, from a file that comes with each
+  version of Vigie. Vigie never downloads or installs an add-on: the page of one that is not
+  installed says where to get it.
+
 ## Writing an add-on
 
 An add-on answers two options, reserved for Vigie; every other option is its own.

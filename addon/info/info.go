@@ -86,7 +86,7 @@ func (t Text) In(lang string) string {
 type Info struct {
 	Format  string `json:"format"`
 	Version int    `json:"version"`
-	// Name is the program's name after "vigie-": "filezilla" for vigie-filezilla.
+	// Name is the program's name after "vigie-": "example" for vigie-example.
 	Name    string `json:"name"`
 	Title   Text   `json:"title"`
 	Author  string `json:"author"`

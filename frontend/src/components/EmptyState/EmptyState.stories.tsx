@@ -12,7 +12,7 @@ const meta = {
     children: (
       <>
         <Button variant="primary" icon="plus">Add a host</Button>
-        <Button variant="text">Import from FileZilla</Button>
+        <Button variant="text">Import a site list</Button>
       </>
     ),
   },
