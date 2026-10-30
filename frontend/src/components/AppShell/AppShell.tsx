@@ -21,7 +21,7 @@ import { BulkDialog } from "../BulkDialog/BulkDialog";
 import { Button } from "../Button/Button";
 import { DeleteDialog } from "../DeleteDialog/DeleteDialog";
 import { EmptyState } from "../EmptyState/EmptyState";
-import type { IconName } from "../Icon/Icon";
+import { Icon, type IconName } from "../Icon/Icon";
 import { type FindSitesApi, FindSitesDialog } from "../FindSitesDialog/FindSitesDialog";
 import { HostDialog, type HostEditApi } from "../HostDialog/HostDialog";
 import { IgnoreDialog } from "../IgnoreDialog/IgnoreDialog";
@@ -795,14 +795,17 @@ function Summary({ node, nodes }: { node: Node; nodes: Node[] }) {
   return <span>{t("bottom.sites", { name: node.name, count })}</span>;
 }
 
-/** When the next automatic scan is due: its time today, else its day and time. */
+/** When the next automatic scan is due, quietly: a clock and its time (its day too when not today);
+ * the whole sentence for screen readers and on hover. */
 function NextScan({ at }: { at: string }) {
   const { t } = useTranslation();
-  const when = new Date(at);
-  const today = when.toDateString() === new Date().toDateString();
+  const today = new Date(at).toDateString() === new Date().toDateString();
+  const sentence = today ? t("manager.nextScan", { time: clock(at) }) : t("manager.nextScanOn", { day: day(at), time: clock(at) });
   return (
-    <span className={styles.next}>
-      {today ? t("manager.nextScan", { time: clock(at) }) : t("manager.nextScanOn", { day: day(at), time: clock(at) })}
+    <span className={styles.next} title={sentence}>
+      <Icon name="activity" size={12} />
+      <span aria-hidden="true">{today ? clock(at) : `${day(at)} ${clock(at)}`}</span>
+      <span className={styles.hidden}>{sentence}</span>
     </span>
   );
 }

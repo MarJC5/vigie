@@ -114,7 +114,9 @@ export const NextAutomaticScan: Story = {
   args: { data, initialSelectedId: "shared", nextScan: today.toISOString() },
   globals: { lang: "fr" },
   play: async ({ canvas }) => {
+    // Quiet: the time shown, the sentence read and on hover.
     await expect((await canvas.findAllByText("Prochain relevé : 18:00"))[0]).toBeInTheDocument();
+    await expect(canvas.getAllByTitle("Prochain relevé : 18:00")[0]).toHaveTextContent(/^18:00/);
   },
 };
 

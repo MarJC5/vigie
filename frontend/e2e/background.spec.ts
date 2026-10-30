@@ -22,5 +22,5 @@ test("the background settings are kept, and the next automatic scan shows under 
   await expect(page.getByRole("combobox", { name: "Automatic scans" })).toHaveValue("6");
 
   await rail.getByRole("link", { name: "Sites" }).click();
-  await expect(page.getByText(/^Next scan: (\d\d\.\d\d\.\d{4} )?\d\d:\d\d$/)).toBeVisible();
+  await expect(page.getByTitle(/^Next scan: (\d\d\.\d\d\.\d{4} )?\d\d:\d\d$/)).toBeVisible();
 });

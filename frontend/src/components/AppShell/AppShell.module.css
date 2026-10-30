@@ -122,5 +122,21 @@
 }
 
 .next {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--vg-text-caption);
+  color: var(--vg-text-muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Read by screen readers only. */
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
   white-space: nowrap;
 }
