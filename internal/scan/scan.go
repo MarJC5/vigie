@@ -220,12 +220,20 @@ func (r *run) scan(ctx context.Context, result *model.Scan) ([]model.Subsite, er
 	}
 
 	// The outside lookups run from the machine while the server is read.
-	found := make(chan []model.Finding, 1)
+	found := make(chan lookupsDone, 1)
 	snapshot := *result
 	go func() { found <- r.scanner.lookups(ctx, snapshot) }()
 	err = r.security(ctx, result)
-	result.Findings = append(result.Findings, <-found...)
+	done := <-found
+	result.Findings = append(result.Findings, done.findings...)
 	sortFindings(result.Findings)
+	// wordpress.org's own answer, from the machine, replaces what the server read: a server that
+	// cannot reach wordpress.org reads every plugin as closed. Without an answer, the server's stays.
+	for i, item := range result.Items {
+		if known, ok := done.onWordPressOrg[item.Slug]; ok && item.Kind == model.ItemPlugin {
+			result.Items[i].OnWordPressOrg = known
+		}
+	}
 	if err != nil {
 		return nil, err
 	}

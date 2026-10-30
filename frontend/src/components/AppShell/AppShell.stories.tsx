@@ -358,7 +358,7 @@ export const IgnoreAFinding: Story = {
       site: async () => ({
         ...outdatedSite,
         id: "boulangerie",
-        scan: { ...outdatedSite.scan!, status: "danger", findings, counts: { urgent: 2, attention: 4, notChecked: 1, ignored: 1 } },
+        scan: { ...outdatedSite.scan!, status: "danger", findings, counts: { urgent: 2, attention: 5, notChecked: 1, ignored: 1 } },
       }),
     },
     initialSelectedId: "boulangerie",

@@ -1,7 +1,4 @@
-.scroll {
-  overflow-x: auto;
-}
-
+/* No scrolling of its own: the page scrolls, and the long column gives way. */
 .table {
   width: 100%;
   border-collapse: separate;
@@ -63,4 +60,12 @@
 
 .muted {
   color: var(--vg-text-muted);
+}
+
+/* The worst finding takes the room left and ends with an ellipsis; the whole text is its title. */
+.worst {
+  width: 100%;
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

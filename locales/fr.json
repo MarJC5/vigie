@@ -738,9 +738,13 @@
         "addedDetail": "Seuls les fichiers de WordPress ont leur place ici."
       },
       "pluginFile": {
-        "changed": "{{name}} : fichier modifié, {{file}}",
-        "added": "{{name}} : fichier ajouté, {{file}}",
-        "detail": "Une extension est parfois modifiée exprès : vérifiez si c'est le cas."
+        "title_one": "{{name}} : {{count}} fichier diffère de celui de wordpress.org",
+        "title_many": "{{name}} : {{count}} fichiers diffèrent de ceux de wordpress.org",
+        "title_other": "{{name}} : {{count}} fichiers diffèrent de ceux de wordpress.org",
+        "counts": "{{added}} ajoutés, {{changed}} modifiés",
+        "files": "dont {{files}}",
+        "detail": "Une extension est parfois modifiée exprès : vérifiez si c'est le cas.",
+        "mismatch": "Presque tous les fichiers diffèrent : probablement une autre extension que celle du même nom sur wordpress.org."
       },
       "pluginUnverified": {
         "title": "{{name}} : fichiers non comparés",
@@ -775,8 +779,8 @@
         "detail": "Réglages › Lecture demande aux moteurs de ne pas indexer le site."
       },
       "noHttps": {
-        "title": "Adresse sans HTTPS",
-        "detail": "L'adresse du site commence par http://."
+        "title": "Le site ne répond pas en HTTPS",
+        "detail": "Son adresse dans WordPress commence par http://, et rien ne répond en TLS sur le port 443."
       },
       "cronOverdue": {
         "title_one": "{{count}} tâche WP-Cron en retard",

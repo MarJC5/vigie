@@ -179,8 +179,9 @@ func FatalsSince(file string, offset int64) (string, error) {
 }
 
 // UploadsPHP lists the PHP files under a site's uploads folder, where WordPress never puts any:
-// one path per line, at most uploadsShown and one more to tell there are more. A site without the
-// folder lists nothing.
+// one path per line, at most uploadsShown and one more to tell there are more. An index.php comes
+// with the start of its content after a tab, so that the empty files plugins drop to stop folder
+// listings ("Silence is golden") are told apart. A site without the folder lists nothing.
 func UploadsPHP(root string) (string, error) {
 	if err := folder(root); err != nil {
 		return "", err
@@ -190,24 +191,38 @@ func UploadsPHP(root string) (string, error) {
 		return "", err
 	}
 	return "find " + q + ` -type f \( -iname '*.php' -o -iname '*.php[0-9]' -o -iname '*.phtml' -o -iname '*.pht' -o -iname '*.phar' \) 2>/dev/null | head -n ` +
-		strconv.Itoa(UploadsShown+1), nil
+		strconv.Itoa(UploadsShown+1) +
+		` | while IFS= read -r f; do case "$f" in */index.php) printf '%s\t%s\n' "$f" "$(head -c ` + strconv.Itoa(stubBytes) +
+		` "$f" | tr '\t\r\n' '   ')";; *) printf '%s\n' "$f";; esac; done`, nil
 }
 
 // UploadsShown is how many PHP files in uploads are listed.
 const UploadsShown = 50
 
-// ParseUploadsPHP reads UploadsPHP's answer: the files relative to the uploads folder, and whether
-// there are more than UploadsShown.
+// stubBytes is how much of an index.php is read: more than any "Silence is golden" file.
+const stubBytes = 120
+
+// silence is the empty index.php WordPress and plugins put in folders so they cannot be listed:
+// "<?php // Silence is golden." and its variants, nothing else.
+var silence = regexp.MustCompile(`(?i)^<\?php\s*(//|#|/\*)?\s*silence is golden\.?\s*(\*/)?\s*(\?>)?\s*$`)
+
+// ParseUploadsPHP reads UploadsPHP's answer: the files relative to the uploads folder, without the
+// "Silence is golden" ones, and whether there are more than UploadsShown.
 func ParseUploadsPHP(root string, out []byte) (files []string, more bool) {
 	prefix := root + "/wp-content/uploads/"
+	lines := 0
 	for _, line := range strings.Split(string(out), "\n") {
-		if line = strings.TrimSpace(line); line == "" {
+		if strings.TrimSpace(line) == "" {
 			continue
 		}
-		if len(files) == UploadsShown {
+		if lines++; lines > UploadsShown {
 			return files, true
 		}
-		files = append(files, strings.TrimPrefix(line, prefix))
+		path, content, sampled := strings.Cut(line, "\t")
+		if sampled && silence.MatchString(strings.TrimSpace(content)) {
+			continue
+		}
+		files = append(files, strings.TrimPrefix(strings.TrimSpace(path), prefix))
 	}
 	return files, false
 }

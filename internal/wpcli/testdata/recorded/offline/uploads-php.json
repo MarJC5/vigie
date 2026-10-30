@@ -1,6 +1,6 @@
 {
   "args": [
-    "find '/home/vigie/sites/offline/wp-content/uploads' -type f \\( -iname '*.php' -o -iname '*.php[0-9]' -o -iname '*.phtml' -o -iname '*.pht' -o -iname '*.phar' \\) 2\u003e/dev/null | head -n 51"
+    "find '/home/vigie/sites/offline/wp-content/uploads' -type f \\( -iname '*.php' -o -iname '*.php[0-9]' -o -iname '*.phtml' -o -iname '*.pht' -o -iname '*.phar' \\) 2\u003e/dev/null | head -n 51 | while IFS= read -r f; do case \"$f\" in */index.php) printf '%s\\t%s\\n' \"$f\" \"$(head -c 120 \"$f\" | tr '\\t\\r\\n' '   ')\";; *) printf '%s\\n' \"$f\";; esac; done"
   ],
   "exit": 0,
   "stdout": "",

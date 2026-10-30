@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import en from "../../../locales/en.json";
 import fr from "../../../locales/fr.json";
-import { certificate, closed, domainSilent, exploited, findings, hidden, notChecked, noTwoFactor, xss } from "../fixtures/findings";
+import { certificate, closed, domainSilent, exploited, findings, hidden, notChecked, noTwoFactor, sameName, xss } from "../fixtures/findings";
 import { createI18n } from "../i18n";
 import { day, findingText, groupsOf, ignoreText, keyOf } from "./findings";
 
@@ -33,6 +33,11 @@ describe("findingText", () => {
       title: "marie: administrator without two-factor",
       detail: "marie@boulangerie-exemple.ch · since 12.03.2024",
     });
+    expect(findingText(sameName, t("en"), "en")).toEqual({
+      title: "Gutenblocks: 232 files differ from wordpress.org's",
+      detail:
+        "231 added, 1 changed · including app/blocks/home-hero/block.json, gutenblocks.php · Nearly every file differs: probably another plugin than the one of the same name on wordpress.org.",
+    });
     expect(findingText(domainSilent, t("fr"), "fr").detail).toBe("Expiration non publiée par le registre du .ch");
     expect(findingText(certificate, t("en"), "en").title).toBe("TLS certificate valid until 25.12.2026");
     expect(findingText(notChecked, t("fr"), "fr").title).toBe("wordpress.org non interrogé");
@@ -53,7 +58,7 @@ describe("groupsOf", () => {
   it("puts the findings by level, the ignored ones last", () => {
     expect(groupsOf(findings).map((g) => [g.group, g.items.length])).toEqual([
       ["urgent", 2],
-      ["attention", 4],
+      ["attention", 5],
       ["not-checked", 1],
       ["info", 2],
       ["ignored", 1],

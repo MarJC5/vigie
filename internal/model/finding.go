@@ -31,9 +31,11 @@ const (
 	KindPluginClosed FindingKind = "plugin-closed"
 	// KindPluginAbandoned: Facts last-release.
 	KindPluginAbandoned FindingKind = "plugin-abandoned"
-	// KindCoreFile and KindPluginFile: Identifier the file's path; Facts change (changed, missing,
-	// added).
-	KindCoreFile   FindingKind = "core-file"
+	// KindCoreFile: Identifier the file's path; Facts change (changed, missing, added).
+	KindCoreFile FindingKind = "core-file"
+	// KindPluginFile: the files of a plugin that differ from wordpress.org's, one finding per
+	// plugin; Facts added, changed (counts), files (the first ones, comma separated), mismatch
+	// ("true" when nearly every file differs: another plugin of the same name).
 	KindPluginFile FindingKind = "plugin-file"
 	// KindPluginUnverified: wordpress.org publishes no checksums for the plugin's version.
 	KindPluginUnverified FindingKind = "plugin-unverified"

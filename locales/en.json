@@ -708,9 +708,12 @@
         "addedDetail": "Only WordPress's own files belong there."
       },
       "pluginFile": {
-        "changed": "{{name}}: file changed, {{file}}",
-        "added": "{{name}}: file added, {{file}}",
-        "detail": "Plugins are sometimes patched on purpose: check whether this one was."
+        "title_one": "{{name}}: {{count}} file differs from wordpress.org's",
+        "title_other": "{{name}}: {{count}} files differ from wordpress.org's",
+        "counts": "{{added}} added, {{changed}} changed",
+        "files": "including {{files}}",
+        "detail": "Plugins are sometimes patched on purpose: check whether this one was.",
+        "mismatch": "Nearly every file differs: probably another plugin than the one of the same name on wordpress.org."
       },
       "pluginUnverified": {
         "title": "{{name}}: files not compared",
@@ -744,8 +747,8 @@
         "detail": "Settings › Reading asks search engines not to index the site."
       },
       "noHttps": {
-        "title": "Address without HTTPS",
-        "detail": "The site's address starts with http://."
+        "title": "The site does not answer in HTTPS",
+        "detail": "Its address in WordPress starts with http://, and nothing answers in TLS on port 443."
       },
       "cronOverdue": {
         "title_one": "{{count}} WP-Cron event overdue",

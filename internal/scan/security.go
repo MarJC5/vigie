@@ -129,7 +129,7 @@ func (r *run) files(ctx context.Context, result *model.Scan) error {
 	}
 	for _, p := range core {
 		result.Findings = append(result.Findings, model.Finding{Kind: model.KindCoreFile, Subject: "core", Identifier: p.File,
-			Version: result.WordPress, Level: fileLevel(""), Facts: map[string]string{"change": string(p.Change)}})
+			Version: result.WordPress, Level: coreFileLevel(p), Facts: map[string]string{"change": string(p.Change)}})
 	}
 
 	if res, err = r.exec(ctx, wpcli.PluginVerifyChecksums(), r.job.Site.Path); err != nil {
@@ -139,16 +139,47 @@ func (r *run) files(ctx context.Context, result *model.Scan) error {
 	if err != nil {
 		result.Findings = append(result.Findings, notChecked(checkPluginFiles, err))
 	}
-	for _, p := range plugins.Problems {
-		result.Findings = append(result.Findings, model.Finding{Kind: model.KindPluginFile, Subject: "plugin:" + p.Plugin,
-			Identifier: p.File, Version: versions[p.Plugin], Level: fileLevel(p.Plugin),
-			Facts: map[string]string{"change": string(p.Change)}})
-	}
+	result.Findings = append(result.Findings, pluginFiles(plugins.Problems, versions)...)
 	for _, slug := range plugins.Skipped {
 		result.Findings = append(result.Findings, model.Finding{Kind: model.KindPluginUnverified, Subject: "plugin:" + slug,
 			Version: versions[slug], Level: model.LevelInfo})
 	}
 	return r.uploads(ctx, result)
+}
+
+// pluginFiles makes one finding per plugin of its files that differ: how many were added and
+// changed, the first ones, and whether nearly all differ.
+func pluginFiles(problems []wpcli.FileProblem, versions map[string]string) []model.Finding {
+	var order []string
+	byPlugin := map[string][]wpcli.FileProblem{}
+	for _, p := range problems {
+		if _, ok := byPlugin[p.Plugin]; !ok {
+			order = append(order, p.Plugin)
+		}
+		byPlugin[p.Plugin] = append(byPlugin[p.Plugin], p)
+	}
+	var findings []model.Finding
+	for _, plugin := range order {
+		var added, changed int
+		var files []string
+		for _, p := range byPlugin[plugin] {
+			if p.Change == wpcli.FileAdded {
+				added++
+			} else {
+				changed++
+			}
+			if len(files) < filesShown {
+				files = append(files, p.File)
+			}
+		}
+		facts := map[string]string{"added": strconv.Itoa(added), "changed": strconv.Itoa(changed), "files": strings.Join(files, ", ")}
+		if added >= mismatchAdded && added > mismatchRatio*changed {
+			facts["mismatch"] = "true"
+		}
+		findings = append(findings, model.Finding{Kind: model.KindPluginFile, Subject: "plugin:" + plugin,
+			Version: versions[plugin], Level: model.LevelAttention, Facts: facts})
+	}
+	return findings
 }
 
 // uploads lists PHP files under the uploads folder of the site's real folder.
@@ -280,7 +311,9 @@ func (r *run) wordfenceUsers(ctx context.Context, result *model.Scan) (ids []int
 	return ids, true, nil
 }
 
-// settings reads wp-config.php's constants, the options and WP-Cron.
+// settings reads wp-config.php's constants, the options and WP-Cron. Whether the site answers in
+// HTTPS is asked from the machine: WP-CLI reads the address without the plugins and wp-config.php
+// switches that make it https on a request.
 func (r *run) settings(ctx context.Context, result *model.Scan) error {
 	if err := r.constants(ctx, result); err != nil {
 		return err
@@ -294,9 +327,6 @@ func (r *run) settings(ctx context.Context, result *model.Scan) error {
 		result.Findings = append(result.Findings, notChecked(checkSettings, err))
 	case ok && public == "0":
 		result.Findings = append(result.Findings, model.Finding{Kind: model.KindHiddenFromSearch, Subject: "site", Level: model.LevelAttention})
-	}
-	if strings.HasPrefix(result.Home, "http://") {
-		result.Findings = append(result.Findings, model.Finding{Kind: model.KindNoHTTPS, Subject: "site", Level: model.LevelAttention})
 	}
 	if err := r.cron(ctx, result); err != nil {
 		return err

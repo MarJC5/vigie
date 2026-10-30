@@ -120,7 +120,7 @@ func TestParsers(t *testing.T) {
 
 func TestUploadsPHP(t *testing.T) {
 	got, err := remote.UploadsPHP("/home/u/sites/a")
-	want := "find '/home/u/sites/a/wp-content/uploads' -type f \\( -iname '*.php' -o -iname '*.php[0-9]' -o -iname '*.phtml' -o -iname '*.pht' -o -iname '*.phar' \\) 2>/dev/null | head -n 51"
+	want := "find '/home/u/sites/a/wp-content/uploads' -type f \\( -iname '*.php' -o -iname '*.php[0-9]' -o -iname '*.phtml' -o -iname '*.pht' -o -iname '*.phar' \\) 2>/dev/null | head -n 51 | while IFS= read -r f; do case \"$f\" in */index.php) printf '%s\\t%s\\n' \"$f\" \"$(head -c 120 \"$f\" | tr '\\t\\r\\n' '   ')\";; *) printf '%s\\n' \"$f\";; esac; done"
 	if err != nil || got != want {
 		t.Errorf("UploadsPHP() = %s, %v\nwant %s", got, err, want)
 	}
@@ -152,8 +152,10 @@ func TestParseUploadsPHP(t *testing.T) {
 	if want, _ := remote.UploadsPHP(root); line != want {
 		t.Fatalf("recorded %s, Vigie runs %s: run make record", line, want)
 	}
+	// The "Silence is golden" file of Solid Security is not one; an index.php with anything more is.
 	files, more := remote.ParseUploadsPHP(root, res.Stdout)
-	if !reflect.DeepEqual(files, []string{"2026/10/fixture-shell.php", "fixture-old.PHTML"}) || more {
+	slices.Sort(files)
+	if !reflect.DeepEqual(files, []string{"2026/10/fixture-shell.php", "fixture-old.PHTML", "ithemes-security/backups/index.php"}) || more {
 		t.Errorf("ParseUploadsPHP() = %v, %v", files, more)
 	}
 	_, clean := recordedResult(t, "uploads-php-clean")
@@ -167,5 +169,14 @@ func TestParseUploadsPHP(t *testing.T) {
 	}
 	if files, more := remote.ParseUploadsPHP(root, []byte(many.String())); len(files) != remote.UploadsShown || !more {
 		t.Errorf("ParseUploadsPHP(51 files) = %d files, more %v", len(files), more)
+	}
+	for content, stub := range map[string]bool{
+		"<?php // Silence is golden.": true, "<?php  # silence is golden ?>": true, "<?php /* Silence is golden */": true,
+		"<?php // Silence is golden. phpinfo();": false, "<?php phpinfo(); // Silence is golden": false, "": false,
+	} {
+		files, _ := remote.ParseUploadsPHP(root, []byte(root+"/wp-content/uploads/a/index.php\t"+content+"\n"))
+		if (len(files) == 0) != stub {
+			t.Errorf("index.php %q: listed %v, want stub %v", content, files, stub)
+		}
 	}
 }

@@ -112,8 +112,18 @@ export function findingText(f: FindingView, t: T, lang: string): FindingText {
       };
     case "core-file":
       return { title: k(`coreFile.${facts.change}`, { file: f.identifier }), detail: k(`coreFile.${facts.change}Detail`) };
-    case "plugin-file":
-      return { title: k(`pluginFile.${facts.change}`, { name, file: f.identifier }), detail: k("pluginFile.detail") };
+    case "plugin-file": {
+      const added = Number(facts.added ?? 0);
+      const changed = Number(facts.changed ?? 0);
+      return {
+        title: k("pluginFile.title", { name, count: added + changed }),
+        detail: join(
+          k("pluginFile.counts", { added, changed }),
+          facts.files && k("pluginFile.files", { files: facts.files }),
+          facts.mismatch === "true" ? k("pluginFile.mismatch") : k("pluginFile.detail"),
+        ),
+      };
+    }
     case "plugin-unverified":
       return { title: k("pluginUnverified.title", { name }), detail: k("pluginUnverified.detail", { version: f.version }) };
     case "uploads-php":

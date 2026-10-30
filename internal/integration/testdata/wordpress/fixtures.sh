@@ -161,6 +161,11 @@ mkdir -p "$SITES/security/wp-content/uploads/2026/10"
 printf '%s\n' '<?php' > "$SITES/security/wp-content/uploads/2026/10/fixture-shell.php"
 printf '%s\n' '<?php' > "$SITES/security/wp-content/uploads/fixture-old.PHTML"
 printf 'JFIF' > "$SITES/security/wp-content/uploads/2026/10/photo.jpg"
+# Solid Security's "Silence is golden" file, which stops folder listings: not reported. An
+# index.php beside it with anything more is.
+mkdir -p "$SITES/security/wp-content/uploads/ithemes-security/logs" "$SITES/security/wp-content/uploads/ithemes-security/backups"
+printf '%s\n' '<?php' '// Silence is golden.' > "$SITES/security/wp-content/uploads/ithemes-security/logs/index.php"
+printf '%s\n' '<?php' '// Silence is golden.' 'phpinfo();' > "$SITES/security/wp-content/uploads/ithemes-security/backups/index.php"
 # Administrators, in this order (IDs 2 to 5), with each way of storing two-factor; their secrets
 # are fake, and Vigie must never read them. User 6 is an editor: not an administrator.
 for login in marie totp-admin wp2fa-admin wf-admin; do

@@ -3,6 +3,6 @@
     "'wp' 'option' 'list' '--fields=option_name,autoload,size_bytes' '--format=json' '--transients' '--path=sites/plain' '--skip-plugins' '--skip-themes'"
   ],
   "exit": 0,
-  "stdout": "[{\"option_name\":\"_transient_wp_core_block_css_files\",\"autoload\":\"on\",\"size_bytes\":\"23778\"}]",
+  "stdout": "[{\"option_name\":\"_transient_doing_cron\",\"autoload\":\"on\",\"size_bytes\":\"33\"},{\"option_name\":\"_transient_wp_core_block_css_files\",\"autoload\":\"on\",\"size_bytes\":\"23778\"}]",
   "stderr": ""
 }

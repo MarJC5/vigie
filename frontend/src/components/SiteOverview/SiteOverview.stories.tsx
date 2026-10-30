@@ -40,7 +40,7 @@ export const SecurityTab: Story = {
   args: {
     site: {
       ...outdatedSite,
-      scan: { ...outdatedSite.scan!, status: "danger", findings, counts: { urgent: 2, attention: 4, notChecked: 1, ignored: 1 } },
+      scan: { ...outdatedSite.scan!, status: "danger", findings, counts: { urgent: 2, attention: 5, notChecked: 1, ignored: 1 } },
     },
     onIgnore: fn(),
     onCheckFiles: fn(),
@@ -48,9 +48,9 @@ export const SecurityTab: Story = {
   play: async ({ canvasElement, args }) => {
     const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
     const tab = page.getByRole("tab", { name: /Security/ });
-    await expect(tab).toHaveTextContent("6");
+    await expect(tab).toHaveTextContent("7");
     await userEvent.click(tab);
-    await expect(page.getByRole("tabpanel")).toHaveTextContent("2 urgent · 4 need attention");
+    await expect(page.getByRole("tabpanel")).toHaveTextContent("2 urgent · 5 need attention");
     await userEvent.click(page.getByRole("button", { name: /Ignore “Contact Form 7/ }));
     await expect(args.onIgnore).toHaveBeenCalledWith(xss);
   },

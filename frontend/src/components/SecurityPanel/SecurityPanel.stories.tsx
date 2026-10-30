@@ -10,7 +10,7 @@ const scan = {
   status: "danger",
   filesChecked: "2026-10-30T08:57:00Z",
   findings,
-  counts: { urgent: 2, attention: 4, notChecked: 1, ignored: 1 },
+  counts: { urgent: 2, attention: 5, notChecked: 1, ignored: 1 },
 };
 
 const meta = {
@@ -24,9 +24,9 @@ type Story = StoryObj<typeof meta>;
 export const Findings: Story = {
   play: async ({ canvasElement, args }) => {
     const panel = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
-    await expect(panel.getByText("2 urgent · 4 need attention · 1 not checked · 1 ignored")).toBeInTheDocument();
+    await expect(panel.getByText("2 urgent · 5 need attention · 1 not checked · 1 ignored")).toBeInTheDocument();
     const groups = panel.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-    await expect(groups).toEqual(["Urgent2", "Needs attention4", "Not checked1", "Information2", "Ignored1"]);
+    await expect(groups).toEqual(["Urgent2", "Needs attention5", "Not checked1", "Information2", "Ignored1"]);
     await expect(panel.getByText("WooCommerce 9.8.1: SQL injection without authentication")).toBeInTheDocument();
     await expect(panel.getByText("CVSS 9.8, critical · exploited (KEV) · fixed in 9.8.3")).toBeInTheDocument();
 
@@ -48,7 +48,7 @@ export const InFrench: Story = {
   globals: { lang: "fr" },
   play: async ({ canvasElement }) => {
     const panel = within(canvasElement.querySelector<HTMLElement>("[data-theme=light]")!);
-    await expect(panel.getByText("2 urgents · 4 à surveiller · 1 non vérifié · 1 ignoré")).toBeInTheDocument();
+    await expect(panel.getByText("2 urgents · 5 à surveiller · 1 non vérifié · 1 ignoré")).toBeInTheDocument();
     await expect(panel.getByText(/Fichiers vérifiés le 30\.10\.2026/)).toBeInTheDocument();
   },
 };

@@ -61,6 +61,15 @@ export const noTwoFactor = finding({
   facts: { email: "marie@boulangerie-exemple.ch", registered: "2024-03-12", "two-factor": "off" },
 });
 
+export const sameName = finding({
+  kind: "plugin-file",
+  level: "attention",
+  subject: "plugin:gutenblocks",
+  name: "Gutenblocks",
+  version: "1.0.0",
+  facts: { added: "231", changed: "1", files: "app/blocks/home-hero/block.json, gutenblocks.php", mismatch: "true" },
+});
+
 export const fileEditing = finding({ kind: "file-editing", level: "attention" });
 
 export const notChecked = finding({ kind: "check", level: "not-checked", identifier: "wordpress.org", facts: { reason: "off" } });
@@ -85,4 +94,4 @@ export const hidden = finding({
 });
 
 /** A site's findings, the worst first, as a scan ranks them. */
-export const findings: FindingView[] = [exploited, publicLog, xss, closed, noTwoFactor, fileEditing, notChecked, domainSilent, certificate, hidden];
+export const findings: FindingView[] = [exploited, publicLog, xss, closed, sameName, noTwoFactor, fileEditing, notChecked, domainSilent, certificate, hidden];

@@ -1,10 +1,12 @@
 package scan
 
 import (
+	"slices"
 	"time"
 
 	"github.com/MarJC5/vigie/internal/lookup"
 	"github.com/MarJC5/vigie/internal/model"
+	"github.com/MarJC5/vigie/internal/wpcli"
 )
 
 // The thresholds of the rules: Vigie's choices, named in the interface's help texts.
@@ -34,14 +36,27 @@ func closedLevel(reason string) model.FindingLevel {
 	return model.LevelAttention
 }
 
-// fileLevel: a WordPress file changed, missing or added is urgent; a plugin's needs attention,
-// since plugins are sometimes patched on purpose.
-func fileLevel(plugin string) model.FindingLevel {
-	if plugin == "" {
-		return model.LevelUrgent
+// removable are WordPress files often deleted on purpose, since they tell its version: missing,
+// they are only shown.
+var removable = []string{"readme.html", "license.txt", "wp-config-sample.php"}
+
+// coreFileLevel: a WordPress file changed, missing or added is urgent, except one of the files
+// often deleted on purpose.
+func coreFileLevel(p wpcli.FileProblem) model.FindingLevel {
+	if p.Change == wpcli.FileMissing && slices.Contains(removable, p.File) {
+		return model.LevelInfo
 	}
-	return model.LevelAttention
+	return model.LevelUrgent
 }
+
+// A plugin's files that differ need attention, since plugins are sometimes patched on purpose.
+// Nearly all of them added means another plugin of the same name as wordpress.org's: at least
+// mismatchAdded files added, and more than mismatchRatio times the files changed.
+const (
+	mismatchAdded = 10
+	mismatchRatio = 3
+	filesShown    = 10 // the files a finding names
+)
 
 // expiryLevel: a certificate or a domain expiring within 7 days is urgent, within 30 days needs
 // attention; later, it is only shown.

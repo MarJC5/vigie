@@ -3,6 +3,7 @@ package scan_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 	"sync"
@@ -27,6 +28,7 @@ type lookups struct {
 	domain  lookup.DomainExpiry
 	debug   lookup.DebugLogCheck
 	err     error // answered by every lookup when set
+	certErr error // answered by the certificate's lookup when set
 }
 
 func (l *lookups) ask(what string) error {
@@ -57,7 +59,10 @@ func (l *lookups) PluginInfo(_ context.Context, slug string) (lookup.PluginInfo,
 }
 
 func (l *lookups) Certificate(_ context.Context, host string) (lookup.Certificate, error) {
-	return l.cert, l.ask("certificate/" + host)
+	if err := l.ask("certificate/" + host); err != nil {
+		return lookup.Certificate{}, err
+	}
+	return l.cert, l.certErr
 }
 
 func (l *lookups) DomainExpiry(_ context.Context, host string) (lookup.DomainExpiry, error) {
@@ -123,7 +128,7 @@ func TestSecurityScanOfTheSecuritySite(t *testing.T) {
 		{model.KindCoreFile, "core", "wp-includes/functions.php", "change=changed", model.LevelUrgent},
 		{model.KindCoreFile, "core", "wp-includes/fixture-added.php", "change=added", model.LevelUrgent},
 		{model.KindCoreFile, "core", "wp-admin/freedoms.php", "change=missing", model.LevelUrgent},
-		{model.KindPluginFile, "plugin:akismet", "akismet.php", "change=changed", model.LevelAttention},
+		{model.KindPluginFile, "plugin:akismet", "", "added=1", model.LevelAttention},
 		{model.KindPluginUnverified, "plugin:fixture-premium", "", "", model.LevelInfo},
 		{model.KindUploadsPHP, "site", "2026/10/fixture-shell.php", "", model.LevelUrgent},
 		{model.KindUploadsPHP, "site", "fixture-old.PHTML", "", model.LevelUrgent},
@@ -328,5 +333,115 @@ func TestAFailedSecurityReadIsNotChecked(t *testing.T) {
 	}
 	if f := find(t, got, model.KindCheck, "site", "core-files"); f.Level != model.LevelNotChecked || !strings.Contains(f.Facts["error"], "Couldn't get checksums") {
 		t.Errorf("core files = %+v, want not checked with the reason", f)
+	}
+}
+
+// Whether wordpress.org knows a plugin comes from wordpress.org itself, asked from the machine:
+// the server's own reading says "closed" when it cannot reach it (Hello Dolly here). Without an
+// answer, the server's reading stays.
+func TestWordPressOrgAnswersForItsPlugins(t *testing.T) {
+	onWordPressOrg := func(s model.Scan, slug string) bool {
+		got, ok := item(s, model.ItemPlugin, slug)
+		if !ok {
+			t.Fatalf("no plugin %s", slug)
+		}
+		return got.OnWordPressOrg
+	}
+	server, _ := scanner(replay(t, "outdated")).Site(context.Background(), job("outdated"), nil)
+	if onWordPressOrg(server, "hello") || !onWordPressOrg(server, "akismet") {
+		t.Fatal("without lookups, the server's reading is not kept")
+	}
+
+	s := scanner(replay(t, "outdated"))
+	s.Lookups = &lookups{info: map[string]lookup.PluginInfo{
+		"akismet": {OnWordPressOrg: true},
+		"hello":   {OnWordPressOrg: true},
+		// fixture-premium: wordpress.org does not know it.
+	}}
+	got, _ := s.Site(context.Background(), job("outdated"), nil)
+	if !onWordPressOrg(got, "hello") || !onWordPressOrg(got, "akismet") || onWordPressOrg(got, "fixture-premium") {
+		t.Errorf("hello %v, akismet %v, fixture-premium %v; want wordpress.org's answers",
+			onWordPressOrg(got, "hello"), onWordPressOrg(got, "akismet"), onWordPressOrg(got, "fixture-premium"))
+	}
+	if p, _ := item(got, model.ItemPlugin, "fixture-premium"); !p.UpdateSourceUnknown() {
+		t.Errorf("fixture-premium = %+v, want its update source unknown", p)
+	}
+}
+
+// What a real host showed: WordPress files deleted on purpose, and a plugin of the user's own
+// whose name wordpress.org also has, its files compared with another plugin's.
+func TestFilesDeletedOnPurposeAndAPluginOfTheSameName(t *testing.T) {
+	fake := replay(t, "plain")
+	core, err := wpcli.CoreVerifyChecksums().Remote("wp", "~/sites/plain")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fake.Set(core, sshx.Result{ExitCode: 1, Stderr: []byte("Warning: File doesn't exist: wp-config-sample.php\n" +
+		"Warning: File doesn't exist: readme.html\nWarning: File doesn't exist: wp-login.php\n" +
+		"Error: WordPress installation doesn't verify against checksums.\n")})
+	plugins, err := wpcli.PluginVerifyChecksums().Remote("wp", "~/sites/plain")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var files []string
+	for i := range 12 {
+		files = append(files, fmt.Sprintf(`{"plugin_name":"akismet","file":"app/f%d.php","message":"File was added"}`, i))
+	}
+	files = append(files, `{"plugin_name":"akismet","file":"akismet.php","message":"Checksum does not match"}`)
+	fake.Set(plugins, sshx.Result{ExitCode: 1, Stdout: []byte("[" + strings.Join(files, ",") + "]"),
+		Stderr: []byte("Error: No plugins verified (1 failed).\n")})
+
+	got, _ := scanner(fake).Site(context.Background(), job("plain"), nil)
+	for file, want := range map[string]model.FindingLevel{
+		"wp-config-sample.php": model.LevelInfo, "readme.html": model.LevelInfo, "wp-login.php": model.LevelUrgent,
+	} {
+		if f := find(t, got, model.KindCoreFile, "core", file); f.Level != want {
+			t.Errorf("%s missing: %q, want %q", file, f.Level, want)
+		}
+	}
+	plugin := find(t, got, model.KindPluginFile, "plugin:akismet", "")
+	if plugin.Facts["added"] != "12" || plugin.Facts["changed"] != "1" || plugin.Facts["mismatch"] != "true" ||
+		strings.Count(plugin.Facts["files"], ",") != 9 {
+		t.Errorf("akismet's files = %+v, want one finding, 12 added, 1 changed, a mismatch, 10 files named", plugin.Facts)
+	}
+	n := 0
+	for _, f := range got.Findings {
+		if f.Kind == model.KindPluginFile {
+			n++
+		}
+	}
+	if n != 1 {
+		t.Errorf("%d plugin file findings, want one per plugin", n)
+	}
+}
+
+// WordPress can store http:// and still be served in HTTPS (coolectif.ch): the machine asks the
+// site itself. Only an http:// address with no TLS answer is reported.
+func TestHTTPSIsAskedOfTheSiteItself(t *testing.T) {
+	scanHTTP := func(l *lookups) model.Scan {
+		fake := replay(t, "plain")
+		home, err := wpcli.OptionGet("home").Remote("wp", "~/sites/plain")
+		if err != nil {
+			t.Fatal(err)
+		}
+		fake.Set(home, sshx.Result{Stdout: []byte("http://plain.example.test\n")})
+		s := scanner(fake)
+		s.Lookups = l
+		got, _ := s.Site(context.Background(), job("plain"), nil)
+		return got
+	}
+
+	served := &lookups{cert: lookup.Certificate{NotAfter: day0.AddDate(0, 3, 0), Issuer: "Bench CA"}}
+	got := scanHTTP(served)
+	if has(got, model.KindNoHTTPS) || find(t, got, model.KindCertificate, "site", "").Level != model.LevelInfo {
+		t.Errorf("served in HTTPS: %+v", got.Findings)
+	}
+	if !slices.Contains(served.asked, "debug-log/https://plain.example.test") {
+		t.Errorf("debug.log asked as %v, want in HTTPS", served.asked)
+	}
+
+	got = scanHTTP(&lookups{certErr: errors.New("connection refused")})
+	if f := find(t, got, model.KindNoHTTPS, "site", ""); f.Level != model.LevelAttention || f.Facts["error"] != "connection refused" {
+		t.Errorf("no TLS answer: %+v", f)
 	}
 }

@@ -24,8 +24,8 @@ export interface SiteTableProps {
 /** The sites of a host or folder with their latest scan; a name opens the site. */
 export function SiteTable({ label, columns, notScanned, rows, onSelect, onMenu }: SiteTableProps) {
   return (
-    // One line per cell; a window too narrow scrolls the table, not the page.
-    <div className={styles.scroll}>
+    // One line per cell; the worst finding gives way when the window is narrow.
+    <div>
       <table aria-label={label} className={styles.table}>
         <thead>
           <tr>
@@ -53,7 +53,9 @@ export function SiteTable({ label, columns, notScanned, rows, onSelect, onMenu }
                 </button>
               </td>
               <td>{row.status ? <StatusDot status={row.status as Status} withLabel /> : <span className={styles.muted}>{notScanned}</span>}</td>
-              <td className={styles.muted}>{row.worst}</td>
+              <td className={`${styles.muted} ${styles.worst}`} title={row.worst || undefined}>
+                {row.worst}
+              </td>
               <td>{row.status ? row.pending : ""}</td>
             </tr>
           ))}

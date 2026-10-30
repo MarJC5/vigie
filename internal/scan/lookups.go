@@ -40,6 +40,15 @@ type lookupRun struct {
 	mu       sync.Mutex
 	findings []model.Finding
 	failed   map[string]error // the first failure of each check
+	// onWordPressOrg is what wordpress.org answered about each plugin asked: whether it knows it.
+	onWordPressOrg map[string]bool
+}
+
+// lookupsDone is what the lookups of a site found.
+type lookupsDone struct {
+	findings []model.Finding
+	// onWordPressOrg tells, for each plugin wordpress.org answered about, whether it knows it.
+	onWordPressOrg map[string]bool
 }
 
 func (l *lookupRun) add(f ...model.Finding) {
@@ -59,8 +68,8 @@ func (l *lookupRun) fail(check string, err error) {
 // lookups asks the outside services about the site: known vulnerabilities of WordPress, its
 // plugins and themes and PHP, wordpress.org's view of the plugins, the certificate, the domain's
 // expiry and the debug.log. Without Lookups, every such check is "not checked".
-func (s Scanner) lookups(ctx context.Context, scan model.Scan) []model.Finding {
-	l := &lookupRun{scanner: s, failed: map[string]error{}}
+func (s Scanner) lookups(ctx context.Context, scan model.Scan) lookupsDone {
+	l := &lookupRun{scanner: s, failed: map[string]error{}, onWordPressOrg: map[string]bool{}}
 	if s.Lookups == nil {
 		for _, check := range []string{checkVulnerabilities, checkWordPressOrg, checkCertificate, checkDomain, checkDebugLog} {
 			l.fail(check, lookup.ErrOff)
@@ -88,22 +97,19 @@ func (s Scanner) lookups(ctx context.Context, scan model.Scan) []model.Finding {
 		}
 	}
 	if u, err := url.Parse(scan.Home); err == nil && u.Hostname() != "" {
-		if u.Scheme == "https" {
-			do(func() { l.certificate(ctx, u.Hostname()) })
-		}
+		do(func() { l.site(ctx, u) })
 		do(func() { l.domain(ctx, u.Hostname()) })
-		do(func() { l.debugLog(ctx, scan.Home) })
 	}
 	wg.Wait()
 	return l.result()
 }
 
 // result adds a finding for each check that failed.
-func (l *lookupRun) result() []model.Finding {
+func (l *lookupRun) result() lookupsDone {
 	for _, check := range slices.Sorted(maps.Keys(l.failed)) {
 		l.findings = append(l.findings, notChecked(check, l.failed[check]))
 	}
-	return l.findings
+	return lookupsDone{findings: l.findings, onWordPressOrg: l.onWordPressOrg}
 }
 
 // vulnerabilities turns the records that affect the installed version into findings; core records
@@ -213,6 +219,9 @@ func (l *lookupRun) pluginInfo(ctx context.Context, item model.ScanItem) {
 		}
 		return
 	}
+	l.mu.Lock()
+	l.onWordPressOrg[item.Slug] = info.OnWordPressOrg
+	l.mu.Unlock()
 	subject := "plugin:" + item.Slug
 	switch {
 	case info.Closed:
@@ -228,13 +237,29 @@ func (l *lookupRun) pluginInfo(ctx context.Context, item model.ScanItem) {
 	}
 }
 
-// certificate reads the certificate the site serves; it is always listed, with its expiry.
-func (l *lookupRun) certificate(ctx context.Context, host string) {
-	cert, err := l.scanner.Lookups.Certificate(ctx, host)
-	if err != nil {
+// site reads the certificate the site serves on port 443, whatever the scheme of its address:
+// WordPress may store http:// and still be served in HTTPS. An http:// address with no TLS answer
+// is reported; with one, debug.log is asked in HTTPS, as a visitor would be sent.
+func (l *lookupRun) site(ctx context.Context, home *url.URL) {
+	base := *home
+	cert, err := l.scanner.Lookups.Certificate(ctx, home.Hostname())
+	switch {
+	case err == nil:
+		l.certificate(cert)
+		if home.Scheme == "http" {
+			base.Scheme = "https"
+		}
+	case errors.Is(err, lookup.ErrOff) || home.Scheme == "https":
 		l.fail(checkCertificate, err)
-		return
+	default:
+		l.add(model.Finding{Kind: model.KindNoHTTPS, Subject: "site", Level: model.LevelAttention,
+			Facts: map[string]string{"error": err.Error()}})
 	}
+	l.debugLog(ctx, base.String())
+}
+
+// certificate lists the certificate read, with its expiry.
+func (l *lookupRun) certificate(cert lookup.Certificate) {
 	level := expiryLevel(cert.NotAfter.Sub(l.scanner.Now()))
 	facts := map[string]string{"expires": cert.NotAfter.UTC().Format(time.RFC3339), "issuer": cert.Issuer}
 	if cert.Problem != "" {
