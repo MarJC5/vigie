@@ -1192,10 +1192,10 @@
     "title": "Help",
     "tabs": {
       "start": "Getting started",
-      "security": "Security",
-      "updates": "Updates",
-      "data": "Data",
-      "addons": "Add-ons",
+      "update": "Updating",
+      "status": "Site status",
+      "server": "Read and sent",
+      "import-export": "Import, export",
       "background": "Background"
     },
     "quote": "“{{text}}”",
@@ -1232,7 +1232,6 @@
         "todo": "check that SSH is turned on for this account, and the user and port your host gives (Edit the connection, in the menu of the host)."
       },
       "shortcuts": "Shortcuts"
-    },
-    "onPage": "On this page"
+    }
   }
 }

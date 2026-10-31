@@ -38,9 +38,9 @@ export const GettingStarted: Story = {
     const [add] = canvas.getAllByRole("button", { name: "Add a host" });
     await userEvent.click(add!);
     await expect(args.onAddHost).toHaveBeenCalled();
-    const [security] = canvas.getAllByRole("tab", { name: "Security" });
-    await userEvent.click(security!);
-    await expect(args.onTab).toHaveBeenCalledWith("security");
+    const [status] = canvas.getAllByRole("tab", { name: "Site status" });
+    await userEvent.click(status!);
+    await expect(args.onTab).toHaveBeenCalledWith("status");
   },
 };
 
@@ -53,52 +53,34 @@ export const GettingStartedInFrench: Story = {
   },
 };
 
-export const SecurityDoc: Story = {
-  args: { tab: "security" },
+export const UpdateTopic: Story = {
+  args: { tab: "update" },
   play: async ({ canvas, args }) => {
-    await expect(canvas.getAllByRole("heading", { level: 2, name: /Security scans/ })).toHaveLength(2);
-    // The doc's sections beside it, the first one read.
-    const [onPage] = canvas.getAllByRole("navigation", { name: "On this page" });
-    await expect(onPage).toHaveTextContent("How findings are ranked");
-    const [first] = canvas.getAllByRole("link", { name: "What is read on the server" });
-    await expect(first).toHaveAttribute("aria-current", "location");
-    // A link to a site opens in the browser.
-    const [link] = canvas.getAllByRole("link", { name: "WPVulnerability" });
-    await userEvent.click(link!);
-    await expect(args.onOpen).toHaveBeenCalledWith("https://www.wpvulnerability.com/");
+    await expect(canvas.getAllByRole("heading", { level: 2, name: "Update a site, and roll back" })).toHaveLength(2);
+    await expect(canvas.queryAllByRole("navigation", { name: "On this page" })).toHaveLength(0);
+    // Its last line leads to the full doc, on GitHub, in the browser.
+    const [more] = canvas.getAllByRole("link", { name: "what Vigie writes on a server" });
+    await userEvent.click(more!);
+    await expect(args.onOpen).toHaveBeenCalledWith("https://github.com/MarJC5/vigie/blob/main/docs/updates.md");
   },
 };
 
-export const BackgroundDocInFrench: Story = {
-  args: { tab: "background" },
+export const StatusTopicInFrench: Story = {
+  args: { tab: "status" },
   globals: { lang: "fr" },
   play: async ({ canvas, args }) => {
-    await expect(canvas.getAllByRole("heading", { level: 2, name: "Vigie en arrière-plan" })).toHaveLength(2);
-    // A link to another doc opens its tab.
-    const [doc] = canvas.getAllByRole("link", { name: "security.md" });
-    await userEvent.click(doc!);
-    await expect(args.onTab).toHaveBeenCalledWith("security");
+    await expect(canvas.getAllByRole("heading", { level: 2, name: "Lire l'état d'un site, et ignorer un constat" })).toHaveLength(2);
+    const [selected] = canvas.getAllByRole("tab", { selected: true });
+    await expect(selected).toHaveTextContent("État des sites");
+    const [more] = canvas.getAllByRole("link", { name: "comment les constats sont classés" });
+    await userEvent.click(more!);
+    await expect(args.onOpen).toHaveBeenCalledWith("https://github.com/MarJC5/vigie/blob/main/docs/fr/security.md");
   },
 };
 
-export const DataDocLinksToTheRepository: Story = {
-  args: { tab: "data" },
-  play: async ({ canvas, args }) => {
-    // A file of the repository, named by a path relative to the doc, opens on GitHub.
-    const [schema] = canvas.getAllByRole("link", { name: "export-v1.schema.json" });
-    await userEvent.click(schema!);
-    await expect(args.onOpen).toHaveBeenCalledWith("https://github.com/MarJC5/vigie/blob/main/addon/export/export-v1.schema.json");
-  },
-};
-
-export const AddonsDocInFrench: Story = {
-  args: { tab: "addons" },
-  globals: { lang: "fr" },
+export const ImportExportTopic: Story = {
+  args: { tab: "import-export" },
   play: async ({ canvas }) => {
-    // The table of the known add-ons: its short column keeps its words whole.
-    const [table] = canvas.getAllByRole("table");
-    await expect(table).toHaveTextContent("FileZilla");
-    const [kind] = canvas.getAllByRole("columnheader", { name: "Type" });
-    await expect(kind!.getBoundingClientRect().height).toBeLessThan(40);
+    await expect(canvas.getAllByRole("heading", { level: 3, name: "From another program" })).toHaveLength(2);
   },
 };

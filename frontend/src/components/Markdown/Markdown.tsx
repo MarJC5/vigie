@@ -12,6 +12,8 @@ export interface MarkdownProps {
   onLink: (href: string) => void;
   /** The level of the text's first heading on the page, 2 under the page's own title. */
   level?: 2 | 3;
+  /** Whether a link leaves the window, marked with an icon; by default, a web address. */
+  external?: (href: string) => boolean;
 }
 
 /** The id of a heading: its text in lowercase, without accents, its words joined by "-". */
@@ -52,14 +54,14 @@ function plainText(children: ReactNode): string {
     .join("");
 }
 
-const external = /^https?:\/\//;
+const web = (href: string) => /^https?:\/\//.test(href);
 
 /**
  * A doc of Vigie, rendered as components: no HTML of the text reaches the window (ADR-0020). Its
  * headings sit under the page's title, each with an id; links go to onLink; the text can be
  * selected and copied, commands included.
  */
-export function Markdown({ text, onLink, level = 2 }: MarkdownProps) {
+export function Markdown({ text, onLink, level = 2, external = web }: MarkdownProps) {
   // Made once per level and onLink: a new component on each render would redraw the doc, and lose
   // the reader's selection.
   const components = useMemo((): Components => {
@@ -88,7 +90,7 @@ export function Markdown({ text, onLink, level = 2 }: MarkdownProps) {
           }}
         >
           {children}
-          {external.test(href) && <Icon name="external" size={13} />}
+          {external(href) && <Icon name="external" size={13} />}
         </a>
       ),
       table: ({ children }) => (
@@ -99,7 +101,7 @@ export function Markdown({ text, onLink, level = 2 }: MarkdownProps) {
       // No image of a doc is loaded: the window reaches nothing outside itself.
       img: ({ alt }) => <span>{alt}</span>,
     };
-  }, [level, onLink]);
+  }, [level, onLink, external]);
   return (
     <div className={styles.doc} data-selectable>
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>

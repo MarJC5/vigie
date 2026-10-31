@@ -1,42 +1,43 @@
-// The docs of the repository (docs/*.md, translated in docs/fr/), bundled at build time: the help
-// works offline (ADR-0020). docs/docs_test.go keeps both languages in step.
-import addons from "../../../../docs/addons.md?raw";
-import background from "../../../../docs/background.md?raw";
-import data from "../../../../docs/data.md?raw";
-import addonsFr from "../../../../docs/fr/addons.md?raw";
-import backgroundFr from "../../../../docs/fr/background.md?raw";
-import dataFr from "../../../../docs/fr/data.md?raw";
-import securityFr from "../../../../docs/fr/security.md?raw";
-import updatesFr from "../../../../docs/fr/updates.md?raw";
-import security from "../../../../docs/security.md?raw";
-import updates from "../../../../docs/updates.md?raw";
+// The short topics of the help (docs/help/*.md, translated in docs/fr/help/), bundled at build time:
+// the help works offline (ADR-0020, ADR-0021). docs/docs_test.go keeps both languages in step and
+// each topic short; the full docs stay on GitHub, where each topic links.
+import background from "../../../../docs/help/background.md?raw";
+import importExport from "../../../../docs/help/import-export.md?raw";
+import server from "../../../../docs/help/server.md?raw";
+import status from "../../../../docs/help/status.md?raw";
+import update from "../../../../docs/help/update.md?raw";
+import backgroundFr from "../../../../docs/fr/help/background.md?raw";
+import importExportFr from "../../../../docs/fr/help/import-export.md?raw";
+import serverFr from "../../../../docs/fr/help/server.md?raw";
+import statusFr from "../../../../docs/fr/help/status.md?raw";
+import updateFr from "../../../../docs/fr/help/update.md?raw";
 
-/** A doc of the help, by the name of its file. */
-export type Doc = "security" | "updates" | "data" | "addons" | "background";
+/** A topic of the help, by the name of its file. */
+export type Topic = "update" | "status" | "server" | "import-export" | "background";
 
-export const docNames: Doc[] = ["security", "updates", "data", "addons", "background"];
+export const topicNames: Topic[] = ["update", "status", "server", "import-export", "background"];
 
-const texts: Record<string, Record<Doc, string>> = {
-  en: { security, updates, data, addons, background },
-  fr: { security: securityFr, updates: updatesFr, data: dataFr, addons: addonsFr, background: backgroundFr },
+const texts: Record<string, Record<Topic, string>> = {
+  en: { update, status, server, "import-export": importExport, background },
+  fr: { update: updateFr, status: statusFr, server: serverFr, "import-export": importExportFr, background: backgroundFr },
 };
 
-/** A doc in the language asked, else in English. */
-export function docText(doc: Doc, lang: string): string {
-  return (texts[lang] ?? texts.en!)[doc];
+/** A topic in the language asked, else in English. */
+export function topicText(topic: Topic, lang: string): string {
+  return (texts[lang] ?? texts.en!)[topic];
 }
 
-/** Where the docs are published, for a link to a file of the repository. */
+/** Where the docs are published, for a link to a full doc or a file of the repository. */
 const repository = "https://github.com/MarJC5/vigie/blob/main/";
 
 /**
- * What a link of a doc leads to: another doc (its tab), or an address for the browser; a file of
- * the repository opens on GitHub. Undefined for an address the window does not open.
+ * What a link of a topic leads to: another topic (its tab), or an address for the browser; a doc
+ * of the repository opens on GitHub. Undefined for an address the window does not open.
  */
-export function linkTarget(href: string, lang: string): { doc: Doc } | { url: string } | undefined {
+export function linkTarget(href: string, lang: string): { topic: Topic } | { url: string } | undefined {
   if (/^https?:\/\//.test(href)) return { url: href };
   if (/^[a-z]+:/i.test(href)) return undefined;
-  const name = href.match(/^([a-z]+)\.md(?:#.*)?$/)?.[1];
-  if (name && (docNames as string[]).includes(name)) return { doc: name as Doc };
-  return { url: new URL(href, repository + (lang === "fr" ? "docs/fr/" : "docs/")).href };
+  const name = href.match(/^([a-z-]+)\.md$/)?.[1];
+  if (name && (topicNames as string[]).includes(name)) return { topic: name as Topic };
+  return { url: new URL(href, repository + (lang === "fr" ? "docs/fr/help/" : "docs/help/")).href };
 }

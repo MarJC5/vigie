@@ -89,8 +89,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   turned urgent or back to normal, a host unreachable) and what Vigie notified; updates and
   rollbacks; filtered by folder, host or site, a name opening its page.
 - The Help page, from the rail or Help > Vigie Help: getting started (the first host, what to do
-  when a host refuses the connection, the shortcuts), then the docs, in English and in French
-  ([docs/fr/](docs/fr/)), offline, each with its sections beside it.
+  when a host refuses the connection, the shortcuts), then short topics (updating, a site's status,
+  what Vigie reads and sends, import and export, the background), offline, each ending with a link
+  to its full doc. The docs are also in French ([docs/fr/](docs/fr/)).
 
 ### Changed
 

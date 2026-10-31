@@ -1246,10 +1246,10 @@
     "title": "Aide",
     "tabs": {
       "start": "Pour commencer",
-      "security": "Sécurité",
-      "updates": "Mises à jour",
-      "data": "Données",
-      "addons": "Add-ons",
+      "update": "Mettre à jour",
+      "status": "État des sites",
+      "server": "Lu et envoyé",
+      "import-export": "Importer, exporter",
       "background": "Arrière-plan"
     },
     "quote": "« {{text}} »",
@@ -1286,7 +1286,6 @@
         "todo": "vérifiez que SSH est activé pour ce compte, et l'utilisateur et le port que donne l'hébergeur (Modifier la connexion, dans le menu de l'hébergement)."
       },
       "shortcuts": "Raccourcis"
-    },
-    "onPage": "Dans cette page"
+    }
   }
 }
