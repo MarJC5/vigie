@@ -5,10 +5,11 @@
 }
 
 /* Stays at the top while the days scroll under it: drawn from the edges of the window's content
-   area (whose padding it takes back), on its ground. */
+   area (whose padding it takes back), on its ground. A sticky box stops at the padding of the
+   area that scrolls (measured in Chromium and WebKit), hence a top that takes it back too. */
 .header {
   position: sticky;
-  top: 0;
+  top: calc(-1 * var(--vg-space-5));
   z-index: 1;
   margin: calc(-1 * var(--vg-space-5)) calc(-1 * var(--vg-space-6)) 0;
   padding: var(--vg-space-5) var(--vg-space-6) var(--vg-space-3);
