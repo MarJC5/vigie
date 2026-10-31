@@ -88,6 +88,8 @@ export interface AppShellProps {
   settingsPage?: ReactNode;
   /** The Add-ons page, in the place of the site list and the detail. */
   addonsPage?: ReactNode;
+  /** The Activity page, shown in place of the site list and the detail. */
+  activityPage?: ReactNode;
   /** Scans a node comparing its files again, even within the day. */
   onCheckFiles?: (nodeId: string) => void;
   /** "Export…" in the menu of a folder or host. */
@@ -131,6 +133,7 @@ export function AppShell({
   onSection,
   settingsPage,
   addonsPage,
+  activityPage,
   onCheckFiles,
   onExport,
   security,
@@ -354,12 +357,12 @@ export function AppShell({
   };
 
   // The settings and the add-ons take the place of the site list and the detail.
-  if (section === "settings" || section === "addons") {
+  if (section === "settings" || section === "addons" || section === "activity") {
     return (
       <div ref={shell} className={styles.shell}>
         <NavRail current={section} onAddHost={onAddHost} onNavigate={onSection} />
         <main className={styles.main} tabIndex={0}>
-          {section === "settings" ? settingsPage : addonsPage}
+          {section === "settings" ? settingsPage : section === "addons" ? addonsPage : activityPage}
         </main>
       </div>
     );

@@ -28,13 +28,16 @@ export const Default: StoryObj<typeof meta> = {
     const [sites] = canvas.getAllByRole("link", { name: "Sites" });
     await expect(sites).toHaveAttribute("aria-current", "page");
     await expect(canvas.getAllByRole("button", { name: "Add a host" })).toHaveLength(2);
-    // Settings opens; Activity and Help do not exist yet.
+    // Settings and Activity open; Help does not exist yet.
     const [settings] = canvas.getAllByRole("link", { name: "Settings" });
     await userEvent.click(settings!);
     await expect(args.onNavigate).toHaveBeenCalledWith("settings");
     const [activity] = canvas.getAllByRole("link", { name: "Activity" });
-    await expect(activity).toHaveAttribute("aria-disabled", "true");
     await userEvent.click(activity!);
-    await expect(args.onNavigate).toHaveBeenCalledTimes(1);
+    await expect(args.onNavigate).toHaveBeenCalledWith("activity");
+    const [help] = canvas.getAllByRole("link", { name: "Help" });
+    await expect(help).toHaveAttribute("aria-disabled", "true");
+    await userEvent.click(help!);
+    await expect(args.onNavigate).toHaveBeenCalledTimes(2);
   },
 };

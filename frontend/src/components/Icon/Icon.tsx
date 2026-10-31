@@ -5,6 +5,7 @@ import {
   ArrowCounterClockwiseIcon,
   ArrowsClockwiseIcon,
   ArrowSquareOutIcon,
+  BellIcon,
   CaretDownIcon,
   CaretRightIcon,
   CheckCircleIcon,
@@ -47,6 +48,7 @@ import { VigieIcon } from "./VigieIcon";
 const icons = {
   activity: ClockCounterClockwiseIcon,
   archive: ArchiveIcon,
+  bell: BellIcon,
   caretDown: CaretDownIcon,
   caretRight: CaretRightIcon,
   check: CheckIcon,

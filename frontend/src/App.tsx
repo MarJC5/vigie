@@ -13,10 +13,12 @@ import {
   Scanner,
   Security,
   SiteManager,
+  Activity,
   Updates,
   Watch,
 } from "../bindings/github.com/MarJC5/vigie/internal/app";
-import type { BackgroundSettings, LoginItemState, LookupsView, Node, ScansState, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { BackgroundSettings, Journal, LoginItemState, LookupsView, Node, ScansState, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { ActivityPage } from "./components/ActivityPage/ActivityPage";
 import { AddHostWizard, type WizardApi } from "./components/AddHostWizard/AddHostWizard";
 import { type AddonsApi, AddonsFlow } from "./components/AddonsFlow/AddonsFlow";
 import { AppShell, type EditApi, type SecurityApi, type ShellData } from "./components/AppShell/AppShell";
@@ -130,6 +132,10 @@ export function App() {
   const [background, setBackground] = useState<BackgroundSettings>({ on: false, autoScan: 0, notify: false });
   const [loginItem, setLoginItem] = useState<LoginItemState>({ supported: false, on: false });
   const [nextScan, setNextScan] = useState("");
+  // The Activity page: its days, its filter, the journal read.
+  const [journal, setJournal] = useState<Journal>();
+  const [journalDays, setJournalDays] = useState(30);
+  const [journalFilter, setJournalFilter] = useState("");
 
   useEffect(() => {
     void Promise.all([Preferences.Language(), SiteManager.Tree(), Preferences.Version(), Preferences.Theme()]).then(([lang, tree, version, theme]) => {
@@ -169,6 +175,12 @@ export function App() {
 
   // Saved one after the other, in the order chosen: two quick changes never land the wrong way round.
   const savingBackground = useRef(Promise.resolve());
+  // The journal, read when the page opens, after each scan or update, and when its span or filter change.
+  useEffect(() => {
+    if (section !== "activity") return;
+    void Activity.Journal(journalDays, journalFilter).then(setJournal);
+  }, [section, journalDays, journalFilter, ended]);
+
   const changeBackground = (b: BackgroundSettings) => {
     setBackground(b);
     savingBackground.current = savingBackground.current.then(async () => {
@@ -285,6 +297,22 @@ export function App() {
                 onBackground={changeBackground}
                 loginItem={loginItem}
                 onLoginItem={(on) => void changeLoginItem(on)}
+              />
+            )
+          }
+          activityPage={
+            journal && (
+              <ActivityPage
+                journal={journal}
+                days={journalDays}
+                filter={journalFilter}
+                nodes={loaded.nodes}
+                onFilter={setJournalFilter}
+                onOlder={() => setJournalDays((d) => d + 30)}
+                onOpen={(nodeId) => {
+                  setSection("sites");
+                  setAdded(nodeId);
+                }}
               />
             )
           }
