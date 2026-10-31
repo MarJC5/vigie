@@ -15,6 +15,9 @@ test("the background settings are kept, and the next automatic scan shows under 
   await keep.click();
   await expect(keep).toHaveAttribute("aria-checked", "true");
   await page.getByRole("combobox", { name: "Automatic scans" }).selectOption("6");
+  // Saved once the next scan is known.
+  await rail.getByRole("link", { name: "Sites" }).click();
+  await expect(page.getByTitle(/^Next scan: (\d\d\.\d\d\.\d{4} )?\d\d:\d\d$/)).toBeVisible();
 
   await page.reload();
   await rail.getByRole("link", { name: "Settings" }).click();

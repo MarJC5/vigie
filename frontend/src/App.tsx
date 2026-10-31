@@ -1,5 +1,5 @@
 import { Browser, Events } from "@wailsio/runtime";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { I18nextProvider } from "react-i18next";
 
 import { VigieDiscovery, VigieMenu, VigieScans, VigieUpdates } from "../bindings/events";
@@ -167,12 +167,16 @@ export function App() {
     return () => clearInterval(timer);
   }, [readNextScan, ended]);
 
-  const changeBackground = async (b: BackgroundSettings) => {
+  // Saved one after the other, in the order chosen: two quick changes never land the wrong way round.
+  const savingBackground = useRef(Promise.resolve());
+  const changeBackground = (b: BackgroundSettings) => {
     setBackground(b);
-    await Preferences.SetBackground(b);
-    // Turning the mode off also removes the login item.
-    setLoginItem(await LoginItem.State());
-    readNextScan();
+    savingBackground.current = savingBackground.current.then(async () => {
+      await Preferences.SetBackground(b);
+      // Turning the mode off also removes the login item.
+      setLoginItem(await LoginItem.State());
+      readNextScan();
+    });
   };
   const changeLoginItem = async (on: boolean) => {
     await LoginItem.Set(on);
@@ -278,7 +282,7 @@ export function App() {
                 onImport={(source) => setDataTask(source === "ssh" ? { kind: "ssh" } : { kind: "import", source })}
                 dataNote={dataNote}
                 background={background}
-                onBackground={(b) => void changeBackground(b)}
+                onBackground={changeBackground}
                 loginItem={loginItem}
                 onLoginItem={(on) => void changeLoginItem(on)}
               />
