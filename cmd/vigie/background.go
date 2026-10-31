@@ -35,6 +35,7 @@ type keeper struct {
 	watch   *app.Watch
 	scanner *app.Scanner
 	notify  *notifications.NotificationService
+	record  func(model.Notice) error // keeps a notification sent, for the Activity page
 	label   func(key string, vars map[string]any) string
 
 	notifyStart sync.Once
@@ -75,7 +76,11 @@ func (k *keeper) start(ctx context.Context) {
 	k.wails.Event.On(app.ScansEvent, func(*application.CustomEvent) { k.refresh(ctx) })
 	k.scanner.OnScanned = func(tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan) {
 		if b, err := k.prefs.Background(ctx); err == nil && b.Notify {
-			k.alert(app.Alerts(tree, before, after))
+			run := model.NoID
+			if len(after) > 0 {
+				run = after[0].RunID
+			}
+			k.alert(app.Alerts(tree, before, after), run)
 		}
 	}
 
@@ -154,7 +159,7 @@ func (k *keeper) notifications() bool {
 }
 
 // alert sends a notification per kind of alert: the sites turned urgent, the hosts unreachable.
-func (k *keeper) alert(alerts []app.Alert) {
+func (k *keeper) alert(alerts []app.Alert, run model.ID) {
 	if len(alerts) == 0 || !k.notifications() {
 		return
 	}
@@ -173,6 +178,10 @@ func (k *keeper) alert(alerts []app.Alert) {
 			ID: fmt.Sprintf("vigie-%s-%d", kind, time.Now().UnixNano()), Title: "Vigie", Body: body,
 		})
 		if err != nil {
+			k.wails.Logger.Error("notifications", "error", err)
+			continue
+		}
+		if err := k.record(model.Notice{ID: model.NewID(), RunID: run, Kind: kind, Names: names, Sent: time.Now().UTC()}); err != nil {
 			k.wails.Logger.Error("notifications", "error", err)
 		}
 	}
