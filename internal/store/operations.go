@@ -162,6 +162,39 @@ func (db *DB) Operations(ctx context.Context, siteID model.ID) ([]model.Operatio
 	return ops, db.loadOperationSteps(ctx, siteID, ops, index)
 }
 
+// OperationsSince returns the operations started since a time, of every site, the oldest first,
+// without their steps.
+func (db *DB) OperationsSince(ctx context.Context, since time.Time) ([]model.Operation, error) {
+	rows, err := db.sql.QueryContext(ctx, `SELECT id, site_id, kind, started_at, finished_at, outcome, summary, backup_dir, pid
+		FROM operations WHERE started_at >= ? ORDER BY started_at, id`, timeText(since))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ops []model.Operation
+	for rows.Next() {
+		var op model.Operation
+		var id, site, started, finished string
+		if err := rows.Scan(&id, &site, &op.Kind, &started, &finished, &op.Outcome, &op.Summary, &op.BackupDir, &op.PID); err != nil {
+			return nil, err
+		}
+		if op.ID, err = uuid.Parse(id); err != nil {
+			return nil, err
+		}
+		if op.SiteID, err = uuid.Parse(site); err != nil {
+			return nil, err
+		}
+		if op.Started, err = parseOptionalTime(started); err != nil {
+			return nil, err
+		}
+		if op.Finished, err = parseOptionalTime(finished); err != nil {
+			return nil, err
+		}
+		ops = append(ops, op)
+	}
+	return ops, rows.Err()
+}
+
 func (db *DB) loadOperationSteps(ctx context.Context, siteID model.ID, ops []model.Operation, index map[string]int) error {
 	rows, err := db.sql.QueryContext(ctx, `SELECT s.operation_id, s.position, s.step, s.item_kind, s.slug, s.version_before,
 			s.version_after, s.started_at, s.finished_at, s.outcome, s.message

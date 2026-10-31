@@ -39,9 +39,9 @@ func TestAlertsTellOnlyWhatGotWorse(t *testing.T) {
 
 	got := app.Alerts(tree, before, after)
 	want := []app.Alert{
-		{Kind: app.AlertUrgent, Name: "shop.example.test"},
-		{Kind: app.AlertUrgent, Name: "blog.example.test"}, // never scanned before
-		{Kind: app.AlertUnreachable, Name: "Managed VPS"},
+		{Kind: app.AlertUrgent, Name: "shop.example.test", NodeID: shop.ID},
+		{Kind: app.AlertUrgent, Name: "blog.example.test", NodeID: blog.ID}, // never scanned before
+		{Kind: app.AlertUnreachable, Name: "Managed VPS", NodeID: other.ID},
 	}
 	if !slices.Equal(got, want) {
 		t.Fatalf("Alerts() = %+v, want %+v (known.example.test was already urgent)", got, want)

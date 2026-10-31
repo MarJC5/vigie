@@ -19,6 +19,7 @@ import (
 	"github.com/MarJC5/vigie/internal/buildinfo"
 	"github.com/MarJC5/vigie/internal/cli"
 	"github.com/MarJC5/vigie/internal/i18n"
+	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/schedule"
 	"github.com/MarJC5/vigie/internal/store"
 	"github.com/MarJC5/vigie/internal/workspace"
@@ -147,6 +148,7 @@ func openWindow(opts cli.Options) error {
 		Services: []application.Service{
 			application.NewService(sites),
 			application.NewService(watch),
+			application.NewService(app.NewActivity(db, time.Now)),
 			application.NewService(login),
 			application.NewService(preferences),
 			application.NewService(app.NewHostWizard(ws, emit)),
@@ -190,6 +192,7 @@ func openWindow(opts cli.Options) error {
 	keep := &keeper{
 		wails: wails, window: window, dock: docked, prefs: preferences, login: login, atLogin: opts.AtLogin,
 		watch: watch, scanner: scanner, notify: notifier,
+		record: func(n model.Notice) error { return db.SaveNotice(context.Background(), n) },
 		label: func(key string, vars map[string]any) string {
 			all := map[string]any{"app": "Vigie"}
 			for k, v := range vars {

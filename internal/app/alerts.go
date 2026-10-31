@@ -13,11 +13,12 @@ const (
 	AlertUnreachable = "unreachable" // a host Vigie could not connect to any more
 )
 
-// Alert is something a scan made worse: a site turned urgent (Name is the site's), or a host turned
-// unreachable (Name is the host's).
+// Alert is something a scan made worse: a site turned urgent (Name and NodeID are the site's), or a
+// host turned unreachable (the host's).
 type Alert struct {
-	Kind string
-	Name string
+	Kind   string
+	Name   string
+	NodeID model.ID
 }
 
 // Alerts compares the latest scans before a scan with the ones it made, in their order, and tells
@@ -33,11 +34,11 @@ func Alerts(tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan
 		previous, scanned := before[s.SiteID]
 		switch {
 		case s.Status() == model.StatusUrgent && (!scanned || previous.Status() != model.StatusUrgent):
-			alerts = append(alerts, Alert{Kind: AlertUrgent, Name: site.Name})
+			alerts = append(alerts, Alert{Kind: AlertUrgent, Name: site.Name, NodeID: site.ID})
 		case unreachable(s) && !(scanned && unreachable(previous)) && !slices.Contains(hosts, site.HostID):
 			hosts = append(hosts, site.HostID)
 			if host, ok := tree.Host(site.HostID); ok {
-				alerts = append(alerts, Alert{Kind: AlertUnreachable, Name: host.Name})
+				alerts = append(alerts, Alert{Kind: AlertUnreachable, Name: host.Name, NodeID: host.ID})
 			}
 		}
 	}

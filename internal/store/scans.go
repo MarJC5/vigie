@@ -198,7 +198,13 @@ func (db *DB) loadScanParts(ctx context.Context, where string, scans []model.Sca
 	if err := rows.Err(); err != nil {
 		return err
 	}
-	rows, err = db.sql.QueryContext(ctx, `SELECT f.scan_id, f.kind, f.subject, f.identifier, f.version, f.level, f.facts
+	return db.loadFindings(ctx, where, scans, index, args...)
+}
+
+// loadFindings adds their findings to scans read by readScans with the same condition; index maps
+// a scan's id to its place in scans.
+func (db *DB) loadFindings(ctx context.Context, where string, scans []model.Scan, index map[string]int, args ...any) error {
+	rows, err := db.sql.QueryContext(ctx, `SELECT f.scan_id, f.kind, f.subject, f.identifier, f.version, f.level, f.facts
 		FROM scan_findings f JOIN scans s ON s.id = f.scan_id
 		WHERE `+where+`
 		ORDER BY f.scan_id, f.position`, args...)
@@ -223,6 +229,34 @@ func (db *DB) loadScanParts(ctx context.Context, where string, scans []model.Sca
 		}
 	}
 	return rows.Err()
+}
+
+// ScanStatuses returns, for the Activity page, the scans started since a time and, for each of
+// their sites, the scan just before, oldest first: with their findings and the site's ignores, so
+// each tells its status; without their items.
+func (db *DB) ScanStatuses(ctx context.Context, since time.Time) ([]model.Scan, error) {
+	where := `s.started_at >= ? OR s.id = (SELECT max(p.id) FROM scans p WHERE p.site_id = s.site_id AND p.started_at < ?
+		AND EXISTS (SELECT 1 FROM scans n WHERE n.site_id = s.site_id AND n.started_at >= ?))`
+	at := timeText(since)
+	scans, err := db.readScans(ctx, where, at, at, at)
+	if err != nil {
+		return nil, err
+	}
+	index := map[string]int{}
+	for i, s := range scans {
+		index[s.ID.String()] = i
+	}
+	if err := db.loadFindings(ctx, where, scans, index, at, at, at); err != nil {
+		return nil, err
+	}
+	ignores, err := db.ignores(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	for i := range scans {
+		scans[i].ApplyIgnores(ignores[scans[i].SiteID])
+	}
+	return scans, nil
 }
 
 // ScanCount returns how many scans of a site are kept.
