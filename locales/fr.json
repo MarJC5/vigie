@@ -511,7 +511,9 @@
     "window": "Fenêtre",
     "minimise": "Placer dans le Dock",
     "zoom": "Réduire/agrandir",
-    "front": "Tout ramener au premier plan"
+    "front": "Tout ramener au premier plan",
+    "help": "Aide",
+    "vigieHelp": "Aide de Vigie"
   },
   "edit": {
     "cancel": "Annuler",
@@ -1239,5 +1241,52 @@
     "failedText": "Rien n'a été ajouté. Ce qu'il a dit :",
     "unusable": "Vigie ne peut pas utiliser cet add-on",
     "notInstalled": "Pas installé. Vigie n'installe jamais un add-on lui-même."
+  },
+  "help": {
+    "title": "Aide",
+    "tabs": {
+      "start": "Pour commencer",
+      "security": "Sécurité",
+      "updates": "Mises à jour",
+      "data": "Données",
+      "addons": "Add-ons",
+      "background": "Arrière-plan"
+    },
+    "quote": "« {{text}} »",
+    "start": {
+      "firstHost": "Votre premier hébergement",
+      "step1": {
+        "title": "Ajoutez-le.",
+        "text": "Avec ⌘N ou le bouton + de la barre : son adresse, l'utilisateur SSH que donne l'hébergeur, le port. Vigie utilise les clés de votre agent SSH et ne demande jamais de mot de passe."
+      },
+      "step2": {
+        "title": "Approuvez la clé du serveur.",
+        "text": "Comparez d'abord son empreinte à celle que publie l'hébergeur."
+      },
+      "step3": {
+        "title": "Testez la connexion.",
+        "text": "Vigie vérifie SSH, PHP en ligne de commande et WP-CLI, puis cherche les installations WordPress du compte. Rien n'est écrit sur le serveur."
+      },
+      "step4": {
+        "title": "Choisissez les sites.",
+        "text": "Vigie n'ajoute que ceux que vous cochez. Relevez-les ensuite avec ⌘R."
+      },
+      "refused": "Quand un hébergement refuse la connexion",
+      "refusedLead": "Vigie dit ce que le serveur a répondu. Les trois réponses les plus fréquentes :",
+      "ipFilter": {
+        "cause": "Filtre d'adresses IP :",
+        "todo": "certains hébergeurs (o2switch par exemple) n'acceptent SSH que depuis des adresses autorisées. Autorisez la vôtre dans le panneau de l'hébergeur, puis relevez à nouveau."
+      },
+      "key": {
+        "cause": "Clé :",
+        "todo": "la clé doit être chargée dans votre agent SSH (Bitwarden, 1Password, ssh-agent) et déposée chez l'hébergeur."
+      },
+      "port": {
+        "cause": "Utilisateur et port :",
+        "todo": "vérifiez que SSH est activé pour ce compte, et l'utilisateur et le port que donne l'hébergeur (Modifier la connexion, dans le menu de l'hébergement)."
+      },
+      "shortcuts": "Raccourcis"
+    },
+    "onPage": "Dans cette page"
   }
 }

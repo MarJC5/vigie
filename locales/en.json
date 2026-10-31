@@ -487,7 +487,9 @@
     "window": "Window",
     "minimise": "Minimize",
     "zoom": "Zoom",
-    "front": "Bring All to Front"
+    "front": "Bring All to Front",
+    "help": "Help",
+    "vigieHelp": "Vigie Help"
   },
   "edit": {
     "cancel": "Cancel",
@@ -1185,5 +1187,52 @@
     "failedText": "Nothing was added. What it said:",
     "unusable": "Vigie cannot use this add-on",
     "notInstalled": "Not installed. Vigie never installs an add-on itself."
+  },
+  "help": {
+    "title": "Help",
+    "tabs": {
+      "start": "Getting started",
+      "security": "Security",
+      "updates": "Updates",
+      "data": "Data",
+      "addons": "Add-ons",
+      "background": "Background"
+    },
+    "quote": "“{{text}}”",
+    "start": {
+      "firstHost": "Your first host",
+      "step1": {
+        "title": "Add it.",
+        "text": "With ⌘N or the + button of the bar: its address, the SSH user your host gives you, the port. Vigie uses the keys of your SSH agent and never asks for a password."
+      },
+      "step2": {
+        "title": "Trust the server's key.",
+        "text": "Compare its fingerprint first with the one your host publishes."
+      },
+      "step3": {
+        "title": "Test the connection.",
+        "text": "Vigie checks SSH, PHP on the command line and WP-CLI, then searches the account for WordPress installs. Nothing is written on the server."
+      },
+      "step4": {
+        "title": "Choose the sites.",
+        "text": "Vigie adds only the ones you check. Then scan them with ⌘R."
+      },
+      "refused": "When a host refuses the connection",
+      "refusedLead": "Vigie tells what the server answered. The three most frequent answers:",
+      "ipFilter": {
+        "cause": "IP filter:",
+        "todo": "some hosts (o2switch, for example) only accept SSH from allowed addresses. Allow yours in the host's control panel, then scan again."
+      },
+      "key": {
+        "cause": "Key:",
+        "todo": "the key must be loaded in your SSH agent (Bitwarden, 1Password, ssh-agent) and added at your host."
+      },
+      "port": {
+        "cause": "User and port:",
+        "todo": "check that SSH is turned on for this account, and the user and port your host gives (Edit the connection, in the menu of the host)."
+      },
+      "shortcuts": "Shortcuts"
+    },
+    "onPage": "On this page"
   }
 }

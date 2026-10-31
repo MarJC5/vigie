@@ -25,6 +25,7 @@ import { AppShell, type EditApi, type SecurityApi, type ShellData } from "./comp
 import { ConsentScreen } from "./components/ConsentScreen/ConsentScreen";
 import { type DataApi, DataFlow, type DataNote, type DataTask } from "./components/DataFlow/DataFlow";
 import type { Section } from "./components/NavRail/NavRail";
+import { HelpPage, type HelpTab } from "./components/HelpPage/HelpPage";
 import { SettingsPage, type SettingsTab, type Theme } from "./components/SettingsPage/SettingsPage";
 import type { UpdatesApi } from "./components/UpdateFlow/UpdateFlow";
 import { createI18n } from "./i18n";
@@ -125,6 +126,7 @@ export function App() {
   const [waiting, setWaiting] = useState<Waiting>();
   const [section, setSection] = useState<Section>("sites");
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("general");
+  const [helpTab, setHelpTab] = useState<HelpTab>("start");
   const [dataTask, setDataTask] = useState<DataTask>();
   const [dataNote, setDataNote] = useState<DataNote>();
   // The preview of an import takes the whole window, as the wizard does.
@@ -316,6 +318,7 @@ export function App() {
               />
             )
           }
+          helpPage={<HelpPage tab={helpTab} onTab={setHelpTab} onOpen={openURL} onAddHost={() => setAdding(true)} />}
           addonsPage={<AddonsFlow api={addonsApi} onLink={openURL} onPreview={(preview) => setDataTask({ kind: "preview", preview })} />}
           onExport={(nodeId) => setDataTask({ kind: "export", nodeId })}
           onStopAll={() => void Scanner.CancelAll()}

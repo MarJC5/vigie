@@ -23,8 +23,8 @@ export interface NavRailProps {
   onNavigate?: (section: Section) => void;
 }
 
-// The sections that exist so far; the others are shown, not reachable yet.
-const reachable: Section[] = ["sites", "activity", "addons", "settings"];
+// Every section can be reached; one left out is shown, not reachable yet.
+const reachable: Section[] = ["sites", "activity", "addons", "settings", "help"];
 
 /** The narrow navigation rail; the native window controls sit above it. */
 export function NavRail({ current, onAddHost, inert, onNavigate }: NavRailProps) {

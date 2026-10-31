@@ -41,7 +41,7 @@ func TestMenuBarIsTranslated(t *testing.T) {
 			}
 		}
 	}
-	for _, want := range []string{app.ActionNewHost, app.ActionNewFolder, app.ActionSearch, app.ActionScan, app.ActionScanAll} {
+	for _, want := range []string{app.ActionNewHost, app.ActionNewFolder, app.ActionSearch, app.ActionScan, app.ActionScanAll, app.ActionHelp} {
 		if !actions[want] {
 			t.Errorf("no menu item sends %q", want)
 		}

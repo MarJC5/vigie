@@ -90,6 +90,8 @@ export interface AppShellProps {
   addonsPage?: ReactNode;
   /** The Activity page, shown in place of the site list and the detail. */
   activityPage?: ReactNode;
+  /** The Help page, shown in place of the site list and the detail. */
+  helpPage?: ReactNode;
   /** Scans a node comparing its files again, even within the day. */
   onCheckFiles?: (nodeId: string) => void;
   /** "Export…" in the menu of a folder or host. */
@@ -134,6 +136,7 @@ export function AppShell({
   settingsPage,
   addonsPage,
   activityPage,
+  helpPage,
   onCheckFiles,
   onExport,
   security,
@@ -219,6 +222,7 @@ export function AppShell({
       if (action === "new-host") onAddHost?.();
       if (action === "new-folder") void createFolder(folderOf(selectedId));
       if (action === "settings") onSection?.("settings");
+      if (action === "help") onSection?.("help");
     };
   });
   useEffect(() => commands?.((action) => onCommand.current(action)), [commands]);
@@ -357,12 +361,13 @@ export function AppShell({
   };
 
   // The settings and the add-ons take the place of the site list and the detail.
-  if (section === "settings" || section === "addons" || section === "activity") {
+  if (section !== "sites") {
+    const pages = { settings: settingsPage, addons: addonsPage, activity: activityPage, help: helpPage };
     return (
       <div ref={shell} className={styles.shell}>
         <NavRail current={section} onAddHost={onAddHost} onNavigate={onSection} />
         <main className={styles.main} tabIndex={0}>
-          {section === "settings" ? settingsPage : section === "addons" ? addonsPage : activityPage}
+          {pages[section]}
         </main>
       </div>
     );

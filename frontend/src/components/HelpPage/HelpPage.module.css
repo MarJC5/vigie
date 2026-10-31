@@ -1,0 +1,240 @@
+/* The page fills the window's content area: the title and the tabs stay, the tab's content scrolls
+   under them, up to the edges of the window (whose padding it takes back). */
+.page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-3);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-3);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--vg-text-display);
+  font-weight: var(--vg-weight-strong);
+  line-height: var(--vg-leading-tight);
+  letter-spacing: -0.01em;
+}
+
+.tabs {
+  box-shadow: inset 0 -1px 0 var(--vg-border);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 calc(-1 * var(--vg-space-6)) calc(-1 * var(--vg-space-5));
+  padding: var(--vg-space-3) var(--vg-space-6) var(--vg-space-6);
+}
+
+.body:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: -2px;
+}
+
+/* Getting started: the steps and the refusals, the shortcuts beside. */
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 40px;
+  align-items: start;
+}
+
+.main {
+  max-width: 640px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-3);
+}
+
+.heading {
+  margin: 0;
+  font-size: 20px;
+  font-weight: var(--vg-weight-strong);
+  line-height: 1.2;
+}
+
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: var(--vg-space-3);
+  align-items: start;
+  line-height: 1.5;
+}
+
+.step > :last-child {
+  padding-top: 2px;
+}
+
+.number {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--vg-radius-pill);
+  background: var(--vg-control);
+  font-size: var(--vg-text-caption);
+  font-weight: var(--vg-weight-strong);
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.strong {
+  font-weight: var(--vg-weight-strong);
+}
+
+.muted,
+.lead {
+  color: var(--vg-text-muted);
+}
+
+.lead {
+  margin: 0;
+}
+
+.action {
+  padding-left: 36px;
+}
+
+.refusals {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: var(--vg-radius-control);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.refusal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-1);
+  padding: var(--vg-space-3) var(--vg-space-4);
+  background: var(--vg-surface-row);
+  line-height: 1.5;
+}
+
+.says {
+  font-size: var(--vg-text-small);
+  color: var(--vg-text-muted);
+}
+
+.aside {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: var(--vg-space-4);
+  border-radius: var(--vg-radius-control);
+  background: var(--vg-surface-row);
+}
+
+.asideTitle {
+  margin: 0;
+  font-size: var(--vg-text-small);
+  font-weight: var(--vg-weight-strong);
+  color: var(--vg-text-muted);
+}
+
+.shortcuts {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--vg-space-2) var(--vg-space-3);
+  align-items: center;
+}
+
+/* Each shortcut a row of the grid: its keys, then what they do. */
+.shortcut {
+  display: contents;
+}
+
+.shortcut dt,
+.shortcut dd {
+  margin: 0;
+}
+
+.kbd {
+  display: inline-block;
+  min-width: 20px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--vg-control);
+  box-shadow: inset 0 -1px 0 var(--vg-border);
+  font: var(--vg-weight-strong) var(--vg-text-small) var(--vg-font);
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+/* A doc: the text, its sections beside it, which stay in view as it scrolls. */
+.docColumns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 40px;
+  align-items: start;
+}
+
+.toc {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-2);
+  font-size: var(--vg-text-small);
+}
+
+.tocLink {
+  color: var(--vg-text-muted);
+  text-decoration: none;
+}
+
+.tocLink:hover {
+  color: var(--vg-text);
+}
+
+.tocLink[aria-current] {
+  color: var(--vg-text);
+  font-weight: var(--vg-weight-strong);
+}
+
+.tocLink:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* A narrow window: one column, the shortcuts under the steps, the doc without its sections. */
+@media (max-width: 1000px) {
+  .columns,
+  .docColumns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .toc {
+    display: none;
+  }
+}

@@ -11,6 +11,7 @@ const (
 	ActionScan      = "scan"       // scans the selected folder, host or site
 	ActionScanAll   = "scan-all"   // scans every site
 	ActionSettings  = "settings"   // opens the settings
+	ActionHelp      = "help"       // opens the help page
 )
 
 // MenuCommand is what the window receives with MenuEvent.
@@ -78,5 +79,8 @@ var MenuBar = []MenuSection{
 		{Key: "menu.zoom", Role: "zoom"},
 		separator,
 		{Key: "menu.front", Role: "bringAllToFront"},
+	}},
+	{Key: "menu.help", Items: []MenuEntry{
+		{Key: "menu.vigieHelp", Action: ActionHelp},
 	}},
 }
