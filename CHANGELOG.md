@@ -84,6 +84,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   hours (one scan after a sleep, never an update), and notifies when a scan turns a site urgent or
   a host unreachable ([docs/background.md](docs/background.md)).
 - Vigie's own icon: an eye whose pupil is a shield.
+- The Activity page: what happened, by day, for the last 30 days and older on demand: each scan
+  with who started it (you, the automatic scans or the command line), what it changed (a site
+  turned urgent or back to normal, a host unreachable) and what Vigie notified; updates and
+  rollbacks; filtered by folder, host or site, a name opening its page.
 
 ### Changed
 
