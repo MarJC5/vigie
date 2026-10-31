@@ -88,6 +88,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   with who started it (you, the automatic scans or the command line), what it changed (a site
   turned urgent or back to normal, a host unreachable) and what Vigie notified; updates and
   rollbacks; filtered by folder, host or site, a name opening its page.
+- The Help page, from the rail or Help > Vigie Help: getting started (the first host, what to do
+  when a host refuses the connection, the shortcuts), then the docs, in English and in French
+  ([docs/fr/](docs/fr/)), offline, each with its sections beside it.
 
 ### Changed
 
