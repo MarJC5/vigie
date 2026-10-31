@@ -126,7 +126,7 @@ func openWindow(opts cli.Options) error {
 		Last: ws.EverythingScanned,
 		Busy: func() bool { return len(scanner.State().Running) > 0 },
 		Start: func() {
-			if p := scanner.Scan(""); p != nil {
+			if p := scanner.ScanScheduled(); p != nil {
 				wails.Logger.Error("automatic scan", "problem", p.Code, "detail", p.Detail)
 			}
 		},

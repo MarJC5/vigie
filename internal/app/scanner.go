@@ -72,6 +72,11 @@ func (s *Scanner) Scan(nodeID string) *Problem {
 	return s.start(nodeID, workspace.ScanOptions{})
 }
 
+// ScanScheduled is Scan of everything for the automatic scans: its run says the schedule started it.
+func (s *Scanner) ScanScheduled() *Problem {
+	return s.start("", workspace.ScanOptions{By: model.RunBySchedule})
+}
+
 // CheckFiles is Scan, comparing the files with wordpress.org's even when it was done less than a
 // day ago.
 func (s *Scanner) CheckFiles(nodeID string) *Problem {

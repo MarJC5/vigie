@@ -145,6 +145,37 @@ func TestACompleteScanOfEverythingIsRecorded(t *testing.T) {
 	}
 }
 
+// Each scan of a node is a run: who started it, on what, how it ended; its scans point to it.
+func TestAScanIsARun(t *testing.T) {
+	ctx := context.Background()
+	ws, db := bench(t)
+	before := time.Now().Add(-time.Minute)
+	results, err := ws.Scan(ctx, "Clients", workspace.ScanOptions{By: model.RunBySchedule}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runs, err := db.Runs(ctx, before)
+	if err != nil || len(runs) != 1 {
+		t.Fatalf("Runs() = %+v, %v; want one", runs, err)
+	}
+	run := runs[0]
+	if run.Path != "Clients" || run.By != model.RunBySchedule || run.Outcome != model.RunCompleted || run.Sites != 3 || run.Finished.IsZero() {
+		t.Errorf("run = %+v", run)
+	}
+	for _, r := range results {
+		if r.Scan.RunID != run.ID {
+			t.Errorf("scan of %s in run %s, want %s", r.Path, r.Scan.RunID, run.ID)
+		}
+	}
+	// Without a starter given, the user started it.
+	if _, err := ws.Scan(ctx, "Clients/Bench/outdated.example.test", workspace.ScanOptions{}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if runs, _ := db.Runs(ctx, before); len(runs) != 2 || runs[1].By != model.RunByUser {
+		t.Errorf("runs = %+v, want the second started by the user", runs)
+	}
+}
+
 func TestScanOneSite(t *testing.T) {
 	ws, _ := bench(t)
 	results, err := ws.Scan(context.Background(), "Clients/Bench/outdated.example.test", workspace.ScanOptions{}, nil)

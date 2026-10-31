@@ -13,6 +13,7 @@ import (
 	"github.com/MarJC5/vigie/internal/addons"
 	"github.com/MarJC5/vigie/internal/buildinfo"
 	"github.com/MarJC5/vigie/internal/i18n"
+	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/workspace"
 )
 
@@ -130,7 +131,7 @@ func Run(ctx context.Context, opts Options, env Env) int {
 	case "tree":
 		return tree(ctx, env, ws, asJSON)
 	case "scan":
-		return scanPath(ctx, env, ws, path, workspace.ScanOptions{CheckFiles: checkFiles}, asJSON)
+		return scanPath(ctx, env, ws, path, workspace.ScanOptions{CheckFiles: checkFiles, By: model.RunByCLI}, asJSON)
 	case "update":
 		return updatePath(ctx, env, ws, path, asJSON, yes)
 	}

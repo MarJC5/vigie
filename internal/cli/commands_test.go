@@ -141,6 +141,16 @@ func TestScanASiteThatNeedsAttention(t *testing.T) {
 	}
 }
 
+// A scan from the command line is a run the command line started.
+func TestAScanFromTheCommandLineIsARun(t *testing.T) {
+	ws := benchWorkspace(t)
+	runIn(t, ws, "en", "scan", "Clients/Bench/outdated.example.test")
+	runs, err := ws.DB().Runs(context.Background(), time.Now().Add(-time.Hour))
+	if err != nil || len(runs) != 1 || runs[0].By != model.RunByCLI || runs[0].Path != "Clients/Bench/outdated.example.test" {
+		t.Fatalf("Runs() = %+v, %v; want one started by the command line", runs, err)
+	}
+}
+
 func TestScanAcceptsCheckFiles(t *testing.T) {
 	if code, out, errOut := run(t, "en", "scan", "--check-files", "Clients/Bench/outdated.example.test"); code != 2 {
 		t.Fatalf("exit %d\n%s%s", code, out, errOut)

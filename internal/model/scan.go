@@ -60,6 +60,7 @@ func (i ScanItem) UpdateSourceUnknown() bool {
 type Scan struct {
 	ID       ID
 	SiteID   ID
+	RunID    ID // the run that made it; NoID for scans made before runs were recorded
 	Started  time.Time
 	Finished time.Time
 	Outcome  ScanOutcome

@@ -150,6 +150,8 @@ type ScanOptions struct {
 	// CheckFiles compares the files with wordpress.org's even when the last comparison is less
 	// than a day old.
 	CheckFiles bool
+	// By is who started the scan, recorded with its run; the user when empty.
+	By model.RunBy
 }
 
 // Scan scans the site at path, the sites of a host, or every site under a folder ("" for all),
@@ -178,6 +180,17 @@ func (w *Workspace) ScanNode(ctx context.Context, node model.Node, opts ScanOpti
 	sites := tree.SitesUnder(node)
 	latest, err := w.db.LatestScans(ctx)
 	if err != nil {
+		return nil, err
+	}
+	// Each scan of a node is a run, for the Activity page.
+	run := model.Run{ID: model.NewID(), By: opts.By, Started: w.deps.Now().UTC(), Outcome: model.RunRunning, Sites: len(sites)}
+	if run.By == "" {
+		run.By = model.RunByUser
+	}
+	if node != model.Root {
+		run.Path = tree.PathOf(node)
+	}
+	if err := w.db.StartRun(ctx, run); err != nil {
 		return nil, err
 	}
 	scanner := w.scanner()
@@ -211,20 +224,13 @@ func (w *Workspace) ScanNode(ctx context.Context, node model.Node, opts ScanOpti
 
 	// Kept even when the scan was cancelled: the history shows it.
 	keep := context.WithoutCancel(ctx)
-	for i, r := range results {
-		if err := w.db.SaveScan(keep, r.Scan); err != nil {
-			return results, err
-		}
-		if sites[i].Multisite && r.Scan.Outcome == model.ScanCompleted {
-			if err := w.db.SaveSubsites(keep, sites[i].ID, r.Subsites); err != nil {
-				return results, err
-			}
-		}
-		ignores, err := w.db.Ignores(keep, sites[i].ID)
-		if err != nil {
-			return results, err
-		}
-		results[i].Scan.ApplyIgnores(ignores)
+	saved := w.saveScans(keep, run.ID, sites, results)
+	ended := model.RunCompleted
+	if ctx.Err() != nil {
+		ended = model.RunCancelled
+	}
+	if err := errors.Join(saved, w.db.EndRun(keep, run.ID, w.deps.Now().UTC(), ended)); err != nil {
+		return results, err
 	}
 	// The schedule of automatic scans counts from the end of the latest complete scan of everything.
 	if node == model.Root && ctx.Err() == nil {
@@ -233,6 +239,28 @@ func (w *Workspace) ScanNode(ctx context.Context, node model.Node, opts ScanOpti
 		}
 	}
 	return results, nil
+}
+
+// saveScans stores the scans of a run with their subsites, and applies their sites' ignores.
+func (w *Workspace) saveScans(ctx context.Context, run model.ID, sites []model.Site, results []Scanned) error {
+	for i := range results {
+		results[i].Scan.RunID = run
+		r := results[i]
+		if err := w.db.SaveScan(ctx, r.Scan); err != nil {
+			return err
+		}
+		if sites[i].Multisite && r.Scan.Outcome == model.ScanCompleted {
+			if err := w.db.SaveSubsites(ctx, sites[i].ID, r.Subsites); err != nil {
+				return err
+			}
+		}
+		ignores, err := w.db.Ignores(ctx, sites[i].ID)
+		if err != nil {
+			return err
+		}
+		results[i].Scan.ApplyIgnores(ignores)
+	}
+	return nil
 }
 
 // everythingScannedSetting holds when the latest complete scan of everything ended.

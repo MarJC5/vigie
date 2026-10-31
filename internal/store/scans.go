@@ -36,11 +36,11 @@ func saveScan(ctx context.Context, tx *sql.Tx, s model.Scan) error {
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO scans (id, site_id, started_at, finished_at, outcome, failure, error,
 			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
-			files_checked_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			files_checked_at, run_id)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		s.ID.String(), s.SiteID.String(), timeText(s.Started), timeText(s.Finished), string(s.Outcome), s.Failure, s.Error,
 		s.WordPress, s.PHPCLI, s.WPCLI, s.Home, s.CoreChecked, s.PluginsChecked, s.ThemesChecked, s.LanguagesChecked,
-		optionalTime(s.FilesChecked))
+		optionalTime(s.FilesChecked), optionalID(s.RunID))
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func (db *DB) Scans(ctx context.Context, siteID model.ID) ([]model.Scan, error) 
 func (db *DB) readScans(ctx context.Context, where string, args ...any) ([]model.Scan, error) {
 	rows, err := db.sql.QueryContext(ctx, `SELECT id, site_id, started_at, finished_at, outcome, failure, error,
 			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
-			files_checked_at
+			files_checked_at, run_id
 		FROM scans s WHERE `+where+` ORDER BY id`, args...)
 	if err != nil {
 		return nil, err
@@ -135,10 +135,13 @@ func (db *DB) readScans(ctx context.Context, where string, args ...any) ([]model
 	var scans []model.Scan
 	for rows.Next() {
 		var s model.Scan
-		var id, site, started, finished, outcome, filesChecked string
+		var id, site, started, finished, outcome, filesChecked, run string
 		if err := rows.Scan(&id, &site, &started, &finished, &outcome, &s.Failure, &s.Error,
 			&s.WordPress, &s.PHPCLI, &s.WPCLI, &s.Home,
-			&s.CoreChecked, &s.PluginsChecked, &s.ThemesChecked, &s.LanguagesChecked, &filesChecked); err != nil {
+			&s.CoreChecked, &s.PluginsChecked, &s.ThemesChecked, &s.LanguagesChecked, &filesChecked, &run); err != nil {
+			return nil, err
+		}
+		if s.RunID, err = parseOptionalID(run); err != nil {
 			return nil, err
 		}
 		if filesChecked != "" {
@@ -266,4 +269,19 @@ func (db *DB) SaveSubsites(ctx context.Context, siteID model.ID, subsites []mode
 
 func timeText(t time.Time) string {
 	return t.UTC().Format(time.RFC3339Nano)
+}
+
+// optionalID stores an absent ID as an empty text.
+func optionalID(id model.ID) string {
+	if id == model.NoID {
+		return ""
+	}
+	return id.String()
+}
+
+func parseOptionalID(s string) (model.ID, error) {
+	if s == "" {
+		return model.NoID, nil
+	}
+	return uuid.Parse(s)
 }

@@ -114,6 +114,21 @@ func TestTheEndOfAScanIsToldWithWhatCameBefore(t *testing.T) {
 	}
 }
 
+// The schedule's scans are runs the schedule started.
+func TestTheScheduledScanIsTheSchedules(t *testing.T) {
+	ws, db, _ := benchSites(t, sshxtest.NewFake())
+	ev := newEvents()
+	s := app.NewScanner(ws, ev.emit)
+	if p := s.ScanScheduled(); p != nil {
+		t.Fatal(p)
+	}
+	ev.idle(t)
+	runs, err := db.Runs(context.Background(), time.Now().Add(-time.Hour))
+	if err != nil || len(runs) != 1 || runs[0].By != model.RunBySchedule || runs[0].Path != "" {
+		t.Fatalf("Runs() = %+v, %v; want one of everything, by the schedule", runs, err)
+	}
+}
+
 func TestScanUnknownNode(t *testing.T) {
 	ws, _, _ := benchSites(t, sshxtest.NewFake())
 	s := app.NewScanner(ws, newEvents().emit)

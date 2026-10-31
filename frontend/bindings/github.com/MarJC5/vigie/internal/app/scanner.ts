@@ -45,6 +45,13 @@ export function Scan(nodeID: string): $CancellablePromise<$models.Problem | null
 }
 
 /**
+ * ScanScheduled is Scan of everything for the automatic scans: its run says the schedule started it.
+ */
+export function ScanScheduled(): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(1026704647);
+}
+
+/**
  * State returns the scans in progress.
  */
 export function State(): $CancellablePromise<$models.ScansState> {
