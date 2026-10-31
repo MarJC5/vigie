@@ -79,8 +79,10 @@ export function SettingsPage({
   const tabs: SettingsTab[] = ["general", "lookups", "data", "about"];
   return (
     <div className={styles.page}>
-      <h1 className={styles.title}>{t("settings.title")}</h1>
-      <TabBar label={t("settings.title")} tabs={tabs.map((id) => ({ id, label: t(`settings.tabs.${id}`) }))} value={tab} onChange={(id) => onTab(id as SettingsTab)} panelId={panel} />
+      <div className={styles.header}>
+        <h1 className={styles.title}>{t("settings.title")}</h1>
+        <TabBar label={t("settings.title")} tabs={tabs.map((id) => ({ id, label: t(`settings.tabs.${id}`) }))} value={tab} onChange={(id) => onTab(id as SettingsTab)} panelId={panel} />
+      </div>
       <div role="tabpanel" id={panel} aria-labelledby={`${panel}-${tab}`} className={styles.panel}>
         {tab === "general" && (
           <Section>

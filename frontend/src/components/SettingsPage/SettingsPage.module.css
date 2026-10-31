@@ -4,6 +4,21 @@
   gap: var(--vg-space-4);
 }
 
+/* The title and the tabs stay at the top while the settings scroll under them, drawn from the
+   edges of the window's content area (whose padding they take back), on its ground. A sticky box
+   stops at the padding of the area that scrolls, hence a top that takes it back too. */
+.header {
+  position: sticky;
+  top: calc(-1 * var(--vg-space-5));
+  z-index: 1;
+  margin: calc(-1 * var(--vg-space-5)) calc(-1 * var(--vg-space-6)) 0;
+  padding: var(--vg-space-5) var(--vg-space-6) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-4);
+  background: var(--vg-surface-main);
+}
+
 .title {
   margin: 0;
   font-size: var(--vg-text-display);
