@@ -91,10 +91,8 @@ export function Markdown({ text, onLink, level = 2 }: MarkdownProps) {
           {external.test(href) && <Icon name="external" size={13} />}
         </a>
       ),
-      // A code block or a table wider than the doc scrolls on its own: reachable from the keyboard.
-      pre: ({ children }) => <pre tabIndex={0}>{children}</pre>,
       table: ({ children }) => (
-        <div className={styles.table} tabIndex={0}>
+        <div className={styles.table}>
           <table>{children}</table>
         </div>
       ),

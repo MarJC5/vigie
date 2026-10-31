@@ -90,3 +90,15 @@ export const DataDocLinksToTheRepository: Story = {
     await expect(args.onOpen).toHaveBeenCalledWith("https://github.com/MarJC5/vigie/blob/main/addon/export/export-v1.schema.json");
   },
 };
+
+export const AddonsDocInFrench: Story = {
+  args: { tab: "addons" },
+  globals: { lang: "fr" },
+  play: async ({ canvas }) => {
+    // The table of the known add-ons: its short column keeps its words whole.
+    const [table] = canvas.getAllByRole("table");
+    await expect(table).toHaveTextContent("FileZilla");
+    const [kind] = canvas.getAllByRole("columnheader", { name: "Type" });
+    await expect(kind!.getBoundingClientRect().height).toBeLessThan(40);
+  },
+};
