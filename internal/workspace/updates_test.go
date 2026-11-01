@@ -27,6 +27,7 @@ type updates struct {
 	running  map[model.ID]int // runs at once per host
 	overlap  bool
 	hostOf   map[string]model.ID
+	chosen   map[string]update.Selection // what each run was given, by site name
 }
 
 func (u *updates) Preview(_ context.Context, job update.Job) (update.Preview, error) {
@@ -38,8 +39,11 @@ func (u *updates) Preview(_ context.Context, job update.Job) (update.Preview, er
 	return u.previews[job.Site.Name], nil
 }
 
-func (u *updates) Run(_ context.Context, job update.Job, _ update.Preview, _ update.Selection) (model.Operation, error) {
+func (u *updates) Run(_ context.Context, job update.Job, _ update.Preview, sel update.Selection) (model.Operation, error) {
 	u.mu.Lock()
+	if u.chosen != nil {
+		u.chosen[job.Site.Name] = sel
+	}
 	host := u.hostOf[job.Site.Name]
 	u.running[host]++
 	if u.running[host] > 1 {
@@ -233,5 +237,41 @@ func TestRollbackOfAStoredOperation(t *testing.T) {
 	}
 	if _, err := ws.Rollback(ctx, node.ID, model.NewID(), nil); !errors.Is(err, model.ErrNotFound) {
 		t.Errorf("an unknown operation: %v, want ErrNotFound", err)
+	}
+}
+
+// An update ignored on a site is left out of a bulk run (ADR-0026); a site with nothing else has
+// nothing to update.
+func TestABulkRunLeavesTheIgnoredUpdatesOut(t *testing.T) {
+	ctx := context.Background()
+	ws, u := twoHosts(t)
+	u.chosen = map[string]update.Selection{}
+	builder := update.Item{Kind: model.ItemPlugin, Slug: "page-builder-kit", From: "4.2.0", To: "5.0.0"}
+	u.previews["a1"] = update.Preview{DumpTool: true, Plugins: []update.Item{pending.Plugins[0], builder}}
+	u.previews["a2"] = update.Preview{DumpTool: true, Plugins: []update.Item{builder}}
+	tree, err := ws.DB().LoadTree(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	key := model.UpdateKey(model.ScanItem{Kind: model.ItemPlugin, Slug: "page-builder-kit"})
+	for _, name := range []string{"A/a1", "A/a2"} {
+		n, err := tree.Resolve(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := ws.DB().SaveIgnore(ctx, model.Ignore{SiteID: n.ID, Key: key, Reason: "the theme uses its API", Created: time.Now()}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	previews := previewAll(t, ws)
+	if len(previews[0].Ignored) != 1 || previews[0].Ignored[0].Slug != "page-builder-kit" || len(previews[2].Ignored) != 0 {
+		t.Fatalf("ignored = %+v, %+v", previews[0].Ignored, previews[2].Ignored)
+	}
+	results := ws.UpdateSites(ctx, workspace.Everything(previews), workspace.Follow{})
+	if got := outcomes(results); got["a1"] != workspace.SiteUpdated || got["a2"] != workspace.SiteNothing {
+		t.Errorf("outcomes = %v", got)
+	}
+	if sel := u.chosen["a1"]; len(sel.Plugins) != 1 || sel.Plugins[0] != "akismet" {
+		t.Errorf("a1 was given %+v, want akismet only", sel)
 	}
 }

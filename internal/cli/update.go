@@ -19,6 +19,7 @@ type updateItemJSON struct {
 	Language string `json:"language,omitempty"`
 	From     string `json:"from,omitempty"`
 	To       string `json:"to,omitempty"`
+	Ignored  bool   `json:"ignored,omitempty"` // left out: the site ignores this update
 }
 
 type updateJSON struct {
@@ -56,12 +57,13 @@ func updateTarget(ctx context.Context, env Env, ws *workspace.Workspace, on targ
 		switch {
 		case p.Err != nil:
 			results[p.Site.ID] = workspace.SiteUpdate{Site: p.Site, Path: p.Path, Outcome: workspace.SiteRefused, Err: p.Err}
-		case p.Preview.Pending() == 0:
+		// Nothing offered, or only updates the site ignores.
+		case p.Preview.Pending() == len(p.Ignored):
 			results[p.Site.ID] = workspace.SiteUpdate{Site: p.Site, Path: p.Path, Outcome: workspace.SiteNothing}
 		case !p.Preview.DumpTool:
 			results[p.Site.ID] = workspace.SiteUpdate{Site: p.Site, Path: p.Path, Outcome: workspace.SiteRefused, Err: wpcli.ErrNoDumpTool}
 		default:
-			planned = append(planned, workspace.Planned{SitePreview: p, Selection: update.All(p.Preview)})
+			planned = append(planned, workspace.Planned{SitePreview: p, Selection: p.Bulk()})
 		}
 	}
 
@@ -72,7 +74,7 @@ func updateTarget(ctx context.Context, env Env, ws *workspace.Workspace, on targ
 				fmt.Fprintln(env.Out, "  "+outcomeText(env, r))
 				continue
 			}
-			for _, line := range itemLines(env, p.Preview) {
+			for _, line := range itemLines(env, p) {
 				fmt.Fprintln(env.Out, "  "+line)
 			}
 		}
@@ -122,16 +124,24 @@ func confirm(env Env, sites int) bool {
 }
 
 // itemLines describes what an update changes, one line per item, the translations on one line.
-func itemLines(env Env, p update.Preview) []string {
+func itemLines(env Env, sp workspace.SitePreview) []string {
+	p := sp.Preview
 	var lines []string
+	// An update the site ignores is listed, said left out.
+	add := func(it update.Item, line string) {
+		if sp.IsIgnored(it) {
+			line += " " + env.t("cli.update.ignored", nil)
+		}
+		lines = append(lines, line)
+	}
 	if p.Core != nil {
-		lines = append(lines, env.t("cli.update.core", map[string]any{"from": p.Core.From, "to": p.Core.To}))
+		add(*p.Core, env.t("cli.update.core", map[string]any{"from": p.Core.From, "to": p.Core.To}))
 	}
 	for _, it := range p.Plugins {
-		lines = append(lines, env.t("cli.update.plugin", map[string]any{"slug": it.Slug, "from": it.From, "to": it.To}))
+		add(it, env.t("cli.update.plugin", map[string]any{"slug": it.Slug, "from": it.From, "to": it.To}))
 	}
 	for _, it := range p.Themes {
-		lines = append(lines, env.t("cli.update.theme", map[string]any{"slug": it.Slug, "from": it.From, "to": it.To}))
+		add(it, env.t("cli.update.theme", map[string]any{"slug": it.Slug, "from": it.From, "to": it.To}))
 	}
 	if len(p.Languages) > 0 {
 		var list []string
@@ -206,11 +216,11 @@ func updatesJSON(previews []workspace.SitePreview, results map[model.ID]workspac
 			u.Error = r.Err.Error()
 		}
 		if p.Preview.Core != nil {
-			u.Items = append(u.Items, itemJSON(*p.Preview.Core))
+			u.Items = append(u.Items, itemJSON(p, *p.Preview.Core))
 		}
 		for _, list := range [][]update.Item{p.Preview.Plugins, p.Preview.Themes, p.Preview.Languages} {
 			for _, it := range list {
-				u.Items = append(u.Items, itemJSON(it))
+				u.Items = append(u.Items, itemJSON(p, it))
 			}
 		}
 		if r.Operation.ID != model.NoID {
@@ -222,6 +232,6 @@ func updatesJSON(previews []workspace.SitePreview, results map[model.ID]workspac
 	return out
 }
 
-func itemJSON(it update.Item) updateItemJSON {
-	return updateItemJSON{Kind: string(it.Kind), Slug: it.Slug, Language: it.Language, From: it.From, To: it.To}
+func itemJSON(p workspace.SitePreview, it update.Item) updateItemJSON {
+	return updateItemJSON{Kind: string(it.Kind), Slug: it.Slug, Language: it.Language, From: it.From, To: it.To, Ignored: p.IsIgnored(it)}
 }

@@ -144,6 +144,7 @@
       "plugin": "extension {{slug}} {{from}} → {{to}}",
       "theme": "thème {{slug}} {{from}} → {{to}}",
       "languages": "traductions : {{list}}",
+      "ignored": "(ignorée, laissée de côté)",
       "updated": "mis à jour",
       "failed": "échec : {{message}}",
       "rollbackHint": "Revenez en arrière depuis la fenêtre : onglet Historique du site.",

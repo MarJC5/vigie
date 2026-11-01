@@ -10,15 +10,15 @@ export const preview: SitePreviewView = {
   siteId: "outdated",
   name: "boulangerie-exemple.ch",
   path: "Clients/Shared hosting/boulangerie-exemple.ch",
-  core: { kind: "core", slug: "", language: "", from: "7.1.3", to: "7.1.4" },
+  core: { kind: "core", slug: "", language: "", from: "7.1.3", to: "7.1.4", ignored: false },
   plugins: [
-    { kind: "plugin", slug: "akismet", language: "", from: "5.3", to: "5.7.2" },
-    { kind: "plugin", slug: "woocommerce", language: "", from: "9.8.1", to: "10.2.0" },
+    { kind: "plugin", slug: "akismet", language: "", from: "5.3", to: "5.7.2", ignored: false },
+    { kind: "plugin", slug: "woocommerce", language: "", from: "9.8.1", to: "10.2.0", ignored: false },
   ],
   themes: [],
   languages: [
-    { kind: "language", slug: "", language: "fr_FR", from: "", to: "" },
-    { kind: "language", slug: "akismet", language: "fr_FR", from: "", to: "" },
+    { kind: "language", slug: "", language: "fr_FR", from: "", to: "", ignored: false },
+    { kind: "language", slug: "akismet", language: "fr_FR", from: "", to: "", ignored: false },
   ],
   dumpTool: true,
   problem: null,
@@ -94,7 +94,7 @@ export const failed = operation({
         "new fatal error in debug.log: PHP Fatal error:  Uncaught Error: Call to undefined function wc_get_page_id() in wp-content/themes/boulangerie/functions.php:42",
     }),
   ],
-  rollback: { kind: "plugin", slug: "woocommerce", language: "", from: "9.8.1", to: "10.2.0" },
+  rollback: { kind: "plugin", slug: "woocommerce", language: "", from: "9.8.1", to: "10.2.0", ignored: false },
 });
 
 /** The rollback of WooCommerce after the failure. */

@@ -29,6 +29,9 @@ type UpdateItemView struct {
 	Language string `json:"language"`
 	From     string `json:"from"`
 	To       string `json:"to"`
+	// Ignored: the site ignores this update (ADR-0026); "Update all" leaves it out, the site's own
+	// update takes it when chosen.
+	Ignored bool `json:"ignored"`
 }
 
 // SitePreviewView is what an update of a site would change.
@@ -173,26 +176,26 @@ func (u *Updates) Preview(ctx context.Context, nodeID string) ([]SitePreviewView
 func previewView(p workspace.SitePreview) SitePreviewView {
 	v := SitePreviewView{
 		SiteID: p.Site.ID.String(), Name: p.Site.Name, Path: p.Path, DumpTool: p.Preview.DumpTool,
-		Plugins: items(p.Preview.Plugins), Themes: items(p.Preview.Themes), Languages: items(p.Preview.Languages),
+		Plugins: items(p, p.Preview.Plugins), Themes: items(p, p.Preview.Themes), Languages: items(p, p.Preview.Languages),
 		Problem: ProblemOf(p.Err), Backups: "~/.vigie/backups/" + p.Site.ID.String() + "/",
 	}
 	if p.Preview.Core != nil {
-		core := itemView(*p.Preview.Core)
+		core := itemView(p, *p.Preview.Core)
 		v.Core = &core
 	}
 	return v
 }
 
-func items(list []update.Item) []UpdateItemView {
+func items(p workspace.SitePreview, list []update.Item) []UpdateItemView {
 	views := make([]UpdateItemView, len(list))
 	for i, it := range list {
-		views[i] = itemView(it)
+		views[i] = itemView(p, it)
 	}
 	return views
 }
 
-func itemView(it update.Item) UpdateItemView {
-	return UpdateItemView{Kind: string(it.Kind), Slug: it.Slug, Language: it.Language, From: it.From, To: it.To}
+func itemView(p workspace.SitePreview, it update.Item) UpdateItemView {
+	return UpdateItemView{Kind: string(it.Kind), Slug: it.Slug, Language: it.Language, From: it.From, To: it.To, Ignored: p.IsIgnored(it)}
 }
 
 // Update starts updating a site with the items chosen among its last preview, and returns at once.
@@ -388,7 +391,7 @@ func (u *Updates) History(ctx context.Context, siteID string) ([]OperationView, 
 	}
 	if len(ops) > 0 {
 		if item, ok := update.RollbackOf(ops[0]); ok {
-			v := itemView(item)
+			v := itemView(workspace.SitePreview{}, item)
 			views[0].Rollback = &v
 		}
 	}

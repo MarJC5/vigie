@@ -54,6 +54,47 @@ type SitePreview struct {
 	Job     update.Job
 	Preview update.Preview
 	Err     error
+	// Ignored are the updates offered that the site's ignores cover (ADR-0026): a bulk run leaves
+	// them out; the site's own update takes one chosen on purpose.
+	Ignored []update.Item
+}
+
+// Bulk selects what a bulk run updates on the site: everything offered, the ignored updates aside.
+func (p SitePreview) Bulk() update.Selection {
+	sel := update.All(p.Preview)
+	for _, it := range p.Ignored {
+		switch it.Kind {
+		case model.ItemCore:
+			sel.Core = false
+		case model.ItemPlugin:
+			sel.Plugins = slices.DeleteFunc(sel.Plugins, func(slug string) bool { return slug == it.Slug })
+		case model.ItemTheme:
+			sel.Themes = slices.DeleteFunc(sel.Themes, func(slug string) bool { return slug == it.Slug })
+		}
+	}
+	return sel
+}
+
+// IsIgnored tells whether an update of the preview is one the site's ignores cover.
+func (p SitePreview) IsIgnored(it update.Item) bool {
+	return slices.Contains(p.Ignored, it)
+}
+
+// ignoredIn are the updates of a preview that the ignores cover.
+func ignoredIn(p update.Preview, ignores []model.Ignore) []update.Item {
+	var offered []update.Item
+	if p.Core != nil {
+		offered = append(offered, *p.Core)
+	}
+	offered = append(append(offered, p.Plugins...), p.Themes...)
+	var ignored []update.Item
+	for _, it := range offered {
+		item := model.ScanItem{Kind: it.Kind, Slug: it.Slug, Update: model.UpdateAvailable, UpdateVersion: it.To}
+		if slices.ContainsFunc(ignores, func(i model.Ignore) bool { return i.CoversUpdate(item) }) {
+			ignored = append(ignored, it)
+		}
+	}
+	return ignored
 }
 
 // PreviewNode reads the previews of a site, the sites of a host, or every site under a folder
@@ -75,10 +116,15 @@ func (w *Workspace) PreviewNode(ctx context.Context, node model.Node) ([]SitePre
 			Job: update.Job{Site: site, Target: sshx.TargetFor(host), HostKey: host.ID.String(), Max: maxConcurrent(host),
 				WPCLI: tree.EffectiveWPCLI(site.ID)},
 		}
+		ignores, err := w.db.Ignores(ctx, site.ID)
+		if err != nil {
+			return nil, err
+		}
 		wg.Go(func() {
 			slots <- struct{}{}
 			defer func() { <-slots }()
 			previews[i].Preview, previews[i].Err = u.Preview(ctx, previews[i].Job)
+			previews[i].Ignored = ignoredIn(previews[i].Preview, ignores)
 		})
 	}
 	wg.Wait()
@@ -91,11 +137,11 @@ type Planned struct {
 	Selection update.Selection
 }
 
-// Everything plans every item of every preview, as "Update all" does.
+// Everything plans every item of every preview, as "Update all" does, the ignored updates aside.
 func Everything(previews []SitePreview) []Planned {
 	planned := make([]Planned, len(previews))
 	for i, p := range previews {
-		planned[i] = Planned{SitePreview: p, Selection: update.All(p.Preview)}
+		planned[i] = Planned{SitePreview: p, Selection: p.Bulk()}
 	}
 	return planned
 }

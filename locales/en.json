@@ -131,6 +131,7 @@
       "plugin": "plugin {{slug}} {{from}} → {{to}}",
       "theme": "theme {{slug}} {{from}} → {{to}}",
       "languages": "translations: {{list}}",
+      "ignored": "(ignored, left out)",
       "updated": "updated",
       "failed": "failed: {{message}}",
       "rollbackHint": "Roll back from the window: the History tab of the site.",

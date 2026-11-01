@@ -1135,6 +1135,12 @@ export interface UpdateItemView {
     "language": string;
     "from": string;
     "to": string;
+
+    /**
+     * Ignored: the site ignores this update (ADR-0026); "Update all" leaves it out, the site's own
+     * update takes it when chosen.
+     */
+    "ignored": boolean;
 }
 
 /**

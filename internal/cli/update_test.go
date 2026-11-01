@@ -189,3 +189,44 @@ func TestUpdateJSON(t *testing.T) {
 		t.Fatalf("exit %d, %+v", code, got)
 	}
 }
+
+// An update the site ignores is listed, said left out, and not installed; a site with only
+// ignored updates has nothing to update (ADR-0026).
+func TestUpdateLeavesTheIgnoredUpdatesOut(t *testing.T) {
+	ctx := context.Background()
+	f := newFake()
+	f.previews["blog.example.test"] = update.Preview{DumpTool: true, Plugins: akismet.Plugins}
+	open := updateEnv(t, f)
+	ws, err := open(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tree, err := ws.DB().LoadTree(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	key := model.UpdateKey(model.ScanItem{Kind: model.ItemPlugin, Slug: "akismet"})
+	for _, path := range []string{"Shop/shop.example.test", "Shop/blog.example.test"} {
+		n, err := tree.Resolve(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := ws.DB().SaveIgnore(ctx, model.Ignore{SiteID: n.ID, Key: key, UntilVersion: "5.7.2", Created: time.Now()}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	opts, err := cli.Parse([]string{"update", "Shop", "--yes"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	code := cli.Run(ctx, opts, cli.Env{In: strings.NewReader(""), Out: &out, Err: &out, Lang: "en", Texts: texts(t), Open: open})
+	for _, want := range []string{"plugin akismet 5.3 → 5.7.2 (ignored, left out)", "Shop/blog.example.test\n  nothing to update"} {
+		if !strings.Contains(out.String(), want) {
+			t.Errorf("output lacks %q:\n%s", want, out.String())
+		}
+	}
+	if code != 0 || len(f.runs) != 1 || f.runs[0] != "shop.example.test" {
+		t.Errorf("exit %d, runs %v; want shop.example.test only", code, f.runs)
+	}
+}
