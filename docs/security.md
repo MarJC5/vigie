@@ -101,9 +101,30 @@ of its plugin, theme, WordPress or PHP (it ends by itself as soon as a scan read
 or **permanently**, with a reason. An ignored finding stays listed, dimmed, with its reason and date,
 and no longer counts in the status. **Stop ignoring** puts it back.
 
+## What changed since the previous scan
+
+Each complete scan is compared with the complete scan of the site before it (one that failed or
+was cancelled in between is skipped), from what both stored: nothing more is read on the server.
+A change is:
+
+- an administrator added (a super administrator said so) or removed,
+- a plugin or theme installed or removed, or the active theme switched,
+- a version of WordPress, a plugin or a theme changed, **by Vigie** when one of its updates of the
+  site made it between the two scans, **outside Vigie** otherwise (automatic updates, by hand,
+  another tool),
+- files of WordPress or of a plugin newly different from wordpress.org's,
+- a new finding that is urgent or needs attention, and is not ignored.
+
+They are listed under each scan in the Activity journal, above a site's Overview ("Since the
+previous scan", absent when nothing changed), and under each site in `vigie scan`. A new
+administrator, and a plugin or theme installed outside Vigie, notify (see
+[background.md](background.md)): Vigie never installs one. A change made and undone between two
+scans is not seen.
+
 ## Command line
 
 `vigie scan [path]` exits with 0 when every site is up to date, 1 when one needs attention or is
 not fully checked, 2 when one is urgent, and 3 when a scan could not complete. `--json` lists the
-findings of each site with their level, facts and whether they are ignored; `--check-files`
+findings of each site with their level, facts and whether they are ignored, and its `changes`
+since the previous scan; `--check-files`
 compares the files again even within the day.

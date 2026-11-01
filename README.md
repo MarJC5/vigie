@@ -26,14 +26,15 @@ to protect. Vigie takes another route:
   FileZilla's site manager with the add-on [`vigie-filezilla`](https://github.com/MarJC5/vigie-filezilla).
 - A scan of each site: WordPress, PHP and database versions, pending updates (core, plugins,
   themes, translations), known vulnerabilities, abandoned plugins, file integrity, administrators
-  and two-factor status, TLS certificate and domain expiry.
+  and two-factor status, TLS certificate and domain expiry; and what changed since the previous
+  scan (a new administrator, a plugin installed or a version changed outside Vigie, files changed).
 - Multisite networks handled as one site, with their subsites.
 - Safe updates, on one site or in bulk: backup first, update, check the site, and roll back on
   failure, including premium plugins.
 - English and French interface.
 - A `vigie` command line with JSON output, for scripts and scheduled scans.
 - Vigie in the background: in the menu bar once its window is closed, automatic scans at the
-  interval you choose, notifications when a site turns urgent.
+  interval you choose, notifications when a site turns urgent or gets a new administrator.
 
 ## Privacy
 

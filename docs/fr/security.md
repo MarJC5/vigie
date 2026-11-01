@@ -118,9 +118,29 @@ dès qu'un relevé lit une autre version), soit **définitivement**, avec une ra
 ignoré reste listé, grisé, avec sa raison et sa date, et ne compte plus dans l'état. **Ne plus
 ignorer** le rétablit.
 
+## Ce qui a changé depuis le relevé précédent
+
+Chaque relevé complet est comparé au relevé complet du site qui le précède (un relevé échoué ou
+arrêté entre les deux est sauté), à partir de ce que les deux ont gardé : rien de plus n'est lu
+sur le serveur. Est un changement :
+
+- un administrateur ajouté (un super administrateur est signalé comme tel) ou retiré,
+- une extension ou un thème installé ou retiré, ou le thème actif changé,
+- une version de WordPress, d'une extension ou d'un thème qui a changé, **par Vigie** quand une de
+  ses mises à jour du site l'a faite entre les deux relevés, **hors de Vigie** sinon (mises à jour
+  automatiques, à la main, autre outil),
+- des fichiers de WordPress ou d'une extension devenus différents de ceux de wordpress.org,
+- un nouveau constat urgent ou à surveiller, non ignoré.
+
+Ils sont listés sous chaque relevé dans le journal Activité, au-dessus de l'aperçu d'un site
+(« Depuis le relevé précédent », absent quand rien n'a changé), et sous chaque site dans
+`vigie scan`. Un nouvel administrateur, et une extension ou un thème installé hors de Vigie,
+déclenchent une notification (voir [background.md](background.md)) : Vigie n'en installe jamais.
+Un changement fait puis défait entre deux relevés n'est pas vu.
+
 ## En ligne de commande
 
 `vigie scan [chemin]` se termine avec 0 quand chaque site est à jour, 1 quand un site est à
 surveiller ou pas entièrement vérifié, 2 quand un site est urgent, et 3 quand un relevé n'a pas pu
 aller au bout. `--json` liste les constats de chaque site avec leur niveau, leurs faits et s'ils
-sont ignorés. `--check-files` compare à nouveau les fichiers, même dans la journée.
+sont ignorés, et ses `changes` depuis le relevé précédent. `--check-files` compare à nouveau les fichiers, même dans la journée.

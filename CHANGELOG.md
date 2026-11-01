@@ -120,6 +120,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   say so, and the site's own update installs it only when ticked. The Plugins tab says so too.
 - Each update offered links to its changelog when wordpress.org has one: a plugin's Development
   tab, the release notes of WordPress.
+- What changed on a site since its previous complete scan: an administrator added or removed, a
+  plugin or theme installed or removed, the active theme switched, a version changed by Vigie or
+  outside it, files of WordPress or a plugin newly different, a new finding. Under each scan in the
+  Activity journal, above a site's Overview, under each site in `vigie scan` and as `changes` in
+  `--json`. A new administrator, and a plugin or theme installed outside Vigie, notify.
 
 ### Changed
 

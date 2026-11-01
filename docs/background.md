@@ -35,7 +35,9 @@ never compares the files again (that stays **Check files now**).
 
 With **Notifications** on (the system asks you once), Vigie tells you when a scan turns a site
 urgent, or cannot connect to a host any more. Never for what was already known, never for what got
-better: one notification for the sites turned urgent, one for the hosts turned unreachable.
+better: one notification for the sites turned urgent, one for the hosts turned unreachable. It also
+tells you when a scan finds a new administrator on a site, or a plugin or theme installed outside
+Vigie (see [security.md](security.md)).
 
 ## Scans with Vigie closed
 

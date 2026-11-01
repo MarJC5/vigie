@@ -139,10 +139,11 @@ func history(ctx context.Context, db *store.DB, site model.ID) error {
 	return nil
 }
 
-// scans are the latest scans of the first site (up to date) and the second (updates pending);
-// the network is left never scanned.
+// scans are the latest scans of the first site (up to date) and the second (updates pending), with
+// the complete one before of the second; the network is left never scanned.
 func scans(upToDate, outdated model.ID) []model.Scan {
 	finished := time.Now().Add(-3 * time.Minute)
+	earlierID := model.NewID() // identifiers are ordered in time: the earlier scan's comes first
 	base := model.Scan{
 		Started: finished.Add(-4 * time.Second), Finished: finished, Outcome: model.ScanCompleted,
 		WordPress: "7.1.3", PHPCLI: "8.4.27", WPCLI: "2.12.0",
@@ -177,7 +178,18 @@ func scans(upToDate, outdated model.ID) []model.Scan {
 	// A scan of the up-to-date site cancelled after its complete one: the complete one stays shown.
 	cancelled := model.Scan{ID: model.NewID(), SiteID: upToDate, Started: finished.Add(time.Minute), Finished: finished.Add(time.Minute + time.Second),
 		Outcome: model.ScanCancelled, Error: "cancelled"}
-	return []model.Scan{ok, warn, cancelled}
+	// The complete scan of the site with updates pending two days before: since then, WordPress moved
+	// outside Vigie, a plugin and an administrator were removed, file editing was allowed (ADR-0027).
+	earlier := warn
+	earlier.ID, earlier.Started, earlier.Finished = earlierID, warn.Started.Add(-48*time.Hour), warn.Finished.Add(-48*time.Hour)
+	earlier.WordPress, earlier.FilesChecked = "7.1.2", earlier.Finished
+	earlier.Items = append([]model.ScanItem{
+		{Kind: model.ItemCore, Status: "minor", Version: "7.1.2", Update: model.UpdateAvailable, UpdateVersion: "7.1.4"},
+		{Kind: model.ItemPlugin, Slug: "hello-dolly", Title: "Hello Dolly", Status: "inactive", Version: "1.7.2", Update: model.UpdateNone, OnWordPressOrg: true},
+	}, warn.Items[1:]...)
+	earlier.Findings = []model.Finding{warn.Findings[0], warn.Findings[2], warn.Findings[3], warn.Findings[4],
+		{Kind: model.KindAdministrator, Subject: "user:stagiaire", Level: model.LevelInfo, Facts: map[string]string{"two-factor": "on"}}}
+	return []model.Scan{earlier, ok, warn, cancelled}
 }
 
 // ignore sets aside the outdated site's "hidden from search engines", permanently.

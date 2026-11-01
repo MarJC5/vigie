@@ -42,7 +42,9 @@ automatique ne met jamais rien à jour, et ne compare jamais à nouveau les fich
 Avec **Notifications** (le système vous le demande une fois), Vigie vous prévient quand un relevé
 rend un site urgent, ou ne peut plus se connecter à un hébergement. Jamais pour ce qui était déjà
 connu, jamais pour ce qui va mieux : une notification pour les sites devenus urgents, une pour les
-hébergements devenus injoignables.
+hébergements devenus injoignables. Vigie vous prévient aussi quand un relevé trouve un nouvel
+administrateur sur un site, ou une extension ou un thème installé hors de Vigie (voir
+[security.md](security.md)).
 
 ## Relevés avec Vigie fermée
 
