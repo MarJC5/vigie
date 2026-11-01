@@ -15,6 +15,7 @@ import type {
   SiteResultView,
   SiteRow,
   SiteView,
+  TreeView,
   UpdatesState,
 } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { clock, day } from "../../lib/findings";
@@ -114,6 +115,9 @@ export interface AppShellProps {
   canOpenSSH?: boolean;
   /** When the next automatic scan is due (RFC 3339), at the foot of the site list; none while off. */
   nextScan?: string;
+  /** How the user left the site list (Preferences.TreeView); told of each change. */
+  treeView?: TreeView;
+  onTreeView?: (view: TreeView) => void;
 }
 
 const idle: ScansState = { running: [], completed: 0 };
@@ -156,13 +160,23 @@ export function AppShell({
   onCopy,
   canOpenSSH,
   nextScan,
+  treeView,
+  onTreeView,
 }: AppShellProps) {
   const { t } = useTranslation();
   // Something to show at once: the item asked for, else the first host, else the first item.
   const [selectedId, setSelectedId] = useState<string | undefined>(
     () => initialSelectedId ?? (nodes.find((n) => n.kind === "host") ?? nodes[0])?.id,
   );
-  const [paneOpen, setPaneOpen] = useState(true);
+  // The list hidden and the folders folded, as the user left them; each change kept for next time,
+  // without the items deleted since.
+  const [paneOpen, setPaneOpen] = useState(!treeView?.hidden);
+  const [folded, setFolded] = useState(() => new Set(treeView?.folded ?? []));
+  const leave = (open: boolean, next: Set<string>) => {
+    setPaneOpen(open);
+    setFolded(next);
+    onTreeView?.({ hidden: !open, folded: nodes.filter((n) => next.has(n.id)).map((n) => n.id) });
+  };
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState("");
   const searchField = useRef<HTMLInputElement>(null);
@@ -189,7 +203,7 @@ export function AppShell({
   const say = (p: Problem) => t(p.code, { message: p.detail });
 
   const openSearch = () => {
-    setPaneOpen(true);
+    if (!paneOpen) leave(true, folded);
     setSearching(true);
     // A field already open takes the focus now; a new one takes it as it appears (autoFocus).
     searchField.current?.focus();
@@ -416,7 +430,7 @@ export function AppShell({
           <div className={styles.paneHeader}>
             <h2 className={styles.paneTitle}>{t("nav.sites")}</h2>
             <Button variant="icon" icon="search" label={t("manager.search")} onClick={() => (searching ? closeSearch() : openSearch())} />
-            <Button variant="icon" icon="sidebar" label={t("manager.collapse")} onClick={() => setPaneOpen(false)} />
+            <Button variant="icon" icon="sidebar" label={t("manager.collapse")} onClick={() => leave(false, folded)} />
           </div>
           {searching && (
             <div className={styles.search}>
@@ -447,6 +461,8 @@ export function AppShell({
                 selectedId={selectedId}
                 onSelect={setSelectedId}
                 filter={query}
+                collapsed={folded}
+                onCollapsedChange={(next) => leave(paneOpen, next)}
                 {...(edit && {
                   editingId,
                   onEdit: setEditingId,
@@ -471,7 +487,7 @@ export function AppShell({
       {/* Focusable so the keyboard can scroll a long detail, WebKit included. */}
       <main className={paneOpen ? styles.main : `${styles.main} ${styles.folded}`} tabIndex={0} inert={inert}>
         {!paneOpen && (
-          <Button variant="icon" icon="sidebar" label={t("manager.expand")} onClick={() => setPaneOpen(true)} />
+          <Button variant="icon" icon="sidebar" label={t("manager.expand")} onClick={() => leave(true, folded)} />
         )}
         {nodes.length === 0 ? (
           <EmptyState title={t("empty.title")} text={t("empty.text")}>

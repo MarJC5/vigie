@@ -17,7 +17,7 @@ import {
   Updates,
   Watch,
 } from "../bindings/github.com/MarJC5/vigie/internal/app";
-import type { BackgroundSettings, Journal, LoginItemState, LookupsView, Node, ScansState, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { BackgroundSettings, Journal, LoginItemState, LookupsView, Node, ScansState, TreeView, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { ActivityPage } from "./components/ActivityPage/ActivityPage";
 import { AddHostWizard, type WizardApi } from "./components/AddHostWizard/AddHostWizard";
 import { type AddonsApi, AddonsFlow } from "./components/AddonsFlow/AddonsFlow";
@@ -111,6 +111,7 @@ interface Loaded {
   theme: Theme;
   nodes: Node[];
   version: string;
+  treeView: TreeView;
 }
 
 /** A scan asked for before the user answered the consent screen. */
@@ -146,13 +147,15 @@ export function App() {
   const [journalFilter, setJournalFilter] = useState("");
 
   useEffect(() => {
-    void Promise.all([Preferences.Language(), SiteManager.Tree(), Preferences.Version(), Preferences.Theme()]).then(([lang, tree, version, theme]) => {
-      const i18n = createI18n(lang);
-      document.documentElement.lang = i18n.language;
-      // Before the first render: the window never shows the system's theme first.
-      applyTheme(theme as Theme);
-      setLoaded({ i18n, nodes: tree.nodes ?? [], version, theme: theme as Theme });
-    });
+    void Promise.all([Preferences.Language(), SiteManager.Tree(), Preferences.Version(), Preferences.Theme(), Preferences.TreeView()]).then(
+      ([lang, tree, version, theme, treeView]) => {
+        const i18n = createI18n(lang);
+        document.documentElement.lang = i18n.language;
+        // Before the first render: the window never shows the system's theme first.
+        applyTheme(theme as Theme);
+        setLoaded({ i18n, nodes: tree.nodes ?? [], version, theme: theme as Theme, treeView });
+      },
+    );
     void Security.Lookups().then(setLookups);
     void SiteManager.CanOpenSSH().then(setCanOpenSSH);
     void Preferences.Background().then(setBackground);
@@ -244,6 +247,11 @@ export function App() {
 
   const showDataWindow = useCallback(() => setDataWindow(true), []);
 
+  const changeTreeView = (treeView: TreeView) => {
+    setLoaded((l) => l && { ...l, treeView });
+    void Preferences.SetTreeView(treeView);
+  };
+
   const changeTheme = async (theme: Theme) => {
     applyTheme(theme);
     setLoaded((l) => l && { ...l, theme });
@@ -274,6 +282,8 @@ export function App() {
         <AppShell
           key={added}
           nodes={loaded.nodes}
+          treeView={loaded.treeView}
+          onTreeView={changeTreeView}
           onAddHost={() => setAdding(true)}
           initialSelectedId={added}
           data={shellData}

@@ -88,6 +88,7 @@ export type {
     StepView,
     TestResult,
     Tree,
+    TreeView,
     UpdateItemView,
     UpdateView,
     UpdatesState,

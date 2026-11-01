@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strconv"
@@ -22,6 +23,7 @@ const (
 	backgroundSetting = "background"
 	autoScanSetting   = "autoscan"
 	notifySetting     = "notify"
+	treeSetting       = "tree"
 )
 
 // AutoScanHours are the intervals offered for automatic scans, in hours; 0 is off.
@@ -138,6 +140,43 @@ func (p *Preferences) SetBackground(ctx context.Context, b BackgroundSettings) e
 		p.OnBackground(b)
 	}
 	return nil
+}
+
+// TreeView is how the user left the site list, kept from one launch to the next: the folders and
+// hosts folded, by ID, and whether the list is hidden.
+type TreeView struct {
+	Folded []string `json:"folded"`
+	Hidden bool     `json:"hidden"`
+}
+
+// TreeView returns how the user left the site list: everything unfolded and shown until then, or
+// when the stored value cannot be read.
+func (p *Preferences) TreeView(ctx context.Context) (TreeView, error) {
+	value, ok, err := p.store.Setting(ctx, treeSetting)
+	if err != nil {
+		return TreeView{}, err
+	}
+	var v TreeView
+	if !ok || json.Unmarshal([]byte(value), &v) != nil {
+		return TreeView{Folded: []string{}}, nil
+	}
+	return TreeView{Folded: folded(v.Folded), Hidden: v.Hidden}, nil
+}
+
+// SetTreeView stores how the user left the site list.
+func (p *Preferences) SetTreeView(ctx context.Context, v TreeView) error {
+	data, err := json.Marshal(TreeView{Folded: folded(v.Folded), Hidden: v.Hidden})
+	if err != nil {
+		return err
+	}
+	return p.store.SetSetting(ctx, treeSetting, string(data))
+}
+
+// folded is a list of IDs sorted, each once, without empty ones.
+func folded(ids []string) []string {
+	out := slices.DeleteFunc(slices.Clone(ids), func(id string) bool { return id == "" })
+	slices.Sort(out)
+	return slices.Compact(out)
 }
 
 // Version is Vigie's version, for the About tab of the settings.

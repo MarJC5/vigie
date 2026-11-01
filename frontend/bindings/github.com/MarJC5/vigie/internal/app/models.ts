@@ -1083,6 +1083,15 @@ export interface Tree {
 }
 
 /**
+ * TreeView is how the user left the site list, kept from one launch to the next: the folders and
+ * hosts folded, by ID, and whether the list is hidden.
+ */
+export interface TreeView {
+    "folded": string[] | null;
+    "hidden": boolean;
+}
+
+/**
  * UpdateItemView is one item an update changes.
  */
 export interface UpdateItemView {

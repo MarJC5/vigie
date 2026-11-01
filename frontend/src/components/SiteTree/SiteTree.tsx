@@ -28,6 +28,9 @@ export interface SiteTreeProps {
   onMove?: (id: string, folderId: string) => void;
   /** Follows a drag: the target folder ("" the root), undefined when there is none; null at the end. */
   onDragChange?: (drag: Drag | null) => void;
+  /** The folders and hosts folded, when kept above the tree (so they outlive it); else its own. */
+  collapsed?: Set<string>;
+  onCollapsedChange?: (collapsed: Set<string>) => void;
 }
 
 export interface Drag {
@@ -38,10 +41,11 @@ export interface Drag {
 /** The site manager tree: folders and hosts fold, arrow keys move between visible items. */
 export function SiteTree({
   label, nodes, selectedId, onSelect, filter = "", editingId, onEdit, onRename, onCancelEdit, onDelete, onMenu, onMove,
-  onDragChange,
+  onDragChange, collapsed: kept, onCollapsedChange,
 }: SiteTreeProps) {
   const { t } = useTranslation();
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [own, setOwn] = useState<Set<string>>(new Set());
+  const collapsed = kept ?? own;
   const ref = useRef<HTMLDivElement>(null);
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
 
@@ -114,12 +118,11 @@ export function SiteTree({
     return nodes.filter((n) => !hidden(n)).map((n) => ({ node: n, depth: depthOf(n), inNotes: false }));
   }, [nodes, collapsed, filter, editingId]);
 
-  const toggle = (id: string) =>
-    setCollapsed((current) => {
-      const next = new Set(current);
-      if (!next.delete(id)) next.add(id);
-      return next;
-    });
+  const toggle = (id: string) => {
+    const next = new Set(collapsed);
+    if (!next.delete(id)) next.add(id);
+    (onCollapsedChange ?? setOwn)(next);
+  };
 
   const onKeyDown = (event: KeyboardEvent) => {
     const row = document.activeElement as HTMLElement | null;

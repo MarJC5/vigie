@@ -50,10 +50,25 @@ export function SetTheme(theme: string): $CancellablePromise<void> {
 }
 
 /**
+ * SetTreeView stores how the user left the site list.
+ */
+export function SetTreeView(v: $models.TreeView): $CancellablePromise<void> {
+    return $Call.ByID(378536318, v);
+}
+
+/**
  * Theme returns the theme chosen for the window: ThemeSystem until the user chose another.
  */
 export function Theme(): $CancellablePromise<string> {
     return $Call.ByID(1739854230);
+}
+
+/**
+ * TreeView returns how the user left the site list: everything unfolded and shown until then, or
+ * when the stored value cannot be read.
+ */
+export function TreeView(): $CancellablePromise<$models.TreeView> {
+    return $Call.ByID(3510487684);
 }
 
 /**

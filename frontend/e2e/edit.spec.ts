@@ -87,3 +87,22 @@ test("an empty folder is deleted after a confirmation", async () => {
   await page.getByRole("dialog", { name: 'Delete the folder "Valais"?' }).getByRole("button", { name: "Delete the folder" }).click();
   await expect(item(/^Valais/)).toHaveCount(0);
 });
+
+test("the site list stays as the user left it: across pages, then after a reload", async () => {
+  const rail = page.getByRole("navigation", { name: "Navigation" });
+  await item(/^Personal/).focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(item(/^Personal/)).toHaveAttribute("aria-expanded", "false");
+  await expect(item(/^Managed VPS/)).toHaveCount(0);
+
+  await rail.getByRole("link", { name: "Settings" }).click();
+  await rail.getByRole("link", { name: "Sites" }).click();
+  await expect(item(/^Personal/)).toHaveAttribute("aria-expanded", "false");
+
+  await page.getByRole("button", { name: "Hide the site list" }).click();
+  await page.reload();
+  await expect(tree()).toHaveCount(0);
+  await page.getByRole("button", { name: "Show the site list" }).click();
+  await expect(item(/^Personal/)).toHaveAttribute("aria-expanded", "false");
+  await expect(item(/^Clients/)).toHaveAttribute("aria-expanded", "true");
+});

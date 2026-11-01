@@ -92,3 +92,30 @@ func TestAChangeOfTheBackgroundSettingsIsTold(t *testing.T) {
 		t.Fatalf("told %+v, want only the stored change", told)
 	}
 }
+
+func TestTheSiteListIsLeftAsTheUserLeftIt(t *testing.T) {
+	ctx := context.Background()
+	db := repository(t)
+	prefs := app.NewPreferences(db, func() string { return "fr" })
+	if got, err := prefs.TreeView(ctx); err != nil || got.Hidden || len(got.Folded) != 0 {
+		t.Fatalf("TreeView() = %+v, %v; want everything unfolded and shown", got, err)
+	}
+	if err := prefs.SetTreeView(ctx, app.TreeView{Folded: []string{"b", "a", "b", ""}, Hidden: true}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := app.NewPreferences(db, func() string { return "fr" }).TreeView(ctx)
+	if err != nil || !got.Hidden || len(got.Folded) != 2 || got.Folded[0] != "a" || got.Folded[1] != "b" {
+		t.Fatalf("TreeView() after SetTreeView = %+v, %v; want a and b folded, once each, and the list hidden", got, err)
+	}
+}
+
+func TestAnUnreadableSiteListSettingIsForgotten(t *testing.T) {
+	ctx := context.Background()
+	db := repository(t)
+	if err := db.SetSetting(ctx, "tree", "{not json"); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := app.NewPreferences(db, func() string { return "fr" }).TreeView(ctx); err != nil || got.Hidden || len(got.Folded) != 0 {
+		t.Fatalf("TreeView() = %+v, %v; want the default", got, err)
+	}
+}

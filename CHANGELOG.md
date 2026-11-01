@@ -105,6 +105,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The plugins and themes across the sites of a host or folder, in a tab next to its sites: how many
   sites run each, in which versions, with an update; a line opens to its sites, and a search by name.
   A site never scanned, or whose latest scan failed, is left out and named.
+- The site list stays as you left it, from one page to another and from one launch to the next:
+  the folders and hosts folded, and the list hidden or shown.
 
 ### Changed
 
