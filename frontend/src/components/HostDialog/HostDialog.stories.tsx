@@ -13,6 +13,7 @@ const stored: HostDetails = {
 function fakeApi(): HostEditApi {
   return {
     Host: fn(async () => stored),
+    TestConnection: fn(async () => ({ phpVersion: "8.4.27", wpCli: "wp", wpCliVersion: "2.12.0", problem: null })),
     EditHost: fn(async (_id: string, d: HostDetails) => {
       if (d.name === "") return { keyCleared: false, problem: { code: "problem.emptyName", detail: "" } };
       return { keyCleared: d.hostname !== stored.hostname, problem: null };
@@ -88,5 +89,18 @@ export const Problems: Story = {
     await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     await waitFor(() => expect(within(dialog).getByRole("textbox", { name: "Name in Vigie" })).toHaveAccessibleDescription("The name cannot be empty."));
     await expect(args.onSaved).not.toHaveBeenCalled();
+  },
+};
+
+// The connection as it is in the form can be tested before saving it.
+export const TestBeforeSaving: Story = {
+  args: { api: fakeApi(), onTest: fn() },
+  play: async ({ canvasElement, args }) => {
+    const dialog = await opened(canvasElement);
+    const name = within(dialog).getByRole("textbox", { name: "Name in Vigie" });
+    await userEvent.clear(name);
+    await userEvent.type(name, "Shared hosting 2");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Test the connection" }));
+    await expect(args.onTest).toHaveBeenCalledWith(expect.objectContaining({ name: "Shared hosting 2", hostname: stored.hostname }));
   },
 };

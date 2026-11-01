@@ -531,7 +531,8 @@
       "maxConcurrentHint": "On shared hosting, keep 2",
       "addressChanged": "The address changed: once saved, Vigie asks {{host}} for its key, for you to check it.",
       "save": "Save",
-      "maxInvalid": "A whole number from 1 to 10, or empty for 2."
+      "maxInvalid": "A whole number from 1 to 10, or empty for 2.",
+      "test": "Test the connection"
     },
     "key": {
       "title": "Check the key of {{host}}",
@@ -572,7 +573,8 @@
       },
       "addHost": "Add a host…",
       "scanAll": "Scan everything",
-      "export": "Export…"
+      "export": "Export…",
+      "test": "Test the connection…"
     },
     "more": "More actions",
     "dropInto": "Drop to move {{name}} into {{folder}}",
@@ -1258,5 +1260,11 @@
     "hint": "Markdown: **bold**, lists, [links](https://…)",
     "count": "{{count}} / {{max}}",
     "save": "Save"
+  },
+  "hostTest": {
+    "title": "Test the connection to {{name}}",
+    "lead": "Vigie checks the connection, PHP on the command line and WP-CLI. Nothing is written on the server.",
+    "again": "Test again",
+    "help": "See the help"
   }
 }

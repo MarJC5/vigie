@@ -557,7 +557,8 @@
       "maxConcurrentHint": "En mutualisé, gardez 2",
       "addressChanged": "L'adresse a changé : une fois enregistrée, Vigie demande sa clé à {{host}} pour que vous la vérifiiez.",
       "save": "Enregistrer",
-      "maxInvalid": "Un nombre entier de 1 à 10, ou vide pour 2."
+      "maxInvalid": "Un nombre entier de 1 à 10, ou vide pour 2.",
+      "test": "Tester la connexion"
     },
     "key": {
       "title": "Vérifier la clé de {{host}}",
@@ -599,7 +600,8 @@
       },
       "addHost": "Ajouter un hébergement…",
       "scanAll": "Tout relever",
-      "export": "Exporter…"
+      "export": "Exporter…",
+      "test": "Tester la connexion…"
     },
     "more": "Plus d'actions",
     "dropInto": "Relâchez pour déplacer {{name}} dans {{folder}}",
@@ -1312,5 +1314,11 @@
     "hint": "Markdown : **gras**, listes, [liens](https://…)",
     "count": "{{count}} / {{max}}",
     "save": "Enregistrer"
+  },
+  "hostTest": {
+    "title": "Tester la connexion à {{name}}",
+    "lead": "Vigie vérifie la connexion, PHP en ligne de commande et WP-CLI. Rien n'est écrit sur le serveur.",
+    "again": "Tester à nouveau",
+    "help": "Voir l'aide"
   }
 }

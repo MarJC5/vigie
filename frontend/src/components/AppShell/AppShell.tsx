@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type {
   CreateResult,
   FindingView,
+  HostDetails,
   HostView,
   Node,
   OperationView,
@@ -25,6 +26,7 @@ import { EmptyState } from "../EmptyState/EmptyState";
 import { Icon, type IconName } from "../Icon/Icon";
 import { type FindSitesApi, FindSitesDialog } from "../FindSitesDialog/FindSitesDialog";
 import { HostDialog, type HostEditApi } from "../HostDialog/HostDialog";
+import { HostTestDialog } from "../HostTestDialog/HostTestDialog";
 import { IgnoreDialog } from "../IgnoreDialog/IgnoreDialog";
 import { InfoList, InfoRow } from "../InfoList/InfoList";
 import { type ColorChoice, Menu, type MenuEntry } from "../Menu/Menu";
@@ -177,6 +179,8 @@ export function AppShell({
   const [ignores, setIgnores] = useState(0);
   // The admin address of a site being given, with the site's own and computed ones.
   const [admin, setAdmin] = useState<{ id: string; own: string; computed: string } | null>(null);
+  // The connection test of a host: the stored connection, or the one being edited.
+  const [hostTest, setHostTest] = useState<{ name: string; details: () => Promise<HostDetails> } | null>(null);
 
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const say = (p: Problem) => t(p.code, { message: p.detail });
@@ -295,6 +299,7 @@ export function AppShell({
     if (action === "newFolder") void createFolder(folderOf(id));
     if (action === "rename") setEditingId(id);
     if (action === "move" || action === "delete" || action === "host" || action === "find") setDialog({ kind: action, id });
+    if (action === "test" && edit) setHostTest({ name: byId.get(id)?.name ?? "", details: () => edit.Host(id) });
     if (action === "admin") void data?.site(id).then((site) => setAdmin({ id, own: site.ownAdminUrl, computed: site.computedAdminUrl }));
   };
 
@@ -353,7 +358,7 @@ export function AppShell({
     );
   };
 
-  const inert = (dialog !== null || bulkDialog !== null || ignoring !== null || admin !== null) || undefined;
+  const inert = (dialog !== null || bulkDialog !== null || ignoring !== null || admin !== null || hostTest !== null) || undefined;
 
   const ignore = async (untilVersion: string, reason: string) => {
     if (!security || !ignoring) return;
@@ -615,6 +620,23 @@ export function AppShell({
             setDialog(null);
             void onChanged?.();
           }}
+          onTest={(d) => setHostTest({ name: d.name, details: async () => d })}
+        />
+      )}
+      {edit && hostTest && (
+        <HostTestDialog
+          name={hostTest.name}
+          details={hostTest.details}
+          test={(d) => edit.TestConnection(d)}
+          onClose={() => setHostTest(null)}
+          onHelp={
+            onSection &&
+            (() => {
+              setHostTest(null);
+              setDialog(null);
+              onSection("help");
+            })
+          }
         />
       )}
       {edit && dialog && dialogNode && dialog.kind === "find" && (
@@ -672,7 +694,7 @@ function menuEntries(node: Node, nodes: Node[], t: T, canExport: boolean): MenuE
   if (node.kind === "host") {
     return [
       scan, newFolder, separator, rename, move, colors,
-      item("host", t("edit.menu.edit"), "host"), item("find", t("edit.menu.find"), "findSites"), ...exported,
+      item("host", t("edit.menu.edit"), "host"), item("test", t("edit.menu.test"), "ok"), item("find", t("edit.menu.find"), "findSites"), ...exported,
       separator, remove("edit.menu.deleteHost"),
     ];
   }

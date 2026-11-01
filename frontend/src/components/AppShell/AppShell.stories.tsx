@@ -243,6 +243,7 @@ function fakeEdit(): EditApi {
     Delete: fn(async () => null),
     SetAdminURL: fn(async () => null),
     SetNotes: fn(async () => null),
+    TestConnection: fn(async () => ({ phpVersion: "8.4.27", wpCli: "wp", wpCliVersion: "2.12.0", problem: null })),
     Host: fn(async () => ({ name: "Managed VPS", alias: "", hostname: "vps.example.test", port: 2222, user: "deploy", keyPath: "", wpCli: "wp", folderId: "personal", maxConcurrent: 0 })),
     EditHost: fn(async () => ({ keyCleared: false, problem: null })),
     HostKeys: fn(async () => ({ name: "", keys: [], problem: null })),
@@ -266,7 +267,7 @@ export const MoveFromTheMenu: Story = {
     await userEvent.pointer({ keys: "[MouseRight]", target: shell.getByRole("treeitem", { name: /Managed VPS/ }) });
     const menu = shell.getByRole("menu", { name: "Actions on Managed VPS" });
     await expect(within(menu).getAllByRole("menuitem").map((i) => i.textContent)).toEqual([
-      "Scan⌘R", "New folder⇧⌘N", "Rename↩", "Move to…", "Edit the connection…", "Find new sites…", "Delete the host…⌘⌫",
+      "Scan⌘R", "New folder⇧⌘N", "Rename↩", "Move to…", "Edit the connection…", "Test the connection…", "Find new sites…", "Delete the host…⌘⌫",
     ]);
     await userEvent.click(within(menu).getByRole("menuitem", { name: "Move to…" }));
     const dialog = shell.getByRole("dialog", { name: 'Move "Managed VPS"' });

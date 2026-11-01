@@ -6,6 +6,7 @@ import type {
   HostDetails,
   KeysResult,
   Problem,
+  TestResult,
 } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { keyType } from "../../lib/hosts";
 import { Button } from "../Button/Button";
@@ -25,6 +26,7 @@ export interface HostEditApi {
   HostKeys(d: HostDetails): Promise<KeysResult>;
   Trust(name: string, fingerprint: string): Promise<Problem | null>;
   KeepKey(hostId: string, fingerprint: string): Promise<Problem | null>;
+  TestConnection(d: HostDetails): Promise<TestResult>;
 }
 
 export interface HostDialogProps {
@@ -35,6 +37,8 @@ export interface HostDialogProps {
   onClose: () => void;
   /** Saved, and its key trusted again when the address changed. */
   onSaved: () => void;
+  /** Tests the connection as it is in the form, before saving it. */
+  onTest?: (d: HostDetails) => void;
 }
 
 interface Form {
@@ -68,7 +72,7 @@ function formOf(d: HostDetails): Form {
 }
 
 /** Edits the name and connection of a host; a new address asks to check the server's key again. */
-export function HostDialog({ api, hostId, sites, onClose, onSaved }: HostDialogProps) {
+export function HostDialog({ api, hostId, sites, onClose, onSaved, onTest }: HostDialogProps) {
   const { t } = useTranslation();
   const [stored, setStored] = useState<HostDetails | null>(null);
   const [form, setForm] = useState<Form | null>(null);
@@ -204,6 +208,11 @@ export function HostDialog({ api, hostId, sites, onClose, onSaved }: HostDialogP
       onClose={onClose}
       actions={
         <>
+          {onTest && (
+            <Button variant="text" className={styles.test} icon="ok" onClick={() => onTest(details())}>
+              {t("edit.host.test")}
+            </Button>
+          )}
           <Button variant="outline" onClick={onClose}>
             {t("edit.cancel")}
           </Button>

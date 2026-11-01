@@ -12,7 +12,7 @@ import type {
   Problem,
   TestResult,
 } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
-import { type CheckItem, CheckList } from "../CheckList/CheckList";
+import { CheckList } from "../CheckList/CheckList";
 import { Checkbox } from "../Checkbox/Checkbox";
 import { ChoiceCard } from "../ChoiceCard/ChoiceCard";
 import { Column, Columns } from "../Columns/Columns";
@@ -23,7 +23,7 @@ import type { ProgressProps } from "../Progress/Progress";
 import { SelectField } from "../SelectField/SelectField";
 import { TextField } from "../TextField/TextField";
 import { WizardStep } from "../WizardStep/WizardStep";
-import { installItem, keyType } from "../../lib/hosts";
+import { checkItems, installItem, keyType } from "../../lib/hosts";
 
 /** The Go service the wizard calls (app.HostWizard); stories and tests give a fake. */
 export interface WizardApi {
@@ -388,32 +388,4 @@ export function AddHostWizard({ api, folders, onClose, onAdded }: AddHostWizardP
   );
 }
 
-type T = (key: string, vars?: Record<string, unknown>) => string;
 
-// The three checks of the test, from its result: what failed stops the ones after it.
-function checkItems(test: TestResult | null, running: boolean, t: T): CheckItem[] {
-  const labels = [t("wizard.check.ssh"), t("wizard.check.php"), t("wizard.check.wpCli")];
-  if (!test) {
-    return labels.map((label, i) => ({ label, value: "", state: running && i === 0 ? "running" : "waiting" }));
-  }
-  const code = test.problem?.code ?? "";
-  const sshFailed = code.startsWith("failure.") || code === "problem.error";
-  const phpFailed = code === "problem.noPhp";
-  const wpFailed = code === "problem.noWpCli";
-  const failedText = test.problem ? t(test.problem.code, { message: test.problem.detail }) : "";
-  return [
-    sshFailed
-      ? { label: labels[0]!, value: failedText, state: "failed" }
-      : { label: labels[0]!, value: t("wizard.check.connected"), state: "ok" },
-    sshFailed
-      ? { label: labels[1]!, value: "", state: "waiting" }
-      : phpFailed
-        ? { label: labels[1]!, value: failedText, state: "failed" }
-        : { label: labels[1]!, value: test.phpVersion, state: "ok" },
-    sshFailed || phpFailed
-      ? { label: labels[2]!, value: "", state: "waiting" }
-      : wpFailed
-        ? { label: labels[2]!, value: failedText, state: "failed" }
-        : { label: labels[2]!, value: `${test.wpCliVersion} (${test.wpCli})`, state: "ok" },
-  ];
-}

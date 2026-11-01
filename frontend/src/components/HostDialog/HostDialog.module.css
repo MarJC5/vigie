@@ -13,3 +13,8 @@
   margin-top: 2px;
   color: var(--vg-status-warn);
 }
+
+/* "Test the connection" on the left, Cancel and Save on the right. */
+.test {
+  margin-right: auto;
+}
