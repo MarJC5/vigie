@@ -135,8 +135,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   each plugin and theme is active (across the network, on some subsites, nowhere). A scan reads
   every subsite in one go, with a read-only script sent to WP-CLI, and every administrator of a
   subsite is a finding as those of the main site are, the super administrators first.
+- Settings, Data, Database: the history kept, and "Compact the database", which shows the size of
+  the database and the space free in it, and gives that space back to the disk.
 
 ### Changed
+
+- The history of scans is kept for as long as the pages need it, so the database stops growing:
+  each site's latest scans always, every scan in detail for 90 days, then for a year only the scans
+  that changed something, without their details; runs and notifications a year. Vigie lets the
+  rest go when it starts and after each run of scans. See [docs/data.md](docs/data.md).
 
 - The site list, a site's page and the Activity journal stay fast with a long history: the latest
   scans and the journal's days are found by index, not by going through every scan kept.

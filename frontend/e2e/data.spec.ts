@@ -104,3 +104,13 @@ test("a CSV list is previewed with the line refused, then added into a folder", 
   await rail(empty).getByRole("link", { name: "Sites" }).click();
   await expect(tree(empty).getByRole("treeitem", { name: /^CSV/ })).toBeVisible();
 });
+
+test("the database's size is shown, and compacting it says the size before and after", async () => {
+  await dataTab(seeded);
+  const panel = seeded.getByRole("tabpanel");
+  await expect(panel.getByText(/^Size: [\d.]+ (kB|MB)(, [\d.]+ (kB|MB) of it free)?$/)).toBeVisible();
+  await panel.getByRole("button", { name: "Compact" }).click();
+  await expect(panel.getByText(/^Compacted: [\d.]+ (kB|MB) → [\d.]+ (kB|MB)$/)).toBeVisible();
+  await expect(panel.getByText(/^Size: [\d.]+ (kB|MB)$/)).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Compact" })).toBeEnabled();
+});

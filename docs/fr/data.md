@@ -5,6 +5,28 @@ Support/Vigie/vigie.db` sous macOS, `~/.config/vigie/vigie.db` sous Linux (ou le
 `--data-dir`). À côté, `known_hosts` contient les clés des serveurs que vous avez approuvés. Avant
 chaque changement du schéma de sa base, Vigie en écrit une copie, `vigie.db.before-<version>`.
 
+## L'historique conservé
+
+Vigie garde l'historique de vos relevés tant que ses pages en ont besoin, puis le laisse partir :
+le fichier cesse de grossir, quels que soient le nombre de sites et la fréquence des relevés.
+
+* **Toujours**, quel que soit leur âge : le dernier relevé de chaque site, son dernier relevé
+  complet et le relevé complet d'avant, avec tout ce qu'ils ont lu et trouvé. « Depuis le relevé
+  précédent », dans l'Aperçu, compare ces deux-là.
+* **90 jours** : chaque relevé, en détail (ses extensions, thèmes, langues, constats et
+  sous-sites).
+* **Un an** : après 90 jours, seuls les relevés qui ont changé quelque chose restent, sans leur
+  détail : l'état du site a changé (urgent, à surveiller, injoignable, de retour), un relevé a
+  échoué ou a de nouveau réussi, ou quelque chose a été installé, mis à jour, supprimé ou trouvé.
+  C'est ce que montre le journal de l'Activité, qui remonte sur un an. Les séries de relevés et les
+  notifications envoyées sont gardées un an aussi.
+* **Aussi longtemps que le site** : les mises à jour et les retours en arrière, avec leurs étapes.
+
+Vigie laisse partir l'ancien historique à son démarrage et après chaque série de relevés, en
+arrière-plan. SQLite réutilise la place libérée, mais le fichier garde sa taille : **Réglages,
+Données, Compacter la base** rend cette place au disque (quelques secondes, proposé quand aucun
+relevé ni aucune mise à jour ne tourne). Un export avec l'historique contient ce qui est gardé.
+
 ## Le format d'export
 
 Un export est un fichier JSON, en UTF-8, qui contient votre gestionnaire de sites. Vigie l'écrit,
@@ -47,9 +69,9 @@ ce qu'un add-on répond.
   dans le format : elle reste sur cet ordinateur.
 * **ignores** (constats ignorés) : les constats mis de côté : `site`, la `key` du constat,
   `untilVersion` (`""` quand c'est définitif), `reason`, `created`.
-* **history** (historique), seulement si vous le demandez : les relevés des sites exportés, avec ce
-  qu'ils ont lu (`items`) et trouvé (`findings`), et les mises à jour et retours en arrière avec
-  leurs étapes.
+* **history** (historique), seulement si vous le demandez : les relevés des sites exportés que Vigie
+  garde (voir plus haut), avec ce qu'ils ont lu (`items`) et trouvé (`findings`), et les mises à
+  jour et retours en arrière avec leurs étapes.
 
 **Jamais dans un export** : les clés privées, les mots de passe, les réglages de cet ordinateur
 (langue, votre accord pour les recherches qui en partent), les réponses que Vigie garde des

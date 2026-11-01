@@ -5,6 +5,27 @@ Support/Vigie/vigie.db` on macOS, `~/.config/vigie/vigie.db` on Linux (or the fo
 `--data-dir`). Next to it, `known_hosts` holds the keys of the servers you trusted. Before each
 update of its database schema, Vigie writes a copy, `vigie.db.before-<version>`.
 
+## The history kept
+
+Vigie keeps the history of your scans for as long as its pages need it, then lets it go, so the
+file stops growing whatever the number of sites and how often they are scanned:
+
+* **Always**, whatever their age: each site's latest scan, its latest complete scan and the
+  complete scan before it, with all they read and found. The Overview's "Since the previous scan"
+  compares those two.
+* **90 days**: every scan, in detail (its extensions, themes, languages, findings and subsites).
+* **A year**: after 90 days, only the scans that changed something are kept, without their
+  details: the site's status changed (urgent, attention, unreachable, back), a scan failed or came
+  back, or something was installed, updated, removed or found. That is what the Activity journal
+  shows, and the journal goes back a year. The runs of scans and the notifications sent are kept a
+  year too.
+* **Kept as long as the site**: the updates and rollbacks, with their steps.
+
+Vigie lets the old history go when it starts and after each run of scans, in the background. SQLite
+reuses the space freed but the file keeps its size: **Settings, Data, Compact the database** gives
+that space back to the disk (a few seconds; offered once no scan or update is running). An export
+with the history carries what is kept.
+
 ## The export format
 
 An export is a JSON file, UTF-8, that holds your site manager. Vigie writes it, Vigie on this
@@ -46,8 +67,9 @@ format. An add-on in another language reads the JSON Schema. See [addons.md](add
   computer.
 * **ignores**: the findings you set aside: `site`, the finding's `key`, `untilVersion` (`""` when
   permanent), `reason`, `created`.
-* **history**, only when you ask for it: the scans of the sites exported, with what they read
-  (`items`) and found (`findings`), and the updates and rollbacks with their steps.
+* **history**, only when you ask for it: the scans of the sites exported that Vigie keeps (see
+  above), with what they read (`items`) and found (`findings`), and the updates and rollbacks with
+  their steps.
 
 **Never in an export**: private keys, passwords, the settings of this computer (language, your
 consent to lookups from it), the answers Vigie keeps from outside services.

@@ -80,11 +80,12 @@ func openWindow(opts cli.Options) error {
 	}
 	defer ws.Close()
 	db := ws.DB()
-	// The scans stored before ADR-0030 note what they tell of themselves, once, in the background:
-	// until then the journal computes it from their details, as before (plan 18).
+	// In the background: the scans stored before ADR-0030 note what they tell of themselves (until
+	// then the journal computes it from their details, as before), then the history is pruned
+	// (ADR-0031), so the end of the first run does not wait for a long history to go.
 	go func() {
-		if _, err := db.RecordScans(context.Background()); err != nil {
-			fmt.Fprintln(os.Stderr, "vigie: noting the stored scans:", err)
+		if err := ws.TidyHistory(context.Background()); err != nil {
+			fmt.Fprintln(os.Stderr, "vigie: putting the history in order:", err)
 		}
 	}()
 

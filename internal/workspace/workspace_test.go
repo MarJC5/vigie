@@ -366,3 +366,42 @@ func TestOpenCreatesTheDataDirectory(t *testing.T) {
 		t.Fatalf("schema version = %d, %v; want the scans migration applied", v, err)
 	}
 }
+
+// At the start, the scans stored before ADR-0030 are noted, then the history pruned (ADR-0031):
+// a base that kept a year of scans is put in order once, before any run.
+func TestTidyHistoryNotesThenPrunes(t *testing.T) {
+	ctx := context.Background()
+	ws, db := bench(t)
+	site := resolve(t, ws, "Clients/Bench/outdated.example.test")
+	day := 24 * time.Hour
+	var ids []model.ID
+	for _, age := range []time.Duration{400 * day, 200 * day, 199 * day, 198 * day, 10 * day} {
+		at := time.Now().Add(-age)
+		s := model.Scan{ID: model.NewID(), SiteID: site.ID, Started: at, Finished: at, Outcome: model.ScanCompleted, WordPress: "7.1.3",
+			CoreChecked: true, PluginsChecked: true, ThemesChecked: true, LanguagesChecked: true,
+			Items: []model.ScanItem{{Kind: model.ItemCore, Version: "7.1.3", Update: model.UpdateNone}}}
+		if err := db.SaveScan(ctx, s); err != nil {
+			t.Fatal(err)
+		}
+		ids = append(ids, s.ID)
+	}
+	if err := ws.TidyHistory(ctx); err != nil {
+		t.Fatal(err)
+	}
+	scans, err := db.Scans(ctx, site.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var left []model.ID
+	for _, s := range scans {
+		left = append(left, s.ID)
+		if !s.Recorded {
+			t.Errorf("scan %s not noted", s.ID)
+		}
+	}
+	// Older than a year: gone; the first within it: kept; the same the next day: gone; the complete
+	// scan before the latest, and the latest: kept.
+	if want := []model.ID{ids[1], ids[3], ids[4]}; !slices.Equal(left, want) {
+		t.Errorf("scans left %v, want %v", left, want)
+	}
+}

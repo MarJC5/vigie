@@ -289,6 +289,17 @@ func (w *Workspace) Prune(ctx context.Context) (store.PruneReport, error) {
 	return w.db.Prune(ctx, w.deps.Now())
 }
 
+// TidyHistory puts the history in order at the start: the scans stored before ADR-0030 note what
+// they tell of themselves, then the history is pruned (ADR-0031), so a base that kept every scan is
+// pruned once, in the background, rather than at the end of the first run.
+func (w *Workspace) TidyHistory(ctx context.Context) error {
+	if _, err := w.db.RecordScans(ctx); err != nil {
+		return err
+	}
+	_, err := w.Prune(ctx)
+	return err
+}
+
 // DatabaseSize returns the size of the database file and the space free in it.
 func (w *Workspace) DatabaseSize(ctx context.Context) (store.DatabaseSize, error) {
 	return w.db.Size(ctx)
