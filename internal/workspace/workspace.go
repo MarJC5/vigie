@@ -289,6 +289,16 @@ func (w *Workspace) Prune(ctx context.Context) (store.PruneReport, error) {
 	return w.db.Prune(ctx, w.deps.Now())
 }
 
+// DatabaseSize returns the size of the database file and the space free in it.
+func (w *Workspace) DatabaseSize(ctx context.Context) (store.DatabaseSize, error) {
+	return w.db.Size(ctx)
+}
+
+// Compact gives the database's free space back to the disk (ADR-0031).
+func (w *Workspace) Compact(ctx context.Context) error {
+	return w.db.Compact(ctx)
+}
+
 // everythingScannedSetting holds when the latest complete scan of everything ended.
 const everythingScannedSetting = "scan.everything"
 

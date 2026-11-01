@@ -227,10 +227,28 @@ export interface ChoiceView {
 }
 
 /**
+ * CompactResult is the size of the database before and after it was compacted.
+ */
+export interface CompactResult {
+    "before": number;
+    "after": number;
+    "problem": Problem | null;
+}
+
+/**
  * CreateResult is the answer of CreateFolder.
  */
 export interface CreateResult {
     "id": string;
+    "problem": Problem | null;
+}
+
+/**
+ * DatabaseView is the size of the database and the space free in it, in bytes.
+ */
+export interface DatabaseView {
+    "bytes": number;
+    "free": number;
     "problem": Problem | null;
 }
 

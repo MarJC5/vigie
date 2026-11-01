@@ -17,7 +17,7 @@ import {
   Updates,
   Watch,
 } from "../bindings/github.com/MarJC5/vigie/internal/app";
-import type { BackgroundSettings, Journal, LoginItemState, LookupsView, Node, ScansState, TagView, TreeView, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { BackgroundSettings, DatabaseView, Journal, LoginItemState, LookupsView, Node, ScansState, TagView, TreeView, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { ActivityPage } from "./components/ActivityPage/ActivityPage";
 import { AddHostWizard, type WizardApi } from "./components/AddHostWizard/AddHostWizard";
 import { type AddonsApi, AddonsFlow } from "./components/AddonsFlow/AddonsFlow";
@@ -29,6 +29,7 @@ import { HelpPage, type HelpTab } from "./components/HelpPage/HelpPage";
 import { SettingsPage, type SettingsTab, type Theme } from "./components/SettingsPage/SettingsPage";
 import type { UpdatesApi } from "./components/UpdateFlow/UpdateFlow";
 import { createI18n } from "./i18n";
+import { sizeText } from "./lib/data";
 
 // The wizard's service, with the progress of discovery as the Go side sends it.
 const wizardApi: WizardApi = {
@@ -139,6 +140,8 @@ export function App() {
   const [helpTab, setHelpTab] = useState<HelpTab>("start");
   const [dataTask, setDataTask] = useState<DataTask>();
   const [dataNote, setDataNote] = useState<DataNote>();
+  const [database, setDatabase] = useState<DatabaseView>();
+  const [compacting, setCompacting] = useState(false);
   // The preview of an import takes the whole window, as the wizard does.
   const [dataWindow, setDataWindow] = useState(false);
   const [background, setBackground] = useState<BackgroundSettings>({ on: false, autoScan: 0, notify: false });
@@ -196,6 +199,28 @@ export function App() {
     if (section !== "activity") return;
     void Activity.Journal(journalDays, journalFilter).then(setJournal);
   }, [section, journalDays, journalFilter, ended]);
+
+  // The database's size, read when the Data tab opens and after each scan or update.
+  useEffect(() => {
+    if (section !== "settings" || settingsTab !== "data") return;
+    void Data.Database().then(setDatabase);
+  }, [section, settingsTab, ended]);
+
+  const compact = async () => {
+    const i18n = loaded?.i18n;
+    if (!i18n) return;
+    setCompacting(true);
+    const result = await Data.Compact();
+    setCompacting(false);
+    const size = (bytes: number) => sizeText(bytes, i18n.language);
+    setDataNote({
+      row: "compact",
+      text: result.problem
+        ? i18n.t(result.problem.code, { message: result.problem.detail })
+        : i18n.t("data.compacted", { before: size(result.before), after: size(result.after) }),
+    });
+    setDatabase(await Data.Database());
+  };
 
   const changeBackground = (b: BackgroundSettings) => {
     setBackground(b);
@@ -319,6 +344,10 @@ export function App() {
                 onExport={() => setDataTask({ kind: "export", nodeId: "" })}
                 onImport={(source) => setDataTask(source === "ssh" ? { kind: "ssh" } : { kind: "import", source })}
                 dataNote={dataNote}
+                database={database}
+                compacting={compacting}
+                busy={(scans.running ?? []).length > 0 || updates.active > 0}
+                onCompact={() => void compact()}
                 background={background}
                 onBackground={changeBackground}
                 loginItem={loginItem}

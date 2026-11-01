@@ -3,7 +3,8 @@
 
 /**
  * Data serves the Data tab of the settings: export the site manager, import an export, a CSV
- * site list or the hosts of ~/.ssh/config, each import shown before anything is added.
+ * site list or the hosts of ~/.ssh/config, each import shown before anything is added; the size
+ * of the database, compacted on demand.
  * @module
  */
 
@@ -35,6 +36,21 @@ export function CancelImport(): $CancellablePromise<void> {
  */
 export function ChooseImport(kind: string): $CancellablePromise<$models.ImportPreview> {
     return $Call.ByID(3968233729, kind);
+}
+
+/**
+ * Compact gives the database's free space back to the disk (ADR-0031), refused while scans or
+ * updates write to it: they would wait for it.
+ */
+export function Compact(): $CancellablePromise<$models.CompactResult> {
+    return $Call.ByID(3333837770);
+}
+
+/**
+ * Database returns the size of the database and the space free in it.
+ */
+export function Database(): $CancellablePromise<$models.DatabaseView> {
+    return $Call.ByID(2608997764);
 }
 
 /**

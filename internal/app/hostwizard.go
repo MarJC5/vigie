@@ -77,6 +77,7 @@ var problemCodes = []struct {
 	{exchange.ErrNotACSV, "problem.notACSV"},
 	{errNotExportable, "problem.notExportable"},
 	{errNoImport, "problem.noImport"},
+	{errRunning, "problem.running"},
 	{workspace.ErrNotAFolder, "problem.notAFolder"},
 	{workspace.ErrKeyChanged, "problem.keyChanged"},
 	{store.ErrIDTaken, "problem.importChanged"},

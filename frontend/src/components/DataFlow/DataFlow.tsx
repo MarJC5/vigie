@@ -37,7 +37,7 @@ export type DataTask =
 
 /** What the task did, for the row of the Data tab. */
 export interface DataNote {
-  row: "export" | "import";
+  row: "export" | "import" | "compact";
   text: string;
 }
 

@@ -1,7 +1,8 @@
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { BackgroundSettings, LoginItemState, LookupsView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { BackgroundSettings, DatabaseView, LoginItemState, LookupsView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { sizeText } from "../../lib/data";
 import { clock, day, keyOf } from "../../lib/findings";
 import { Button } from "../Button/Button";
 import { SelectField } from "../SelectField/SelectField";
@@ -36,8 +37,15 @@ export interface SettingsPageProps {
   /** The Data tab: export the site manager, import from a source. */
   onExport: () => void;
   onImport: (source: ImportSource) => void;
-  /** What the last export or import did, under its row. */
-  dataNote?: { row: "export" | "import"; text: string };
+  /** What the last export, import or compaction did, under its row. */
+  dataNote?: { row: "export" | "import" | "compact"; text: string };
+  /** The database's size and the space free in it; not shown before it is read. */
+  database?: DatabaseView;
+  /** The database is being compacted. */
+  compacting?: boolean;
+  /** Scans or updates are running: the database is compacted after them. */
+  busy?: boolean;
+  onCompact: () => void;
   /** Vigie in the background: kept running, automatic scans, notifications. */
   background: BackgroundSettings;
   onBackground: (b: BackgroundSettings) => void;
@@ -69,13 +77,18 @@ export function SettingsPage({
   onExport,
   onImport,
   dataNote,
+  database,
+  compacting = false,
+  busy = false,
+  onCompact,
   background,
   onBackground,
   loginItem,
   onLoginItem,
 }: SettingsPageProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const panel = useId();
+  const size = (bytes: number) => sizeText(bytes, i18n.language);
   const tabs: SettingsTab[] = ["general", "lookups", "data", "about"];
   return (
     <div className={styles.page}>
@@ -149,6 +162,25 @@ export function SettingsPage({
               <Row title={t("data.exportTitle")} desc={t("data.exportDesc")} note={dataNote?.row === "export" ? dataNote.text : undefined}>
                 <Button variant="primary" onClick={onExport}>
                   {t("data.exportAction")}
+                </Button>
+              </Row>
+            </Section>
+            <Section title={t("data.base")}>
+              <Row title={t("data.keptTitle")} desc={t("data.keptDesc")} />
+              <Row
+                title={t("data.compactTitle")}
+                desc={t("data.compactDesc")}
+                meta={
+                  database && !database.problem
+                    ? database.free > 0
+                      ? t("data.size", { size: size(database.bytes), free: size(database.free) })
+                      : t("data.sizeOnly", { size: size(database.bytes) })
+                    : undefined
+                }
+                note={dataNote?.row === "compact" ? dataNote.text : undefined}
+              >
+                <Button onClick={onCompact} disabled={compacting || busy}>
+                  {t(compacting ? "data.compacting" : "data.compactAction")}
                 </Button>
               </Row>
             </Section>
@@ -242,12 +274,13 @@ function Section({ title, children }: { title?: string; children: ReactNode }) {
   );
 }
 
-function Row({ title, desc, note, children }: { title: string; desc: string; note?: string; children?: ReactNode }) {
+function Row({ title, desc, meta, note, children }: { title: string; desc: string; meta?: string; note?: string; children?: ReactNode }) {
   return (
     <div className={styles.row}>
       <span className={styles.text}>
         <span className={styles.rowTitle}>{title}</span>
         <span className={styles.desc}>{desc}</span>
+        {meta && <span className={styles.meta}>{meta}</span>}
         {note && <span className={styles.note}>{note}</span>}
       </span>
       <span className={styles.control}>{children}</span>

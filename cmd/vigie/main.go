@@ -115,7 +115,10 @@ func openWindow(opts cli.Options) error {
 	}
 
 	files := picker{app: func() *application.App { return wails }}
-	data := app.NewData(ws, files, time.Now)
+	updates := app.NewUpdates(ws, emit, scanner)
+	data := app.NewData(ws, files, time.Now, func() bool {
+		return len(scanner.State().Running) > 0 || updates.State().Active > 0
+	})
 	// Add-ons are looked for in the PATH and the usual install folders (an app opened from the Finder
 	// does not get the PATH of the user's shell).
 	home, err := os.UserHomeDir()
@@ -160,7 +163,7 @@ func openWindow(opts cli.Options) error {
 			application.NewService(preferences),
 			application.NewService(app.NewHostWizard(ws, emit)),
 			application.NewService(app.NewEditor(ws)),
-			application.NewService(app.NewUpdates(ws, emit, scanner)),
+			application.NewService(updates),
 			application.NewService(scanner),
 			application.NewService(app.NewSecurity(ws, time.Now)),
 			application.NewService(data),

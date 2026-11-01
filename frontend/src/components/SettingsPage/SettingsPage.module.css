@@ -80,6 +80,11 @@
   color: var(--vg-text-muted);
 }
 
+.meta {
+  font-size: var(--vg-text-small);
+  font-variant-numeric: tabular-nums;
+}
+
 .note {
   font-size: var(--vg-text-small);
 }

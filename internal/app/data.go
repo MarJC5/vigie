@@ -31,6 +31,8 @@ var (
 	errNotExportable = errors.New("a site is exported with its host")
 	errNoImport      = errors.New("no import is being previewed")
 	errUnknownFile   = errors.New("unknown kind of file")
+	// errRunning refuses to compact the database while scans or updates write to it.
+	errRunning = errors.New("scans or updates are running")
 )
 
 // FilePicker asks the user for a file with the system's dialogs; "" when they cancel.
@@ -42,11 +44,13 @@ type FilePicker interface {
 }
 
 // Data serves the Data tab of the settings: export the site manager, import an export, a CSV
-// site list or the hosts of ~/.ssh/config, each import shown before anything is added.
+// site list or the hosts of ~/.ssh/config, each import shown before anything is added; the size
+// of the database, compacted on demand.
 type Data struct {
 	ws   *workspace.Workspace
 	pick FilePicker
 	now  func() time.Time
+	busy func() bool // scans or updates running; nil: never
 
 	mu      sync.Mutex
 	pending *pendingImport // the import being previewed
@@ -58,9 +62,52 @@ type pendingImport struct {
 	plan   workspace.ImportPlan
 }
 
-// NewData returns the service.
-func NewData(ws *workspace.Workspace, pick FilePicker, now func() time.Time) *Data {
-	return &Data{ws: ws, pick: pick, now: now}
+// NewData returns the service; busy tells whether scans or updates are running (nil: never).
+func NewData(ws *workspace.Workspace, pick FilePicker, now func() time.Time, busy func() bool) *Data {
+	return &Data{ws: ws, pick: pick, now: now, busy: busy}
+}
+
+// DatabaseView is the size of the database and the space free in it, in bytes.
+type DatabaseView struct {
+	Bytes   int64    `json:"bytes"`
+	Free    int64    `json:"free"`
+	Problem *Problem `json:"problem"`
+}
+
+// Database returns the size of the database and the space free in it.
+func (d *Data) Database(ctx context.Context) DatabaseView {
+	size, err := d.ws.DatabaseSize(ctx)
+	if err != nil {
+		return DatabaseView{Problem: ProblemOf(err)}
+	}
+	return DatabaseView{Bytes: size.Bytes, Free: size.Free}
+}
+
+// CompactResult is the size of the database before and after it was compacted.
+type CompactResult struct {
+	Before  int64    `json:"before"`
+	After   int64    `json:"after"`
+	Problem *Problem `json:"problem"`
+}
+
+// Compact gives the database's free space back to the disk (ADR-0031), refused while scans or
+// updates write to it: they would wait for it.
+func (d *Data) Compact(ctx context.Context) CompactResult {
+	if d.busy != nil && d.busy() {
+		return CompactResult{Problem: ProblemOf(errRunning)}
+	}
+	before, err := d.ws.DatabaseSize(ctx)
+	if err != nil {
+		return CompactResult{Problem: ProblemOf(err)}
+	}
+	if err := d.ws.Compact(ctx); err != nil {
+		return CompactResult{Problem: ProblemOf(err)}
+	}
+	after, err := d.ws.DatabaseSize(ctx)
+	if err != nil {
+		return CompactResult{Problem: ProblemOf(err)}
+	}
+	return CompactResult{Before: before.Bytes, After: after.Bytes}
 }
 
 // ExportSummary is what an export of a node holds, for the export dialog.

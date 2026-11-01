@@ -44,14 +44,14 @@ func emptyData(t *testing.T, pick *picker, deps workspace.Deps) (*app.Data, *wor
 	deps.Now = time.Now
 	deps.KnownHosts = filepath.Join(t.TempDir(), "known_hosts")
 	ws := workspace.New(repository(t), deps)
-	return app.NewData(ws, pick, func() time.Time { return day }), ws, deps.KnownHosts
+	return app.NewData(ws, pick, func() time.Time { return day }, nil), ws, deps.KnownHosts
 }
 
 func TestExportFromTheWindow(t *testing.T) {
 	ctx := context.Background()
 	_, ws, ids := editor(t)
 	pick := &picker{save: filepath.Join(t.TempDir(), "backup.json")}
-	d := app.NewData(ws, pick, func() time.Time { return day })
+	d := app.NewData(ws, pick, func() time.Time { return day }, nil)
 
 	sum := d.ExportSummary(ctx, "")
 	if sum.Problem != nil || sum.Folders != 1 || sum.Hosts != 1 || sum.Sites != 1 || sum.Ignores != 0 || sum.HistoryBytes <= 0 {
@@ -217,5 +217,25 @@ func TestImportHostsOfTheSSHConfigFromTheWindow(t *testing.T) {
 		t.Fatal(err)
 	} else if _, err := tree.Resolve("shop"); err != nil {
 		t.Errorf("host not added: %v", err)
+	}
+}
+
+// The database's size is shown, and compacting it is refused while scans or updates run.
+func TestCompactFromTheWindow(t *testing.T) {
+	ctx := context.Background()
+	_, ws, _ := editor(t)
+	running := true
+	d := app.NewData(ws, &picker{}, func() time.Time { return day }, func() bool { return running })
+
+	if got := d.Database(ctx); got.Problem != nil || got.Bytes == 0 {
+		t.Errorf("Database() = %+v, want a size", got)
+	}
+	if got := d.Compact(ctx); got.Problem == nil || got.Problem.Code != "problem.running" {
+		t.Errorf("Compact() while running = %+v, want problem.running", got)
+	}
+	running = false
+	got := d.Compact(ctx)
+	if got.Problem != nil || got.Before == 0 || got.After == 0 || got.After > got.Before {
+		t.Errorf("Compact() = %+v, want the sizes before and after", got)
 	}
 }

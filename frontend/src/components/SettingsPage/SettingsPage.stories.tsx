@@ -31,6 +31,8 @@ const meta = {
     onOpen: fn(),
     onExport: fn(),
     onImport: fn(),
+    database: { bytes: 287_400_000, free: 112_300_000, problem: null },
+    onCompact: fn(),
     background: { on: false, autoScan: 0, notify: false },
     onBackground: fn(),
     loginItem: { supported: true, on: false },
@@ -129,6 +131,57 @@ export const Data: Story = {
     await userEvent.click(page.getAllByRole("button", { name: "Import…" })[1]!);
     await expect(args.onImport).toHaveBeenLastCalledWith("csv");
     await expect(page.getByText("5 folders, hosts and sites added.")).toBeInTheDocument();
+  },
+};
+
+// The history kept and the database's size; compacting it is offered.
+export const Database: Story = {
+  args: { tab: "data" },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByText("History kept")).toBeInTheDocument();
+    await expect(page.getByText("Size: 287.4 MB, 112.3 MB of it free")).toBeInTheDocument();
+    await userEvent.click(page.getByRole("button", { name: "Compact" }));
+    await expect(args.onCompact).toHaveBeenCalled();
+  },
+};
+
+// While it is compacted, and while scans run: the button waits.
+export const Compacting: Story = {
+  args: { tab: "data", compacting: true },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByRole("button", { name: "Compacting…" })).toBeDisabled();
+  },
+};
+
+export const CompactWhileScanning: Story = {
+  args: { tab: "data", busy: true },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByRole("button", { name: "Compact" })).toBeDisabled();
+  },
+};
+
+// Compacted: the new size, and what it was.
+export const Compacted: Story = {
+  args: {
+    tab: "data",
+    database: { bytes: 175_100_000, free: 0, problem: null },
+    dataNote: { row: "compact", text: "Compacted: 287.4 MB → 175.1 MB" },
+  },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByText("Size: 175.1 MB")).toBeInTheDocument();
+    await expect(page.getByText("Compacted: 287.4 MB → 175.1 MB")).toBeInTheDocument();
+  },
+};
+
+export const DatabaseInFrench: Story = {
+  args: { tab: "data" },
+  globals: { lang: "fr" },
+  play: async ({ canvas }) => {
+    await expect(canvas.getAllByText(/^Taille\s: 287,4\sMo, dont 112,3\sMo libres$/)).toHaveLength(2);
   },
 };
 
