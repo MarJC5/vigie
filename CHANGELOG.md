@@ -99,3 +99,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and the window says why nothing newer is.
 - Whether wordpress.org knows a plugin is asked from your computer when you agreed to it: a server
   without outbound access no longer shows every plugin as closed.
+
+### Security
+
+- The window loads only what Vigie embeds: a strict Content Security Policy refuses any script,
+  style, font, image or connection from elsewhere, and the tests open every section to check it.

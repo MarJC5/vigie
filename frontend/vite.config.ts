@@ -6,10 +6,12 @@ import { playwright } from "@vitest/browser-playwright";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
+import { contentSecurityPolicy } from "./csp";
+
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), contentSecurityPolicy()],
   build: { outDir: "dist", emptyOutDir: true },
   test: {
     projects: [
