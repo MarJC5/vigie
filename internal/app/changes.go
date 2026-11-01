@@ -25,27 +25,21 @@ type SiteChangesView struct {
 	Changes []ChangeView `json:"changes"`
 }
 
-// changeViews are the changes a scan made, its findings named as the site's page names them.
-func changeViews(changes []model.Change, after model.Scan) []ChangeView {
-	byKey := map[string]FindingView{}
-	for _, f := range findingViews(after) {
-		byKey[f.Key] = f
-	}
+// changeViews are the changes a scan made, each finding named as the change names its plugin or theme.
+func changeViews(changes []model.Change) []ChangeView {
 	views := []ChangeView{}
 	for _, c := range changes {
 		v := ChangeView{Kind: string(c.Kind), Subject: c.Subject, Name: c.Title, From: c.From, To: c.To, ByVigie: c.ByVigie, Super: c.Super}
 		switch {
 		case strings.HasPrefix(c.Subject, "user:"):
 			v.Name = strings.TrimPrefix(c.Subject, "user:")
-		case v.Name == "" && c.Subject != "core":
+		case v.Name == "" && c.Subject != "core" && c.Finding == nil:
 			_, v.Name, _ = strings.Cut(c.Subject, ":")
 		}
 		if c.Finding != nil {
-			f := byKey[c.Finding.Key()]
+			// The change names its plugin or theme as the scan did (model.Changes).
+			f := findingView(*c.Finding, c.Title)
 			v.Finding = &f
-			if c.Kind == model.ChangeFiles || c.Kind == model.ChangeFinding {
-				v.Name = f.Name
-			}
 		}
 		views = append(views, v)
 	}

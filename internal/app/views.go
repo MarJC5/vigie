@@ -309,19 +309,24 @@ func findingViews(s model.Scan) []FindingView {
 	}
 	views := []FindingView{}
 	for _, f := range s.Findings {
-		v := FindingView{
-			Key: f.Key(), Kind: string(f.Kind), Subject: f.Subject, Name: titles[f.Subject], Identifier: f.Identifier,
-			Version: f.Version, Level: string(f.Level), Facts: f.Facts,
-		}
-		if v.Facts == nil {
-			v.Facts = map[string]string{}
-		}
-		if f.Ignore != nil {
-			v.Ignore = ignoreView(f.Ignore)
-		}
-		views = append(views, v)
+		views = append(views, findingView(f, titles[f.Subject]))
 	}
 	return views
+}
+
+// findingView is a finding with the title of its plugin or theme ("" for others).
+func findingView(f model.Finding, name string) FindingView {
+	v := FindingView{
+		Key: f.Key(), Kind: string(f.Kind), Subject: f.Subject, Name: name, Identifier: f.Identifier,
+		Version: f.Version, Level: string(f.Level), Facts: f.Facts,
+	}
+	if v.Facts == nil {
+		v.Facts = map[string]string{}
+	}
+	if f.Ignore != nil {
+		v.Ignore = ignoreView(f.Ignore)
+	}
+	return v
 }
 
 // findingsAbout keeps the findings of one subject, for example "plugin:akismet".
@@ -479,7 +484,7 @@ func (s *SiteManager) changes(ctx context.Context, view *SiteView, scan model.Sc
 	if err != nil {
 		return err
 	}
-	view.Changes = changeViews(model.Changes(before, scan, ops), scan)
+	view.Changes = changeViews(model.Changes(before, scan, ops))
 	view.ChangesSince = rfc3339(before.Finished)
 	return nil
 }

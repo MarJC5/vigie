@@ -95,9 +95,14 @@ func TestFilesNewlyDifferent(t *testing.T) {
 		return model.Finding{Kind: model.KindCoreFile, Subject: "core", Level: model.LevelUrgent, Facts: map[string]string{"changed": changed, "added": "0", "missing": "0"}}
 	}
 	plugin := model.Finding{Kind: model.KindPluginFile, Subject: "plugin:akismet", Level: model.LevelAttention, Facts: map[string]string{"changed": "1", "added": "0"}}
-	got := model.Changes(scanAt(t0, nil, core("1")), scanAt(t1, nil, core("3"), plugin), nil)
+	akismet := []model.ScanItem{item(model.ItemPlugin, "akismet", "Akismet Anti-spam", "active", "5.7.2")}
+	got := model.Changes(scanAt(t0, akismet, core("1")), scanAt(t1, akismet, core("3"), plugin), nil)
 	if want := []string{"files core", "files plugin:akismet"}; !slices.Equal(kinds(got), want) {
 		t.Fatalf("Changes() = %q, want %q", kinds(got), want)
+	}
+	// Named as the scan names the plugin, so the change says it on its own (ADR-0030).
+	if got[0].Title != "" || got[1].Title != "Akismet Anti-spam" {
+		t.Errorf("titles = %q, %q; want none for WordPress, the plugin's", got[0].Title, got[1].Title)
 	}
 	// The same files, carried over from a comparison of the day before: nothing new.
 	if got := model.Changes(scanAt(t0, nil, core("3")), scanAt(t1, nil, core("3")), nil); len(got) != 0 {
@@ -123,5 +128,27 @@ func TestNoChangesAgainstAnIncompleteScan(t *testing.T) {
 	failed := model.Scan{SiteID: site, Outcome: model.ScanFailed}
 	if got := model.Changes(failed, scanAt(t1, nil, admin("root2", false)), nil); got != nil {
 		t.Errorf("Changes() after a failed scan = %+v, want nil", got)
+	}
+}
+
+// What each scan of a site tells of itself, noted in order as the workspace notes it when a scan is
+// made (ADR-0030): its status, its changes since the complete scan before, a failed one between.
+func TestNoteAll(t *testing.T) {
+	editing := model.Finding{Kind: model.KindFileEditing, Subject: "site", Level: model.LevelAttention}
+	first := scanAt(t0, []model.ScanItem{item(model.ItemPlugin, "akismet", "Akismet", "active", "5.3")})
+	failed := model.Scan{SiteID: site, Started: t1, Finished: t1, Outcome: model.ScanFailed, Failure: "refused"}
+	last := scanAt(t1.Add(time.Hour), []model.ScanItem{item(model.ItemPlugin, "akismet", "Akismet", "active", "5.7.2")}, editing)
+	scans := []model.Scan{first, failed, last}
+	model.NoteAll(scans, nil)
+	for i, s := range scans {
+		if !s.Recorded || s.RecordedStatus != s.Status() {
+			t.Errorf("scan %d noted %v, %q; want its status %q", i, s.Recorded, s.RecordedStatus, s.Status())
+		}
+	}
+	if len(scans[0].RecordedChanges) != 0 || len(scans[1].RecordedChanges) != 0 {
+		t.Errorf("the first and the failed scan noted changes: %+v, %+v", scans[0].RecordedChanges, scans[1].RecordedChanges)
+	}
+	if want := []string{"version plugin:akismet", "finding site"}; !slices.Equal(kinds(scans[2].RecordedChanges), want) {
+		t.Errorf("the last scan noted %q, want %q (against the first, the failed one skipped)", kinds(scans[2].RecordedChanges), want)
 	}
 }

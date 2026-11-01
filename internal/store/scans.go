@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -359,24 +360,7 @@ func (db *DB) loadFindings(ctx context.Context, where string, scans []model.Scan
 // their findings and the site's ignores, so each tells its status and what changed (ADR-0027).
 // sites keeps those of some sites only; nil keeps every site's.
 func (db *DB) ScanStatuses(ctx context.Context, since time.Time, sites []model.ID) ([]model.Scan, error) {
-	// Each subquery runs once, by the index of the start (scans_started), not once per scan kept.
-	where := `s.started_at >= ?1 OR s.id IN (
-		SELECT max(p.id) FROM scans p WHERE p.started_at < ?1 AND p.site_id IN (SELECT site_id FROM scans WHERE started_at >= ?1)
-		GROUP BY p.site_id
-		UNION
-		SELECT max(p.id) FROM scans p WHERE p.started_at < ?1 AND p.outcome = 'completed'
-			AND p.site_id IN (SELECT site_id FROM scans WHERE started_at >= ?1)
-		GROUP BY p.site_id)`
-	args := []any{timeText(since)}
-	// Only the sites asked for, when there are some: a journal filtered on a host reads its sites'.
-	if sites != nil {
-		marks := make([]string, len(sites))
-		for i, id := range sites {
-			marks[i] = "?" + strconv.Itoa(i+2)
-			args = append(args, id.String())
-		}
-		where = "(" + where + ") AND s.site_id IN (" + strings.Join(marks, ", ") + ")"
-	}
+	where, args := statusesWhere(since, sites)
 	scans, err := db.readScans(ctx, where, args...)
 	if err != nil {
 		return nil, err
@@ -472,4 +456,111 @@ func parseOptionalID(s string) (model.ID, error) {
 		return model.NoID, nil
 	}
 	return uuid.Parse(s)
+}
+
+// RecordScans notes, once, what the scans stored before ADR-0030 tell of themselves (model.NoteAll):
+// site by site, each in a transaction of its own, with the site's ignores of now (those of then are
+// not known) and its operations. It returns how many scans it noted.
+func (db *DB) RecordScans(ctx context.Context) (int, error) {
+	rows, err := db.sql.QueryContext(ctx, "SELECT DISTINCT site_id FROM scans WHERE recorded_changes IS NULL")
+	if err != nil {
+		return 0, err
+	}
+	var sites []model.ID
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return 0, err
+		}
+		site, err := uuid.Parse(id)
+		if err != nil {
+			rows.Close()
+			return 0, err
+		}
+		sites = append(sites, site)
+	}
+	if err := errors.Join(rows.Err(), rows.Close()); err != nil {
+		return 0, err
+	}
+	noted := 0
+	for _, site := range sites {
+		scans, err := db.Scans(ctx, site)
+		if err != nil {
+			return noted, err
+		}
+		ignores, err := db.ignores(ctx, "WHERE site_id = ?", site.String())
+		if err != nil {
+			return noted, err
+		}
+		ops, err := db.Operations(ctx, site)
+		if err != nil {
+			return noted, err
+		}
+		before := make([]bool, len(scans))
+		for i := range scans {
+			before[i] = scans[i].Recorded
+			scans[i].ApplyIgnores(ignores[site])
+		}
+		model.NoteAll(scans, ops)
+		err = db.withTx(ctx, func(tx *sql.Tx) error {
+			for i, s := range scans {
+				if before[i] {
+					continue // noted when it was made
+				}
+				data, err := json.Marshal(nonNil(s.RecordedChanges))
+				if err != nil {
+					return err
+				}
+				if _, err := tx.ExecContext(ctx, "UPDATE scans SET recorded_status = ?, recorded_changes = ? WHERE id = ?",
+					string(s.RecordedStatus), string(data), s.ID.String()); err != nil {
+					return err
+				}
+				noted++
+			}
+			return nil
+		})
+		if err != nil {
+			return noted, err
+		}
+	}
+	return noted, nil
+}
+
+func nonNil(changes []model.Change) []model.Change {
+	if changes == nil {
+		return []model.Change{}
+	}
+	return changes
+}
+
+// JournalScans is ScanStatuses without the scans' items and findings, for a journal that reads what
+// each scan noted of itself (ADR-0030).
+func (db *DB) JournalScans(ctx context.Context, since time.Time, sites []model.ID) ([]model.Scan, error) {
+	where, args := statusesWhere(since, sites)
+	return db.readScans(ctx, where, args...)
+}
+
+// statusesWhere picks the scans of the journal's days and, for each of their sites, the scan just
+// before and the complete scan before; of some sites only when sites is not nil.
+func statusesWhere(since time.Time, sites []model.ID) (string, []any) {
+	// Each subquery runs once, by the index of the start (scans_started), not once per scan kept.
+	where := `s.started_at >= ?1 OR s.id IN (
+		SELECT max(p.id) FROM scans p WHERE p.started_at < ?1 AND p.site_id IN (SELECT site_id FROM scans WHERE started_at >= ?1)
+		GROUP BY p.site_id
+		UNION
+		SELECT max(p.id) FROM scans p WHERE p.started_at < ?1 AND p.outcome = 'completed'
+			AND p.site_id IN (SELECT site_id FROM scans WHERE started_at >= ?1)
+		GROUP BY p.site_id)`
+	args := []any{timeText(since)}
+	// Only the sites asked for, when there are some: a journal filtered on a host reads its sites'.
+	if sites != nil {
+		marks := make([]string, len(sites))
+		for i, id := range sites {
+			marks[i] = "?" + strconv.Itoa(i+2)
+			args = append(args, id.String())
+		}
+		where = "(" + where + ") AND s.site_id IN (" + strings.Join(marks, ", ") + ")"
+	}
+	return where, args
 }

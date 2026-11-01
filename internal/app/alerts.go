@@ -26,6 +26,12 @@ type Alert struct {
 // Alerts compares the latest scans before a scan with the ones it made, in their order, and tells
 // what got worse: never what was already known, never what got better.
 func Alerts(tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan) []Alert {
+	return alertsBy(tree, before, after, model.Scan.Status)
+}
+
+// alertsBy is Alerts with a scan's status read by status: its status now, or what it noted when it
+// was made, for the journal (ADR-0030).
+func alertsBy(tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan, status func(model.Scan) model.SiteStatus) []Alert {
 	var alerts []Alert
 	var hosts []model.ID
 	for _, s := range after {
@@ -35,7 +41,7 @@ func Alerts(tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan
 		}
 		previous, scanned := before[s.SiteID]
 		switch {
-		case s.Status() == model.StatusUrgent && (!scanned || previous.Status() != model.StatusUrgent):
+		case status(s) == model.StatusUrgent && (!scanned || status(previous) != model.StatusUrgent):
 			alerts = append(alerts, Alert{Kind: AlertUrgent, Name: site.Name, NodeID: site.ID})
 		case unreachable(s) && !(scanned && unreachable(previous)) && !slices.Contains(hosts, site.HostID):
 			hosts = append(hosts, site.HostID)

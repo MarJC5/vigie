@@ -138,6 +138,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The site list, a site's page and the Activity journal stay fast with a long history: the latest
+  scans and the journal's days are found by index, not by going through every scan kept.
+- The Activity journal reads what each scan noted of itself when it was made (its status and its
+  changes), instead of computing it again from every detail: it opens in a tenth of a second on
+  hundreds of sites. A finding ignored later no longer rewrites the journal's past lines; the
+  scans stored before are noted once, in the background, at the first start.
 - `WP_DEBUG_LOG` is read as WordPress reads it: "true" and "1", in any case, name
   `wp-content/debug.log`, and `WP_DEBUG` counts whenever it is true for PHP.
 - A scan cancelled or failed after a complete one no longer hides it: the complete one stays shown,

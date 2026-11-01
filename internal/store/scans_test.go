@@ -257,3 +257,42 @@ func TestScanStatusesReadTheCompleteScanBefore(t *testing.T) {
 		t.Errorf("CompleteScanBefore(the first scan) = %v, %v; want none", ok, err)
 	}
 }
+
+// Scans stored before ADR-0030 are noted once (plan 18): what each tells of itself, against the
+// complete scan before; a scan already noted is left as it is.
+func TestRecordScansNotesTheScansStoredBefore(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	site := siteOnHost(t, db, "a.example.test")
+	start := time.Date(2026, 10, 30, 9, 0, 0, 0, time.UTC)
+	first, second := scanOf(site, start, "7.1.3"), scanOf(site, start.Add(time.Hour), "7.1.4")
+	for _, s := range []*model.Scan{&first, &second} {
+		s.Recorded, s.RecordedStatus, s.RecordedChanges = false, "", nil // stored before ADR-0030
+	}
+	noted := scanOf(siteOnHost(t, db, "b.example.test"), start, "7.1.3")
+	noted.Recorded, noted.RecordedStatus, noted.RecordedChanges = true, model.StatusUrgent, []model.Change{}
+	for _, s := range []model.Scan{first, second, noted} {
+		must(t, db.SaveScan(ctx, s))
+	}
+	n, err := db.RecordScans(ctx)
+	if err != nil || n != 2 {
+		t.Fatalf("RecordScans() = %d, %v; want the two scans not noted", n, err)
+	}
+	got, err := db.Scans(ctx, site.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !got[0].Recorded || got[0].RecordedStatus != model.StatusAttention || len(got[0].RecordedChanges) != 0 {
+		t.Errorf("first = %v %q %+v, want noted without changes", got[0].Recorded, got[0].RecordedStatus, got[0].RecordedChanges)
+	}
+	if !got[1].Recorded || len(got[1].RecordedChanges) != 1 || got[1].RecordedChanges[0].Kind != model.ChangeVersion {
+		t.Errorf("second = %v %+v, want WordPress's version changed", got[1].Recorded, got[1].RecordedChanges)
+	}
+	// Once only: nothing left, and a scan noted when it was made kept as it was.
+	if n, err := db.RecordScans(ctx); err != nil || n != 0 {
+		t.Errorf("RecordScans() again = %d, %v; want nothing", n, err)
+	}
+	if again, ok, _ := db.LatestScan(ctx, noted.SiteID); !ok || again.RecordedStatus != model.StatusUrgent {
+		t.Errorf("a scan noted when made = %q, want left as it was", again.RecordedStatus)
+	}
+}

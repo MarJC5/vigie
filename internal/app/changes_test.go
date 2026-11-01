@@ -66,6 +66,7 @@ func TestTheChangesOfASite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	sameOnceNoted(t, db, now, journal)
 	i := slices.IndexFunc(journal.Entries, func(e app.ActivityEntry) bool { return e.Kind == "run" })
 	if i < 0 || len(journal.Entries[i].SiteChanges) != 1 {
 		t.Fatalf("journal = %+v, want the run with one site's changes", journal.Entries)

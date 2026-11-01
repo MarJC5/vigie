@@ -80,6 +80,13 @@ func openWindow(opts cli.Options) error {
 	}
 	defer ws.Close()
 	db := ws.DB()
+	// The scans stored before ADR-0030 note what they tell of themselves, once, in the background:
+	// until then the journal computes it from their details, as before (plan 18).
+	go func() {
+		if _, err := db.RecordScans(context.Background()); err != nil {
+			fmt.Fprintln(os.Stderr, "vigie: noting the stored scans:", err)
+		}
+	}()
 
 	// The scanner reports to the window, which exists once application.New has returned.
 	var wails *application.App

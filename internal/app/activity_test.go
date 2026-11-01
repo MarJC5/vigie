@@ -2,12 +2,14 @@ package app_test
 
 import (
 	"context"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/MarJC5/vigie/internal/app"
 	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/sshx"
+	"github.com/MarJC5/vigie/internal/store"
 )
 
 // The journal of a span of days: each run with what it changed and what Vigie notified, updates
@@ -61,6 +63,7 @@ func TestTheJournalTellsWhatChanged(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	sameOnceNoted(t, db, now, journal)
 	kinds := []string{}
 	for _, e := range journal.Entries {
 		kinds = append(kinds, e.Kind)
@@ -80,11 +83,42 @@ func TestTheJournalTellsWhatChanged(t *testing.T) {
 		t.Errorf("scan entry = %+v, want blog's, unreachable as before: no change", s)
 	}
 
+	// What happened then (ADR-0030): ignoring the urgent finding now leaves the run's line as it was;
+	// the site's page follows the ignore.
+	if err := db.SaveIgnore(ctx, model.Ignore{SiteID: shop.ID, Key: "debug-log|site|", Reason: "known", Created: now}); err != nil {
+		t.Fatal(err)
+	}
+	after, err := activity.Journal(ctx, 7, "")
+	if err != nil || !reflect.DeepEqual(after, journal) {
+		t.Errorf("journal after an ignore = %+v, %v; want it as it was", after, err)
+	}
+	if page, err := app.NewSiteManager(db).SiteDetail(ctx, shop.ID.String()); err != nil || page.Scan.Status == "danger" {
+		t.Errorf("the site's page = %+v, %v; want the ignore applied", page.Scan, err)
+	}
+
 	only, err := activity.Journal(ctx, 7, shop.ID.String())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(only.Entries) != 2 || len(only.Entries[1].Changes) != 1 || only.Entries[1].Changes[0].Name != shop.Name {
 		t.Fatalf("journal of shop = %+v, want its update and the run with its change only", only.Entries)
+	}
+}
+
+// sameOnceNoted checks that the journal read from what each scan noted of itself equals the journal
+// computed from the scans' details (ADR-0030): the scans of these tests are stored without notes,
+// then noted as the first start after the upgrade notes them.
+func sameOnceNoted(t *testing.T, db *store.DB, now time.Time, computed app.Journal) {
+	t.Helper()
+	ctx := context.Background()
+	if _, err := db.RecordScans(ctx); err != nil {
+		t.Fatal(err)
+	}
+	noted, err := app.NewActivity(db, func() time.Time { return now }).Journal(ctx, 7, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(noted, computed) {
+		t.Fatalf("journal from the noted facts =\n%+v\nwant the computed one\n%+v", noted, computed)
 	}
 }

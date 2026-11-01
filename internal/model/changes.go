@@ -45,7 +45,34 @@ func Changes(before, after Scan, operations []Operation) []Change {
 	changes = append(changes, versions(before, after, operations)...)
 	changes = append(changes, files(before, after)...)
 	changes = append(changes, findings(before, after)...)
+	// A plugin's or theme's files or finding named as the scan names it: the change says it on its
+	// own, stored with the scan (ADR-0030).
+	titles := extensions(after)
+	for i, c := range changes {
+		if c.Finding != nil && c.Title == "" {
+			changes[i].Title = titles[c.Subject].Title
+		}
+	}
 	return changes
+}
+
+// NoteAll notes on a site's scans, oldest first, what each tells of itself for the journal
+// (ADR-0030), as the workspace notes it when a scan is made: its status with the ignores applied
+// to it, and what changed since the complete scan before it.
+func NoteAll(scans []Scan, operations []Operation) {
+	var complete Scan
+	had := false
+	for i := range scans {
+		s := &scans[i]
+		var changes []Change
+		if had && s.Outcome == ScanCompleted {
+			changes = Changes(complete, *s, operations)
+		}
+		s.Recorded, s.RecordedStatus, s.RecordedChanges = true, s.Status(), changes
+		if s.Outcome == ScanCompleted {
+			complete, had = *s, true
+		}
+	}
 }
 
 func administrators(before, after Scan) []Change {

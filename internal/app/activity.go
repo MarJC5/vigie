@@ -56,6 +56,7 @@ type activityData interface {
 	Runs(ctx context.Context, since time.Time) ([]model.Run, error)
 	Notices(ctx context.Context, since time.Time) ([]model.Notice, error)
 	ScanStatuses(ctx context.Context, since time.Time, sites []model.ID) ([]model.Scan, error)
+	JournalScans(ctx context.Context, since time.Time, sites []model.ID) ([]model.Scan, error)
 	OperationsSince(ctx context.Context, since time.Time) ([]model.Operation, error)
 }
 
@@ -104,9 +105,21 @@ func (a *Activity) Journal(ctx context.Context, days int, nodeID string) (Journa
 	if err != nil {
 		return Journal{}, err
 	}
-	scans, err := a.repo.ScanStatuses(ctx, since, sites)
+	// What each scan noted of itself when it was made (ADR-0030): its status and its changes, without
+	// its details. A scan stored before and not noted yet has the journal computed as before.
+	scans, err := a.repo.JournalScans(ctx, since, sites)
 	if err != nil {
 		return Journal{}, err
+	}
+	noted := !slices.ContainsFunc(scans, func(s model.Scan) bool { return !s.Recorded })
+	if !noted {
+		if scans, err = a.repo.ScanStatuses(ctx, since, sites); err != nil {
+			return Journal{}, err
+		}
+	}
+	status := model.Scan.Status
+	if noted {
+		status = func(s model.Scan) model.SiteStatus { return s.RecordedStatus }
 	}
 	// Vigie's operations from the oldest scan read, to tell the versions it changed.
 	from := since
@@ -136,16 +149,21 @@ func (a *Activity) Journal(ctx context.Context, days int, nodeID string) (Journa
 		if s.Started.Before(since) || !shown(s.SiteID) {
 			continue
 		}
-		found := changesOf(tree, before, had, s)
+		found := changesOf(tree, before, had, s, status)
 		var site []SiteChangesView
-		if hadComplete {
-			if c := model.Changes(last, s, ops); len(c) > 0 {
-				name := ""
-				if st, ok := tree.Site(s.SiteID); ok {
-					name = st.Name
-				}
-				site = []SiteChangesView{{SiteID: s.SiteID.String(), Name: name, Changes: changeViews(c, s)}}
+		var c []model.Change
+		switch {
+		case noted:
+			c = s.RecordedChanges
+		case hadComplete:
+			c = model.Changes(last, s, ops)
+		}
+		if len(c) > 0 {
+			name := ""
+			if st, ok := tree.Site(s.SiteID); ok {
+				name = st.Name
 			}
+			site = []SiteChangesView{{SiteID: s.SiteID.String(), Name: name, Changes: changeViews(c)}}
 		}
 		if s.RunID == model.NoID {
 			e := siteEntry(tree, "scan", s.SiteID, s.Started, s.Finished, string(s.Outcome))
@@ -214,16 +232,16 @@ func siteEntry(tree *model.Tree, kind string, site model.ID, started, finished t
 
 // changesOf tells what a scan changed from the one before it on its site: what Alerts tells, and
 // a site back from urgent or unreachable.
-func changesOf(tree *model.Tree, before model.Scan, had bool, s model.Scan) []Change {
+func changesOf(tree *model.Tree, before model.Scan, had bool, s model.Scan, status func(model.Scan) model.SiteStatus) []Change {
 	previous := map[model.ID]model.Scan{}
 	if had {
 		previous[s.SiteID] = before
 	}
 	found := []Change{}
-	for _, a := range Alerts(tree, previous, []model.Scan{s}) {
+	for _, a := range alertsBy(tree, previous, []model.Scan{s}, status) {
 		found = append(found, Change{Kind: a.Kind, NodeID: a.NodeID.String(), Name: a.Name})
 	}
-	bad := func(x model.Scan) bool { return x.Status() == model.StatusUrgent || unreachable(x) }
+	bad := func(x model.Scan) bool { return status(x) == model.StatusUrgent || unreachable(x) }
 	if had && bad(before) && !bad(s) && s.Outcome == model.ScanCompleted {
 		if site, ok := tree.Site(s.SiteID); ok {
 			found = append(found, Change{Kind: ChangeRecovered, NodeID: site.ID.String(), Name: site.Name})

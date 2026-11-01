@@ -118,6 +118,10 @@ func TestScaleOfHistory(t *testing.T) {
 		return
 	}
 	a := app.NewActivity(db, time.Now)
+	measure("Journal 30 days, computed", func() error { _, err := a.Journal(ctx, 30, ""); return err })
+	// The scans stored here noted nothing, as those stored before ADR-0030: noted once at the first
+	// start, then read by the journal.
+	measure("RecordScans (first start)", func() error { _, err := db.RecordScans(ctx); return err })
 	measure("Journal 30 days", func() error { _, err := a.Journal(ctx, 30, ""); return err })
 	measure("Journal 30 days, one site", func() error { _, err := a.Journal(ctx, 30, all[0].ID.String()); return err })
 }
