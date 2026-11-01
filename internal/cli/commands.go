@@ -39,6 +39,43 @@ func explain(env Env, path string, err error) string {
 	return err.Error()
 }
 
+// changeText says a change since the complete scan before in one line.
+func changeText(env Env, c model.Change) string {
+	kind, slug, _ := strings.Cut(c.Subject, ":")
+	name := c.Title
+	switch {
+	case c.Subject == "core":
+		name = "WordPress"
+	case name == "":
+		name = slug
+	}
+	vars := map[string]any{"name": name, "from": c.From, "to": c.To}
+	switch c.Kind {
+	case model.ChangeAdminAdded:
+		if c.Super {
+			return env.t("cli.change.superAdded", vars)
+		}
+		return env.t("cli.change.adminAdded", vars)
+	case model.ChangeAdminRemoved:
+		return env.t("cli.change.adminRemoved", vars)
+	case model.ChangeInstalled, model.ChangeRemoved:
+		return env.t("cli.change."+string(c.Kind)+"."+kind, vars)
+	case model.ChangeThemeSwitched:
+		return env.t("cli.change.themeSwitched", vars)
+	case model.ChangeVersion:
+		if c.ByVigie {
+			return env.t("cli.change.byVigie", vars)
+		}
+		return env.t("cli.change.outside", vars)
+	case model.ChangeFiles:
+		return env.t("cli.change.files", vars)
+	}
+	if c.Finding != nil && c.Finding.Kind == model.KindVulnerability {
+		return env.t("cli.change.vulnerability", map[string]any{"name": name, "version": c.Finding.Version, "title": c.Finding.Facts["name"]})
+	}
+	return env.t("cli.change.finding", map[string]any{"kind": c.Finding.Kind, "subject": c.Subject})
+}
+
 // failureText explains a classified ssh failure; "other" shows ssh's own message.
 func failureText(env Env, failure, message string) string {
 	return env.t("failure."+failure, map[string]any{"message": message})
@@ -141,6 +178,19 @@ type scanJSON struct {
 	// FilesChecked is when the files were last compared with wordpress.org's.
 	FilesChecked string        `json:"filesChecked,omitempty"`
 	Findings     []findingJSON `json:"findings"`
+	// Changes are what changed since the complete scan before; empty after a first scan.
+	Changes []changeJSON `json:"changes"`
+}
+
+// changeJSON is a change since the complete scan before (model.Change).
+type changeJSON struct {
+	Kind    string `json:"kind"`
+	Subject string `json:"subject"`
+	Title   string `json:"title,omitempty"`
+	From    string `json:"from,omitempty"`
+	To      string `json:"to,omitempty"`
+	ByVigie bool   `json:"byVigie,omitempty"`
+	Super   bool   `json:"super,omitempty"`
 }
 
 // findingJSON is a finding, its facts as Vigie stores them; an ignored one says until when and why.
@@ -214,7 +264,11 @@ func scanTarget(ctx context.Context, env Env, ws *workspace.Workspace, on target
 				WordPress: s.WordPress, PHPCLI: s.PHPCLI, WPCLI: s.WPCLI, Home: s.Home,
 				Pending:  pendingJSON{Core: p.Core, Plugins: p.Plugins, Themes: p.Themes, Languages: p.Languages},
 				Checked:  checkedJSON{Core: s.CoreChecked, Plugins: s.PluginsChecked, Themes: s.ThemesChecked, Languages: s.LanguagesChecked},
-				Subsites: len(r.Subsites), Findings: findingsJSON(s.Findings),
+				Subsites: len(r.Subsites), Findings: findingsJSON(s.Findings), Changes: []changeJSON{},
+			}
+			for _, c := range r.Changes {
+				out[i].Changes = append(out[i].Changes, changeJSON{Kind: string(c.Kind), Subject: c.Subject, Title: c.Title,
+					From: c.From, To: c.To, ByVigie: c.ByVigie, Super: c.Super})
 			}
 			if !s.FilesChecked.IsZero() {
 				out[i].FilesChecked = s.FilesChecked.UTC().Format(time.RFC3339)
@@ -230,6 +284,10 @@ func scanTarget(ctx context.Context, env Env, ws *workspace.Workspace, on target
 	w := tabwriter.NewWriter(env.Out, 0, 0, 2, ' ', 0)
 	for _, r := range results {
 		fmt.Fprintf(w, "%s\t%s\t%s\n", r.Path, statusText(env, r.Scan), summary(env, r.Scan))
+		// Under the site, in the status's column: a last cell does not widen it.
+		for _, c := range r.Changes {
+			fmt.Fprintf(w, "\t%s\n", strings.TrimSpace(changeText(env, c)))
+		}
 	}
 	w.Flush()
 	return exitFor(scans)

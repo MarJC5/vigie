@@ -213,6 +213,25 @@
       "sshNone": "~/.ssh/config names no host.",
       "sshChoose": "Nothing was added: ~/.ssh/config names any server. Name the hosts of WordPress sites to add, for example: vigie import --ssh-config {{alias}}",
       "sshUnknown": "\"{{alias}}\" is not a host of ~/.ssh/config"
+    },
+    "change": {
+      "adminAdded": "new administrator: {{name}}",
+      "superAdded": "new super administrator: {{name}}",
+      "adminRemoved": "administrator removed: {{name}}",
+      "installed": {
+        "plugin": "plugin installed outside Vigie: {{name}} {{to}}",
+        "theme": "theme installed outside Vigie: {{name}} {{to}}"
+      },
+      "removed": {
+        "plugin": "plugin removed: {{name}} {{from}}",
+        "theme": "theme removed: {{name}} {{from}}"
+      },
+      "themeSwitched": "active theme: {{from}} → {{to}}",
+      "outside": "{{name}} {{from}} → {{to}}, outside Vigie",
+      "byVigie": "{{name}} {{from}} → {{to}}, by Vigie",
+      "files": "files of {{name}} newly different from wordpress.org's",
+      "vulnerability": "new vulnerability: {{name}} {{version}}, {{title}}",
+      "finding": "new finding: {{kind}} ({{subject}})"
     }
   },
   "outcome": {

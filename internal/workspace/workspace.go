@@ -143,6 +143,8 @@ type Scanned struct {
 	Path     string
 	Scan     model.Scan
 	Subsites []model.Subsite
+	// Changes are what the scan found changed since the site's complete scan before (ADR-0027).
+	Changes []model.Change
 }
 
 // ScanOptions change what a scan does.
@@ -224,7 +226,7 @@ func (w *Workspace) ScanNode(ctx context.Context, node model.Node, opts ScanOpti
 
 	// Kept even when the scan was cancelled: the history shows it.
 	keep := context.WithoutCancel(ctx)
-	saved := w.saveScans(keep, run.ID, sites, results)
+	saved := errors.Join(w.saveScans(keep, run.ID, sites, results), w.changes(keep, latest, results))
 	ended := model.RunCompleted
 	if ctx.Err() != nil {
 		ended = model.RunCancelled
@@ -259,6 +261,23 @@ func (w *Workspace) saveScans(ctx context.Context, run model.ID, sites []model.S
 			return err
 		}
 		results[i].Scan.ApplyIgnores(ignores)
+	}
+	return nil
+}
+
+// changes tells each complete scan what changed since its site's complete scan before, with
+// Vigie's operations on the site.
+func (w *Workspace) changes(ctx context.Context, before map[model.ID]model.Scan, results []Scanned) error {
+	for i, r := range results {
+		previous, ok := before[r.Scan.SiteID]
+		if !ok || r.Scan.Outcome != model.ScanCompleted {
+			continue
+		}
+		ops, err := w.db.Operations(ctx, r.Scan.SiteID)
+		if err != nil {
+			return err
+		}
+		results[i].Changes = model.Changes(previous, r.Scan, ops)
 	}
 	return nil
 }

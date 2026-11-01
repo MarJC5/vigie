@@ -228,6 +228,25 @@
       "sshNone": "~/.ssh/config ne nomme aucun hôte.",
       "sshChoose": "Rien n'a été ajouté : ~/.ssh/config nomme n'importe quel serveur. Nommez les hôtes de sites WordPress à ajouter, par exemple : vigie import --ssh-config {{alias}}",
       "sshUnknown": "« {{alias}} » n'est pas un hôte de ~/.ssh/config"
+    },
+    "change": {
+      "adminAdded": "nouvel administrateur : {{name}}",
+      "superAdded": "nouveau super administrateur : {{name}}",
+      "adminRemoved": "administrateur retiré : {{name}}",
+      "installed": {
+        "plugin": "extension installée hors de Vigie : {{name}} {{to}}",
+        "theme": "thème installé hors de Vigie : {{name}} {{to}}"
+      },
+      "removed": {
+        "plugin": "extension retirée : {{name}} {{from}}",
+        "theme": "thème retiré : {{name}} {{from}}"
+      },
+      "themeSwitched": "thème actif : {{from}} → {{to}}",
+      "outside": "{{name}} {{from}} → {{to}}, hors de Vigie",
+      "byVigie": "{{name}} {{from}} → {{to}}, par Vigie",
+      "files": "fichiers de {{name}} nouvellement différents de ceux de wordpress.org",
+      "vulnerability": "nouvelle faille : {{name}} {{version}}, {{title}}",
+      "finding": "nouveau constat : {{kind}} ({{subject}})"
     }
   },
   "outcome": {

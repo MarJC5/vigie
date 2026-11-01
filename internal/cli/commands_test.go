@@ -291,3 +291,45 @@ func TestDiscoverExplainsAConnectionFailure(t *testing.T) {
 		t.Fatalf("exit %d, stderr %q", code, errOut)
 	}
 }
+
+// A scan says what changed since the complete scan before it (ADR-0027), under the site and in
+// --json; a first scan says nothing.
+func TestScanSaysWhatChanged(t *testing.T) {
+	ws := benchWorkspace(t)
+	ctx := context.Background()
+	tree, err := ws.DB().LoadTree(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	n, err := tree.Resolve("Clients/Bench/outdated.example.test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, out := runIn(t, ws, "en", "scan", "Clients/Bench/outdated.example.test"); strings.Contains(out, "outside Vigie") {
+		t.Fatalf("a first scan tells changes:\n%s", out)
+	}
+	// An older complete scan: WordPress 7.1.2, no plugin, an administrator gone since.
+	older := model.Scan{ID: model.NewID(), SiteID: n.ID, Started: time.Now().Add(-time.Hour), Finished: time.Now().Add(-time.Hour), Outcome: model.ScanCompleted,
+		Items:    []model.ScanItem{{Kind: model.ItemCore, Version: "7.1.2", Update: model.UpdateNone}},
+		Findings: []model.Finding{{Kind: model.KindAdministrator, Subject: "user:intern", Level: model.LevelInfo}}}
+	if err := ws.DB().SaveScan(ctx, older); err != nil {
+		t.Fatal(err)
+	}
+	_, out := runIn(t, ws, "en", "scan", "Clients/Bench/outdated.example.test")
+	for _, want := range []string{"WordPress 7.1.2 → 7.1.3, outside Vigie", "administrator removed: intern", "plugin installed outside Vigie: "} {
+		if !strings.Contains(out, want) {
+			t.Errorf("output lacks %q:\n%s", want, out)
+		}
+	}
+	_, out = runIn(t, ws, "en", "scan", "Clients/Bench/outdated.example.test", "--json")
+	var results []struct {
+		Changes []struct{ Kind, Subject, From, To string }
+	}
+	if err := json.Unmarshal([]byte(out), &results); err != nil {
+		t.Fatalf("%v\n%s", err, out)
+	}
+	// Compared with the scan just before, made by this test: nothing changed since.
+	if len(results) != 1 || len(results[0].Changes) != 0 {
+		t.Errorf("--json changes = %+v, want none against an identical scan", results)
+	}
+}
