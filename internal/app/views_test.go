@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"reflect"
 	"testing"
 	"time"
 
@@ -102,6 +103,15 @@ func TestSiteDetail(t *testing.T) {
 	}
 	if s.Plugins != 2 || s.Themes != 1 {
 		t.Fatalf("installed: %d plugins, %d themes", s.Plugins, s.Themes)
+	}
+	// Every plugin and theme, as the scan read them (ADR-0024), WordPress and translations left out.
+	want := []app.ExtensionView{
+		{Kind: "plugin", Slug: "akismet", Title: "Akismet", Status: "inactive", Version: "5.3", Update: "available", UpdateVersion: "5.7.2", OnWordPressOrg: true},
+		{Kind: "plugin", Slug: "fixture-premium", Title: "Fixture Premium", Status: "active", Version: "1.0.0", Update: "none"},
+		{Kind: "theme", Slug: "twentytwentyfive", Title: "Twenty Twenty-Five", Status: "active", Version: "1.5", Update: "none"},
+	}
+	if !reflect.DeepEqual(s.Extensions, want) {
+		t.Fatalf("extensions =\n%+v\nwant\n%+v", s.Extensions, want)
 	}
 	if len(s.Updates) != 2 || s.Updates[0].Kind != "core" || s.Updates[1].Slug != "akismet" {
 		t.Fatalf("updates = %+v", s.Updates)

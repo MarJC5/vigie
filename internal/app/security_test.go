@@ -147,4 +147,17 @@ func TestSiteDetailCarriesTheFindings(t *testing.T) {
 	if scan.Findings[0].Level != "urgent" {
 		t.Errorf("first finding = %+v, want the worst first", scan.Findings[0])
 	}
+	// A plugin or theme carries the worst finding about it.
+	for _, e := range scan.Extensions {
+		var worst *app.FindingView
+		for _, f := range scan.Findings {
+			if f.Subject == e.Kind+":"+e.Slug && f.Ignore == nil && (f.Level == "urgent" || f.Level == "attention") {
+				worst = &f
+				break
+			}
+		}
+		if (worst == nil) != (e.Worst == nil) || (worst != nil && worst.Key != e.Worst.Key) {
+			t.Errorf("%s %s: worst finding %+v, want %+v", e.Kind, e.Slug, e.Worst, worst)
+		}
+	}
 }

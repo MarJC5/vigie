@@ -53,6 +53,8 @@ type ScanView struct {
 	Updates []UpdateView `json:"updates"`
 	// SourceUnknown names the plugins whose updates Vigie cannot see (not on wordpress.org).
 	SourceUnknown []string `json:"sourceUnknown"`
+	// Extensions are the plugins, then the themes, as the scan read them (ADR-0024).
+	Extensions []ExtensionView `json:"extensions"`
 	// FilesChecked is when the files were last compared with wordpress.org's; "" never.
 	FilesChecked string            `json:"filesChecked"`
 	Findings     []FindingView     `json:"findings"` // the worst first
@@ -112,6 +114,20 @@ type PendingView struct {
 	Languages int `json:"languages"`
 }
 
+// ExtensionView is a plugin or theme of a site, from its scan.
+type ExtensionView struct {
+	Kind           string       `json:"kind"` // plugin, theme
+	Slug           string       `json:"slug"`
+	Title          string       `json:"title"`
+	Status         string       `json:"status"` // plugins: active, active-network, inactive, must-use, dropin; themes: active, parent, inactive
+	Version        string       `json:"version"`
+	Update         string       `json:"update"` // none, available, unavailable, unknown
+	UpdateVersion  string       `json:"updateVersion"`
+	AutoUpdate     bool         `json:"autoUpdate"`
+	OnWordPressOrg bool         `json:"onWordPressOrg"`
+	Worst          *FindingView `json:"worst"` // the worst finding about it not set aside; nil when none
+}
+
 // UpdateView is one update to look at.
 type UpdateView struct {
 	Kind          string `json:"kind"` // core, plugin, theme, language
@@ -167,6 +183,7 @@ func scanView(s model.Scan) *ScanView {
 		SourceUnknown: []string{},
 		FilesChecked:  rfc3339(s.FilesChecked),
 		Findings:      findingViews(s),
+		Extensions:    []ExtensionView{},
 	}
 	if s.Attempt != nil {
 		v.Attempt = &AttemptView{Finished: rfc3339(s.Attempt.Finished), Problem: ScanProblem(*s.Attempt)}
@@ -200,7 +217,29 @@ func scanView(s model.Scan) *ScanView {
 			v.SourceUnknown = append(v.SourceUnknown, name)
 		}
 	}
+	v.Extensions = extensionViews(s.Items, v.Findings)
 	return v
+}
+
+// extensionViews lists the plugins, then the themes, each with the worst finding about it that
+// needs the user (urgent or needs attention) and is not set aside.
+func extensionViews(items []model.ScanItem, findings []FindingView) []ExtensionView {
+	views := []ExtensionView{}
+	for _, kind := range []model.ItemKind{model.ItemPlugin, model.ItemTheme} {
+		for _, item := range items {
+			if item.Kind != kind {
+				continue
+			}
+			e := ExtensionView{
+				Kind: string(item.Kind), Slug: item.Slug, Title: item.Title, Status: item.Status, Version: item.Version,
+				Update: string(item.Update), UpdateVersion: item.UpdateVersion, AutoUpdate: item.AutoUpdate,
+				OnWordPressOrg: item.OnWordPressOrg,
+			}
+			e.Worst = worst(findingsAbout(findings, e.Kind+":"+e.Slug))
+			views = append(views, e)
+		}
+	}
+	return views
 }
 
 // findingViews are the findings of a scan, each plugin or theme with its title.
@@ -226,6 +265,17 @@ func findingViews(s model.Scan) []FindingView {
 		views = append(views, v)
 	}
 	return views
+}
+
+// findingsAbout keeps the findings of one subject, for example "plugin:akismet".
+func findingsAbout(findings []FindingView, subject string) []FindingView {
+	about := []FindingView{}
+	for _, f := range findings {
+		if f.Subject == subject {
+			about = append(about, f)
+		}
+	}
+	return about
 }
 
 // worst is the worst finding not set aside that calls for something, urgent or needing attention.
