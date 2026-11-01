@@ -43,6 +43,8 @@
   font-size: var(--vg-text-caption);
   color: var(--vg-text);
   overflow-wrap: anywhere;
+  /* An add-on's report keeps its lines. */
+  white-space: pre-wrap;
 }
 
 /* Its button takes the banner's tone, not the accent. */

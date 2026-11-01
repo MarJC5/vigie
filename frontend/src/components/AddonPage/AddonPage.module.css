@@ -147,43 +147,9 @@
   margin: 0;
 }
 
-.path,
-.report {
+.path {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
 
-
-/* Neutral: no colored edge, the icon in gray. */
-.problem {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--vg-space-3);
-  padding: 14px 18px;
-  border-radius: var(--vg-radius-panel);
-  background: var(--vg-surface-row);
-  color: var(--vg-text-muted);
-  font-size: var(--vg-text-small);
-}
-
-.problem > svg {
-  flex: none;
-  margin-top: 2px;
-}
-
-.problemText {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.problemTitle {
-  font-weight: var(--vg-weight-strong);
-  color: var(--vg-text);
-}
-
-.report {
-  font-size: var(--vg-text-caption);
-}

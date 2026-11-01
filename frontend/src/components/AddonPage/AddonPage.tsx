@@ -11,6 +11,7 @@ import { Icon } from "../Icon/Icon";
 import { SelectField } from "../SelectField/SelectField";
 import { TextField } from "../TextField/TextField";
 import { ExternalLink } from "../ExternalLink/ExternalLink";
+import { Notice } from "../Notice/Notice";
 import styles from "./AddonPage.module.css";
 
 export interface AddonPageProps {
@@ -68,7 +69,7 @@ export function AddonPage({ addon, values, onValue, onChooseFile, onRun, running
             {t("addons.runTitle")}
           </h2>
           {addon.problem ? (
-            <Problem title={t("addons.unusable")} text={t(addon.problem.code, { message: addon.problem.detail })} />
+            <Notice tone="neutral" title={t("addons.unusable")} text={t(addon.problem.code, { message: addon.problem.detail })} />
           ) : !addon.installed ? (
             <p className={styles.lead}>{t("addons.notInstalled")}</p>
           ) : addon.kind !== "source" ? (
@@ -110,7 +111,8 @@ export function AddonPage({ addon, values, onValue, onChooseFile, onRun, running
                 })}
               </div>
               {failure && (
-                <Problem
+                <Notice
+                  tone="neutral"
                   title={t("addons.failedTitle", { program })}
                   text={failure.report ? t("addons.failedText") : t(failure.problem.code, { message: failure.problem.detail })}
                   detail={failure.report}
@@ -158,20 +160,3 @@ export function AddonPage({ addon, values, onValue, onChooseFile, onRun, running
   );
 }
 
-/** A problem of the add-on, neutral: no colored edge, the icon in gray. */
-function Problem({ title, text, detail }: { title: string; text: string; detail?: string }) {
-  return (
-    <div role="alert" className={styles.problem}>
-      <Icon name="warning" size={18} />
-      <span className={styles.problemText}>
-        <span className={styles.problemTitle}>{title}</span>
-        <span>{text}</span>
-        {detail && (
-          <span className={styles.report} data-selectable>
-            {detail}
-          </span>
-        )}
-      </span>
-    </div>
-  );
-}
