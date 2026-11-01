@@ -46,6 +46,9 @@ type ScanItem struct {
 	UpdateVersion  string
 	AutoUpdate     bool
 	OnWordPressOrg bool // plugins: wordpress.org knows it
+	// Ignore is the ignore of the site that covers its update offered (ADR-0026), set by
+	// ApplyIgnores; nil when it counts.
+	Ignore *Ignore
 }
 
 // UpdateSourceUnknown tells that no update can be seen for this plugin: wordpress.org does not
@@ -121,8 +124,9 @@ func (s Scan) Status() SiteStatus {
 		return StatusAttention
 	}
 	for _, item := range s.Items {
-		switch item.Update {
-		case UpdateAvailable, UpdateUnavailable, UpdateUnknown:
+		switch {
+		case item.Ignore != nil:
+		case item.Update == UpdateAvailable, item.Update == UpdateUnavailable, item.Update == UpdateUnknown:
 			return StatusAttention
 		}
 	}
@@ -137,11 +141,11 @@ type UpdateCounts struct {
 	Core, Plugins, Themes, Languages int
 }
 
-// PendingUpdates counts the available updates by kind.
+// PendingUpdates counts the available updates by kind, the ignored ones left out.
 func (s Scan) PendingUpdates() UpdateCounts {
 	var c UpdateCounts
 	for _, item := range s.Items {
-		if item.Update != UpdateAvailable {
+		if item.Update != UpdateAvailable || item.Ignore != nil {
 			continue
 		}
 		switch item.Kind {

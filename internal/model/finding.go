@@ -120,13 +120,34 @@ func (i Ignore) Covers(f Finding) bool {
 	return i.Key == f.Key() && (i.UntilVersion == "" || i.UntilVersion == f.Version)
 }
 
-// ApplyIgnores marks the findings of the scan that the ignores of its site cover.
+// UpdateKey is what an ignore of an update offered is kept by (ADR-0026): the item, whatever
+// version is offered; a key of the same form as a finding's.
+func UpdateKey(item ScanItem) string {
+	return "update|" + string(item.Kind) + ":" + item.Slug + "|"
+}
+
+// CoversUpdate tells whether the ignore applies to the update an item is offered: the same item,
+// and the version ignored unless it is permanent.
+func (i Ignore) CoversUpdate(item ScanItem) bool {
+	return item.Update == UpdateAvailable && i.Key == UpdateKey(item) && (i.UntilVersion == "" || i.UntilVersion == item.UpdateVersion)
+}
+
+// ApplyIgnores marks the findings and the updates of the scan that the ignores of its site cover.
 func (s *Scan) ApplyIgnores(ignores []Ignore) {
 	for i := range s.Findings {
 		s.Findings[i].Ignore = nil
 		for _, ig := range ignores {
 			if ig.SiteID == s.SiteID && ig.Covers(s.Findings[i]) {
 				s.Findings[i].Ignore = &ig
+				break
+			}
+		}
+	}
+	for i := range s.Items {
+		s.Items[i].Ignore = nil
+		for _, ig := range ignores {
+			if ig.SiteID == s.SiteID && ig.CoversUpdate(s.Items[i]) {
+				s.Items[i].Ignore = &ig
 				break
 			}
 		}
