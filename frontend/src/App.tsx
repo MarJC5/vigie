@@ -17,7 +17,7 @@ import {
   Updates,
   Watch,
 } from "../bindings/github.com/MarJC5/vigie/internal/app";
-import type { BackgroundSettings, Journal, LoginItemState, LookupsView, Node, ScansState, TreeView, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { BackgroundSettings, Journal, LoginItemState, LookupsView, Node, ScansState, TagView, TreeView, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { ActivityPage } from "./components/ActivityPage/ActivityPage";
 import { AddHostWizard, type WizardApi } from "./components/AddHostWizard/AddHostWizard";
 import { type AddonsApi, AddonsFlow } from "./components/AddonsFlow/AddonsFlow";
@@ -64,6 +64,7 @@ const editApi: EditApi = {
   Delete: Editor.Delete,
   SetAdminURL: Editor.SetAdminURL,
   SetNotes: Editor.SetNotes,
+  SetTags: Editor.SetTags,
   TestConnection: HostWizard.TestConnection,
   Host: Editor.Host,
   EditHost: Editor.EditHost,
@@ -110,6 +111,7 @@ interface Loaded {
   i18n: ReturnType<typeof createI18n>;
   theme: Theme;
   nodes: Node[];
+  tags: TagView[];
   version: string;
   treeView: TreeView;
 }
@@ -153,7 +155,7 @@ export function App() {
         document.documentElement.lang = i18n.language;
         // Before the first render: the window never shows the system's theme first.
         applyTheme(theme as Theme);
-        setLoaded({ i18n, nodes: tree.nodes ?? [], version, theme: theme as Theme, treeView });
+        setLoaded({ i18n, nodes: tree.nodes ?? [], tags: tree.tags ?? [], version, theme: theme as Theme, treeView });
       },
     );
     void Security.Lookups().then(setLookups);
@@ -174,7 +176,7 @@ export function App() {
   const ended = scans.completed + updates.completed;
   useEffect(() => {
     if (ended === 0) return;
-    void SiteManager.Tree().then((tree) => setLoaded((l) => l && { ...l, nodes: tree.nodes ?? [] }));
+    void SiteManager.Tree().then((tree) => setLoaded((l) => l && { ...l, nodes: tree.nodes ?? [], tags: tree.tags ?? [] }));
   }, [ended]);
 
   // The next automatic scan: read again after each scan, each change of the settings, and each minute.
@@ -210,7 +212,7 @@ export function App() {
   // Reads the tree again, after an edit or a host added.
   const reload = async () => {
     const tree = await SiteManager.Tree();
-    setLoaded((l) => l && { ...l, nodes: tree.nodes ?? [] });
+    setLoaded((l) => l && { ...l, nodes: tree.nodes ?? [], tags: tree.tags ?? [] });
   };
 
   // A scan starts at once, unless the user never answered the consent screen: it asks first.
@@ -282,6 +284,7 @@ export function App() {
         <AppShell
           key={added}
           nodes={loaded.nodes}
+          tags={loaded.tags}
           treeView={loaded.treeView}
           onTreeView={changeTreeView}
           onAddHost={() => setAdding(true)}

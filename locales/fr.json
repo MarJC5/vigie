@@ -29,7 +29,8 @@
     "updating_one": "{{count}} site en mise à jour",
     "updating_many": "{{count}} sites en mise à jour",
     "updating_other": "{{count}} sites en mise à jour",
-    "inNotes": "dans les notes"
+    "inNotes": "dans les notes",
+    "inTags": "dans les étiquettes"
   },
   "empty": {
     "title": "Ajoutez votre premier hébergement",
@@ -1409,5 +1410,18 @@
       "updateCount_many": "{{count}} sites",
       "updateCount_other": "{{count}} sites"
     }
+  },
+  "tags": {
+    "label": "Étiquettes",
+    "add": "Ajouter une étiquette",
+    "remove": "Retirer l'étiquette {{tag}}",
+    "field": "Nouvelle étiquette",
+    "hint": "Entrée pour ajouter, Échap pour annuler",
+    "choices": "Étiquettes déjà utilisées",
+    "sites_one": "{{count}} site",
+    "sites_many": "{{count}} sites",
+    "sites_other": "{{count}} sites",
+    "create": "Créer « {{tag}} »",
+    "new": "nouvelle"
   }
 }

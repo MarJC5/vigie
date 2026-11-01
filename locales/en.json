@@ -25,7 +25,8 @@
     "nameOf": "Name of {{name}}",
     "updating_one": "{{count}} site updating",
     "updating_other": "{{count}} sites updating",
-    "inNotes": "in the notes"
+    "inNotes": "in the notes",
+    "inTags": "in the tags"
   },
   "empty": {
     "title": "Add your first host",
@@ -1352,5 +1353,17 @@
       "updateCount_one": "{{count}} site",
       "updateCount_other": "{{count}} sites"
     }
+  },
+  "tags": {
+    "label": "Tags",
+    "add": "Add a tag",
+    "remove": "Remove the tag {{tag}}",
+    "field": "New tag",
+    "hint": "Enter to add, Escape to cancel",
+    "choices": "Tags already used",
+    "sites_one": "{{count}} site",
+    "sites_other": "{{count}} sites",
+    "create": "Create “{{tag}}”",
+    "new": "new"
   }
 }

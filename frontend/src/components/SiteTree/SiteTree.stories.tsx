@@ -97,6 +97,18 @@ export const FoundInTheNotes: Story = {
   },
 };
 
+// The search reads the tags too (ADR-0025): the sites found by one say so.
+export const FoundInTheTags: Story = {
+  args: { filter: "dupont" },
+  play: async ({ canvas }) => {
+    const [tree] = canvas.getAllByRole("tree");
+    const rows = within(tree!).getAllByRole("treeitem");
+    await expect(rows).toHaveLength(4);
+    await expect(rows[2]).toHaveTextContent("atelier-exemple.chin the tags");
+    await expect(rows[3]).toHaveTextContent("boulangerie-exemple.chin the tags");
+  },
+};
+
 // The row being renamed is a field: Enter keeps the name, Escape cancels.
 export const RenameInPlace: Story = {
   args: { editingId: "personal", onRename: fn(), onCancelEdit: fn() },

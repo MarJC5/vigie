@@ -1,0 +1,189 @@
+.row {
+  font-size: var(--vg-text-small);
+}
+
+.tags {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* A tag: filled as the window's controls, no outline. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 4px 0 8px;
+  box-sizing: border-box;
+  border-radius: var(--vg-radius-control);
+  background: var(--vg-control);
+  color: var(--vg-text-muted);
+}
+
+.name {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--vg-text);
+  font: inherit;
+  white-space: nowrap;
+}
+
+/* Without the remove button, the tag keeps the same space on its right. */
+.tag:not(:has(.remove)) {
+  padding-right: 8px;
+}
+
+button.name {
+  cursor: pointer;
+}
+
+button.name:hover {
+  text-decoration: underline;
+}
+
+.remove,
+.add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  color: var(--vg-text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.remove {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 6px;
+  background: transparent;
+}
+
+.remove:hover {
+  background: var(--vg-control-hover);
+  color: var(--vg-text);
+}
+
+.add {
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: var(--vg-radius-control);
+  background: transparent;
+}
+
+.add:hover {
+  background: var(--vg-control);
+  color: var(--vg-text);
+}
+
+.name:focus-visible,
+.remove:focus-visible,
+.add:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 2px;
+}
+
+.adding {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vg-space-2);
+}
+
+/* The field as the search field of the window. */
+.field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 220px;
+  height: 26px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border-radius: var(--vg-radius-control);
+  background: var(--vg-surface-sunken);
+  color: var(--vg-text-muted);
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 1px;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--vg-text);
+  font: inherit;
+  outline: none;
+}
+
+.field:has(.input[aria-invalid="true"]) {
+  box-shadow: inset 0 0 0 1px var(--vg-status-danger);
+}
+
+.hint {
+  color: var(--vg-text-muted);
+  font-size: var(--vg-text-caption);
+}
+
+/* A refusal in the text's color: the danger red is under 4.5:1 at this size. */
+.hint[data-problem] {
+  color: var(--vg-text);
+}
+
+/* The tags offered: a list as the window's menus. */
+.choices {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  width: 300px;
+  margin: 0;
+  padding: var(--vg-space-2);
+  box-sizing: border-box;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border-radius: var(--vg-radius-control);
+  background: var(--vg-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--vg-raised-stroke), var(--vg-shadow-raised);
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: var(--vg-space-3);
+  height: 34px;
+  padding: 0 var(--vg-space-2);
+  border-radius: var(--vg-radius-control);
+  color: var(--vg-text-muted);
+  font-size: var(--vg-text-body);
+  cursor: default;
+}
+
+.choice[aria-selected="true"] {
+  background: var(--vg-raised-stroke);
+  color: var(--vg-text);
+}
+
+.choiceName {
+  flex: 1;
+  min-width: 0;
+  color: var(--vg-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.choiceNote {
+  font-size: var(--vg-text-caption);
+}

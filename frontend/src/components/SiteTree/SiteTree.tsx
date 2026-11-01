@@ -2,6 +2,7 @@ import { type DragEvent, type KeyboardEvent, useMemo, useRef, useState } from "r
 import { useTranslation } from "react-i18next";
 
 import type { Node } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { fold } from "../../lib/text";
 import type { Status } from "../StatusDot/StatusDot";
 import { type SiteColor, TreeNode } from "../TreeNode/TreeNode";
 import styles from "./SiteTree.module.css";
@@ -32,6 +33,9 @@ export interface SiteTreeProps {
   collapsed?: Set<string>;
   onCollapsedChange?: (collapsed: Set<string>) => void;
 }
+
+/** What a row was found by, when it is not its name. */
+type Found = "tags" | "notes" | undefined;
 
 export interface Drag {
   id: string;
@@ -100,13 +104,17 @@ export function SiteTree({
     if (query) {
       // Matches and their parents, all unfolded.
       const shown = new Set<string>();
+      const inTags = (n: Node) => (n.tags ?? []).some((tag) => fold(tag).includes(query));
       for (const n of nodes) {
-        if (!fold(n.name).includes(query) && !fold(n.notes).includes(query)) continue;
+        if (!fold(n.name).includes(query) && !fold(n.notes).includes(query) && !inTags(n)) continue;
         for (let p: Node | undefined = n; p; p = byId.get(p.parentId)) shown.add(p.id);
       }
-      // Found by its notes only: the row says so.
-      const inNotes = (n: Node) => !fold(n.name).includes(query) && fold(n.notes).includes(query);
-      return nodes.filter((n) => shown.has(n.id)).map((n) => ({ node: n, depth: depthOf(n), inNotes: inNotes(n) }));
+      // Found by its tags or its notes only: the row says so.
+      const foundBy = (n: Node): Found => {
+        if (fold(n.name).includes(query)) return undefined;
+        return inTags(n) ? "tags" : fold(n.notes).includes(query) ? "notes" : undefined;
+      };
+      return nodes.filter((n) => shown.has(n.id)).map((n) => ({ node: n, depth: depthOf(n), found: foundBy(n) }));
     }
     // The item being named shows, even in a folded folder.
     const unfolded = new Set<string>();
@@ -115,7 +123,7 @@ export function SiteTree({
       for (let p = byId.get(n.parentId); p; p = byId.get(p.parentId)) if (collapsed.has(p.id) && !unfolded.has(p.id)) return true;
       return false;
     };
-    return nodes.filter((n) => !hidden(n)).map((n) => ({ node: n, depth: depthOf(n), inNotes: false }));
+    return nodes.filter((n) => !hidden(n)).map((n) => ({ node: n, depth: depthOf(n), found: undefined as Found }));
   }, [nodes, collapsed, filter, editingId]);
 
   const toggle = (id: string) => {
@@ -161,7 +169,7 @@ export function SiteTree({
       onDragOver={(event) => over(event, "")}
       onDrop={(event) => drop(event, "")}
     >
-      {visible.map(({ node, depth, inNotes }, index) => (
+      {visible.map(({ node, depth, found }, index) => (
         <TreeNode
           key={node.id}
           kind={node.kind as "folder" | "host" | "site"}
@@ -172,7 +180,7 @@ export function SiteTree({
           tabbable={hasSelection ? undefined : index === 0}
           status={node.kind === "site" ? siteStatus(node.status) : undefined}
           color={node.color === "none" ? undefined : (node.color as SiteColor)}
-          meta={inNotes ? t("manager.inNotes") : node.multisite && node.subsites > 0 ? t("manager.subsites", { count: node.subsites }) : undefined}
+          meta={found ? t(found === "tags" ? "manager.inTags" : "manager.inNotes") : node.multisite && node.subsites > 0 ? t("manager.subsites", { count: node.subsites }) : undefined}
           updates={node.kind === "host" ? node.updates : undefined}
           onSelect={() => onSelect(node.id)}
           onToggle={() => toggle(node.id)}
@@ -211,7 +219,3 @@ function siteStatus(status: string): Status {
   return status === "ok" || status === "warn" || status === "danger" || status === "partial" ? status : "unknown";
 }
 
-// Lower case without accents, so "écoles" matches "ECOLES".
-function fold(text: string): string {
-  return text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
-}

@@ -4,6 +4,7 @@ import { expect, fn, userEvent, within } from "storybook/test";
 import { extensions } from "../../fixtures/extensions";
 import { findings, xss } from "../../fixtures/findings";
 import { failedSite, newSite, offlineSite, outdatedSite, upToDateSite } from "../../fixtures/scans";
+import { sampleTags } from "../../fixtures/tree";
 import { historyToRollBack } from "../../fixtures/updates";
 import { SiteOverview } from "./SiteOverview";
 
@@ -38,6 +39,23 @@ export const QuickLinksWithoutTerminal: Story = {
   play: async ({ canvas }) => {
     const [links] = canvas.getAllByRole("list", { name: "Site links" });
     await expect(within(links!).getAllByRole("button").map((b) => b.textContent)).toEqual(["Copy SSH command"]);
+  },
+};
+
+// Under the quick links, the site's tags (ADR-0025): one opens its page, one is added.
+export const Tags: Story = {
+  args: {
+    onOpen: fn(), onCopy: fn(async () => {}), terminal: true,
+    tags: ["Contrat de maintenance", "Client Dupont"], usedTags: sampleTags, onSaveTags: fn(async () => null), onOpenTag: fn(),
+  },
+  play: async ({ canvas, args }) => {
+    const [tags] = canvas.getAllByRole("list", { name: "Tags" });
+    const row = within(tags!);
+    await userEvent.click(row.getByRole("button", { name: "Client Dupont" }));
+    await expect(args.onOpenTag).toHaveBeenCalledWith("Client Dupont");
+    await userEvent.click(row.getByRole("button", { name: "Add a tag" }));
+    await userEvent.keyboard("Hébergement{Enter}");
+    await expect(args.onSaveTags).toHaveBeenCalledWith(["Contrat de maintenance", "Client Dupont", "Hébergement à migrer"]);
   },
 };
 

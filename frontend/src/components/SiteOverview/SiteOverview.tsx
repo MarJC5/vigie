@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { FindingView, OperationView, Problem, ScanView, SiteView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { FindingView, OperationView, Problem, ScanView, SiteView, TagView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { clock, day } from "../../lib/findings";
 import { since } from "../../lib/time";
 import { choicesOf, namesOf, offeredKeys } from "../../lib/updates";
@@ -16,6 +16,7 @@ import { type QuickLink, QuickLinks } from "../QuickLinks/QuickLinks";
 import { SecurityPanel } from "../SecurityPanel/SecurityPanel";
 import { StatusDot } from "../StatusDot/StatusDot";
 import { TabBar } from "../TabBar/TabBar";
+import { TagRow } from "../TagRow/TagRow";
 import { UpdateChoices } from "../UpdateChoices/UpdateChoices";
 import { UpdateHistory } from "../UpdateHistory/UpdateHistory";
 import styles from "./SiteOverview.module.css";
@@ -54,6 +55,14 @@ export interface SiteOverviewProps {
   notes?: string;
   /** Saves the notes; without it, they are only read. */
   onSaveNotes?: (notes: string) => Promise<Problem | null>;
+  /** The site's tags; without them, no tag row. */
+  tags?: string[];
+  /** The tags in use on every site, offered while one is added. */
+  usedTags?: TagView[];
+  /** Saves the site's tags; without it, they are only read. */
+  onSaveTags?: (tags: string[]) => Promise<Problem | null>;
+  /** Opens a tag's page. */
+  onOpenTag?: (tag: string) => void;
 }
 
 /** A site with its latest scan: an overview, the updates waiting, and the history of its updates. */
@@ -77,6 +86,10 @@ export function SiteOverview({
   terminal = false,
   notes,
   onSaveNotes,
+  tags,
+  usedTags,
+  onSaveTags,
+  onOpenTag,
 }: SiteOverviewProps) {
   const { t, i18n } = useTranslation();
   const [tab, setTab] = useState("overview");
@@ -121,7 +134,12 @@ export function SiteOverview({
         <DetailHeader
           title={site.name}
           meta={scan ? t("site.lastScan", { when: since(scan.finished, i18n.language, now) }) : undefined}
-          links={<QuickLinks label={t("site.links")} links={links} />}
+          links={
+            <>
+              <QuickLinks label={t("site.links")} links={links} />
+              {tags && <TagRow tags={tags} used={usedTags ?? []} onSave={onSaveTags} onOpenTag={onOpenTag} />}
+            </>
+          }
         >
           {onMore && (
             <Button

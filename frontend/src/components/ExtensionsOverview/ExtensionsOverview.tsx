@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import type { ExtensionsAcross } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { findingText } from "../../lib/findings";
+import { fold } from "../../lib/text";
 import { wordPressOrgAddress } from "../ExtensionList/ExtensionList";
 import { ExternalLink } from "../ExternalLink/ExternalLink";
 import { Icon } from "../Icon/Icon";
@@ -18,9 +19,6 @@ export interface ExtensionsOverviewProps {
   onOpen?: (href: string) => void;
 }
 
-function fold(text: string): string {
-  return text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
-}
 
 /** The plugins and themes across a host's or folder's sites (ADR-0024, point 2): how many sites run
  * each, in which versions; a line opens to its sites. */

@@ -15,6 +15,7 @@ import type {
   SiteResultView,
   SiteRow,
   SiteView,
+  TagView,
   TreeView,
   UpdatesState,
 } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
@@ -68,6 +69,7 @@ export interface EditApi extends HostEditApi, FindSitesApi {
   Delete(id: string): Promise<Problem | null>;
   SetAdminURL(id: string, address: string): Promise<Problem | null>;
   SetNotes(id: string, notes: string): Promise<Problem | null>;
+  SetTags(id: string, tags: string[]): Promise<Problem | null>;
 }
 
 export interface AppShellProps {
@@ -115,6 +117,8 @@ export interface AppShellProps {
   canOpenSSH?: boolean;
   /** When the next automatic scan is due (RFC 3339), at the foot of the site list; none while off. */
   nextScan?: string;
+  /** The tags in use, with how many sites have each (SiteManager.Tree). */
+  tags?: TagView[];
   /** How the user left the site list (Preferences.TreeView); told of each change. */
   treeView?: TreeView;
   onTreeView?: (view: TreeView) => void;
@@ -160,6 +164,7 @@ export function AppShell({
   onCopy,
   canOpenSSH,
   nextScan,
+  tags,
   treeView,
   onTreeView,
 }: AppShellProps) {
@@ -523,6 +528,15 @@ export function AppShell({
                     return refused;
                   })
                 }
+                usedTags={tags}
+                onSaveTags={
+                  edit &&
+                  (async (siteTags: string[]) => {
+                    const refused = await edit.SetTags(selected.id, siteTags);
+                    if (!refused) await onChanged?.();
+                    return refused;
+                  })
+                }
                 {...(updatesApi && {
                   onUpdate: (site: SiteView, keys: Set<string>) =>
                     setFlow({ site: { id: site.id, name: site.name }, keys, names: namesOf(site.scan?.updates ?? []), follow: false }),
@@ -750,6 +764,8 @@ function Loaded({
   onCopy,
   terminal,
   onSaveNotes,
+  usedTags,
+  onSaveTags,
 }: {
   node: Node;
   data: ShellData;
@@ -775,6 +791,9 @@ function Loaded({
   terminal?: boolean;
   /** Saves the notes of the node shown; without it, they are only read. */
   onSaveNotes?: (notes: string) => Promise<Problem | null>;
+  usedTags?: TagView[];
+  /** Saves the tags of the site shown; without it, they are only read. */
+  onSaveTags?: (tags: string[]) => Promise<Problem | null>;
 }) {
   const { t } = useTranslation();
   const [view, setView] = useState<{ id: string; view: View }>();
@@ -832,6 +851,9 @@ function Loaded({
         terminal={terminal}
         notes={node.notes}
         onSaveNotes={onSaveNotes}
+        tags={node.tags ?? []}
+        usedTags={usedTags}
+        onSaveTags={onSaveTags}
       />
     );
   }
