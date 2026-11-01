@@ -27,6 +27,10 @@ export interface UpdateFlowProps {
   keys: Set<string>;
   /** The titles of the plugins and themes, by key. */
   names: Map<string, string>;
+  /** The plugins wordpress.org knows, for their changelogs. */
+  known?: Set<string>;
+  /** Opens a changelog in the browser. */
+  onOpen?: (href: string) => void;
   state: UpdatesState;
   /** Opens on the run of the site already going, instead of a new preview. */
   follow?: boolean;
@@ -46,7 +50,7 @@ interface Following {
 const notStarted: Problem = { code: "update.run.notStarted", detail: "" };
 
 /** The update of one site, from its preview to how it ended, following Vigie's state. */
-export function UpdateFlow({ api, site, keys, names, state, follow = false, onClose }: UpdateFlowProps) {
+export function UpdateFlow({ api, site, keys, names, known, onOpen, state, follow = false, onClose }: UpdateFlowProps) {
   const running = (state.running ?? []).find((op) => op.siteId === site.id);
   const busy = (state.sites ?? []).includes(site.id);
 
@@ -128,6 +132,8 @@ export function UpdateFlow({ api, site, keys, names, state, follow = false, onCl
       preview={preview}
       planned={planned}
       names={names}
+      known={known}
+      onOpen={onOpen}
       operation={following ? (running ?? null) : ended}
       starting={!!following && !running}
       stopping={stopping}

@@ -644,7 +644,8 @@
       "core": "WordPress",
       "plugin": "Extensions",
       "theme": "Thèmes",
-      "language": "Traductions"
+      "language": "Traductions",
+      "ignored": "Ignorées"
     },
     "upToDate": "Tous à jour",
     "notOffered": {
@@ -685,7 +686,13 @@
       "coreText": "Le site affiche la page de maintenance de WordPress pendant environ une minute. Si vous revenez en arrière ensuite, la base de données retrouve son état d'avant la mise à jour : les commandes ou commentaires écrits entre-temps sont perdus.",
       "nothing": "Rien de ce que vous avez choisi n'est encore proposé : le site a peut-être été mis à jour entre-temps.",
       "cannot": "Cette mise à jour ne peut pas commencer",
-      "confirm": "Sauvegarder et mettre à jour"
+      "confirm": "Sauvegarder et mettre à jour",
+      "leftOutTitle_one": "Laissée de côté : {{count}} mise à jour ignorée",
+      "leftOutTitle_other": "Laissées de côté : {{count}} mises à jour ignorées",
+      "leftOutTitle_many": "Laissées de côté : {{count}} mises à jour ignorées",
+      "leftOut_one": "{{items}}. Cochez-la dans l'onglet Mises à jour pour l'installer cette fois.",
+      "leftOut_other": "{{items}}. Cochez-les dans l'onglet Mises à jour pour les installer cette fois.",
+      "leftOut_many": "{{items}}. Cochez-les dans l'onglet Mises à jour pour les installer cette fois."
     },
     "run": {
       "title": "Mise à jour de {{name}}",
@@ -814,11 +821,31 @@
       "confirm_one": "Mettre à jour {{count}} site",
       "confirm_many": "Mettre à jour {{count}} sites",
       "confirm_other": "Mettre à jour {{count}} sites",
-      "sites": "Sites concernés"
+      "sites": "Sites concernés",
+      "onlyIgnored_one": "Rien à installer : sa seule mise à jour est ignorée",
+      "onlyIgnored_other": "Rien à installer : ses {{count}} mises à jour sont ignorées",
+      "onlyIgnored_many": "Rien à installer : ses {{count}} mises à jour sont ignorées",
+      "ignoredLeft_one": "{{count}} mise à jour ignorée laissée de côté",
+      "ignoredLeft_other": "{{count}} mises à jour ignorées laissées de côté",
+      "ignoredLeft_many": "{{count}} mises à jour ignorées laissées de côté"
     },
     "updateAll": "Tout mettre à jour",
     "updatingAll": "Mise à jour en cours…",
-    "upToDateOne": "À jour"
+    "upToDateOne": "À jour",
+    "changelog": "Changelog",
+    "releaseNotes": "Notes de version",
+    "ignore": "Ignorer…",
+    "ignoreNamed": "Ignorer la mise à jour de « {{name}} »",
+    "restore": "Ne plus ignorer",
+    "restoreNamed": "Ne plus ignorer la mise à jour de « {{name}} »",
+    "ignoredUntil": "Ignorée le {{date}} jusqu'à une version plus récente que {{version}}",
+    "ignoredForever": "Ignorée définitivement le {{date}} : « {{reason}} »",
+    "ignoreDialog": {
+      "title": "Ignorer la mise à jour de « {{name}} » ?",
+      "lead": "{{from}} → {{to}}. Elle ne compte plus dans l'état du site, et « Tout mettre à jour » la laisse de côté.",
+      "untilNext": "Jusqu'à la version suivante",
+      "untilNextHint": "Revient d'elle-même dès qu'une version plus récente que {{version}} est proposée."
+    }
   },
   "security": {
     "summary": {
@@ -1416,7 +1443,8 @@
       "updateCount_one": "{{count}} site",
       "updateCount_many": "{{count}} sites",
       "updateCount_other": "{{count}} sites"
-    }
+    },
+    "ignored": "ignorée"
   },
   "tags": {
     "label": "Étiquettes",

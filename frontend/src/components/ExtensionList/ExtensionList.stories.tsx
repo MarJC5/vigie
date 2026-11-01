@@ -54,3 +54,19 @@ export const InFrench: Story = {
     await expect(canvas.getAllByRole("table", { name: "Thèmes" })[0]).toHaveTextContent("Inactif");
   },
 };
+
+// An update ignored says so on its line, in gray (ADR-0026).
+export const AnIgnoredUpdate: Story = {
+  args: {
+    extensions: [
+      ...extensions,
+      { ...extensions[0]!, slug: "page-builder-kit", title: "Page Builder Kit", version: "4.2.0", updateVersion: "5.0.0", autoUpdate: false, worst: null,
+        ignore: { untilVersion: "", reason: "the theme uses its internal API", created: "2026-11-01T10:00:00Z" } },
+    ],
+  },
+  play: async ({ canvas }) => {
+    const [table] = canvas.getAllByRole("table", { name: "Plugins" });
+    const row = within(table!).getByRole("row", { name: /Page Builder Kit/ });
+    await expect(row).toHaveTextContent("→ 5.0.0 · ignored");
+  },
+};

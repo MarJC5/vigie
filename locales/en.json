@@ -616,7 +616,8 @@
       "core": "WordPress",
       "plugin": "Plugins",
       "theme": "Themes",
-      "language": "Translations"
+      "language": "Translations",
+      "ignored": "Ignored"
     },
     "upToDate": "All up to date",
     "notOffered": {
@@ -655,7 +656,11 @@
       "coreText": "The site shows the maintenance page of WordPress for about a minute. If you roll back afterwards, the database returns to its state before the update: orders or comments written in between are lost.",
       "nothing": "Nothing you chose is offered any more: the site may have been updated in the meantime.",
       "cannot": "This update cannot start",
-      "confirm": "Back up and update"
+      "confirm": "Back up and update",
+      "leftOutTitle_one": "Left out: {{count}} ignored update",
+      "leftOutTitle_other": "Left out: {{count}} ignored updates",
+      "leftOut_one": "{{items}}. Tick it in the Updates tab to install it this time.",
+      "leftOut_other": "{{items}}. Tick them in the Updates tab to install them this time."
     },
     "run": {
       "title": "Updating {{name}}",
@@ -780,11 +785,29 @@
       "nothing": "Up to date",
       "confirm_one": "Update {{count}} site",
       "confirm_other": "Update {{count}} sites",
-      "sites": "Sites"
+      "sites": "Sites",
+      "onlyIgnored_one": "Nothing to install: its only update is ignored",
+      "onlyIgnored_other": "Nothing to install: its {{count}} updates are ignored",
+      "ignoredLeft_one": "{{count}} ignored update left out",
+      "ignoredLeft_other": "{{count}} ignored updates left out"
     },
     "updateAll": "Update all",
     "updatingAll": "Updating…",
-    "upToDateOne": "Up to date"
+    "upToDateOne": "Up to date",
+    "changelog": "Changelog",
+    "releaseNotes": "Release notes",
+    "ignore": "Ignore…",
+    "ignoreNamed": "Ignore the update of {{name}}",
+    "restore": "Stop ignoring",
+    "restoreNamed": "Stop ignoring the update of {{name}}",
+    "ignoredUntil": "Ignored on {{date}} until a version newer than {{version}}",
+    "ignoredForever": "Ignored permanently on {{date}}: “{{reason}}”",
+    "ignoreDialog": {
+      "title": "Ignore the update of {{name}}?",
+      "lead": "{{from}} → {{to}}. It no longer counts in the site's status, and “Update all” leaves it out.",
+      "untilNext": "Until the next version",
+      "untilNextHint": "Comes back by itself as soon as a version newer than {{version}} is offered."
+    }
   },
   "security": {
     "summary": {
@@ -1358,7 +1381,8 @@
       "versionCount_other": "{{count}} versions",
       "updateCount_one": "{{count}} site",
       "updateCount_other": "{{count}} sites"
-    }
+    },
+    "ignored": "ignored"
   },
   "tags": {
     "label": "Tags",

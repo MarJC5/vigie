@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 
 import type { SitePreviewView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
-import { pendingOf } from "../../lib/updates";
+import { ignoredOf, pendingOf } from "../../lib/updates";
 import { Button } from "../Button/Button";
 import { Dialog } from "../Dialog/Dialog";
 import { Icon } from "../Icon/Icon";
@@ -43,18 +43,21 @@ export function BulkDialog({ name, previews, onConfirm, onClose }: BulkDialogPro
         <ul aria-label={t("update.bulkDialog.sites")} className={styles.sites}>
           {previews.map((p) => {
             const count = pendingOf(p);
+            // The updates the site ignores are left out (ADR-0026), and said.
+            const ignored = ignoredOf(p).length;
             const why = p.problem
               ? t(p.problem.code, { message: p.problem.detail })
               : !p.dumpTool
                 ? t("problem.noDumpTool")
                 : count === 0
-                  ? t("update.bulkDialog.nothing")
+                  ? t(ignored > 0 ? "update.bulkDialog.onlyIgnored" : "update.bulkDialog.nothing", { count: ignored })
                   : "";
+            const items = [t("update.bulkDialog.items", { count }), ...(ignored > 0 ? [t("update.bulkDialog.ignoredLeft", { count: ignored })] : [])].join(" · ");
             return (
               <li key={p.siteId} className={styles.site} data-ready={!why || undefined}>
-                <Icon name={why ? (count === 0 && !p.problem ? "ok" : "lock") : "update"} size={14} />
+                <Icon name={why ? (count === 0 && !p.problem ? (ignored > 0 ? "eyeSlash" : "ok") : "lock") : "update"} size={14} />
                 <span className={styles.name}>{p.name}</span>
-                <span className={styles.note}>{why || t("update.bulkDialog.items", { count })}</span>
+                <span className={styles.note}>{why || items}</span>
               </li>
             );
           })}

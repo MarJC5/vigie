@@ -11,12 +11,19 @@
 }
 
 .heading {
+  display: flex;
+  gap: var(--vg-space-2);
   margin: 0 0 var(--vg-space-1);
   font-size: var(--vg-text-small);
   font-weight: var(--vg-weight-strong);
   color: var(--vg-text-muted);
 }
 
+.count {
+  font-weight: var(--vg-weight-regular);
+}
+
+/* Box, name, change, then a note or the actions: the changelog and "Ignore…", as on the Security tab. */
 .row {
   display: grid;
   grid-template-columns: 28px minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
@@ -32,8 +39,31 @@
   background: var(--vg-surface-row);
 }
 
-label.row {
+/* The label takes its place in the row's grid. */
+.pick {
+  display: contents;
   cursor: pointer;
+}
+
+.nameCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px 0;
+}
+
+.detail {
+  font-size: var(--vg-text-small);
+  color: var(--vg-text-muted);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--vg-space-4);
+  white-space: nowrap;
 }
 
 .row[data-muted] {

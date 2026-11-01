@@ -22,6 +22,10 @@ export interface UpdateWindowProps {
   planned: UpdateItemView[];
   /** The titles of the plugins and themes, by key. */
   names: Map<string, string>;
+  /** The plugins wordpress.org knows, for their changelogs. */
+  known?: Set<string>;
+  /** Opens a changelog in the browser. */
+  onOpen?: (href: string) => void;
   /** The update, then its rollback, as they run and once ended; null before the update starts. */
   operation: OperationView | null;
   /** The update or rollback was asked for and Vigie has not reported its first step yet. */
@@ -45,6 +49,8 @@ export function UpdateWindow({
   preview,
   planned,
   names,
+  known,
+  onOpen,
   operation,
   starting = false,
   rollingBack = false,
@@ -93,7 +99,7 @@ export function UpdateWindow({
         progress={preview || problem ? undefined : { label: t("update.preview.loading") }}
       >
         {refused}
-        {preview && <UpdatePreview preview={preview} planned={planned} names={names} />}
+        {preview && <UpdatePreview preview={preview} planned={planned} names={names} known={known} onOpen={onOpen} />}
       </WizardStep>
     );
   }

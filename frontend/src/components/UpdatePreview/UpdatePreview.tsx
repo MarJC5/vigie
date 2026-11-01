@@ -1,7 +1,8 @@
 import { useTranslation } from "react-i18next";
 
 import type { SitePreviewView, UpdateItemView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
-import { itemName } from "../../lib/updates";
+import { changelogOf, ignoredOf, itemName, keyOf } from "../../lib/updates";
+import { ExternalLink } from "../ExternalLink/ExternalLink";
 import { Icon, type IconName } from "../Icon/Icon";
 import { Notice } from "../Notice/Notice";
 import styles from "./UpdatePreview.module.css";
@@ -12,10 +13,14 @@ export interface UpdatePreviewProps {
   planned: UpdateItemView[];
   /** The titles of the plugins and themes, by key. */
   names: Map<string, string>;
+  /** The plugins wordpress.org knows, for their changelogs. */
+  known?: Set<string>;
+  /** Opens a changelog in the browser. */
+  onOpen?: (href: string) => void;
 }
 
 /** What an update will change and what Vigie backs up first, or why it cannot start. */
-export function UpdatePreview({ preview, planned, names }: UpdatePreviewProps) {
+export function UpdatePreview({ preview, planned, names, known, onOpen }: UpdatePreviewProps) {
   const { t } = useTranslation();
   if (preview.problem) {
     const text = t(preview.problem.code, { message: preview.problem.detail });
@@ -33,6 +38,9 @@ export function UpdatePreview({ preview, planned, names }: UpdatePreviewProps) {
   if (planned.some((it) => it.kind === "core")) backups.push(["archive", t("update.preview.coreFiles")]);
   const languages = planned.filter((it) => it.kind === "language");
   const items = planned.filter((it) => it.kind !== "language");
+  // The ignored updates not chosen on purpose: "Update" leaves them out (ADR-0026).
+  const leftOut = ignoredOf(preview).filter((it) => !planned.some((p) => p.kind === it.kind && p.slug === it.slug));
+  const changelog = (it: UpdateItemView) => changelogOf({ kind: it.kind, slug: it.slug, to: it.to, onWordPressOrg: known?.has(keyOf(it.kind, it.slug)) });
 
   return (
     <>
@@ -50,7 +58,14 @@ export function UpdatePreview({ preview, planned, names }: UpdatePreviewProps) {
                     {it.from} → {it.to}
                   </span>
                 </span>
-                <span className={styles.kind}>{t(`update.preview.kind.${it.kind}`)}</span>
+                <span className={styles.line}>
+                  <span className={styles.kind}>{t(`update.preview.kind.${it.kind}`)}</span>
+                  {changelog(it) && (
+                    <ExternalLink href={changelog(it)!} onOpen={onOpen}>
+                      {t(it.kind === "core" ? "update.releaseNotes" : "update.changelog")}
+                    </ExternalLink>
+                  )}
+                </span>
               </li>
             ))}
             {languages.length > 0 && (
@@ -65,6 +80,18 @@ export function UpdatePreview({ preview, planned, names }: UpdatePreviewProps) {
               </li>
             )}
           </ul>
+          {leftOut.length > 0 && (
+            <Notice
+              tone="neutral"
+              icon="eyeSlash"
+              role="note"
+              title={t("update.preview.leftOutTitle", { count: leftOut.length })}
+              text={t("update.preview.leftOut", {
+                items: leftOut.map((it) => `${itemName(t, it.kind, it.slug, names)} ${it.from} → ${it.to}`).join(", "),
+                count: leftOut.length,
+              })}
+            />
+          )}
         </section>
         <section className={styles.column}>
           <h2 className={styles.heading}>

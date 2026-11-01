@@ -60,3 +60,15 @@ export const InFrench: Story = {
     await expect(title).toBeInTheDocument();
   },
 };
+
+// An update offered (ADR-0026): until a newer version by default, or permanently with a reason.
+export const AnUpdate: Story = {
+  args: { finding: undefined, update: { name: "WooCommerce", from: "9.8.1", to: "10.2.0" } },
+  play: async ({ canvas, args }) => {
+    const [dialog] = canvas.getAllByRole("dialog", { name: "Ignore the update of WooCommerce?" });
+    await expect(dialog).toHaveAccessibleDescription("9.8.1 → 10.2.0. It no longer counts in the site's status, and “Update all” leaves it out.");
+    await expect(canvas.getAllByText("Comes back by itself as soon as a version newer than 10.2.0 is offered.").length).toBeGreaterThan(0);
+    await userEvent.click(canvas.getAllByRole("button", { name: "Ignore" })[0]!);
+    await expect(args.onIgnore).toHaveBeenCalledWith("10.2.0", "");
+  },
+};

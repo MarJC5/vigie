@@ -22,7 +22,7 @@ import type {
 import { clock, day } from "../../lib/findings";
 import { hasTag, spread, tagId, tagOf, tagsGroupId } from "../../lib/tags";
 import { fold } from "../../lib/text";
-import { namesOf } from "../../lib/updates";
+import { type Choice, knownOf, namesOf } from "../../lib/updates";
 import { AdminAddressDialog } from "../AdminAddressDialog/AdminAddressDialog";
 import { BulkDialog } from "../BulkDialog/BulkDialog";
 import { Button } from "../Button/Button";
@@ -137,6 +137,8 @@ interface Flow {
   site: { id: string; name: string };
   keys: Set<string>;
   names: Map<string, string>;
+  /** The plugins wordpress.org knows, for their changelogs. */
+  known: Set<string>;
   follow: boolean;
 }
 
@@ -204,7 +206,8 @@ export function AppShell({
   // The host or folder whose last update of every site shows, until dismissed.
   const [bulkFor, setBulkFor] = useState<string>();
   // The finding being set aside, and why the last attempt was refused.
-  const [ignoring, setIgnoring] = useState<{ site: SiteView; finding: FindingView; problem: Problem | null } | null>(null);
+  // A finding to set aside, or an update offered to ignore (ADR-0026).
+  const [ignoring, setIgnoring] = useState<{ site: SiteView; finding?: FindingView; update?: Choice; problem: Problem | null } | null>(null);
   // Grows when an ignore changes: the detail is read again.
   const [ignores, setIgnores] = useState(0);
   // The admin address of a site being given, with the site's own and computed ones.
@@ -408,16 +411,17 @@ export function AppShell({
 
   const ignore = async (untilVersion: string, reason: string) => {
     if (!security || !ignoring) return;
-    const refused = await security.Ignore(ignoring.site.id, ignoring.finding.key, untilVersion, reason);
+    const key = ignoring.finding?.key ?? ignoring.update?.ignoreKey ?? "";
+    const refused = await security.Ignore(ignoring.site.id, key, untilVersion, reason);
     if (refused) return setIgnoring({ ...ignoring, problem: refused });
     setIgnoring(null);
     setIgnores((n) => n + 1);
     await onChanged?.();
   };
-  const restore = async (site: SiteView, finding: FindingView) => {
+  const restore = async (site: SiteView, key: string) => {
     if (!security) return;
     setProblem(null);
-    const refused = await security.Unignore(site.id, finding.key);
+    const refused = await security.Unignore(site.id, key);
     if (refused) setProblem(refused);
     setIgnores((n) => n + 1);
     await onChanged?.();
@@ -443,6 +447,8 @@ export function AppShell({
         api={updatesApi}
         site={flow.site}
         keys={flow.keys}
+        known={flow.known}
+        onOpen={onOpen}
         names={flow.names}
         state={updates}
         follow={flow.follow}
@@ -542,7 +548,9 @@ export function AppShell({
                 updating={updating(selected)}
                 onCheckFiles={onCheckFiles && (() => !updating(selected) && onCheckFiles(selected.id))}
                 onIgnore={security && ((site, finding) => setIgnoring({ site, finding, problem: null }))}
-                onRestore={security && ((site, finding) => void restore(site, finding))}
+                onRestore={security && ((site, finding) => void restore(site, finding.key))}
+                onIgnoreUpdate={security && ((site: SiteView, update: Choice) => setIgnoring({ site, update, problem: null }))}
+                onRestoreUpdate={security && ((site: SiteView, update: Choice) => void restore(site, update.ignoreKey))}
                 onOpen={onOpen}
                 onCopy={onCopy}
                 terminal={canOpenSSH}
@@ -569,9 +577,9 @@ export function AppShell({
                 }
                 {...(updatesApi && {
                   onUpdate: (site: SiteView, keys: Set<string>) =>
-                    setFlow({ site: { id: site.id, name: site.name }, keys, names: namesOf(site.scan?.updates ?? []), follow: false }),
+                    setFlow({ site: { id: site.id, name: site.name }, keys, names: namesOf(site.scan?.updates ?? []), known: knownOf(site.scan?.updates ?? []), follow: false }),
                   onFollow: (site: SiteView) =>
-                    setFlow({ site: { id: site.id, name: site.name }, keys: new Set(), names: namesOf(site.scan?.updates ?? []), follow: true }),
+                    setFlow({ site: { id: site.id, name: site.name }, keys: new Set(), names: namesOf(site.scan?.updates ?? []), known: knownOf(site.scan?.updates ?? []), follow: true }),
                   // The site turns busy at once; its page then offers to follow the rollback.
                   onRollback: (site: SiteView, operationID: string) => {
                     setProblem(null);
@@ -620,6 +628,7 @@ export function AppShell({
       {ignoring && (
         <IgnoreDialog
           finding={ignoring.finding}
+          update={ignoring.update && { name: ignoring.update.kind === "core" ? "WordPress" : ignoring.update.name, from: ignoring.update.from, to: ignoring.update.to }}
           site={ignoring.site.name}
           problem={ignoring.problem}
           onIgnore={(untilVersion, reason) => void ignore(untilVersion, reason)}
@@ -817,6 +826,8 @@ function Loaded({
   onCheckFiles,
   onIgnore,
   onRestore,
+  onIgnoreUpdate,
+  onRestoreUpdate,
   onOpen,
   onCopy,
   terminal,
@@ -844,6 +855,8 @@ function Loaded({
   onCheckFiles?: () => void;
   onIgnore?: (site: SiteView, finding: FindingView) => void;
   onRestore?: (site: SiteView, finding: FindingView) => void;
+  onIgnoreUpdate?: (site: SiteView, update: Choice) => void;
+  onRestoreUpdate?: (site: SiteView, update: Choice) => void;
   onOpen?: (href: string) => void;
   onCopy?: (text: string) => Promise<unknown> | void;
   terminal?: boolean;
@@ -908,6 +921,8 @@ function Loaded({
         onCheckFiles={onCheckFiles}
         onIgnore={onIgnore && ((finding) => onIgnore(site, finding))}
         onRestore={onRestore && ((finding) => onRestore(site, finding))}
+        onIgnoreUpdate={onIgnoreUpdate && ((update) => onIgnoreUpdate(site, update))}
+        onRestoreUpdate={onRestoreUpdate && ((update) => onRestoreUpdate(site, update))}
         onOpen={onOpen}
         onCopy={onCopy}
         terminal={terminal}

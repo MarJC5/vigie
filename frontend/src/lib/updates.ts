@@ -1,5 +1,6 @@
 // What the update screens show, worked out from the scan, the preview and the steps recorded.
 import type {
+  IgnoreView,
   OperationView,
   SelectionView,
   SitePreviewView,
@@ -8,6 +9,7 @@ import type {
   UpdateItemView,
   UpdateView,
 } from "../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { day } from "./findings";
 
 export type ItemKind = "core" | "plugin" | "theme" | "language";
 
@@ -47,36 +49,43 @@ export interface Choice {
   /** Translations only: the languages, and what they translate ("" for WordPress). */
   languages: string[];
   of: string[];
+  /** Ignores the update with Security.Ignore (ADR-0026); "" when it cannot be ignored. */
+  ignoreKey: string;
+  /** Why and until when it is ignored; null when it counts. */
+  ignore: IgnoreView | null;
+  /** Where its changes are read, when wordpress.org has them. */
+  changelog?: string;
 }
 
+/** The ignored updates go in a group of their own, after the others, unticked. */
 export interface ChoiceGroup {
-  kind: ItemKind;
+  kind: ItemKind | "ignored";
   choices: Choice[];
 }
 
 const kinds: ItemKind[] = ["core", "plugin", "theme", "language"];
 
 /** The updates of a scan as the tab lists them: WordPress, plugins, themes, then all translations in
- one row. */
+ one row; the ignored ones last, in a group of their own. */
 export function choicesOf(updates: UpdateView[]): ChoiceGroup[] {
-  return kinds.map((kind) => {
-    const of = updates.filter((u) => u.kind === kind);
-    if (kind !== "language") {
-      return {
-        kind,
-        choices: of.map((u) => ({
-          key: keyOf(kind, u.slug),
-          kind,
-          name: u.title || u.slug,
-          from: u.version,
-          to: u.updateVersion,
-          offered: u.update === "available",
-          reason: u.update === "available" ? "" : u.update,
-          languages: [],
-          of: [],
-        })),
-      };
-    }
+  const choice = (u: UpdateView): Choice => ({
+    key: keyOf(u.kind, u.slug),
+    kind: u.kind as ItemKind,
+    name: u.title || u.slug,
+    from: u.version,
+    to: u.updateVersion,
+    offered: u.update === "available",
+    reason: u.update === "available" ? "" : u.update,
+    languages: [],
+    of: [],
+    ignoreKey: u.key,
+    ignore: u.ignore,
+    changelog: u.update === "available" ? changelogOf({ kind: u.kind, slug: u.slug, to: u.updateVersion, onWordPressOrg: u.onWordPressOrg }) : undefined,
+  });
+  const ignored = updates.filter((u) => u.ignore);
+  const groups: ChoiceGroup[] = kinds.map((kind) => {
+    const of = updates.filter((u) => u.kind === kind && !u.ignore);
+    if (kind !== "language") return { kind, choices: of.map(choice) };
     const offered = of.filter((u) => u.update === "available");
     if (offered.length === 0) return { kind, choices: [] };
     return {
@@ -92,15 +101,24 @@ export function choicesOf(updates: UpdateView[]): ChoiceGroup[] {
           reason: "",
           languages: unique(offered.map((u) => u.language)),
           of: unique(offered.map((u) => u.slug)),
+          ignoreKey: "",
+          ignore: null,
         },
       ],
     };
   });
+  return ignored.length > 0 ? [...groups, { kind: "ignored", choices: ignored.map(choice) }] : groups;
 }
 
-/** The keys of every item offered, chosen when the tab opens. */
+/** The keys of every item offered, chosen when the tab opens; an ignored update only on purpose. */
 export function offeredKeys(groups: ChoiceGroup[]): Set<string> {
-  return new Set(groups.flatMap((g) => g.choices.filter((c) => c.offered).map((c) => c.key)));
+  return new Set(groups.filter((g) => g.kind !== "ignored").flatMap((g) => g.choices.filter((c) => c.offered).map((c) => c.key)));
+}
+
+/** How long an update is ignored, and why. */
+export function ignoredText(ignore: IgnoreView, t: (key: string, vars?: Record<string, unknown>) => string): string {
+  const date = day(ignore.created);
+  return ignore.untilVersion ? t("update.ignoredUntil", { version: ignore.untilVersion, date }) : t("update.ignoredForever", { date, reason: ignore.reason });
 }
 
 /** The selection sent to Vigie for the keys chosen. */
@@ -136,9 +154,16 @@ export function plannedItems(preview: SitePreviewView, sel: SelectionView): Upda
   return items;
 }
 
-/** How many items a preview offers; the translations count as one. */
+/** How many items "Update all" takes from a preview, the ignored ones aside; the translations
+ count as one. */
 export function pendingOf(p: SitePreviewView): number {
-  return (p.core ? 1 : 0) + (p.plugins ?? []).length + (p.themes ?? []).length + ((p.languages ?? []).length > 0 ? 1 : 0);
+  const counted = (list: UpdateItemView[] | null | undefined) => (list ?? []).filter((it) => !it.ignored).length;
+  return (p.core && !p.core.ignored ? 1 : 0) + counted(p.plugins) + counted(p.themes) + ((p.languages ?? []).length > 0 ? 1 : 0);
+}
+
+/** The updates of a preview the site ignores, which "Update all" leaves out. */
+export function ignoredOf(p: SitePreviewView): UpdateItemView[] {
+  return [...(p.core ? [p.core] : []), ...(p.plugins ?? []), ...(p.themes ?? [])].filter((it) => it.ignored);
 }
 
 /** Can an update of this preview start: it was read, the server can dump, something is chosen. */
@@ -261,6 +286,11 @@ type T = (key: string, vars?: Record<string, unknown>) => string;
 /** The titles of the plugins and themes of a scan, by key, to name them better than by slug. */
 export function namesOf(updates: UpdateView[]): Map<string, string> {
   return new Map(updates.filter((u) => u.title).map((u) => [keyOf(u.kind, u.slug), u.title]));
+}
+
+/** The keys of the plugins wordpress.org knows, whose changelog is there. */
+export function knownOf(updates: UpdateView[]): Set<string> {
+  return new Set(updates.filter((u) => u.onWordPressOrg).map((u) => keyOf(u.kind, u.slug)));
 }
 
 /** An item's name: WordPress, its title when known, else its slug. */

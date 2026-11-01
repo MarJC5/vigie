@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect } from "storybook/test";
+import { expect, fn, userEvent } from "storybook/test";
 
 import { outdatedSite } from "../../fixtures/scans";
 import { preview } from "../../fixtures/updates";
-import { namesOf, plannedItems, selectionOf } from "../../lib/updates";
+import { knownOf, namesOf, plannedItems, selectionOf } from "../../lib/updates";
 import { UpdatePreview } from "./UpdatePreview";
 
 const names = namesOf(outdatedSite.scan!.updates!);
@@ -51,5 +51,25 @@ export const CannotLoad: Story = {
   play: async ({ canvas }) => {
     const [alert] = canvas.getAllByRole("alert");
     await expect(alert).toHaveTextContent("WordPress cannot be loaded: Error establishing a database connection");
+  },
+};
+
+// Each change with its changelog; an ignored update not chosen is left out, and said (ADR-0026).
+const held = { ...preview, plugins: preview.plugins!.map((it) => (it.slug === "woocommerce" ? { ...it, ignored: true } : it)) };
+
+export const Changelogs: Story = {
+  args: {
+    preview: held,
+    planned: plannedItems(held, selectionOf(["core", "plugin:akismet", "languages"])),
+    known: knownOf(outdatedSite.scan!.updates!),
+    onOpen: fn(),
+  },
+  play: async ({ canvas, args }) => {
+    await userEvent.click(canvas.getAllByRole("link", { name: /Changelog/ })[0]!);
+    await expect(args.onOpen).toHaveBeenCalledWith("https://wordpress.org/plugins/akismet/#developers");
+    await expect(canvas.getAllByRole("link", { name: /Release notes/ }).length).toBeGreaterThan(0);
+    const [note] = canvas.getAllByRole("note").filter((n) => n.textContent?.includes("Left out"));
+    await expect(note).toHaveTextContent("Left out: 1 ignored update");
+    await expect(note).toHaveTextContent("WooCommerce 9.8.1 → 10.2.0. Tick it in the Updates tab to install it this time.");
   },
 };

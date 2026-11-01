@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 
 import type { ExtensionView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { findingText } from "../../lib/findings";
+import { ignoredText } from "../../lib/updates";
+import { Icon } from "../Icon/Icon";
 import { StatusDot } from "../StatusDot/StatusDot";
 import { ExternalLink } from "../ExternalLink/ExternalLink";
 import styles from "./ExtensionList.module.css";
@@ -87,7 +89,13 @@ export function ExtensionList({ extensions, onFinding, onOpen }: ExtensionListPr
                   </td>
                   <td className={styles.muted}>{t(`ext.status.${e.kind}.${e.status}`, { defaultValue: e.status })}</td>
                   <td>
-                    {e.update === "available" ? (
+                    {e.update === "available" && e.ignore ? (
+                      // Ignored (ADR-0026): said, in gray, without the mark of an update waiting.
+                      <span className={`${styles.update} ${styles.muted}`} title={ignoredText(e.ignore, t)}>
+                        <Icon name="eyeSlash" size={14} />
+                        {t("ext.to", { version: e.updateVersion })} · {t("ext.ignored")}
+                      </span>
+                    ) : e.update === "available" ? (
                       <span className={styles.update}>
                         <StatusDot status="warn" />
                         {t("ext.to", { version: e.updateVersion })}

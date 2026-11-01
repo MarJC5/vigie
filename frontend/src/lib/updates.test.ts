@@ -8,11 +8,14 @@ import {
   changelogOf,
   choicesOf,
   durationText,
+  ignoredOf,
+  ignoredText,
   failedStep,
   itemsDone,
   itemsOf,
   namesOf,
   offeredKeys,
+  pendingOf,
   plannedItems,
   rescanRow,
   restoredStep,
@@ -161,5 +164,26 @@ describe("changelogOf", () => {
     expect(changelogOf({ kind: "core", slug: "", to: "7.2" })).toBe("https://wordpress.org/documentation/wordpress-version/version-7-2/");
     expect(changelogOf({ kind: "core", slug: "", to: "7.2.0" })).toBe("https://wordpress.org/documentation/wordpress-version/version-7-2/");
     expect(changelogOf({ kind: "core", slug: "", to: "7.2-beta1" })).toBeUndefined();
+  });
+});
+
+describe("an ignored update", () => {
+  const ignore = { untilVersion: "", reason: "payment not tested", created: "2026-11-01T10:00:00Z" };
+  const updates = outdatedSite.scan!.updates!.map((u) => (u.slug === "woocommerce" ? { ...u, ignore } : u));
+
+  it("is listed apart, with its changelog, and not chosen when the tab opens", () => {
+    const groups = choicesOf(updates);
+    expect(groups.map((g) => g.kind)).toEqual(["core", "plugin", "theme", "language", "ignored"]);
+    expect(groups[1]!.choices.map((c) => c.key)).toEqual(["plugin:akismet", "plugin:old-gallery"]);
+    const held = groups[4]!.choices[0]!;
+    expect([held.key, held.ignoreKey, held.changelog]).toEqual(["plugin:woocommerce", "update|plugin:woocommerce|", "https://wordpress.org/plugins/woocommerce/#developers"]);
+    expect(offeredKeys(groups).has("plugin:woocommerce")).toBe(false);
+    expect(ignoredText(ignore, (key, vars) => `${key} ${JSON.stringify(vars)}`)).toBe('update.ignoredForever {"date":"01.11.2026","reason":"payment not tested"}');
+  });
+
+  it("is left out of the count of a bulk update", () => {
+    const p = { ...preview, plugins: preview.plugins!.map((it) => (it.slug === "woocommerce" ? { ...it, ignored: true } : it)) };
+    expect([pendingOf(preview), pendingOf(p)]).toEqual([4, 3]);
+    expect(ignoredOf(p).map((it) => it.slug)).toEqual(["woocommerce"]);
   });
 });

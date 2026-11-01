@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { FindingView, OperationView, Problem, ScanView, SiteView, TagView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { clock, day } from "../../lib/findings";
 import { since } from "../../lib/time";
-import { choicesOf, namesOf, offeredKeys } from "../../lib/updates";
+import { type Choice, choicesOf, namesOf, offeredKeys } from "../../lib/updates";
 import { Button } from "../Button/Button";
 import { DetailHeader } from "../DetailHeader/DetailHeader";
 import { Dialog } from "../Dialog/Dialog";
@@ -45,6 +45,9 @@ export interface SiteOverviewProps {
   /** Opens the dialog that sets a finding aside; without it, findings are only listed. */
   onIgnore?: (finding: FindingView) => void;
   onRestore?: (finding: FindingView) => void;
+  /** Opens the dialog that ignores an update offered (ADR-0026); without it, no "Ignore…". */
+  onIgnoreUpdate?: (choice: Choice) => void;
+  onRestoreUpdate?: (choice: Choice) => void;
   /** Opens an address in the browser, or an ssh:// address in the user's terminal. */
   onOpen?: (href: string) => void;
   /** Puts a text on the clipboard; without it, no "Copy SSH command". */
@@ -81,6 +84,8 @@ export function SiteOverview({
   onCheckFiles,
   onIgnore,
   onRestore,
+  onIgnoreUpdate,
+  onRestoreUpdate,
   onOpen,
   onCopy,
   terminal = false,
@@ -103,7 +108,8 @@ export function SiteOverview({
   const scanKey = `${site.id}:${scan?.finished ?? ""}`;
   const [choice, setChoice] = useState<{ key: string; chosen: Set<string> }>();
   const chosen = choice?.key === scanKey ? choice.chosen : offeredKeys(groups);
-  const offered = offeredKeys(groups).size;
+  // An ignored update counts among those that can be chosen, unticked until it is.
+  const offered = groups.flatMap((g) => g.choices).filter((c) => c.offered).length;
   const completed = scan?.outcome === "completed";
   const toLookAt = completed && scan ? scan.counts.urgent + scan.counts.attention : 0;
 
@@ -210,7 +216,15 @@ export function SiteOverview({
               <InfoRow label={t("updates.label")}>{t("updates.none")}</InfoRow>
             </InfoList>
           ) : (
-            <UpdateChoices groups={groups} chosen={chosen} onChange={(next) => setChoice({ key: scanKey, chosen: next })} names={names} />
+            <UpdateChoices
+              groups={groups}
+              chosen={chosen}
+              onChange={(next) => setChoice({ key: scanKey, chosen: next })}
+              names={names}
+              onIgnore={onIgnoreUpdate}
+              onRestore={onRestoreUpdate}
+              onOpen={onOpen}
+            />
           ))}
         {tab === "security" &&
           (completed && scan ? (

@@ -1,7 +1,9 @@
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
-import { type Choice, type ChoiceGroup, itemName } from "../../lib/updates";
+import { type Choice, type ChoiceGroup, ignoredText, itemName } from "../../lib/updates";
+import { Button } from "../Button/Button";
+import { ExternalLink } from "../ExternalLink/ExternalLink";
 import { Icon } from "../Icon/Icon";
 import styles from "./UpdateChoices.module.css";
 
@@ -12,10 +14,17 @@ export interface UpdateChoicesProps {
   onChange: (chosen: Set<string>) => void;
   /** The titles of the plugins and themes, by key. */
   names: Map<string, string>;
+  /** Opens the dialog that ignores an update (ADR-0026); without it, no "Ignore…". */
+  onIgnore?: (choice: Choice) => void;
+  /** Counts an ignored update again. */
+  onRestore?: (choice: Choice) => void;
+  /** Opens a changelog in the browser; without it, the link opens a new tab. */
+  onOpen?: (href: string) => void;
 }
 
-/** The updates of a site by kind, each offered one with a checkbox; a kind with none says so. */
-export function UpdateChoices({ groups, chosen, onChange, names }: UpdateChoicesProps) {
+/** The updates of a site by kind, each offered one with a checkbox, its changelog and "Ignore…"; a
+ kind with none says so; the ignored updates last, unticked, with why. */
+export function UpdateChoices({ groups, chosen, onChange, names, onIgnore, onRestore, onOpen }: UpdateChoicesProps) {
   const { t } = useTranslation();
   const id = useId();
   const toggle = (key: string, on: boolean) => {
@@ -31,6 +40,7 @@ export function UpdateChoices({ groups, chosen, onChange, names }: UpdateChoices
         <div role="group" key={group.kind} className={styles.group} aria-labelledby={`${id}-${group.kind}`}>
           <h2 id={`${id}-${group.kind}`} className={styles.heading}>
             {t(`update.group.${group.kind}`)}
+            {group.kind === "ignored" && <span className={styles.count}>{group.choices.length}</span>}
           </h2>
           {group.choices.length === 0 ? (
             <div className={styles.row} data-muted>
@@ -47,6 +57,9 @@ export function UpdateChoices({ groups, chosen, onChange, names }: UpdateChoices
                 name={choiceName(t, choice, names)}
                 checked={chosen.has(choice.key)}
                 onChange={(on) => toggle(choice.key, on)}
+                onIgnore={onIgnore}
+                onRestore={onRestore}
+                onOpen={onOpen}
               />
             ))
           )}
@@ -56,7 +69,14 @@ export function UpdateChoices({ groups, chosen, onChange, names }: UpdateChoices
   );
 }
 
-function ChoiceRow({ choice, name, checked, onChange }: { choice: Choice; name: string; checked: boolean; onChange: (on: boolean) => void }) {
+interface ChoiceRowProps extends Pick<UpdateChoicesProps, "onIgnore" | "onRestore" | "onOpen"> {
+  choice: Choice;
+  name: string;
+  checked: boolean;
+  onChange: (on: boolean) => void;
+}
+
+function ChoiceRow({ choice, name, checked, onChange, onIgnore, onRestore, onOpen }: ChoiceRowProps) {
   const { t } = useTranslation();
   const change = choice.from && choice.to ? `${choice.from} → ${choice.to}` : "";
   if (!choice.offered) {
@@ -72,13 +92,38 @@ function ChoiceRow({ choice, name, checked, onChange }: { choice: Choice; name: 
     );
   }
   return (
-    <label className={styles.row}>
-      <span className={styles.mark}>
-        <input type="checkbox" className={styles.box} checked={checked} onChange={(event) => onChange(event.target.checked)} />
+    <div className={styles.row}>
+      {/* The label lays out in the row's grid: a click on the name ticks the box. */}
+      <label className={styles.pick}>
+        <span className={styles.mark}>
+          <input type="checkbox" className={styles.box} checked={checked} onChange={(event) => onChange(event.target.checked)} />
+        </span>
+        <span className={styles.nameCell}>
+          <span className={styles.name}>{name}</span>
+          {choice.ignore && <span className={styles.detail}>{ignoredText(choice.ignore, t)}</span>}
+        </span>
+        <span className={styles.change}>{change}</span>
+      </label>
+      <span className={styles.actions}>
+        {choice.changelog && (
+          <ExternalLink href={choice.changelog} onOpen={onOpen}>
+            {t(choice.kind === "core" ? "update.releaseNotes" : "update.changelog")}
+          </ExternalLink>
+        )}
+        {choice.ignore
+          ? onRestore && (
+              <Button variant="text" label={t("update.restoreNamed", { name })} onClick={() => onRestore(choice)}>
+                {t("update.restore")}
+              </Button>
+            )
+          : onIgnore &&
+            choice.ignoreKey && (
+              <Button variant="text" icon="eyeSlash" label={t("update.ignoreNamed", { name })} onClick={() => onIgnore(choice)}>
+                {t("update.ignore")}
+              </Button>
+            )}
       </span>
-      <span className={styles.name}>{name}</span>
-      <span className={styles.change}>{change}</span>
-    </label>
+    </div>
   );
 }
 

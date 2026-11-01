@@ -8,7 +8,9 @@ import { Dialog } from "../Dialog/Dialog";
 import styles from "./IgnoreDialog.module.css";
 
 export interface IgnoreDialogProps {
-  finding: FindingView;
+  /** A finding to set aside, or an update offered to ignore (ADR-0026). */
+  finding?: FindingView;
+  update?: { name: string; from: string; to: string };
   site: string;
   /** untilVersion "" ignores permanently, and then a reason is required. */
   onIgnore: (untilVersion: string, reason: string) => void;
@@ -20,27 +22,31 @@ export interface IgnoreDialogProps {
 // "Until the next version" only for what has versions of its own: WordPress, a plugin, a theme, PHP.
 const versioned = (f: FindingView) => f.version !== "" && /^(core|php|plugin:|theme:)/.test(f.subject);
 
-/** Sets a finding aside, until the next version of its subject or permanently with a reason. */
-export function IgnoreDialog({ finding, site, onIgnore, onClose, problem }: IgnoreDialogProps) {
+/** Sets a finding aside, or ignores an update offered, until the next version or permanently with
+ a reason. */
+export function IgnoreDialog({ finding, update, site, onIgnore, onClose, problem }: IgnoreDialogProps) {
   const { t, i18n } = useTranslation();
   const id = useId();
-  const canWait = versioned(finding);
+  // An update offered waits for a newer one; a finding, for another version of its subject.
+  const version = update ? update.to : finding!.version;
+  const canWait = update ? true : versioned(finding!);
   const [forever, setForever] = useState(!canWait);
   const [reason, setReason] = useState("");
-  const title = findingText(finding, t, i18n.language).title;
-  const name = finding.name || (finding.subject === "core" ? "WordPress" : finding.subject === "php" ? "PHP" : finding.subject.replace(/^\w+:/, ""));
+  const name = update
+    ? update.name
+    : finding!.name || (finding!.subject === "core" ? "WordPress" : finding!.subject === "php" ? "PHP" : finding!.subject.replace(/^\w+:/, ""));
   const missing = forever && reason.trim() === "";
 
   return (
     <Dialog
-      title={t("security.dialog.title", { title })}
-      lead={t("security.dialog.lead", { site })}
+      title={update ? t("update.ignoreDialog.title", { name }) : t("security.dialog.title", { title: findingText(finding!, t, i18n.language).title })}
+      lead={update ? t("update.ignoreDialog.lead", { from: update.from, to: update.to }) : t("security.dialog.lead", { site })}
       onClose={onClose}
       wide
       actions={
         <>
           <Button onClick={onClose}>{t("action.cancel")}</Button>
-          <Button variant="primary" icon="eyeSlash" disabled={missing} onClick={() => onIgnore(forever ? "" : finding.version, reason.trim())}>
+          <Button variant="primary" icon="eyeSlash" disabled={missing} onClick={() => onIgnore(forever ? "" : version, reason.trim())}>
             {t("security.dialog.confirm")}
           </Button>
         </>
@@ -52,8 +58,8 @@ export function IgnoreDialog({ finding, site, onIgnore, onClose, problem }: Igno
           <label className={styles.choice}>
             <input type="radio" name={`${id}-how`} checked={!forever} onChange={() => setForever(false)} className={styles.radio} />
             <span className={styles.choiceText}>
-              <span className={styles.choiceTitle}>{t("security.dialog.untilNext", { name })}</span>
-              <span className={styles.hint}>{t("security.dialog.untilNextHint", { version: finding.version })}</span>
+              <span className={styles.choiceTitle}>{update ? t("update.ignoreDialog.untilNext") : t("security.dialog.untilNext", { name })}</span>
+              <span className={styles.hint}>{t(update ? "update.ignoreDialog.untilNextHint" : "security.dialog.untilNextHint", { version })}</span>
             </span>
           </label>
         )}

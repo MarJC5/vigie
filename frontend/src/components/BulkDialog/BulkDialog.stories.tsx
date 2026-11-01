@@ -46,3 +46,21 @@ export const Loading: Story = {
     await expect(confirm).toHaveAttribute("aria-busy", "true");
   },
 };
+
+// The updates a site ignores are left out, and said; a site with only those has nothing to install.
+const builder = { kind: "plugin", slug: "page-builder-kit", language: "", from: "4.2.0", to: "5.0.0", ignored: true };
+
+export const IgnoredLeftOut: Story = {
+  args: {
+    previews: [
+      { ...preview, plugins: [...preview.plugins!, builder] },
+      { ...preview, siteId: "o", name: "vieux-site.ch", core: null, plugins: [builder], themes: [], languages: [] },
+    ],
+  },
+  play: async ({ canvas }) => {
+    const [list] = canvas.getAllByRole("list", { name: "Sites" });
+    await expect(list).toHaveTextContent("4 items · 1 ignored update left out");
+    await expect(list).toHaveTextContent("Nothing to install: its only update is ignored");
+    await expect(canvas.getAllByRole("button", { name: "Update 1 site" }).length).toBeGreaterThan(0);
+  },
+};
