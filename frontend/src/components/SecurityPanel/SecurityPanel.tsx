@@ -1,7 +1,8 @@
 import { useTranslation } from "react-i18next";
 
-import type { FindingView, ScanView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
-import { clock, day, findingText, type Group, groupsOf, ignoreText } from "../../lib/findings";
+import type { FindingView, ScanView, SubsiteView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { clock, day, findingText, type Group, groupOf, groupsOf, ignoreText } from "../../lib/findings";
+import { labelsOf } from "../../lib/subsites";
 import { Button } from "../Button/Button";
 import { Icon } from "../Icon/Icon";
 import { type Status, StatusDot } from "../StatusDot/StatusDot";
@@ -19,6 +20,8 @@ export interface SecurityPanelProps {
   onRestore?: (finding: FindingView) => void;
   /** Opens an address in the browser; links open in a new window without it. */
   onOpen?: (href: string) => void;
+  /** A network's subsites, to name those its administrators administer (ADR-0029). */
+  subsites?: SubsiteView[];
 }
 
 // The shape of each group: never color alone.
@@ -28,7 +31,7 @@ const shapes: Partial<Record<Group, Status>> = { urgent: "danger", attention: "w
 const wpvulnerability = { href: "https://www.wpvulnerability.com/", name: "WPVulnerability" };
 
 /** The Security tab of a site: what its latest scan found, the worst first, by group. */
-export function SecurityPanel({ scan, onCheckFiles, scanning = false, onIgnore, onRestore, onOpen }: SecurityPanelProps) {
+export function SecurityPanel({ scan, onCheckFiles, scanning = false, onIgnore, onRestore, onOpen, subsites }: SecurityPanelProps) {
   const { t, i18n } = useTranslation();
   const c = scan.counts;
   const summary = [
@@ -67,7 +70,7 @@ export function SecurityPanel({ scan, onCheckFiles, scanning = false, onIgnore, 
           </h2>
           <ul className={styles.list}>
             {items.map((f) => (
-              <Row key={f.key} finding={f} group={group} onIgnore={onIgnore} onRestore={onRestore} onOpen={onOpen} lang={i18n.language} />
+              <Row key={f.key} finding={f} group={group} onIgnore={onIgnore} onRestore={onRestore} onOpen={onOpen} lang={i18n.language} labels={labelsOf(subsites)} />
             ))}
           </ul>
         </div>
@@ -84,6 +87,18 @@ export function SecurityPanel({ scan, onCheckFiles, scanning = false, onIgnore, 
   );
 }
 
+/** Findings in the rows of the Security tab, without its groups: a subsite's administrators. */
+export function FindingRows({ findings, label, subsites }: { findings: FindingView[]; label: string; subsites?: SubsiteView[] }) {
+  const { i18n } = useTranslation();
+  return (
+    <ul className={styles.list} aria-label={label}>
+      {findings.map((f) => (
+        <Row key={f.key} finding={f} group={groupOf(f)} lang={i18n.language} labels={labelsOf(subsites)} />
+      ))}
+    </ul>
+  );
+}
+
 function Row({
   finding,
   group,
@@ -91,6 +106,7 @@ function Row({
   onRestore,
   onOpen,
   lang,
+  labels,
 }: {
   finding: FindingView;
   group: Group;
@@ -98,9 +114,10 @@ function Row({
   onRestore?: (f: FindingView) => void;
   onOpen?: (href: string) => void;
   lang: string;
+  labels?: Record<string, string>;
 }) {
   const { t } = useTranslation();
-  const text = findingText(finding, t, lang);
+  const text = findingText(finding, t, lang, labels);
   const shape = shapes[group];
   // Information is only shown: it never counts, so there is nothing to set aside.
   const canIgnore = onIgnore && !finding.ignore && finding.level !== "info";

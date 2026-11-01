@@ -8,12 +8,13 @@ import styles from "./TreeNode.module.css";
 export type SiteColor = "red" | "green" | "blue" | "yellow" | "cyan" | "magenta" | "orange";
 
 export interface TreeNodeProps {
-  /** A tag's row opens the page of its sites (ADR-0025). */
-  kind: "folder" | "host" | "site" | "tag";
+  /** A tag's row opens the page of its sites (ADR-0025); a subsite's, its page under its network
+   * (ADR-0029). */
+  kind: "folder" | "host" | "site" | "tag" | "subsite";
   name: string;
   /** 0 at the root. */
   depth: number;
-  /** Folders and hosts only. */
+  /** Folders and hosts; a network, which unfolds to its subsites. */
   expanded?: boolean;
   selected?: boolean;
   /** Sites only. */
@@ -56,7 +57,7 @@ export function TreeNode({
   onDragStart, onDragEnd, onDragOver, onDrop, onContextMenu,
 }: TreeNodeProps) {
   const { t } = useTranslation();
-  const branch = kind === "folder" || kind === "host";
+  const branch = kind === "folder" || kind === "host" || (kind === "site" && expanded !== undefined);
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Enter" && selected && onEdit) {
       event.preventDefault();
@@ -70,9 +71,10 @@ export function TreeNode({
     }
   };
   const style = {
-    // A site's mark sits in the column of its host's tile (past the host's caret and gap); a tag's
-    // icon in the column of a host's caret.
-    "--vg-node-indent": `${depth * 14 + (kind === "site" ? 6 : 0)}px`,
+    // A site's mark sits in the column of its host's tile (past the host's caret and gap), a
+    // network's too, its caret before; a subsite's name under its network's (past the mark's
+    // column); a tag's icon in the column of a host's caret.
+    "--vg-node-indent": `${depth * 14 + (kind === "site" ? (branch ? -14 : 6) : kind === "subsite" ? 21 : 0)}px`,
     ...(color ? { "--vg-node-color": `var(--vg-site-${color})` } : {}),
   } as CSSProperties;
 

@@ -2,6 +2,7 @@ import { type DragEvent, type KeyboardEvent, useMemo, useRef, useState } from "r
 import { useTranslation } from "react-i18next";
 
 import type { Node, TagView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { openKey } from "../../lib/subsites";
 import { tagId, tagsGroupId } from "../../lib/tags";
 import { fold } from "../../lib/text";
 import type { Status } from "../StatusDot/StatusDot";
@@ -122,8 +123,10 @@ export function SiteTree({
     // The item being named shows, even in a folded folder.
     const unfolded = new Set<string>();
     for (let p = editingId ? byId.get(byId.get(editingId)?.parentId ?? "") : undefined; p; p = byId.get(p.parentId)) unfolded.add(p.id);
+    // A network is folded unless unfolded (openKey), the other branches unfolded unless folded.
+    const folded = (p: Node) => (p.kind === "site" ? !collapsed.has(openKey(p.id)) && !unfolded.has(p.id) : collapsed.has(p.id) && !unfolded.has(p.id));
     const hidden = (n: Node): boolean => {
-      for (let p = byId.get(n.parentId); p; p = byId.get(p.parentId)) if (collapsed.has(p.id) && !unfolded.has(p.id)) return true;
+      for (let p = byId.get(n.parentId); p; p = byId.get(p.parentId)) if (folded(p)) return true;
       return false;
     };
     return nodes.filter((n) => !hidden(n)).map((n) => ({ node: n, depth: depthOf(n), found: undefined as Found }));
@@ -147,7 +150,8 @@ export function SiteTree({
   const onKeyDown = (event: KeyboardEvent) => {
     const row = document.activeElement as HTMLElement | null;
     // The Tags group itself has no actions.
-    const id = row?.dataset.id === tagsGroupId ? undefined : row?.dataset.id;
+    // The Tags group, and a subsite (read-only, ADR-0029), have none either.
+    const id = row?.dataset.id === tagsGroupId || row?.dataset.id?.startsWith("subsite:") ? undefined : row?.dataset.id;
     if (id && ((event.metaKey && event.key === "Backspace") || event.key === "Delete")) {
       event.preventDefault();
       onDelete?.(id);
@@ -182,47 +186,63 @@ export function SiteTree({
       onDragOver={(event) => over(event, "")}
       onDrop={(event) => drop(event, "")}
     >
-      {visible.map(({ node, depth, found }, index) => (
-        <TreeNode
-          key={node.id}
-          kind={node.kind as "folder" | "host" | "site"}
-          name={node.name}
-          depth={depth}
-          expanded={node.kind === "site" ? undefined : filter.trim() !== "" || !collapsed.has(node.id)}
-          selected={node.id === selectedId}
-          tabbable={hasSelection ? undefined : index === 0}
-          status={node.kind === "site" ? siteStatus(node.status) : undefined}
-          color={node.color === "none" ? undefined : (node.color as SiteColor)}
-          meta={found ? t(found === "tags" ? "manager.inTags" : "manager.inNotes") : node.multisite && node.subsites > 0 ? t("manager.subsites", { count: node.subsites }) : undefined}
-          updates={node.kind === "host" ? node.updates : undefined}
-          onSelect={() => onSelect(node.id)}
-          onToggle={() => toggle(node.id)}
-          itemId={node.id}
-          onEdit={onEdit && (() => onEdit(node.id))}
-          editing={node.id === editingId}
-          editLabel={t("manager.nameOf", { name: node.name })}
-          onRename={(name) => onRename?.(node.id, name)}
-          onCancelEdit={onCancelEdit}
-          draggable={Boolean(onMove) && node.kind !== "site"}
-          dragging={drag?.id === node.id}
-          dropTarget={node.kind === "folder" && drag?.target === node.id}
-          onDragStart={(event) => {
-            event.dataTransfer.effectAllowed = "move";
-            event.dataTransfer.setData("text/plain", node.name);
-            follow({ id: node.id, target: undefined });
-          }}
-          onDragEnd={() => follow(null)}
-          onDragOver={(event) => over(event, targetOf(node))}
-          onDrop={(event) => drop(event, targetOf(node))}
-          onContextMenu={
-            onMenu &&
-            ((event) => {
-              event.preventDefault();
-              onMenu(node.id, { x: event.clientX, y: event.clientY });
-            })
-          }
-        />
-      ))}
+      {visible.map(({ node, depth, found }, index) => {
+        // A network unfolds to its subsites (ADR-0029), which are read-only.
+        const network = node.kind === "site" && (node.subsiteList ?? []).length > 0;
+        const subsite = node.kind === "subsite";
+        return (
+          <TreeNode
+            key={node.id}
+            kind={node.kind as "folder" | "host" | "site" | "subsite"}
+            name={node.name}
+            depth={depth}
+            expanded={
+              network ? filter.trim() !== "" || collapsed.has(openKey(node.id)) : node.kind === "site" || subsite ? undefined : filter.trim() !== "" || !collapsed.has(node.id)
+            }
+            selected={node.id === selectedId}
+            tabbable={hasSelection ? undefined : index === 0}
+            status={node.kind === "site" ? siteStatus(node.status) : undefined}
+            color={node.color === "none" ? undefined : (node.color as SiteColor)}
+            meta={
+              found
+                ? t(found === "tags" ? "manager.inTags" : "manager.inNotes")
+                : subsite
+                  ? (["archived", "spam", "deleted"].includes(node.status) ? t(`subsite.state.${node.status}`) : undefined)
+                  : node.multisite && node.subsites > 0
+                    ? t("manager.subsites", { count: node.subsites })
+                    : undefined
+            }
+            updates={node.kind === "host" ? node.updates : undefined}
+            onSelect={() => onSelect(node.id)}
+            onToggle={() => toggle(network ? openKey(node.id) : node.id)}
+            itemId={node.id}
+            onEdit={onEdit && !subsite ? () => onEdit(node.id) : undefined}
+            editing={node.id === editingId}
+            editLabel={t("manager.nameOf", { name: node.name })}
+            onRename={(name) => onRename?.(node.id, name)}
+            onCancelEdit={onCancelEdit}
+            draggable={Boolean(onMove) && node.kind !== "site" && !subsite}
+            dragging={drag?.id === node.id}
+            dropTarget={node.kind === "folder" && drag?.target === node.id}
+            onDragStart={(event) => {
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", node.name);
+              follow({ id: node.id, target: undefined });
+            }}
+            onDragEnd={() => follow(null)}
+            onDragOver={(event) => over(event, targetOf(node))}
+            onDrop={(event) => drop(event, targetOf(node))}
+            onContextMenu={
+              onMenu && !subsite
+                ? (event) => {
+                    event.preventDefault();
+                    onMenu(node.id, { x: event.clientX, y: event.clientY });
+                  }
+                : undefined
+            }
+          />
+        );
+      })}
       {tagRows.map((r, index) =>
         r.tag ? (
           <TreeNode

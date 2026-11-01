@@ -1029,7 +1029,11 @@
         "on": "{{login}} : administrateur avec double authentification",
         "unknown": "{{login}} : administrateur, double authentification inconnue",
         "since": "depuis le {{date}}",
-        "super": "super administrateur"
+        "super_off": "{{login}} : super administrateur sans double authentification",
+        "super_on": "{{login}} : super administrateur avec double authentification",
+        "super_unknown": "{{login}} : super administrateur, double authentification inconnue",
+        "sites": "administre {{sites}}",
+        "mainSite": "le site principal"
       },
       "fileEditing": {
         "title": "Fichiers modifiables depuis l'administration",
@@ -1454,7 +1458,8 @@
       "status": "État",
       "update": "Mise à jour",
       "auto": "Auto",
-      "finding": "Constat le plus grave"
+      "finding": "Constat le plus grave",
+      "activation": "Activation"
     },
     "status": {
       "plugin": {
@@ -1582,5 +1587,43 @@
       "added_many": "{{count}} ajoutés",
       "added_other": "{{count}} ajoutés"
     }
+  },
+  "subsite": {
+    "state": {
+      "public": "Public",
+      "hidden": "Masqué aux moteurs de recherche",
+      "archived": "archivé",
+      "spam": "spam",
+      "deleted": "supprimé"
+    },
+    "stateLabel": {
+      "public": "Public",
+      "hidden": "Masqué aux moteurs de recherche",
+      "archived": "Archivé",
+      "spam": "Marqué comme spam",
+      "deleted": "Supprimé"
+    },
+    "activation": {
+      "network": "Sur tout le réseau",
+      "some_one": "Sur {{count}} sous-site",
+      "some_many": "Sur {{count}} sous-sites",
+      "some_other": "Sur {{count}} sous-sites",
+      "nowhere": "Nulle part",
+      "listOf": "Sous-sites où {{name}} est actif"
+    },
+    "of": "Sous-site de",
+    "notRead": "Ce sous-site est {{state}} : Vigie n'en lit pas les détails.",
+    "notScanned": "Pas encore lu : relevez le réseau.",
+    "address": "Adresse",
+    "theme": "Thème",
+    "plugins": "Extensions actives",
+    "pluginsHere_one": "{{count}} sur ce sous-site",
+    "pluginsHere_many": "{{count}} sur ce sous-site",
+    "pluginsHere_other": "{{count}} sur ce sous-site",
+    "pluginsNetwork": "+ {{count}} sur tout le réseau",
+    "admins": "Administrateurs",
+    "noPlugins": "Aucune, en dehors de celles de tout le réseau.",
+    "noAdmins": "Aucun.",
+    "stateRow": "État"
   }
 }

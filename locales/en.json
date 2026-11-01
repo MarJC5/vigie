@@ -982,7 +982,11 @@
         "on": "{{login}}: administrator with two-factor",
         "unknown": "{{login}}: administrator, two-factor unknown",
         "since": "since {{date}}",
-        "super": "super administrator"
+        "super_off": "{{login}}: super administrator without two-factor",
+        "super_on": "{{login}}: super administrator with two-factor",
+        "super_unknown": "{{login}}: super administrator, two-factor unknown",
+        "sites": "administers {{sites}}",
+        "mainSite": "the main site"
       },
       "fileEditing": {
         "title": "Files can be edited from the dashboard",
@@ -1392,7 +1396,8 @@
       "status": "Status",
       "update": "Update",
       "auto": "Auto",
-      "finding": "Worst finding"
+      "finding": "Worst finding",
+      "activation": "Activation"
     },
     "status": {
       "plugin": {
@@ -1508,5 +1513,41 @@
       "added_one": "{{count}} added",
       "added_other": "{{count}} added"
     }
+  },
+  "subsite": {
+    "state": {
+      "public": "Public",
+      "hidden": "Hidden from search engines",
+      "archived": "archived",
+      "spam": "spam",
+      "deleted": "deleted"
+    },
+    "stateLabel": {
+      "public": "Public",
+      "hidden": "Hidden from search engines",
+      "archived": "Archived",
+      "spam": "Marked as spam",
+      "deleted": "Deleted"
+    },
+    "activation": {
+      "network": "Across the network",
+      "some_one": "On {{count}} subsite",
+      "some_other": "On {{count}} subsites",
+      "nowhere": "Nowhere",
+      "listOf": "Subsites where {{name}} is active"
+    },
+    "of": "Subsite of",
+    "notRead": "This subsite is {{state}}: Vigie does not read its details.",
+    "notScanned": "Not read yet: scan the network.",
+    "address": "Address",
+    "theme": "Theme",
+    "plugins": "Active plugins",
+    "pluginsHere_one": "{{count}} on this subsite",
+    "pluginsHere_other": "{{count}} on this subsite",
+    "pluginsNetwork": "+ {{count}} across the network",
+    "admins": "Administrators",
+    "noPlugins": "None but those across the network.",
+    "noAdmins": "None.",
+    "stateRow": "State"
   }
 }

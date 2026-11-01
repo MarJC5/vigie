@@ -20,6 +20,7 @@ import type {
   UpdatesState,
 } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { clock, day } from "../../lib/findings";
+import { openKey, subsiteId, subsiteOf, withSubsites } from "../../lib/subsites";
 import { hasTag, spread, tagId, tagOf, tagsGroupId } from "../../lib/tags";
 import { fold } from "../../lib/text";
 import { type Choice, knownOf, namesOf } from "../../lib/updates";
@@ -43,6 +44,7 @@ import { SiteOverview } from "../SiteOverview/SiteOverview";
 import { SitesOverview } from "../SitesOverview/SitesOverview";
 import { type Drag, SiteTree } from "../SiteTree/SiteTree";
 import { StatusDot } from "../StatusDot/StatusDot";
+import { SubsitePage } from "../SubsitePage/SubsitePage";
 import { UpdateFlow, type UpdatesApi } from "../UpdateFlow/UpdateFlow";
 import styles from "./AppShell.module.css";
 
@@ -187,7 +189,8 @@ export function AppShell({
   const leave = (open: boolean, next: Set<string>) => {
     setPaneOpen(open);
     setFolded(next);
-    const kept = nodes.filter((n) => next.has(n.id)).map((n) => n.id);
+    // The networks unfolded (openKey) are kept too, for the networks still there.
+    const kept = nodes.flatMap((n) => [n.id, openKey(n.id)]).filter((id) => next.has(id));
     onTreeView?.({ hidden: !open, folded: next.has(tagsGroupId) ? [...kept, tagsGroupId] : kept });
   };
   const [searching, setSearching] = useState(false);
@@ -226,7 +229,9 @@ export function AppShell({
       ),
     [tags],
   );
-  const byId = new Map([...nodes, ...tagNodes].map((n) => [n.id, n]));
+  // Each network's subsites, under it in the list, each a page of its own (ADR-0029).
+  const listed = useMemo(() => withSubsites(nodes), [nodes]);
+  const byId = new Map([...listed, ...tagNodes].map((n) => [n.id, n]));
   const say = (p: Problem) => t(p.code, { message: p.detail });
 
   const openSearch = () => {
@@ -307,7 +312,16 @@ export function AppShell({
     node.kind === "site"
       ? busySites.has(node.id)
       : nodes.some((n) => busySites.has(n.id) && (node.kind === "tag" ? hasTag(n.tags, node.name) : n.path.startsWith(`${node.path}/`)));
+  // A subsite opened from a page unfolds its network in the list, where it shows chosen.
+  const select = (id: string) => {
+    const sub = subsiteOf(id);
+    if (sub && !folded.has(openKey(sub.siteId))) leave(paneOpen, new Set([...folded, openKey(sub.siteId)]));
+    setSelectedId(id);
+  };
+
   const scan = (id: string) => {
+    // A subsite is scanned with its network.
+    id = subsiteOf(id)?.siteId ?? id;
     const node = id ? byId.get(id) : undefined;
     if (id ? node && !updating(node) : busySites.size === 0) onScan?.(id);
   };
@@ -492,7 +506,7 @@ export function AppShell({
             {nodes.length > 0 ? (
               <SiteTree
                 label={t("manager.label")}
-                nodes={nodes}
+                nodes={listed}
                 tags={tags}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
@@ -541,8 +555,8 @@ export function AppShell({
                 revision={scans.completed + updates.completed + ignores + tagEdits}
                 scanning={scanning(selected)}
                 onScan={() => scan(selected.id)}
-                onSelect={setSelectedId}
-                onMore={edit && ((point) => openMenu(selected.id, point))}
+                onSelect={select}
+                onMore={edit && selected.kind !== "subsite" ? (point) => openMenu(selected.id, point) : undefined}
                 onSiteMenu={edit && ((id, point) => openMenu(id, point, false))}
                 onRemove={edit && (() => setDialog({ kind: "delete", id: selected.id }))}
                 updating={updating(selected)}
@@ -889,6 +903,11 @@ function Loaded({
           return { kind: "host", host: await data.host(node.id) };
         case "tag":
           return { kind: "tag", rows: await data.sites(node.id) };
+        case "subsite": {
+          // Read from its network's latest scan (ADR-0029).
+          const { siteId, blogId } = subsiteOf(node.id)!;
+          return { kind: "subsite", site: await data.site(siteId), blogId };
+        }
       }
       return { kind: "folder", rows: await data.sites(node.id) };
     };
@@ -904,6 +923,9 @@ function Loaded({
   // Nothing until the first answer, which comes at once from the local database.
   if (!view || view.id !== node.id) return null;
   const v = view.view;
+  if (v.kind === "subsite") {
+    return <SubsitePage site={v.site} blogId={v.blogId} onNetwork={() => onSelect(v.site.id)} onOpen={onOpen} />;
+  }
   if (v.kind === "site") {
     const site = v.site;
     return (
@@ -932,6 +954,7 @@ function Loaded({
         usedTags={usedTags}
         onSaveTags={onSaveTags}
         onOpenTag={onOpenTag}
+        onOpenSubsite={(blogId) => onSelect(subsiteId(site.id, blogId))}
       />
     );
   }
@@ -1000,7 +1023,8 @@ type View =
   | { kind: "site"; site: SiteView; history?: OperationView[] }
   | { kind: "host"; host: HostView }
   | { kind: "folder"; rows: SiteRow[] }
-  | { kind: "tag"; rows: SiteRow[] };
+  | { kind: "tag"; rows: SiteRow[] }
+  | { kind: "subsite"; site: SiteView; blogId: number };
 
 function Detail({ node }: { node: Node }) {
   const { t } = useTranslation();

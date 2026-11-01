@@ -68,6 +68,8 @@ export interface SiteOverviewProps {
   onSaveTags?: (tags: string[]) => Promise<Problem | null>;
   /** Opens a tag's page. */
   onOpenTag?: (tag: string) => void;
+  /** Opens a subsite's page, from the Plugins tab of a network (ADR-0029). */
+  onOpenSubsite?: (blogId: number) => void;
 }
 
 /** A site with its latest scan: an overview, the updates waiting, and the history of its updates. */
@@ -97,6 +99,7 @@ export function SiteOverview({
   usedTags,
   onSaveTags,
   onOpenTag,
+  onOpenSubsite,
 }: SiteOverviewProps) {
   const { t, i18n } = useTranslation();
   const [tab, setTab] = useState("overview");
@@ -204,7 +207,13 @@ export function SiteOverview({
         {tab === "overview" && <Overview site={site} onExtensions={() => setTab("extensions")} />}
         {tab === "extensions" &&
           (completed && scan ? (
-            <ExtensionList extensions={scan.extensions ?? []} onFinding={() => setTab("security")} onOpen={onOpen} />
+            <ExtensionList
+              extensions={scan.extensions ?? []}
+              onFinding={() => setTab("security")}
+              onOpen={onOpen}
+              subsites={site.subsites ?? []}
+              onOpenSubsite={onOpenSubsite}
+            />
           ) : (
             !scan && (
               <InfoList>
@@ -231,7 +240,15 @@ export function SiteOverview({
           ))}
         {tab === "security" &&
           (completed && scan ? (
-            <SecurityPanel scan={scan} scanning={scanning} onCheckFiles={updating ? undefined : onCheckFiles} onIgnore={onIgnore} onRestore={onRestore} onOpen={onOpen} />
+            <SecurityPanel
+              scan={scan}
+              scanning={scanning}
+              onCheckFiles={updating ? undefined : onCheckFiles}
+              onIgnore={onIgnore}
+              onRestore={onRestore}
+              onOpen={onOpen}
+              subsites={site.subsites ?? []}
+            />
           ) : (
             !scan && (
               <InfoList>

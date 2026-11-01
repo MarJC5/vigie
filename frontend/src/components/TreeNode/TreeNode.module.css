@@ -177,3 +177,9 @@
 .meta + .tag {
   margin-left: var(--vg-space-2);
 }
+
+/* A subsite, under its network: smaller, gray, read-only. */
+.node[data-kind="subsite"] {
+  height: 28px;
+  font-size: var(--vg-text-small);
+}

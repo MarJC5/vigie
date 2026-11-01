@@ -172,3 +172,56 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* On a network, the activation column is wider: "Across the network", "On 12 subsites". */
+.table[data-network] th:nth-child(1) {
+  width: 24%;
+}
+
+.table[data-network] th:nth-child(3) {
+  width: 16%;
+}
+
+.where {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--vg-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.where:focus-visible,
+.siteLink:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* The subsites a plugin or theme is active on, under its line. */
+.table td.sites {
+  height: auto;
+  padding: 0 14px var(--vg-space-3) 34px;
+  box-shadow: none;
+}
+
+.sites ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.siteLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--vg-accent-text);
+  font: var(--vg-weight-strong) var(--vg-text-small) var(--vg-font);
+  cursor: pointer;
+}

@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 
 import { extensions } from "../../fixtures/extensions";
+import { networkSite } from "../../fixtures/subsites";
 import { ExtensionList } from "./ExtensionList";
 
 const meta = {
@@ -68,5 +69,26 @@ export const AnIgnoredUpdate: Story = {
     const [table] = canvas.getAllByRole("table", { name: "Plugins" });
     const row = within(table!).getByRole("row", { name: /Page Builder Kit/ });
     await expect(row).toHaveTextContent("→ 5.0.0 · ignored");
+  },
+};
+
+// On a network (ADR-0029): where each plugin and theme is active; a line opens to its subsites,
+// each opening its page.
+export const OnANetwork: Story = {
+  args: { extensions: networkSite.scan!.extensions!, subsites: networkSite.subsites!, onOpenSubsite: fn() },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=light]")!);
+    const plugins = within(page.getByRole("table", { name: "Plugins" }));
+    await expect(plugins.getByRole("columnheader", { name: "Activation" })).toBeInTheDocument();
+    await expect(plugins.getAllByRole("row").map((r) => r.children[2]?.textContent)).toEqual([
+      "Activation", "Across the network", "On 2 subsites", "On 1 subsite", "Nowhere",
+    ]);
+    await userEvent.click(plugins.getByRole("button", { name: "On 2 subsites" }));
+    const list = within(plugins.getByRole("list", { name: "Subsites where Contact Form 7 is active" }));
+    await userEvent.click(list.getByRole("button", { name: "/beta" }));
+    await expect(args.onOpenSubsite).toHaveBeenCalledWith(3);
+    // Active is active anywhere on the network.
+    const [filters] = page.getAllByRole("group", { name: "Show" });
+    await expect(within(filters!).getAllByRole("button").map((b) => b.textContent)).toEqual(["All6", "Active5", "Inactive1", "With an update0"]);
   },
 };

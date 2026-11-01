@@ -2,6 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, fireEvent, fn, userEvent, waitFor, within } from "storybook/test";
 
+import { networkTree } from "../../fixtures/subsites";
+import { withSubsites } from "../../lib/subsites";
 import { sampleTags, sampleTree } from "../../fixtures/tree";
 import { SiteTree } from "./SiteTree";
 
@@ -238,5 +240,33 @@ export const TagsFound: Story = {
     const [tree] = canvas.getAllByRole("tree");
     const names = within(tree!).getAllByRole("treeitem").map((r) => r.textContent);
     await expect(names).toEqual(["Clients", "Shared hosting5", "boulangerie-exemple.chin the tags", "Tags", "Prioritaire2", "Priorité basse1"]);
+  },
+};
+
+// A network unfolds to its subsites, folded by default (ADR-0029); a subsite opens its page, and an
+// archived one says so.
+export const ANetworksSubsites: Story = {
+  args: { nodes: withSubsites(networkTree), onSelect: fn(), onCollapsedChange: fn() },
+  globals: { lang: "fr" },
+  play: async ({ canvasElement, args }) => {
+    const tree = within(within(canvasElement.querySelector<HTMLElement>("[data-theme=light]")!).getByRole("tree"));
+    const network = tree.getByRole("treeitem", { name: /reseau-ecoles\.ch/ });
+    await expect(network).toHaveAttribute("aria-expanded", "false");
+    await expect(tree.queryByRole("treeitem", { name: /^\/alpha/ })).toBeNull();
+    await userEvent.click(network.querySelector("[data-caret]")!);
+    await expect(args.onCollapsedChange).toHaveBeenCalledWith(new Set(["open:ecoles"]));
+  },
+};
+
+export const ANetworkUnfolded: Story = {
+  args: { nodes: withSubsites(networkTree), collapsed: new Set(["open:ecoles"]), selectedId: "subsite:ecoles:2", onSelect: fn() },
+  globals: { lang: "fr" },
+  play: async ({ canvasElement, args }) => {
+    const tree = within(within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!).getByRole("tree"));
+    await expect(tree.getByRole("treeitem", { name: /reseau-ecoles\.ch/ })).toHaveAttribute("aria-expanded", "true");
+    await expect(tree.getByRole("treeitem", { name: "/alpha" })).toHaveAttribute("aria-selected", "true");
+    await expect(tree.getByRole("treeitem", { name: /^\/gamma/ })).toHaveTextContent("archivé");
+    await userEvent.click(tree.getByRole("treeitem", { name: "/beta" }));
+    await expect(args.onSelect).toHaveBeenCalledWith("subsite:ecoles:3");
   },
 };

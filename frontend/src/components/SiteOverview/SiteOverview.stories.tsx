@@ -4,6 +4,7 @@ import { expect, fn, userEvent, within } from "storybook/test";
 import { siteChanges } from "../../fixtures/changes";
 import { extensions } from "../../fixtures/extensions";
 import { debugFatal, fileEditing, findings, phpWeb, xss } from "../../fixtures/findings";
+import { networkSite } from "../../fixtures/subsites";
 import { failedSite, newSite, offlineSite, outdatedSite, upToDateSite } from "../../fixtures/scans";
 import { sampleTags } from "../../fixtures/tree";
 import { historyToRollBack } from "../../fixtures/updates";
@@ -390,5 +391,24 @@ export const ComplementsSecurity: Story = {
     await expect(panel.getByText("3 erreurs fatales dans debug.log ces 7 derniers jours")).toBeInTheDocument();
     await expect(panel.getByText(/Call to undefined function wc_get_order\(\)/, { selector: "code" })).toBeInTheDocument();
     await expect(panel.getByText("PHP 8.2.29 sur le web ne reçoit plus que des correctifs de sécurité")).toBeInTheDocument();
+  },
+};
+
+// A network's Security tab (ADR-0029): the super administrators first, and the subsites each
+// administrator administers.
+export const NetworkSecurity: Story = {
+  globals: { lang: "fr" },
+  args: { site: networkSite, onIgnore: fn() },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await userEvent.click(page.getByRole("tab", { name: /Sécurité/ }));
+    const panel = within(page.getByRole("tabpanel"));
+    const titles = panel.getAllByText(/: (super )?administrateur/).map((e) => e.textContent);
+    await expect(titles).toEqual([
+      "jdupont\u00a0: super administrateur sans double authentification",
+      "marie\u00a0: administrateur sans double authentification",
+      "admin\u00a0: super administrateur avec double authentification",
+    ]);
+    await expect(panel.getByText(/marie@ecole-alpha\.ch · depuis le 12\.09\.2024 · administre \/alpha et \/beta/)).toBeInTheDocument();
   },
 };

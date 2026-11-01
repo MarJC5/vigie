@@ -69,7 +69,9 @@ function linkLabel(href: string): string {
 const closeReasons = ["security-issue", "author-request", "guideline-violation", "licensing-trademark-violation", "merged-into-core", "unused"];
 
 /** The title, detail and link of a finding, in the interface language. */
-export function findingText(f: FindingView, t: T, lang: string): FindingText {
+/** A finding in words. subsites names a network's subsites by their ID, for the administrators
+ of a network (ADR-0029). */
+export function findingText(f: FindingView, t: T, lang: string, subsites?: Record<string, string>): FindingText {
   const facts = f.facts ?? {};
   const name = subjectName(f);
   const k = (key: string, vars?: Record<string, unknown>) => t(`security.finding.${key}`, vars);
@@ -162,9 +164,19 @@ export function findingText(f: FindingView, t: T, lang: string): FindingText {
       return { title: k("uploadsPhpMore.title", { count: Number(facts.shown) }), detail: k("uploadsPhp.detail") };
     case "administrator": {
       const login = f.subject.slice("user:".length);
+      const state = facts["two-factor"] ?? "unknown";
+      // On a network: a super administrator says so first, then which subsites each administers.
+      const sites = (facts.sites ?? "")
+        .split(",")
+        .filter(Boolean)
+        .map((id) => (subsites?.[id] === "/" ? k("administrator.mainSite") : (subsites?.[id] ?? id)));
       return {
-        title: k(`administrator.${facts["two-factor"] ?? "unknown"}`, { login }),
-        detail: join(facts.email, facts.registered && k("administrator.since", { date: day(facts.registered) }), facts.super === "true" && k("administrator.super")),
+        title: k(facts.super === "true" ? `administrator.super_${state}` : `administrator.${state}`, { login }),
+        detail: join(
+          facts.email,
+          facts.registered && k("administrator.since", { date: day(facts.registered) }),
+          sites.length > 0 && k("administrator.sites", { sites: new Intl.ListFormat(lang, { type: "conjunction" }).format(sites) }),
+        ),
       };
     }
     case "cron-overdue":
