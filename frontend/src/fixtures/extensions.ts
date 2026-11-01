@@ -9,6 +9,7 @@ const extension = (e: Partial<ExtensionView> & Pick<ExtensionView, "kind" | "slu
   autoUpdate: false,
   onWordPressOrg: true,
   worst: null,
+  ignore: null,
   ...e,
 });
 

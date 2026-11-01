@@ -83,7 +83,7 @@ type FindingView struct {
 	Ignore     *IgnoreView       `json:"ignore"` // nil unless set aside
 }
 
-// IgnoreView is why and until when a finding is set aside.
+// IgnoreView is why and until when a finding or an update is set aside.
 type IgnoreView struct {
 	UntilVersion string `json:"untilVersion"` // "": permanently
 	Reason       string `json:"reason"`
@@ -125,7 +125,8 @@ type ExtensionView struct {
 	UpdateVersion  string       `json:"updateVersion"`
 	AutoUpdate     bool         `json:"autoUpdate"`
 	OnWordPressOrg bool         `json:"onWordPressOrg"`
-	Worst          *FindingView `json:"worst"` // the worst finding about it not set aside; nil when none
+	Worst          *FindingView `json:"worst"`  // the worst finding about it not set aside; nil when none
+	Ignore         *IgnoreView  `json:"ignore"` // its update offered, ignored (ADR-0026); nil when it counts
 }
 
 // UpdateView is one update to look at.
@@ -137,6 +138,10 @@ type UpdateView struct {
 	Version       string `json:"version"`
 	UpdateVersion string `json:"updateVersion"`
 	Update        string `json:"update"` // available, unavailable, unknown
+	// Key ignores an update offered with Security.Ignore (ADR-0026); "" for a translation, updated
+	// with the others.
+	Key    string      `json:"key"`
+	Ignore *IgnoreView `json:"ignore"` // nil unless ignored
 }
 
 // SiteRow is a line of the table of a host or folder.
@@ -204,10 +209,14 @@ func scanView(s model.Scan) *ScanView {
 		}
 		switch item.Update {
 		case model.UpdateAvailable, model.UpdateUnavailable, model.UpdateUnknown:
-			v.Updates = append(v.Updates, UpdateView{
+			u := UpdateView{
 				Kind: string(item.Kind), Slug: item.Slug, Title: item.Title, Language: item.Language,
-				Version: item.Version, UpdateVersion: item.UpdateVersion, Update: string(item.Update),
-			})
+				Version: item.Version, UpdateVersion: item.UpdateVersion, Update: string(item.Update), Ignore: ignoreView(item.Ignore),
+			}
+			if item.Kind != model.ItemLanguage && item.Update == model.UpdateAvailable {
+				u.Key = model.UpdateKey(item)
+			}
+			v.Updates = append(v.Updates, u)
 		}
 		if item.UpdateSourceUnknown() {
 			name := item.Title
@@ -233,13 +242,21 @@ func extensionViews(items []model.ScanItem, findings []FindingView) []ExtensionV
 			e := ExtensionView{
 				Kind: string(item.Kind), Slug: item.Slug, Title: item.Title, Status: item.Status, Version: item.Version,
 				Update: string(item.Update), UpdateVersion: item.UpdateVersion, AutoUpdate: item.AutoUpdate,
-				OnWordPressOrg: item.OnWordPressOrg,
+				OnWordPressOrg: item.OnWordPressOrg, Ignore: ignoreView(item.Ignore),
 			}
 			e.Worst = worst(findingsAbout(findings, e.Kind+":"+e.Slug))
 			views = append(views, e)
 		}
 	}
 	return views
+}
+
+// ignoreView is why and until when a finding or an update is set aside; nil when it is not.
+func ignoreView(i *model.Ignore) *IgnoreView {
+	if i == nil {
+		return nil
+	}
+	return &IgnoreView{UntilVersion: i.UntilVersion, Reason: i.Reason, Created: rfc3339(i.Created)}
 }
 
 // findingViews are the findings of a scan, each plugin or theme with its title.
@@ -260,7 +277,7 @@ func findingViews(s model.Scan) []FindingView {
 			v.Facts = map[string]string{}
 		}
 		if f.Ignore != nil {
-			v.Ignore = &IgnoreView{UntilVersion: f.Ignore.UntilVersion, Reason: f.Ignore.Reason, Created: rfc3339(f.Ignore.Created)}
+			v.Ignore = ignoreView(f.Ignore)
 		}
 		views = append(views, v)
 	}

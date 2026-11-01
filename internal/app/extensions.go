@@ -83,7 +83,7 @@ func (s *SiteManager) Extensions(ctx context.Context, nodeID string) (Extensions
 			}
 			item := &across.Items[i]
 			item.OnWordPressOrg = item.OnWordPressOrg || e.OnWordPressOrg
-			if e.Update == string(model.UpdateAvailable) {
+			if e.Update == string(model.UpdateAvailable) && e.Ignore == nil {
 				item.Updates++
 			}
 			if e.Worst != nil && (item.Worst == nil || levelRank(e.Worst.Level) > levelRank(item.Worst.Level)) {

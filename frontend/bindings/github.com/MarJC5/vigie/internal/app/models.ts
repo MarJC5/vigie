@@ -328,6 +328,11 @@ export interface ExtensionView {
      * the worst finding about it not set aside; nil when none
      */
     "worst": FindingView | null;
+
+    /**
+     * its update offered, ignored (ADR-0026); nil when it counts
+     */
+    "ignore": IgnoreView | null;
 }
 
 /**
@@ -461,7 +466,7 @@ export interface HostView {
 }
 
 /**
- * IgnoreView is why and until when a finding is set aside.
+ * IgnoreView is why and until when a finding or an update is set aside.
  */
 export interface IgnoreView {
     /**
@@ -1150,6 +1155,17 @@ export interface UpdateView {
      * available, unavailable, unknown
      */
     "update": string;
+
+    /**
+     * Key ignores an update offered with Security.Ignore (ADR-0026); "" for a translation, updated
+     * with the others.
+     */
+    "key": string;
+
+    /**
+     * nil unless ignored
+     */
+    "ignore": IgnoreView | null;
 }
 
 /**
