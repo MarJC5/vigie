@@ -99,6 +99,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   read by the search of the site list.
 - Test the connection of a host already added, from its menu or while editing it.
 - The tables of sites sort by site, status or updates, and filter from the counts above them.
+- A site's plugins and themes, from its latest complete scan: version, status, update offered,
+  automatic updates, the worst finding, and a link to wordpress.org; filtered by active, inactive or
+  with an update.
+- The plugins and themes across the sites of a host or folder, in a tab next to its sites: how many
+  sites run each, in which versions, with an update; a line opens to its sites, and a search by name.
+  A site never scanned, or whose latest scan failed, is left out and named.
 
 ### Changed
 
