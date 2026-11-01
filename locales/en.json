@@ -44,6 +44,7 @@
   "tabs": {
     "label": "Site tabs",
     "overview": "Overview",
+    "extensions": "Plugins",
     "updates": "Updates",
     "security": "Security",
     "notes": "Notes",
@@ -393,7 +394,9 @@
     "close": "Close",
     "remove": "Remove from Vigie…",
     "attemptTitle": "The latest scan did not complete",
-    "attemptText": "{{reason}}. These results are from the scan of {{date}} at {{time}}."
+    "attemptText": "{{reason}}. These results are from the scan of {{date}} at {{time}}.",
+    "showPlugins": "Show the plugins",
+    "showThemes": "Show the themes"
   },
   "updates": {
     "label": "Pending updates",
@@ -1267,5 +1270,47 @@
     "lead": "Vigie checks the connection, PHP on the command line and WP-CLI. Nothing is written on the server.",
     "again": "Test again",
     "help": "See the help"
+  },
+  "ext": {
+    "plugins": "Plugins",
+    "themes": "Themes",
+    "filter": "Show",
+    "filters": {
+      "all": "All",
+      "active": "Active",
+      "inactive": "Inactive",
+      "update": "With an update"
+    },
+    "none": "Nothing to show with this filter.",
+    "col": {
+      "name": "Name",
+      "version": "Version",
+      "status": "Status",
+      "update": "Update",
+      "auto": "Auto",
+      "finding": "Worst finding"
+    },
+    "status": {
+      "plugin": {
+        "active": "Active",
+        "active-network": "Network active",
+        "inactive": "Inactive",
+        "must-use": "Must-use",
+        "dropin": "Drop-in"
+      },
+      "theme": {
+        "active": "Active",
+        "parent": "Parent",
+        "inactive": "Inactive"
+      }
+    },
+    "to": "→ {{version}}",
+    "updateState": {
+      "unavailable": "not possible yet",
+      "unknown": "unknown"
+    },
+    "auto": "Auto",
+    "notOrg": "Not on wordpress.org",
+    "notScanned": "Scan the site to see its plugins and themes."
   }
 }

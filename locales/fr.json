@@ -48,6 +48,7 @@
   "tabs": {
     "label": "Onglets du site",
     "overview": "Aperçu",
+    "extensions": "Extensions",
     "updates": "Mises à jour",
     "security": "Sécurité",
     "notes": "Notes",
@@ -413,7 +414,9 @@
     "close": "Fermer",
     "remove": "Retirer de Vigie…",
     "attemptTitle": "Le dernier relevé n'a pas abouti",
-    "attemptText": "{{reason}}. Ces résultats datent du relevé du {{date}} à {{time}}."
+    "attemptText": "{{reason}}. Ces résultats datent du relevé du {{date}} à {{time}}.",
+    "showPlugins": "Voir les extensions",
+    "showThemes": "Voir les thèmes"
   },
   "updates": {
     "label": "Mises à jour en attente",
@@ -1321,5 +1324,47 @@
     "lead": "Vigie vérifie la connexion, PHP en ligne de commande et WP-CLI. Rien n'est écrit sur le serveur.",
     "again": "Tester à nouveau",
     "help": "Voir l'aide"
+  },
+  "ext": {
+    "plugins": "Extensions",
+    "themes": "Thèmes",
+    "filter": "Afficher",
+    "filters": {
+      "all": "Toutes",
+      "active": "Actives",
+      "inactive": "Inactives",
+      "update": "Avec mise à jour"
+    },
+    "none": "Rien à afficher avec ce filtre.",
+    "col": {
+      "name": "Nom",
+      "version": "Version",
+      "status": "État",
+      "update": "Mise à jour",
+      "auto": "Auto",
+      "finding": "Constat le plus grave"
+    },
+    "status": {
+      "plugin": {
+        "active": "Active",
+        "active-network": "Active sur le réseau",
+        "inactive": "Inactive",
+        "must-use": "Must-use",
+        "dropin": "Drop-in"
+      },
+      "theme": {
+        "active": "Actif",
+        "parent": "Parent",
+        "inactive": "Inactif"
+      }
+    },
+    "to": "→ {{version}}",
+    "updateState": {
+      "unavailable": "pas encore possible",
+      "unknown": "inconnue"
+    },
+    "auto": "Auto",
+    "notOrg": "Hors wordpress.org",
+    "notScanned": "Relevez le site pour voir ses extensions et ses thèmes."
   }
 }

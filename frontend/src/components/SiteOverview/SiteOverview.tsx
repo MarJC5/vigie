@@ -8,6 +8,7 @@ import { choicesOf, namesOf, offeredKeys } from "../../lib/updates";
 import { Button } from "../Button/Button";
 import { DetailHeader } from "../DetailHeader/DetailHeader";
 import { Dialog } from "../Dialog/Dialog";
+import { ExtensionList } from "../ExtensionList/ExtensionList";
 import { InfoList, InfoRow } from "../InfoList/InfoList";
 import { NotesPanel } from "../NotesPanel/NotesPanel";
 import { Notice } from "../Notice/Notice";
@@ -116,53 +117,56 @@ export function SiteOverview({
 
   return (
     <div className={styles.overview}>
-      <DetailHeader
-        title={site.name}
-        meta={scan ? t("site.lastScan", { when: since(scan.finished, i18n.language, now) }) : undefined}
-        links={<QuickLinks label={t("site.links")} links={links} />}
-      >
-        {onMore && (
-          <Button
-            variant="icon"
-            icon="dots"
-            label={t("edit.more")}
-            onClick={(event) => {
-              const r = event.currentTarget.getBoundingClientRect();
-              onMore({ x: r.left, y: r.bottom + 4 });
-            }}
-          />
-        )}
-      </DetailHeader>
-      <TabBar
-        label={t("tabs.label")}
-        tabs={[
-          { id: "overview", label: t("tabs.overview") },
-          { id: "updates", label: t("tabs.updates"), count: pending > 0 ? pending : undefined },
-          { id: "security", label: t("tabs.security"), count: toLookAt > 0 ? toLookAt : undefined },
-          ...(notes !== undefined ? [{ id: "notes", label: t("tabs.notes") }] : []),
-          ...(history ? [{ id: "history", label: t("tabs.history") }] : []),
-        ]}
-        value={tab}
-        onChange={setTab}
-        panelId={panel}
-      >
-        {updating && onFollow ? (
-          <Button variant="primary" icon="update" onClick={onFollow}>
-            {t("update.follow")}
-          </Button>
-        ) : tab === "updates" && onUpdate && offered > 0 ? (
-          <>
-            <span className={styles.selected}>{t("update.selected", { count: chosen.size, total: offered })}</span>
-            <Button variant="primary" icon="update" onClick={() => onUpdate(chosen)} disabled={chosen.size === 0 || updating || scanning} aria-busy={scanning || undefined}>
-              {t("update.updateSelected", { count: chosen.size })}
+      <div className={styles.header}>
+        <DetailHeader
+          title={site.name}
+          meta={scan ? t("site.lastScan", { when: since(scan.finished, i18n.language, now) }) : undefined}
+          links={<QuickLinks label={t("site.links")} links={links} />}
+        >
+          {onMore && (
+            <Button
+              variant="icon"
+              icon="dots"
+              label={t("edit.more")}
+              onClick={(event) => {
+                const r = event.currentTarget.getBoundingClientRect();
+                onMore({ x: r.left, y: r.bottom + 4 });
+              }}
+            />
+          )}
+        </DetailHeader>
+        <TabBar
+          label={t("tabs.label")}
+          tabs={[
+            { id: "overview", label: t("tabs.overview") },
+            { id: "extensions", label: t("tabs.extensions") },
+            { id: "updates", label: t("tabs.updates"), count: pending > 0 ? pending : undefined },
+            { id: "security", label: t("tabs.security"), count: toLookAt > 0 ? toLookAt : undefined },
+            ...(notes !== undefined ? [{ id: "notes", label: t("tabs.notes") }] : []),
+            ...(history ? [{ id: "history", label: t("tabs.history") }] : []),
+          ]}
+          value={tab}
+          onChange={setTab}
+          panelId={panel}
+        >
+          {updating && onFollow ? (
+            <Button variant="primary" icon="update" onClick={onFollow}>
+              {t("update.follow")}
             </Button>
-          </>
-        ) : (
-          <Button variant="primary" icon="refresh" onClick={onScan} disabled={scanning || updating} aria-busy={scanning || undefined}>
-            {scanning ? t("overview.scanning") : t("action.scanNow")}
-          </Button>
-        )}
-      </TabBar>
+          ) : tab === "updates" && onUpdate && offered > 0 ? (
+            <>
+              <span className={styles.selected}>{t("update.selected", { count: chosen.size, total: offered })}</span>
+              <Button variant="primary" icon="update" onClick={() => onUpdate(chosen)} disabled={chosen.size === 0 || updating || scanning} aria-busy={scanning || undefined}>
+                {t("update.updateSelected", { count: chosen.size })}
+              </Button>
+            </>
+          ) : (
+            <Button variant="primary" icon="refresh" onClick={onScan} disabled={scanning || updating} aria-busy={scanning || undefined}>
+              {scanning ? t("overview.scanning") : t("action.scanNow")}
+            </Button>
+          )}
+        </TabBar>
+      </div>
       <div role="tabpanel" id={panel} aria-labelledby={`${panel}-${tab}`} className={styles.panel}>
         {scan?.problem && tab !== "history" && (
           <ScanNotice code={scan.problem.code} detail={scan.problem.detail} onRemove={onRemove} />
@@ -170,7 +174,17 @@ export function SiteOverview({
         {scan?.attempt?.problem && tab !== "history" && (
           <AttemptNotice finished={scan.finished} problem={scan.attempt.problem} onRemove={onRemove} />
         )}
-        {tab === "overview" && <Overview site={site} />}
+        {tab === "overview" && <Overview site={site} onExtensions={() => setTab("extensions")} />}
+        {tab === "extensions" &&
+          (completed && scan ? (
+            <ExtensionList extensions={scan.extensions ?? []} onFinding={() => setTab("security")} onOpen={onOpen} />
+          ) : (
+            !scan && (
+              <InfoList>
+                <InfoRow label={t("tabs.extensions")}>{t("ext.notScanned")}</InfoRow>
+              </InfoList>
+            )
+          ))}
         {tab === "updates" &&
           scan?.outcome === "completed" &&
           (updates.length === 0 ? (
@@ -201,7 +215,7 @@ export function SiteOverview({
   );
 }
 
-function Overview({ site }: { site: SiteView }) {
+function Overview({ site, onExtensions }: { site: SiteView; onExtensions: () => void }) {
   const { t } = useTranslation();
   const scan = site.scan;
   const unchecked = t("overview.unchecked");
@@ -225,11 +239,21 @@ function Overview({ site }: { site: SiteView }) {
           <InfoRow label={t("overview.wpCli")}>{scan.wpCli}</InfoRow>
           <InfoRow label={t("overview.plugins")}>
             <StatusDot status={scan.pending.plugins > 0 || !scan.checked.plugins ? "warn" : "ok"} />
-            {installed(t, scan.plugins, scan.pending.plugins, scan.checked.plugins)}
+            <span className={styles.unknownLine}>
+              {installed(t, scan.plugins, scan.pending.plugins, scan.checked.plugins)}
+              <Button variant="text" label={t("overview.showPlugins")} onClick={onExtensions}>
+                {t("overview.show")}
+              </Button>
+            </span>
           </InfoRow>
           <InfoRow label={t("overview.themes")}>
             <StatusDot status={scan.pending.themes > 0 || !scan.checked.themes ? "warn" : "ok"} />
-            {installed(t, scan.themes, scan.pending.themes, scan.checked.themes)}
+            <span className={styles.unknownLine}>
+              {installed(t, scan.themes, scan.pending.themes, scan.checked.themes)}
+              <Button variant="text" label={t("overview.showThemes")} onClick={onExtensions}>
+                {t("overview.show")}
+              </Button>
+            </span>
           </InfoRow>
           <InfoRow label={t("overview.translations")}>
             <StatusDot status={scan.pending.languages > 0 || !scan.checked.languages ? "warn" : "ok"} />

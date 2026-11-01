@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 
+import { extensions } from "../../fixtures/extensions";
 import { findings, xss } from "../../fixtures/findings";
 import { failedSite, newSite, offlineSite, outdatedSite, upToDateSite } from "../../fixtures/scans";
 import { historyToRollBack } from "../../fixtures/updates";
@@ -248,5 +249,17 @@ export const SiteNoLongerThere: Story = {
     await expect(alert).toHaveTextContent("This does not seem to be a WordPress installation");
     await userEvent.click(within(alert!).getByRole("button", { name: "Remove from Vigie…" }));
     await expect(args.onRemove).toHaveBeenCalled();
+  },
+};
+
+// The Plugins and Themes rows of the Overview open the Plugins tab (ADR-0024).
+export const PluginsFromTheOverview: Story = {
+  args: { site: { ...outdatedSite, scan: outdatedSite.scan && { ...outdatedSite.scan, extensions } } },
+  play: async ({ canvas }) => {
+    const [show] = canvas.getAllByRole("button", { name: "Show the plugins" });
+    await userEvent.click(show!);
+    const [tab] = canvas.getAllByRole("tab", { selected: true });
+    await expect(tab).toHaveTextContent("Plugins");
+    await expect(canvas.getAllByRole("table", { name: "Plugins" }).length).toBeGreaterThan(0);
   },
 };

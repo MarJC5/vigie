@@ -1,0 +1,56 @@
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, fn, userEvent, within } from "storybook/test";
+
+import { extensions } from "../../fixtures/extensions";
+import { ExtensionList } from "./ExtensionList";
+
+const meta = {
+  component: ExtensionList,
+  args: { extensions, onFinding: fn(), onOpen: fn() },
+} satisfies Meta<typeof ExtensionList>;
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+// The slugs of a table's lines, in order.
+const slugs = (table: HTMLElement) => within(table).getAllByRole("row").slice(1).map((r) => r.querySelector("[data-selectable]")!.textContent);
+
+// The plugins, then the themes; each filter with its count.
+export const Plugins: Story = {
+  play: async ({ canvas, args }) => {
+    const [filters] = canvas.getAllByRole("group", { name: "Show" });
+    await expect(within(filters!).getAllByRole("button").map((b) => b.textContent)).toEqual(["All6", "Active4", "Inactive2", "With an update2"]);
+    const [plugins] = canvas.getAllByRole("table", { name: "Plugins" });
+    await expect(plugins).toHaveTextContent("Must-use");
+    await expect(plugins).toHaveTextContent("→ 9.8.5");
+    await expect(plugins).toHaveTextContent("Not on wordpress.org");
+    const [themes] = canvas.getAllByRole("table", { name: "Themes" });
+    await expect(themes).toHaveTextContent("Parent");
+    // A plugin wordpress.org knows opens its page there; its worst finding opens the Security tab.
+    await userEvent.click(within(plugins!).getByRole("link", { name: /^Akismet/ }));
+    await expect(args.onOpen).toHaveBeenCalledWith("https://wordpress.org/plugins/akismet/");
+    await userEvent.click(within(plugins!).getByRole("button", { name: /SQL injection/ }));
+    await expect(args.onFinding).toHaveBeenCalled();
+  },
+};
+
+// With an update: two plugins, no theme.
+export const WithAnUpdate: Story = {
+  play: async ({ canvas }) => {
+    // In the first of the two themes, where the filter is chosen.
+    const list = within(canvas.getAllByRole("group", { name: "Show" })[0]!.parentElement!);
+    const update = list.getByRole("button", { name: /With an update/ });
+    await userEvent.click(update);
+    await expect(update).toHaveAttribute("aria-pressed", "true");
+    await expect(slugs(list.getByRole("table", { name: "Plugins" }))).toEqual(["woocommerce", "akismet"]);
+    await expect(list.queryAllByRole("table", { name: "Themes" })).toHaveLength(0);
+  },
+};
+
+export const InFrench: Story = {
+  globals: { lang: "fr" },
+  play: async ({ canvas }) => {
+    const [plugins] = canvas.getAllByRole("table", { name: "Extensions" });
+    await expect(plugins).toHaveTextContent("Hors wordpress.org");
+    await expect(canvas.getAllByRole("table", { name: "Thèmes" })[0]).toHaveTextContent("Inactif");
+  },
+};
