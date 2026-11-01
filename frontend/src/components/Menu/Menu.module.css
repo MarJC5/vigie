@@ -72,16 +72,17 @@
   background: var(--vg-raised-stroke);
 }
 
+/* The palette icon in the items' column, the first swatch where their labels start. */
 .colors {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px var(--vg-space-3) var(--vg-space-2);
+  padding: 6px var(--vg-space-2) var(--vg-space-2);
   color: var(--vg-text-muted);
 }
 
 .colors > :first-child {
-  margin-right: 6px;
+  margin-right: calc(var(--vg-space-3) - 10px);
 }
 
 .swatch {
