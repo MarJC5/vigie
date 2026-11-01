@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 	"uuid"
 
@@ -15,6 +17,7 @@ import (
 type ScanRepository interface {
 	SaveScan(ctx context.Context, s model.Scan) error
 	LatestScans(ctx context.Context) (map[model.ID]model.Scan, error)
+	LatestScan(ctx context.Context, siteID model.ID) (model.Scan, bool, error)
 	ScanCount(ctx context.Context, siteID model.ID) (int, error)
 	CompleteScanBefore(ctx context.Context, siteID, scanID model.ID) (model.Scan, bool, error)
 	SaveSubsites(ctx context.Context, siteID model.ID, subsites []model.Subsite) error
@@ -101,29 +104,43 @@ func saveScan(ctx context.Context, tx *sql.Tx, s model.Scan) error {
 	return nil
 }
 
-// shownScan is the scan of a site the interface shows: its latest completed one, else its latest.
-const shownScan = `coalesce((SELECT max(id) FROM scans WHERE site_id = s.site_id AND outcome = 'completed'),
-	(SELECT max(id) FROM scans WHERE site_id = s.site_id))`
-
-// latestScan is the latest scan of a site, whatever its outcome.
-const latestScan = `(SELECT max(id) FROM scans WHERE site_id = s.site_id)`
-
 // LatestScans returns, for each scanned site, its latest completed scan with its items and its
 // findings, those an ignore of the site covers marked; a later scan that did not complete (cancelled,
 // failed) is its Attempt. A site never scanned to the end gets its latest scan.
 func (db *DB) LatestScans(ctx context.Context) (map[model.ID]model.Scan, error) {
-	shown, err := db.readScans(ctx, "s.id = "+shownScan)
+	return db.latest(ctx, "")
+}
+
+// LatestScan is LatestScans for one site, as its page reads it; ok is false when it was never
+// scanned.
+func (db *DB) LatestScan(ctx context.Context, siteID model.ID) (model.Scan, bool, error) {
+	scans, err := db.latest(ctx, siteID.String())
+	scan, ok := scans[siteID]
+	return scan, ok, err
+}
+
+// latest reads the latest scans of every site, or of one site when siteID is not empty. A site's
+// scans are picked in one pass over the index scans_site_outcome, whatever the history kept: its
+// latest completed one, else its latest; and its latest whatever its outcome.
+func (db *DB) latest(ctx context.Context, siteID string) (map[model.ID]model.Scan, error) {
+	filter, args, ignoresWhere := "", []any{}, ""
+	if siteID != "" {
+		filter, args, ignoresWhere = "WHERE site_id = ?", []any{siteID}, "WHERE site_id = ?"
+	}
+	shownScans := `s.id IN (SELECT coalesce(max(CASE WHEN outcome = 'completed' THEN id END), max(id)) FROM scans ` + filter + ` GROUP BY site_id)`
+	latestScans := `s.id IN (SELECT max(id) FROM scans ` + filter + ` GROUP BY site_id)`
+	shown, err := db.readScans(ctx, shownScans, args...)
 	if err != nil {
 		return nil, err
 	}
-	if err := db.loadScanParts(ctx, "s.id = "+shownScan, shown); err != nil {
+	if err := db.loadScanParts(ctx, shownScans, shown, args...); err != nil {
 		return nil, err
 	}
-	latest, err := db.readScans(ctx, "s.id = "+latestScan)
+	latest, err := db.readScans(ctx, latestScans, args...)
 	if err != nil {
 		return nil, err
 	}
-	ignores, err := db.ignores(ctx, "")
+	ignores, err := db.ignores(ctx, ignoresWhere, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -320,16 +337,31 @@ func (db *DB) loadFindings(ctx context.Context, where string, scans []model.Scan
 // ScanStatuses returns, for the Activity page, the scans started since a time and, for each of
 // their sites, the scan just before and the complete scan before, oldest first: with their items,
 // their findings and the site's ignores, so each tells its status and what changed (ADR-0027).
-func (db *DB) ScanStatuses(ctx context.Context, since time.Time) ([]model.Scan, error) {
-	where := `s.started_at >= ?1 OR (EXISTS (SELECT 1 FROM scans n WHERE n.site_id = s.site_id AND n.started_at >= ?1) AND (
-		s.id = (SELECT max(p.id) FROM scans p WHERE p.site_id = s.site_id AND p.started_at < ?1) OR
-		s.id = (SELECT max(p.id) FROM scans p WHERE p.site_id = s.site_id AND p.started_at < ?1 AND p.outcome = 'completed')))`
-	at := timeText(since)
-	scans, err := db.readScans(ctx, where, at)
+// sites keeps those of some sites only; nil keeps every site's.
+func (db *DB) ScanStatuses(ctx context.Context, since time.Time, sites []model.ID) ([]model.Scan, error) {
+	// Each subquery runs once, by the index of the start (scans_started), not once per scan kept.
+	where := `s.started_at >= ?1 OR s.id IN (
+		SELECT max(p.id) FROM scans p WHERE p.started_at < ?1 AND p.site_id IN (SELECT site_id FROM scans WHERE started_at >= ?1)
+		GROUP BY p.site_id
+		UNION
+		SELECT max(p.id) FROM scans p WHERE p.started_at < ?1 AND p.outcome = 'completed'
+			AND p.site_id IN (SELECT site_id FROM scans WHERE started_at >= ?1)
+		GROUP BY p.site_id)`
+	args := []any{timeText(since)}
+	// Only the sites asked for, when there are some: a journal filtered on a host reads its sites'.
+	if sites != nil {
+		marks := make([]string, len(sites))
+		for i, id := range sites {
+			marks[i] = "?" + strconv.Itoa(i+2)
+			args = append(args, id.String())
+		}
+		where = "(" + where + ") AND s.site_id IN (" + strings.Join(marks, ", ") + ")"
+	}
+	scans, err := db.readScans(ctx, where, args...)
 	if err != nil {
 		return nil, err
 	}
-	if err := db.loadScanParts(ctx, where, scans, at); err != nil {
+	if err := db.loadScanParts(ctx, where, scans, args...); err != nil {
 		return nil, err
 	}
 	ignores, err := db.ignores(ctx, "")

@@ -361,7 +361,7 @@ func (s *SiteManager) SiteDetail(ctx context.Context, siteID string) (SiteView, 
 	if !ok {
 		return SiteView{}, fmt.Errorf("site %s: %w", siteID, model.ErrNotFound)
 	}
-	latest, err := s.repo.LatestScans(ctx)
+	scan, scanned, err := s.repo.LatestScan(ctx, id)
 	if err != nil {
 		return SiteView{}, err
 	}
@@ -377,7 +377,7 @@ func (s *SiteManager) SiteDetail(ctx context.Context, siteID string) (SiteView, 
 		view.SSHURL = target.URL()
 	}
 	base := site.URL
-	if scan, ok := latest[id]; ok {
+	if scanned {
 		view.Subsites = subsiteViews(site, &scan)
 		view.Scan = scanView(scan)
 		if err := s.changes(ctx, &view, scan); err != nil {

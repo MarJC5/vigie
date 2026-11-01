@@ -55,7 +55,7 @@ type activityData interface {
 	LoadTree(ctx context.Context) (*model.Tree, error)
 	Runs(ctx context.Context, since time.Time) ([]model.Run, error)
 	Notices(ctx context.Context, since time.Time) ([]model.Notice, error)
-	ScanStatuses(ctx context.Context, since time.Time) ([]model.Scan, error)
+	ScanStatuses(ctx context.Context, since time.Time, sites []model.ID) ([]model.Scan, error)
 	OperationsSince(ctx context.Context, since time.Time) ([]model.Operation, error)
 }
 
@@ -86,10 +86,13 @@ func (a *Activity) Journal(ctx context.Context, days int, nodeID string) (Journa
 		return Journal{}, err
 	}
 	shown := func(site model.ID) bool { return true }
+	var sites []model.ID // nil: every site's scans are read
 	if node != model.Root {
 		under := map[model.ID]bool{}
+		sites = []model.ID{}
 		for _, s := range tree.SitesUnder(node) {
 			under[s.ID] = true
+			sites = append(sites, s.ID)
 		}
 		shown = func(site model.ID) bool { return under[site] }
 	}
@@ -101,7 +104,7 @@ func (a *Activity) Journal(ctx context.Context, days int, nodeID string) (Journa
 	if err != nil {
 		return Journal{}, err
 	}
-	scans, err := a.repo.ScanStatuses(ctx, since)
+	scans, err := a.repo.ScanStatuses(ctx, since, sites)
 	if err != nil {
 		return Journal{}, err
 	}

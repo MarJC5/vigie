@@ -62,6 +62,16 @@ func TestScansAreKeptAndTheLatestIsRead(t *testing.T) {
 	if len(latest) != 2 || !reflect.DeepEqual(latest[a.ID], second) || !reflect.DeepEqual(latest[b.ID], other) {
 		t.Fatalf("LatestScans() =\n%+v\nwant the second scan of a and the failed scan of b", latest)
 	}
+	// One site's alone, as the site's page reads it: the same scan, its attempt included.
+	for _, site := range []model.Site{a, b} {
+		got, ok, err := db.LatestScan(ctx, site.ID)
+		if err != nil || !ok || !reflect.DeepEqual(got, latest[site.ID]) {
+			t.Fatalf("LatestScan(%s) = %+v, %v, %v\nwant %+v", site.Name, got, ok, err, latest[site.ID])
+		}
+	}
+	if _, ok, err := db.LatestScan(ctx, model.NewID()); ok || err != nil {
+		t.Fatalf("LatestScan() of a site never scanned = %v, %v; want none", ok, err)
+	}
 	count, err := db.ScanCount(ctx, a.ID)
 	if err != nil || count != 2 {
 		t.Fatalf("ScanCount() = %d, %v; want both scans kept", count, err)
@@ -214,15 +224,22 @@ func TestScanStatusesReadTheCompleteScanBefore(t *testing.T) {
 	failed := model.Scan{ID: model.NewID(), SiteID: site.ID, Started: start.Add(time.Hour), Finished: start.Add(time.Hour + time.Second),
 		Outcome: model.ScanFailed, Failure: "refused"}
 	recent := scanOf(site, start.Add(3*time.Hour), "7.1.4")
-	for _, s := range []model.Scan{complete, failed, recent} {
+	other := siteOnHost(t, db, "b.example.test")
+	elsewhere := scanOf(other, start.Add(3*time.Hour), "7.1.4")
+	for _, s := range []model.Scan{complete, failed, recent, elsewhere} {
 		must(t, db.SaveScan(ctx, s))
 	}
-	got, err := db.ScanStatuses(ctx, start.Add(2*time.Hour))
+	// The sites of a folder, host or site only, when the journal is filtered.
+	got, err := db.ScanStatuses(ctx, start.Add(2*time.Hour), []model.ID{site.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(got) != 3 || got[0].ID != complete.ID || got[1].ID != failed.ID || got[2].ID != recent.ID || len(got[2].Items) != len(recent.Items) {
 		t.Fatalf("ScanStatuses() = %d scans %+v; want the complete one, the failed one, the recent one, with their items", len(got), got)
+	}
+
+	if all, err := db.ScanStatuses(ctx, start.Add(2*time.Hour), nil); err != nil || len(all) != 4 {
+		t.Fatalf("ScanStatuses() of every site = %d scans, %v; want 4", len(all), err)
 	}
 
 	before, ok, err := db.CompleteScanBefore(ctx, site.ID, recent.ID)
