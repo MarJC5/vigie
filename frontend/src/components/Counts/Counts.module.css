@@ -1,10 +1,8 @@
+/* No lines of its own: the tabs above and the framed table under it set it apart. */
 .row {
   display: flex;
   align-items: center;
   gap: var(--vg-space-6);
-  padding: var(--vg-space-3) 0;
-  border-top: 1px solid var(--vg-border);
-  border-bottom: 1px solid var(--vg-border);
 }
 
 .counts {
@@ -36,8 +34,10 @@
 }
 
 /* Counts that filter: each in a quiet pad, the one chosen on the selection's ground. */
+/* The pads take the left edge back, so that the labels line up with the tabs and the table. */
 .counts[data-filters] {
   gap: var(--vg-space-2);
+  margin-left: calc(-1 * var(--vg-space-3));
 }
 
 .counts[data-filters] .count {
