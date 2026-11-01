@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 
 import type { Journal } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { siteChanges } from "../../fixtures/changes";
 import { sampleTree } from "../../fixtures/tree";
 import { ActivityPage } from "./ActivityPage";
 
@@ -19,8 +20,12 @@ const journal: Journal = {
         { kind: "urgent", nodeId: "boulangerie", name: "boulangerie-exemple.ch" },
         { kind: "recovered", nodeId: "atelier", name: "atelier-exemple.ch" },
       ],
-      siteChanges: [],
-      notices: [{ kind: "urgent", names: ["boulangerie-exemple.ch"] }],
+      siteChanges: [{ siteId: "boulangerie", name: "boulangerie-exemple.ch", changes: siteChanges.slice(0, 5) }],
+      notices: [
+        { kind: "urgent", names: ["boulangerie-exemple.ch"] },
+        { kind: "admin", names: ["boulangerie-exemple.ch"] },
+        { kind: "installed", names: ["boulangerie-exemple.ch"] },
+      ],
     },
     { kind: "update", at: at(30, 16, 40), ended: at(30, 16, 42), by: "", path: "Clients/Shared hosting/boulangerie-exemple.ch", siteId: "boulangerie", sites: 0, outcome: "completed", summary: "Akismet 5.3 → 5.7.2", changes: [], siteChanges: [], notices: [] },
     { kind: "run", at: at(28, 9, 5), ended: at(28, 9, 6), by: "cli", path: "Personal/Managed VPS", siteId: "", sites: 1, outcome: "cancelled", summary: "", changes: [], siteChanges: [], notices: [] },
@@ -43,11 +48,32 @@ export const WhatChanged: Story = {
     await expect(page.getByRole("heading", { level: 2, name: "Hier" })).toBeInTheDocument();
     await expect(page.getByText("Relevé automatique de tous les sites")).toBeInTheDocument();
     await expect(page.getByText("Notifié : boulangerie-exemple.ch")).toBeInTheDocument();
-    await userEvent.click(page.getByRole("button", { name: "boulangerie-exemple.ch" }));
+    await userEvent.click(page.getAllByRole("button", { name: "boulangerie-exemple.ch" })[0]!);
     await expect(args.onOpen).toHaveBeenCalledWith("boulangerie");
     await expect(page.getByText("1 site · arrêté")).toBeInTheDocument();
     await userEvent.click(page.getByRole("button", { name: "Afficher plus ancien" }));
     await expect(args.onOlder).toHaveBeenCalled();
+  },
+};
+
+// Under a run, what changed on each site since its previous scan (ADR-0027), its name opening it;
+// the changes that notified said on one line.
+export const SiteChanges: Story = {
+  globals: { lang: "fr" },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=light]")!);
+    const list = within(page.getByRole("list", { name: "Changements de boulangerie-exemple.ch" }));
+    await expect(list.getAllByRole("img", { name: "À regarder" })).toHaveLength(2);
+    await expect(list.getAllByRole("listitem").map((li) => li.textContent)).toEqual([
+      "Nouvel administrateur\u00a0: marie.dupont",
+      "Administrateur retiré\u00a0: stagiaire",
+      "Extension installée hors de Vigie\u00a0: WP File Manager 7.2.1",
+      "Thème actif\u00a0: Twenty Twenty-Four → Astra",
+      "WordPress 7.1.3 → 7.1.4, hors de Vigie",
+    ]);
+    await expect(page.getByText("Notifié : nouvel administrateur et extension ou thème installé hors de Vigie sur boulangerie-exemple.ch")).toBeInTheDocument();
+    await userEvent.click(page.getAllByRole("button", { name: "boulangerie-exemple.ch" })[1]!);
+    await expect(args.onOpen).toHaveBeenCalledWith("boulangerie");
   },
 };
 

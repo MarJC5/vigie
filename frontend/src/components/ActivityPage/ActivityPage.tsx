@@ -1,8 +1,10 @@
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 
-import type { ActivityEntry, Change, Journal, Node } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { ActivityEntry, Change, Journal, Node, NoticeView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { clock } from "../../lib/findings";
 import { Button } from "../Button/Button";
+import { ChangeList } from "../ChangeList/ChangeList";
 import { Icon, type IconName } from "../Icon/Icon";
 import { SelectField } from "../SelectField/SelectField";
 import { StatusDot } from "../StatusDot/StatusDot";
@@ -90,6 +92,7 @@ function Entry({ entry: e, onOpen }: { entry: ActivityEntry; onOpen: (nodeId: st
   const title = run ? (e.path ? t(`activity.run_${e.by}`, { path: e.path }) : t(`activity.runAll_${e.by}`)) : "";
   const meta = [run ? t("activity.sites", { count: e.sites }) : "", outcome(e) ? t(`activity.${outcome(e)}`) : ""].filter(Boolean);
   const changes = e.changes ?? [];
+  const sites = e.siteChanges ?? [];
   const notices = e.notices ?? [];
   return (
     <li className={styles.entry}>
@@ -112,15 +115,45 @@ function Entry({ entry: e, onOpen }: { entry: ActivityEntry; onOpen: (nodeId: st
         {changes.map((c) => (
           <ChangeLine key={`${c.kind}-${c.nodeId}`} change={c} onOpen={onOpen} />
         ))}
-        {notices.map((n, i) => (
-          <span key={i} className={styles.notice}>
+        {/* What changed on each site since its previous complete scan (ADR-0027). */}
+        {sites.map((s) => (
+          <span key={s.siteId} className={styles.site}>
+            <button type="button" className={styles.name} onClick={() => onOpen(s.siteId)}>
+              {s.name}
+            </button>
+            <ChangeList changes={s.changes ?? []} label={t("activity.changesOf", { name: s.name })} />
+          </span>
+        ))}
+        {noticeLines(notices, t).map((line) => (
+          <span key={line} className={styles.notice}>
             <Icon name="bell" size={12} />
-            {t("activity.notified", { names: (n.names ?? []).join(", ") })}
+            {line}
           </span>
         ))}
       </span>
     </li>
   );
+}
+
+/**
+ * The notifications a run sent, a line each: a site turned urgent or unreachable by its names; the
+ * changes that notify (ADR-0027) by what they were, those of the same sites on one line.
+ */
+function noticeLines(notices: NoticeView[], t: TFunction): string[] {
+  const lines: string[] = [];
+  const changes = new Map<string, string[]>();
+  for (const n of notices) {
+    const names = (n.names ?? []).join(", ");
+    if (n.kind === "admin" || n.kind === "installed") {
+      changes.set(names, [...(changes.get(names) ?? []), t(`activity.noticeKind.${n.kind}`)]);
+    } else {
+      lines.push(t("activity.notified", { names }));
+    }
+  }
+  for (const [names, what] of changes) {
+    lines.push(t("activity.notifiedChange", { what: what.join(t("activity.and")), names }));
+  }
+  return lines;
 }
 
 // Stands for a name in a sentence, which Named then shows as a link.

@@ -130,6 +130,19 @@
   color: var(--vg-text-muted);
 }
 
+/* A site's changes: its name, then a line each. */
+.site {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-1);
+  font-size: var(--vg-text-small);
+}
+
+.site > .name {
+  align-self: flex-start;
+  font-weight: var(--vg-weight-strong);
+}
+
 .empty {
   margin: 0;
   color: var(--vg-text-muted);

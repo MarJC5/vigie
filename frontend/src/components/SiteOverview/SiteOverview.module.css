@@ -52,3 +52,29 @@
 .unknownList li + li {
   box-shadow: inset 0 1px 0 var(--vg-raised-stroke);
 }
+
+/* What changed since the previous scan, above the facts of the Overview. */
+.since {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-2);
+}
+
+.sinceTitle {
+  display: flex;
+  gap: var(--vg-space-2);
+  margin: 0;
+  font-size: var(--vg-text-small);
+  font-weight: var(--vg-weight-strong);
+}
+
+.sinceWhen {
+  font-weight: var(--vg-weight-regular);
+  color: var(--vg-text-muted);
+}
+
+.sinceBox {
+  padding: var(--vg-space-3) var(--vg-space-4);
+  border-radius: var(--vg-radius-control);
+  background: var(--vg-surface-row);
+}

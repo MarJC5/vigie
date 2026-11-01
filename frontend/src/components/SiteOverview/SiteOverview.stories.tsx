@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 
+import { siteChanges } from "../../fixtures/changes";
 import { extensions } from "../../fixtures/extensions";
 import { findings, xss } from "../../fixtures/findings";
 import { failedSite, newSite, offlineSite, outdatedSite, upToDateSite } from "../../fixtures/scans";
@@ -279,5 +280,26 @@ export const PluginsFromTheOverview: Story = {
     const [tab] = canvas.getAllByRole("tab", { selected: true });
     await expect(tab).toHaveTextContent("Plugins");
     await expect(canvas.getAllByRole("table", { name: "Plugins" }).length).toBeGreaterThan(0);
+  },
+};
+
+// Above the overview, what the latest scan found changed since the one before (ADR-0027); absent
+// when nothing did.
+export const SinceThePreviousScan: Story = {
+  args: { site: { ...outdatedSite, changes: siteChanges, changesSince: "2026-10-31T02:00:00Z" } },
+  play: async ({ canvasElement }) => {
+    const en = within(canvasElement.querySelector<HTMLElement>("[data-theme=light]")!);
+    await expect(en.getByRole("heading", { level: 2, name: /^Since the previous scan/ })).toBeInTheDocument();
+    const list = within(en.getByRole("list", { name: "Since the previous scan" }));
+    await expect(list.getAllByRole("listitem")).toHaveLength(8);
+    await expect(list.getByText("Files changed in WordPress: 2 changed, 1 added")).toBeInTheDocument();
+    await expect(list.getByText("New vulnerability: WooCommerce 9.8.1, SQL injection without authentication")).toBeInTheDocument();
+    await expect(list.getByText("Akismet Anti-spam 5.3 → 5.7.2, by Vigie")).toBeInTheDocument();
+  },
+};
+
+export const NothingSinceThePreviousScan: Story = {
+  play: async ({ canvas }) => {
+    await expect(canvas.queryByRole("heading", { name: /^Since the previous scan/ })).toBeNull();
   },
 };

@@ -500,7 +500,14 @@
     "noChange": "Nothing changed",
     "empty": "Nothing in the last {{days}} days.",
     "older": "Show older",
-    "since": "Since {{day}}"
+    "since": "Since {{day}}",
+    "changesOf": "Changes of {{name}}",
+    "noticeKind": {
+      "admin": "new administrator",
+      "installed": "plugin or theme installed outside Vigie"
+    },
+    "notifiedChange": "Notified: {{what}} on {{names}}",
+    "and": " and "
   },
   "tray": {
     "open": "Open {{app}}",
@@ -1443,6 +1450,37 @@
       "mergeTitle": "“{{tag}}” already exists",
       "merge_one": "Both become one tag, on {{count}} site.",
       "merge_other": "Both become one tag, on {{count}} sites."
+    }
+  },
+  "changes": {
+    "adminAdded": "New administrator: {{name}}",
+    "superAdded": "New super administrator: {{name}}",
+    "adminRemoved": "Administrator removed: {{name}}",
+    "installed": {
+      "plugin": "Plugin installed outside Vigie: {{name}} {{version}}",
+      "theme": "Theme installed outside Vigie: {{name}} {{version}}"
+    },
+    "removed": {
+      "plugin": "Plugin removed: {{name}} {{version}}",
+      "theme": "Theme removed: {{name}} {{version}}"
+    },
+    "themeSwitched": "Active theme: {{from}} → {{to}}",
+    "outside": "{{name}} {{from}} → {{to}}, outside Vigie",
+    "byVigie": "{{name}} {{from}} → {{to}}, by Vigie",
+    "files": "Files changed in {{name}}: {{counts}}",
+    "vulnerability": "New vulnerability: {{name}} {{version}}, {{title}}",
+    "finding": "New finding: {{title}}",
+    "look": "Worth a look",
+    "change": "Change",
+    "since": "Since the previous scan",
+    "sinceWhen": "of {{day}} at {{time}}",
+    "counts": {
+      "changed_one": "{{count}} changed",
+      "changed_other": "{{count}} changed",
+      "missing_one": "{{count}} missing",
+      "missing_other": "{{count}} missing",
+      "added_one": "{{count}} added",
+      "added_other": "{{count}} added"
     }
   }
 }

@@ -6,6 +6,7 @@ import { clock, day } from "../../lib/findings";
 import { since } from "../../lib/time";
 import { type Choice, choicesOf, namesOf, offeredKeys } from "../../lib/updates";
 import { Button } from "../Button/Button";
+import { ChangeList } from "../ChangeList/ChangeList";
 import { DetailHeader } from "../DetailHeader/DetailHeader";
 import { Dialog } from "../Dialog/Dialog";
 import { ExtensionList } from "../ExtensionList/ExtensionList";
@@ -198,6 +199,7 @@ export function SiteOverview({
         {scan?.attempt?.problem && tab !== "history" && (
           <AttemptNotice finished={scan.finished} problem={scan.attempt.problem} onRemove={onRemove} />
         )}
+        {tab === "overview" && (site.changes ?? []).length > 0 && <SinceBefore site={site} />}
         {tab === "overview" && <Overview site={site} onExtensions={() => setTab("extensions")} />}
         {tab === "extensions" &&
           (completed && scan ? (
@@ -311,6 +313,22 @@ function Overview({ site, onExtensions }: { site: SiteView; onExtensions: () => 
         <span data-selectable>{site.path}</span>
       </InfoRow>
     </InfoList>
+  );
+}
+
+/** What the latest scan found changed since the complete scan before (ADR-0027). */
+function SinceBefore({ site }: { site: SiteView }) {
+  const { t } = useTranslation();
+  return (
+    <section className={styles.since}>
+      <h2 className={styles.sinceTitle}>
+        {t("changes.since")}
+        <span className={styles.sinceWhen}>{t("changes.sinceWhen", { day: day(site.changesSince), time: clock(site.changesSince) })}</span>
+      </h2>
+      <div className={styles.sinceBox}>
+        <ChangeList changes={site.changes ?? []} label={t("changes.since")} />
+      </div>
+    </section>
   );
 }
 

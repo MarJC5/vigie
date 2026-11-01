@@ -525,7 +525,14 @@
     "noChange": "Rien n'a changé",
     "empty": "Rien ces {{days}} derniers jours.",
     "older": "Afficher plus ancien",
-    "since": "Depuis le {{day}}"
+    "since": "Depuis le {{day}}",
+    "changesOf": "Changements de {{name}}",
+    "noticeKind": {
+      "admin": "nouvel administrateur",
+      "installed": "extension ou thème installé hors de Vigie"
+    },
+    "notifiedChange": "Notifié : {{what}} sur {{names}}",
+    "and": " et "
   },
   "tray": {
     "open": "Ouvrir {{app}}",
@@ -1513,6 +1520,40 @@
       "merge_one": "Les deux deviennent une seule étiquette, sur {{count}} site.",
       "merge_other": "Les deux deviennent une seule étiquette, sur {{count}} sites.",
       "merge_many": "Les deux deviennent une seule étiquette, sur {{count}} sites."
+    }
+  },
+  "changes": {
+    "adminAdded": "Nouvel administrateur : {{name}}",
+    "superAdded": "Nouveau super administrateur : {{name}}",
+    "adminRemoved": "Administrateur retiré : {{name}}",
+    "installed": {
+      "plugin": "Extension installée hors de Vigie : {{name}} {{version}}",
+      "theme": "Thème installé hors de Vigie : {{name}} {{version}}"
+    },
+    "removed": {
+      "plugin": "Extension retirée : {{name}} {{version}}",
+      "theme": "Thème retiré : {{name}} {{version}}"
+    },
+    "themeSwitched": "Thème actif : {{from}} → {{to}}",
+    "outside": "{{name}} {{from}} → {{to}}, hors de Vigie",
+    "byVigie": "{{name}} {{from}} → {{to}}, par Vigie",
+    "files": "Fichiers modifiés dans {{name}} : {{counts}}",
+    "vulnerability": "Nouvelle faille : {{name}} {{version}}, {{title}}",
+    "finding": "Nouveau constat : {{title}}",
+    "look": "À regarder",
+    "change": "Changement",
+    "since": "Depuis le relevé précédent",
+    "sinceWhen": "du {{day}} à {{time}}",
+    "counts": {
+      "changed_one": "{{count}} changé",
+      "changed_many": "{{count}} changés",
+      "changed_other": "{{count}} changés",
+      "missing_one": "{{count}} manquant",
+      "missing_many": "{{count}} manquants",
+      "missing_other": "{{count}} manquants",
+      "added_one": "{{count}} ajouté",
+      "added_many": "{{count}} ajoutés",
+      "added_other": "{{count}} ajoutés"
     }
   }
 }
