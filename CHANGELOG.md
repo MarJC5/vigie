@@ -92,6 +92,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   when a host refuses the connection, the shortcuts), then short topics (updating, a site's status,
   what Vigie reads and sends, import and export, the background), offline, each ending with a link
   to its full doc. The docs are also in French ([docs/fr/](docs/fr/)).
+- Quick links under a site's name: open the site, its dashboard (under the WordPress address, or
+  the admin address you give for a login a plugin renamed), an SSH terminal (macOS, and Linux when
+  the system opens ssh:// addresses), and the SSH command to paste, which opens in the site's folder.
+- Notes in Markdown on every folder, host and site: written in place, shown without raw HTML, and
+  read by the search of the site list.
+- Test the connection of a host already added, from its menu or while editing it.
+- The tables of sites sort by site, status or updates, and filter from the counts above them.
 
 ### Changed
 
