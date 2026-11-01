@@ -124,8 +124,8 @@ export avec de nouveaux identifiants, montre l'aperçu, et ajoute ce que vous co
 
 * **Une ligne d'en-tête** nomme les colonnes, dans n'importe quel ordre : `path` (la racine de
   WordPress sur le serveur), et soit `alias` (une entrée de `~/.ssh/config`), soit `host` et `user`
-  avec un `port` facultatif. Puis, si vous voulez, `folder`, `url`, `name`, `color` et `notes`. Une
-  autre colonne fait refuser le fichier.
+  avec un `port` facultatif. Puis, si vous voulez, `folder`, `url`, `name`, `color`, `notes` et
+  `tags`. Une autre colonne fait refuser le fichier.
 * **Une ligne par site.** Les valeurs sont séparées par des virgules, ou par des points-virgules
   quand l'en-tête en contient davantage, comme les écrivent les tableurs en français. Des guillemets
   gardent un séparateur ou un retour à la ligne dans une valeur (RFC 4180). Une marque d'ordre des
@@ -135,6 +135,7 @@ export avec de nouveaux identifiants, montre l'aperçu, et ajoute ce que vous co
   d'après son alias ou son hôte.
 * Un site sans `name` prend le nom de son adresse, sinon de la dernière partie de son chemin.
   `color` est l'une de `none`, `red`, `green`, `blue`, `yellow`, `cyan`, `magenta`, `orange`.
+* `tags` contient les étiquettes d'un site séparées par `|` (`Contrat|Prioritaire`).
 
 ```csv
 folder;host;port;user;path;url
@@ -146,3 +147,9 @@ Une ligne que Vigie ne peut pas prendre est listée avec son numéro et la raiso
 pas de connexion ou les deux, un hôte sans utilisateur, un port, une couleur ou un nom illisible, un
 compte déjà placé dans un autre dossier sur une ligne précédente, le même site deux fois, ou pas
 autant de valeurs que l'en-tête.
+
+Les étiquettes d'un export ou d'une liste suivent les règles d'une étiquette : une étiquette que
+Vigie connaît déjà garde l'orthographe qu'elle y a, quelles que soient la casse ou les accents du
+fichier. Une étiquette de plus de 40 caractères, une qui contient une virgule, une barre verticale
+ou un caractère de contrôle, et celles au-delà de la vingtième d'un site sont écartées et nommées
+dans l'aperçu. Le site est ajouté sans elles.

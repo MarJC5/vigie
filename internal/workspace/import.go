@@ -78,11 +78,28 @@ type ImportKey struct {
 	Refused     KeyRefusal
 }
 
+// TagReason tells why a tag of the file is left out of the site it comes with.
+type TagReason string
+
+const (
+	TagTooLong   TagReason = "too-long"
+	TagCharacter TagReason = "character" // a comma, a vertical bar or a control character
+	TagTooMany   TagReason = "too-many"  // past model.MaxTags
+)
+
+// ImportTag is a tag of the file left out of a site added, which is added without it.
+type ImportTag struct {
+	Site   string // the site's path once imported
+	Tag    string
+	Reason TagReason
+}
+
 // ImportPlan is what an import would do, shown before it does it.
 type ImportPlan struct {
 	Into                       string // the folder it adds into; "" for the top
 	Entries                    []ImportEntry
 	Keys                       []ImportKey
+	TagsLeftOut                []ImportTag
 	Ignores, Scans, Operations int // added with the sites added
 	batch                      store.ImportBatch
 }
@@ -447,6 +464,8 @@ func (p *planner) site(x export.Site) {
 	}
 	s.ID, s.HostID = p.newID(s.ID), host.id
 	s.Position = p.position(model.KindSite, host.id, s.Position)
+	var left []ImportTag
+	s.Tags, left = p.tags(s.Tags)
 	if err := model.ValidateName(x.Name); err != nil {
 		p.entry(model.KindSite, x.ID, x.Name, path, ImportRefused, ReasonInvalid, err.Error())
 		return
@@ -463,6 +482,48 @@ func (p *planner) site(x export.Site) {
 	p.sites[x.ID] = s.ID
 	p.plan.batch.Sites = append(p.plan.batch.Sites, s)
 	p.entry(model.KindSite, x.ID, x.Name, sitePath(s.ID), ImportAdded, reason, "")
+	for _, l := range left {
+		l.Site = sitePath(s.ID)
+		p.plan.TagsLeftOut = append(p.plan.TagsLeftOut, l)
+	}
+}
+
+// tags applies the rules of a site's tags to those of the file (ADR-0025): a tag Vigie already
+// has, or one an earlier site of the file brought, takes its spelling; one that breaks a rule, or
+// one past the limit, is left out and returned. An empty tag is dropped without a word.
+func (p *planner) tags(given []string) ([]string, []ImportTag) {
+	spelling := map[string]string{}
+	for _, c := range p.tree.Tags() {
+		spelling[model.TagKey(c.Name)] = c.Name
+	}
+	kept, left, seen := []string{}, []ImportTag{}, map[string]bool{}
+	for _, tag := range given {
+		normal, err := model.NormalizeTag(tag)
+		switch {
+		case errors.Is(err, model.ErrEmptyTag):
+			continue
+		case errors.Is(err, model.ErrTagTooLong):
+			left = append(left, ImportTag{Tag: tag, Reason: TagTooLong})
+			continue
+		case err != nil:
+			left = append(left, ImportTag{Tag: tag, Reason: TagCharacter})
+			continue
+		}
+		key := model.TagKey(normal)
+		if seen[key] {
+			continue
+		}
+		if len(kept) == model.MaxTags {
+			left = append(left, ImportTag{Tag: normal, Reason: TagTooMany})
+			continue
+		}
+		seen[key] = true
+		if s, ok := spelling[key]; ok {
+			normal = s
+		}
+		kept = append(kept, normal)
+	}
+	return kept, left
 }
 
 // samePath compares two WordPress roots, a trailing slash aside.

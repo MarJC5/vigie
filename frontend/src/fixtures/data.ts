@@ -19,6 +19,7 @@ const item = (i: Partial<ImportItem> & Pick<ImportItem, "kind" | "path" | "statu
   operations: 0,
   line: 0,
   value: "",
+  tagsLeftOut: [],
   ...i,
 });
 
@@ -39,7 +40,10 @@ export const vigiePreview: ImportPreview = {
     item({ kind: "folder", path: "Clients/Valais", status: "added" }),
     item({ kind: "host", path: "Clients/Valais/Atelier", status: "added", account: "atelier@ssh.example-host.ch" }),
     item({ kind: "site", path: "Clients/Valais/Atelier/atelier-exemple.ch", status: "added", sitePath: "~/www/atelier", scans: 12, operations: 3 }),
-    item({ kind: "site", path: "Clients/Valais/Atelier/reseau-ecoles.ch", status: "added", sitePath: "~/www/ecoles", subsites: 3 }),
+    item({
+      kind: "site", path: "Clients/Valais/Atelier/reseau-ecoles.ch", status: "added", sitePath: "~/www/ecoles", subsites: 3,
+      tagsLeftOut: [{ tag: "Écoles, primaires", reason: "character" }],
+    }),
     item({ kind: "host", path: "Clients/Valais/Atelier (2)", status: "added", reason: "renamed", account: "deploy@203.0.113.24:2222" }),
     item({ kind: "host", path: "Clients/Shared hosting", status: "present", reason: "same-connection" }),
     item({ kind: "site", path: "Clients/Shared hosting/boulangerie-exemple.ch", status: "present", reason: "same-path" }),

@@ -56,8 +56,8 @@ type CSVReport struct {
 }
 
 // The columns of a site list: a connection (alias, or host, port and user), the site's path and
-// address, and optionally its folder, name, color and notes.
-var csvColumns = []string{"folder", "alias", "host", "port", "user", "path", "url", "name", "color", "notes"}
+// address, and optionally its folder, name, color, notes and tags (separated by "|").
+var csvColumns = []string{"folder", "alias", "host", "port", "user", "path", "url", "name", "color", "notes", "tags"}
 
 // maxSize bounds what is read: far above a list of thousands of sites.
 const maxSize = 64 << 20
@@ -217,10 +217,22 @@ func (b *csvBuilder) add(value func(string) string) *CSVRefusal {
 	}
 	b.sites[siteKey] = true
 	b.file.Sites = append(b.file.Sites, export.Site{ID: model.NewID().String(), Host: host.id, Name: name, Path: sitePath,
-		URL: value("url"), Color: color, Notes: value("notes"), Tags: []string{}, Subsites: []export.Subsite{}, Position: host.sites})
+		URL: value("url"), Color: color, Notes: value("notes"), Tags: csvTags(value("tags")), Subsites: []export.Subsite{}, Position: host.sites})
 	host.sites++
 	b.hosts[key] = host
 	return nil
+}
+
+// csvTags splits the tags of a line, each trimmed, the empty ones left out; their rules apply when
+// they are imported.
+func csvTags(value string) []string {
+	tags := []string{}
+	for tag := range strings.SplitSeq(value, "|") {
+		if tag = strings.TrimSpace(tag); tag != "" {
+			tags = append(tags, tag)
+		}
+	}
+	return tags
 }
 
 // folder returns the ID of the folder at a path, made with its parents when new; "" is the top.

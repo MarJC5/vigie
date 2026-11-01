@@ -160,9 +160,16 @@ type sshConfigJSON struct {
 	Error    string `json:"error,omitempty"`
 }
 
+type importTagJSON struct {
+	Site   string `json:"site"`
+	Tag    string `json:"tag"`
+	Reason string `json:"reason"`
+}
+
 type importJSON struct {
 	Into       string            `json:"into"`
 	Entries    []importEntryJSON `json:"entries"`
+	Tags       []importTagJSON   `json:"tagsLeftOut,omitempty"`
 	Lines      []importLineJSON  `json:"lines,omitempty"`
 	SSHConfig  []sshConfigJSON   `json:"sshConfig,omitempty"`
 	Keys       []importKeyJSON   `json:"keys"`
@@ -211,7 +218,7 @@ func importFile(ctx context.Context, env Env, ws *workspace.Workspace, o dataOpt
 		return env.fail(explain(env, o.into, err))
 	}
 	result := importJSONOf(plan, src)
-	refused := len(src.lines) > 0
+	refused := len(src.lines) > 0 || len(plan.TagsLeftOut) > 0
 	for _, e := range plan.Entries {
 		refused = refused || e.Status == workspace.ImportRefused
 	}
@@ -405,6 +412,10 @@ func printImport(env Env, plan workspace.ImportPlan, src importSource) {
 		fmt.Fprintf(w, "  %s\t%s\t%s\n", status, e.Path, note)
 	}
 	w.Flush()
+	for _, l := range plan.TagsLeftOut {
+		fmt.Fprintln(env.Out, env.t("cli.import.tagLeftOut", map[string]any{"tag": l.Tag, "site": l.Site,
+			"reason": env.t("cli.import.tag."+string(l.Reason), nil)}))
+	}
 	for _, l := range src.lines {
 		reason := env.t("cli.import.line."+string(l.Reason), nil)
 		if l.Value != "" {
@@ -444,6 +455,9 @@ func importJSONOf(plan workspace.ImportPlan, src importSource) importJSON {
 	for _, e := range plan.Entries {
 		out.Entries = append(out.Entries, importEntryJSON{Kind: e.Kind.String(), Name: e.Name, Path: e.Path,
 			Status: string(e.Status), Reason: string(e.Reason), Detail: e.Detail})
+	}
+	for _, l := range plan.TagsLeftOut {
+		out.Tags = append(out.Tags, importTagJSON{Site: l.Site, Tag: l.Tag, Reason: string(l.Reason)})
 	}
 	for _, k := range plan.Keys {
 		out.Keys = append(out.Keys, importKeyJSON{Host: k.Host, Name: k.Name, Type: k.Key.Type, Fingerprint: k.Fingerprint,

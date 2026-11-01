@@ -278,3 +278,21 @@ func TestExport(t *testing.T) {
 		t.Errorf("--yes on export: exit %d, %s", code, errOut)
 	}
 }
+
+// A tag the rules leave out is named in the preview; the site comes without it, and the exit
+// status says to look.
+func TestImportACSVListWithTags(t *testing.T) {
+	v := newDataVigie(t, nil)
+	list := filepath.Join(t.TempDir(), "sites.csv")
+	data := "alias,path,name,tags\nshared,~/a,a.example.test,Contrat|a\x07b\n"
+	if err := os.WriteFile(list, []byte(data), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	code, out, _ := v.run(t, "en", "", "import", list, "--yes")
+	if code != 1 || !strings.Contains(out, "left out of shared/a.example.test: a comma, a vertical bar or a control character.") {
+		t.Fatalf("exit %d\n%s", code, out)
+	}
+	if sites := v.tree(t).SitesUnder(model.TagNode("contrat")); len(sites) != 1 || len(sites[0].Tags) != 1 {
+		t.Errorf("sites with Contrat = %+v", sites)
+	}
+}

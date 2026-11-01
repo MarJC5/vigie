@@ -171,6 +171,12 @@
       "sshPresent": "reached by {{path}}",
       "sshError": "ssh cannot read it: {{message}}",
       "lineRefused": "Line {{line}} refused: {{reason}}",
+      "tagLeftOut": "Tag \"{{tag}}\" left out of {{site}}: {{reason}}.",
+      "tag": {
+        "too-long": "over 40 characters",
+        "character": "a comma, a vertical bar or a control character",
+        "too-many": "past 20 tags"
+      },
       "line": {
         "columns": "not as many values as the header",
         "no-path": "no path",
@@ -1145,6 +1151,7 @@
       "subsites_other": "network, {{count}} subsites",
       "history": "with {{counts}}",
       "line": "Line {{line}}: {{reason}}",
+      "tagLeftOut": "tag \"{{tag}}\" left out ({{reason}})",
       "keys": "Server keys",
       "keysLead": "The file brings the trusted key of these hosts. Keep only the ones you recognize; the others are asked for at their first connection.",
       "keyRefused": "Not kept: {{reason}}.",

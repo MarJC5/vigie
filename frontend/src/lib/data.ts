@@ -83,5 +83,6 @@ export function itemDetail(t: TFunction, item: ImportItem): string {
       break;
   }
   if (item.reason === "renamed") parts.push(t("data.reason.renamed"));
+  for (const l of item.tagsLeftOut ?? []) parts.push(t("data.preview.tagLeftOut", { tag: l.tag, reason: t(`cli.import.tag.${l.reason}`) }));
   return parts.join(" · ");
 }

@@ -123,3 +123,15 @@ func FuzzReadCSV(f *testing.F) {
 		}
 	})
 }
+
+// Tags are separated by "|"; the rules of a tag apply on import, not here.
+func TestTheTagsOfASiteList(t *testing.T) {
+	data := "alias,path,tags\nshared,~/a, Contrat | Prioritaire |\nshared,~/b,\n"
+	f, _, err := exchange.ReadCSV(strings.NewReader(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(f.Sites[0].Tags, []string{"Contrat", "Prioritaire"}) || len(f.Sites[1].Tags) != 0 || f.Sites[1].Tags == nil {
+		t.Errorf("tags = %q and %q", f.Sites[0].Tags, f.Sites[1].Tags)
+	}
+}

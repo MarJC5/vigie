@@ -184,6 +184,12 @@
       "sshPresent": "atteint par {{path}}",
       "sshError": "ssh ne peut pas le lire : {{message}}",
       "lineRefused": "Ligne {{line}} refusée : {{reason}}",
+      "tagLeftOut": "Étiquette « {{tag}} » écartée de {{site}} : {{reason}}.",
+      "tag": {
+        "too-long": "plus de 40 caractères",
+        "character": "une virgule, une barre verticale ou un caractère de contrôle",
+        "too-many": "au-delà de 20 étiquettes"
+      },
       "line": {
         "columns": "pas autant de valeurs que l'en-tête",
         "no-path": "pas de chemin",
@@ -1198,6 +1204,7 @@
       "subsites_other": "réseau, {{count}} sous-sites",
       "history": "avec {{counts}}",
       "line": "Ligne {{line}} : {{reason}}",
+      "tagLeftOut": "étiquette « {{tag}} » écartée ({{reason}})",
       "keys": "Clés des serveurs",
       "keysLead": "Le fichier apporte la clé de confiance de ces hébergements. Ne gardez que celles que vous reconnaissez, les autres seront demandées à leur première connexion.",
       "keyRefused": "Pas gardée : {{reason}}.",

@@ -31,7 +31,7 @@ describe("data", () => {
       "new folder",
       "host · atelier@ssh.example-host.ch",
       "site · ~/www/atelier · with 12 scans, 3 updates and rollbacks",
-      "site · ~/www/ecoles · network, 3 subsites",
+      'site · ~/www/ecoles · network, 3 subsites · tag "Écoles, primaires" left out (a comma, a vertical bar or a control character)',
       "host · deploy@203.0.113.24:2222 · its name was taken: renamed",
     ]);
     expect(itemDetail(t, groups.present[0]!)).toBe("same account");

@@ -292,3 +292,52 @@ func TestAPreviewOverTakenByAChangeAddsNothing(t *testing.T) {
 		t.Error("the host was added without its folder")
 	}
 }
+
+// Tags read from a file follow the rules of a tag: the spelling Vigie already has, the limits; a
+// tag left out is said, the site added all the same.
+func TestTheTagsOfAFileFollowTheRules(t *testing.T) {
+	ctx := context.Background()
+	ws, _, _ := emptyVigie(t)
+	host := model.NewID().String()
+	first := export.File{
+		Hosts: []export.Host{{ID: host, Name: "Server", Alias: "server", Color: "none"}},
+		Sites: []export.Site{{ID: model.NewID().String(), Host: host, Name: "a.example.test", Path: "~/a", Color: "none", Tags: []string{"Contrat"}}},
+	}
+	p := plan(t, ws, first, "")
+	if err := ws.Import(ctx, p, nil); err != nil {
+		t.Fatal(err)
+	}
+	many := []string{"contrat", "a,b", "Too long tag 0123456789012345678901234567890"}
+	for i := range model.MaxTags {
+		many = append(many, "t"+string(rune('a'+i)))
+	}
+	second := export.File{
+		Hosts: []export.Host{{ID: model.NewID().String(), Name: "Other", Alias: "other", Color: "none"}},
+		Sites: []export.Site{{ID: model.NewID().String(), Host: "", Name: "b.example.test", Path: "~/b", Color: "none", Tags: many}},
+	}
+	second.Sites[0].Host = second.Hosts[0].ID
+	p = plan(t, ws, second, "")
+	var left []string
+	for _, l := range p.TagsLeftOut {
+		left = append(left, l.Site+" "+l.Tag+" "+string(l.Reason))
+	}
+	want := []string{
+		"Other/b.example.test a,b character",
+		"Other/b.example.test Too long tag 0123456789012345678901234567890 too-long",
+		"Other/b.example.test tt too-many",
+	}
+	if !slices.Equal(left, want) {
+		t.Errorf("tags left out =\n%q\nwant\n%q", left, want)
+	}
+	if err := ws.Import(ctx, p, nil); err != nil {
+		t.Fatal(err)
+	}
+	tree, err := ws.DB().LoadTree(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := tree.SitesUnder(model.TagNode("ta"))
+	if len(b) != 1 || len(b[0].Tags) != model.MaxTags || b[0].Tags[0] != "Contrat" {
+		t.Errorf("site imported = %+v, want %d tags, the first spelled as stored", b, model.MaxTags)
+	}
+}

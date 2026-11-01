@@ -206,6 +206,14 @@ type ImportItem struct {
 	Operations int    `json:"operations"`
 	Line       int    `json:"line"`
 	Value      string `json:"value"` // a line: the value at fault
+	// A site added: the tags of the file it is added without, by the rules of a tag.
+	TagsLeftOut []ImportTagView `json:"tagsLeftOut"`
+}
+
+// ImportTagView is a tag of the file left out of a site added, with why (workspace.TagReason).
+type ImportTagView struct {
+	Tag    string `json:"tag"`
+	Reason string `json:"reason"`
 }
 
 // ImportKeyView is a key of the file for a host added, for the user to keep or leave out.
@@ -331,9 +339,14 @@ func itemsOf(plan workspace.ImportPlan, f export.File) []ImportItem {
 			operations[o.Site]++
 		}
 	}
+	left := map[string][]ImportTagView{}
+	for _, l := range plan.TagsLeftOut {
+		left[l.Site] = append(left[l.Site], ImportTagView{Tag: l.Tag, Reason: string(l.Reason)})
+	}
 	items := []ImportItem{}
 	for _, e := range plan.Entries {
-		item := ImportItem{Kind: e.Kind.String(), Path: e.Path, Status: string(e.Status), Reason: string(e.Reason), Detail: e.Detail}
+		item := ImportItem{Kind: e.Kind.String(), Path: e.Path, Status: string(e.Status), Reason: string(e.Reason), Detail: e.Detail,
+			TagsLeftOut: []ImportTagView{}}
 		switch e.Kind {
 		case model.KindHost:
 			item.Account = account(hosts[e.FileID])
@@ -342,6 +355,7 @@ func itemsOf(plan workspace.ImportPlan, f export.File) []ImportItem {
 			item.SitePath, item.Subsites = s.Path, len(s.Subsites)
 			if e.Status == workspace.ImportAdded {
 				item.Scans, item.Operations = scans[e.FileID], operations[e.FileID]
+				item.TagsLeftOut = append(item.TagsLeftOut, left[e.Path]...)
 			}
 		}
 		items = append(items, item)

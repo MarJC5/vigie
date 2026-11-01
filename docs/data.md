@@ -119,7 +119,7 @@ export with new IDs, shows the preview, and adds what you confirm.
 
 * **A header line** names the columns, in any order: `path` (the WordPress root on the server), and
   either `alias` (an entry of `~/.ssh/config`) or `host` and `user` with an optional `port`; then,
-  if you want, `folder`, `url`, `name`, `color` and `notes`. Another column refuses the file.
+  if you want, `folder`, `url`, `name`, `color`, `notes` and `tags`. Another column refuses the file.
 * **One line per site.** Values are separated by commas, or by semicolons when the header has more
   of them, as spreadsheets write in French; quotes keep a separator or a line break in a value
   (RFC 4180); a byte order mark at the start is skipped.
@@ -127,6 +127,7 @@ export with new IDs, shows the preview, and adds what you confirm.
   alias, or the same host, port and user) share one host, named after its alias or its host.
 * A site without a `name` is named after its address, or else after the last part of its path.
   `color` is one of `none`, `red`, `green`, `blue`, `yellow`, `cyan`, `magenta`, `orange`.
+* `tags` holds a site's tags separated by `|` (`Contract|Priority`).
 
 ```csv
 folder;host;port;user;path;url
@@ -137,3 +138,8 @@ Clients/Valais;ssh.example-host.ch;22;u12ab;~/sites/cave;https://cave-exemple.ch
 A line Vigie cannot take is listed with its number and the reason: no path, no connection or both,
 a host without a user, a port, color or name it cannot read, an account already given another
 folder on an earlier line, the same site twice, or not as many values as the header.
+
+The tags of an export or a list follow the rules of a tag: a tag Vigie already has keeps the
+spelling it has there, whatever the case or accents in the file. A tag over 40 characters, one with
+a comma, a vertical bar or a control character, and those past the twentieth of a site are left out
+and named in the preview; the site is added without them.

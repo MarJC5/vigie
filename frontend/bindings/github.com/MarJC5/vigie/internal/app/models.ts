@@ -520,6 +520,11 @@ export interface ImportItem {
      * a line: the value at fault
      */
     "value": string;
+
+    /**
+     * A site added: the tags of the file it is added without, by the rules of a tag.
+     */
+    "tagsLeftOut": ImportTagView[] | null;
 }
 
 /**
@@ -601,6 +606,14 @@ export interface ImportPreview {
 export interface ImportResult {
     "added": number;
     "problem": Problem | null;
+}
+
+/**
+ * ImportTagView is a tag of the file left out of a site added, with why (workspace.TagReason).
+ */
+export interface ImportTagView {
+    "tag": string;
+    "reason": string;
 }
 
 /**

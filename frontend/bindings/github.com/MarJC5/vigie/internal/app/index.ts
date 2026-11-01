@@ -62,6 +62,7 @@ export type {
     ImportKeyView,
     ImportPreview,
     ImportResult,
+    ImportTagView,
     Install,
     Journal,
     KeysResult,
