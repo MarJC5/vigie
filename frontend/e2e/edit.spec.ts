@@ -106,3 +106,55 @@ test("the site list stays as the user left it: across pages, then after a reload
   await expect(item(/^Personal/)).toHaveAttribute("aria-expanded", "false");
   await expect(item(/^Clients/)).toHaveAttribute("aria-expanded", "true");
 });
+
+// Tags (ADR-0025): written on two sites, found by the search, a tag's page opened, renamed onto
+// another tag, then removed from every site.
+test("a tag across sites: its page, renamed onto another, removed", async () => {
+  const addTags = async (site: RegExp, ...typed: string[]) => {
+    await item(site).click();
+    await page.getByRole("button", { name: "Add a tag" }).click();
+    for (const text of typed) {
+      await page.keyboard.type(text);
+      await page.keyboard.press("Enter");
+      await expect(page.getByRole("combobox", { name: "New tag" })).toHaveValue("");
+    }
+    await page.keyboard.press("Escape");
+  };
+  await addTags(/atelier\.ch$/, "Contrat");
+  // Typed in another case: the spelling already used is kept.
+  await addTags(/boulangerie-exemple\.ch$/, "contrat", "Dupont");
+  await expect(page.getByRole("list", { name: "Tags" })).toContainText("Contrat");
+  await expect(page.getByRole("list", { name: "Tags" })).not.toContainText("contrat");
+
+  // The search reads the tags.
+  await page.getByRole("button", { name: "Search" }).click();
+  await page.getByRole("searchbox", { name: "Search" }).fill("dupont");
+  await expect(item(/boulangerie-exemple\.ch/)).toContainText("in the tags");
+  await page.getByRole("searchbox", { name: "Search" }).press("Escape");
+  await page.getByRole("searchbox", { name: "Search" }).press("Escape");
+
+  // The tag's page: its two sites, where each is.
+  await item(/^Contrat/).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Contrat");
+  await expect(page.getByRole("table")).toContainText("Host");
+  await expect(page.getByRole("table").getByRole("row")).toHaveCount(3);
+  await expect(page.getByRole("complementary")).toContainText("Contrat · 2 sites");
+
+  // Renamed onto Dupont: both become one, and the page follows.
+  await page.getByRole("button", { name: "More actions" }).click();
+  await page.getByRole("menuitem", { name: "Rename the tag…" }).click();
+  const rename = page.getByRole("dialog", { name: "Rename “Contrat”" });
+  await rename.getByRole("textbox", { name: "Name" }).fill("dupont");
+  await expect(rename.getByRole("note")).toContainText("Both become one tag, on 2 sites.");
+  await rename.getByRole("button", { name: "Rename" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Dupont");
+  await expect(item(/^Dupont/)).toContainText("2");
+  await expect(item(/^Contrat/)).toHaveCount(0);
+
+  // Removed from every site: the group goes with its last tag.
+  await page.getByRole("button", { name: "More actions" }).click();
+  await page.getByRole("menuitem", { name: "Remove from every site…" }).click();
+  await page.getByRole("dialog", { name: "Remove “Dupont” from every site?" }).getByRole("button", { name: "Remove the tag" }).click();
+  await expect(item(/^Dupont/)).toHaveCount(0);
+  await expect(item(/^Tags/)).toHaveCount(0);
+});

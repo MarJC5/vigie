@@ -107,6 +107,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   A site never scanned, or whose latest scan failed, is left out and named.
 - The site list stays as you left it, from one page to another and from one launch to the next:
   the folders and hosts folded, and the list hidden or shown.
+- Tags on sites, written under a site's quick links, the tags already used offered as you type;
+  compared without case or accents. A tag's page, from the Tags group of the site list or a tag
+  of a site, lists its sites wherever they are, with the counts, the table, the Plugins tab, and
+  scan and update for those sites; its menu renames the tag everywhere (onto another tag, both
+  become one) or removes it from every site. The search of the site list reads the tags.
+- `--tag <tag>` on `vigie tree`, `scan` and `update`, for the sites with a tag. A `tags` column in
+  a CSV site list; tags read from a file follow the rules of a tag, and those left out are named
+  in the preview.
 
 ### Changed
 
