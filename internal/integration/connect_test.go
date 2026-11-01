@@ -206,3 +206,19 @@ func TestConnectionFailuresAreClassified(t *testing.T) {
 		}
 	}
 }
+
+// A fixed text of Vigie's reaches the remote command's standard input over SSH, whole (ADR-0029),
+// and a command run without one reads nothing.
+func TestStandardInputReachesTheServer(t *testing.T) {
+	a := sshAccess(t)
+	r := a.runner(t, a.trusted(t))
+	input := []byte("line one\nline two, ünïcode\n")
+	res, err := r.RunInput(context.Background(), a.target(a.key), "cat", input)
+	if err != nil || res.ExitCode != 0 || string(res.Stdout) != string(input) {
+		t.Fatalf("RunInput(cat) = %q (exit %d, %s), %v; want %q", res.Stdout, res.ExitCode, res.Stderr, err, input)
+	}
+	res, err = r.Run(context.Background(), a.target(a.key), "cat")
+	if err != nil || len(res.Stdout) != 0 {
+		t.Fatalf("Run(cat) = %q, %v; want nothing read", res.Stdout, err)
+	}
+}

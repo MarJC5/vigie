@@ -51,6 +51,22 @@ func TestExecRunnerPassesArgumentsAndOutput(t *testing.T) {
 	}
 }
 
+// A fixed text goes on the command's standard input; without one, the command reads nothing.
+func TestExecRunnerSendsStandardInput(t *testing.T) {
+	r := runner(t, 5*time.Second)
+	res, err := r.RunInput(context.Background(), sshx.Target{Alias: "a"}, "input", []byte("<?php echo 1;\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, got, _ := strings.Cut(string(res.Stdout), "input:\n"); got != "<?php echo 1;\n" {
+		t.Fatalf("RunInput() stdout = %q", res.Stdout)
+	}
+	res, err = r.Run(context.Background(), sshx.Target{Alias: "a"}, "input")
+	if _, got, _ := strings.Cut(string(res.Stdout), "input:\n"); err != nil || got != "" {
+		t.Fatalf("Run() read %q, %v; want nothing", got, err)
+	}
+}
+
 func TestExecRunnerReportsRemoteExitCode(t *testing.T) {
 	res, err := runner(t, 5*time.Second).Run(context.Background(), sshx.Target{Alias: "a"}, "exit-3")
 	if err != nil {
@@ -80,6 +96,15 @@ func TestExecRunnerTimeout(t *testing.T) {
 	}
 	if time.Since(start) > 3*time.Second {
 		t.Fatalf("timeout not enforced: took %s", time.Since(start))
+	}
+}
+
+func TestFakeRunnerKeepsTheInputSent(t *testing.T) {
+	fake := sshxtest.NewFake()
+	fake.Set("'wp' 'eval-file' '-'", sshx.Result{Stdout: []byte("{}")})
+	res, err := fake.RunInput(context.Background(), sshx.Target{}, "'wp' 'eval-file' '-'", []byte("<?php echo 1;"))
+	if err != nil || string(res.Stdout) != "{}" || string(fake.Input("'wp' 'eval-file' '-'")) != "<?php echo 1;" {
+		t.Fatalf("RunInput() = %q, %v; input kept %q", res.Stdout, err, fake.Input("'wp' 'eval-file' '-'"))
 	}
 }
 

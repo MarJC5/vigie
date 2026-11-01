@@ -97,3 +97,7 @@ type failing struct{ err error }
 func (f failing) Run(context.Context, sshx.Target, string) (sshx.Result, error) {
 	return sshx.Result{}, f.err
 }
+
+func (f failing) RunInput(ctx context.Context, target sshx.Target, remote string, _ []byte) (sshx.Result, error) {
+	return f.Run(ctx, target, remote)
+}

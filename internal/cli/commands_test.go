@@ -78,6 +78,10 @@ func (b byHost) Run(ctx context.Context, target sshx.Target, remote string) (ssh
 	return sshx.Result{}, &sshx.ConnectionError{Failure: sshx.FailureRefused, Message: "ssh: connect to host down port 22: Connection refused"}
 }
 
+func (b byHost) RunInput(ctx context.Context, target sshx.Target, remote string, _ []byte) (sshx.Result, error) {
+	return b.Run(ctx, target, remote)
+}
+
 // The bench's image adds wp-config-docker.php where only WordPress's own files belong: urgent.
 const dockerFile = "core-file|core|"
 

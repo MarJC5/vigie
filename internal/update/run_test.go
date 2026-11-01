@@ -317,6 +317,10 @@ func (c cancelling) Run(ctx context.Context, t sshx.Target, line string) (sshx.R
 	return res, err
 }
 
+func (c cancelling) RunInput(ctx context.Context, target sshx.Target, remote string, _ []byte) (sshx.Result, error) {
+	return c.Run(ctx, target, remote)
+}
+
 // A cancel stops after the current item and never leaves maintenance mode on.
 func TestCancelTurnsMaintenanceOff(t *testing.T) {
 	b := newRun(t)

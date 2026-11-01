@@ -12,5 +12,6 @@ case "$last" in
 	exit-3) echo "remote failed" >&2; exit 3 ;;
 	exit-255) echo "ssh: connect to host: Connection refused" >&2; exit 255 ;;
 	sleep) exec sleep 5 ;;
+	input) echo "input:"; cat ;;
 esac
 exit 0

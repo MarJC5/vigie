@@ -151,6 +151,10 @@ func (b blocking) Run(ctx context.Context, _ sshx.Target, _ string) (sshx.Result
 	return sshx.Result{}, ctx.Err()
 }
 
+func (b blocking) RunInput(ctx context.Context, target sshx.Target, remote string, _ []byte) (sshx.Result, error) {
+	return b.Run(ctx, target, remote)
+}
+
 func TestCancelAScan(t *testing.T) {
 	runner := blocking{started: make(chan struct{}), once: &sync.Once{}}
 	ws, db, _ := benchSites(t, runner)

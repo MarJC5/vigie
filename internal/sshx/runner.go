@@ -29,6 +29,9 @@ type Result struct {
 // Runner runs a quoted remote command on a target.
 type Runner interface {
 	Run(ctx context.Context, target Target, remote string) (Result, error)
+	// RunInput runs remote with input on its standard input: a fixed text of Vigie's, such as the
+	// read-only script of a network's subsites (ADR-0029).
+	RunInput(ctx context.Context, target Target, remote string, input []byte) (Result, error)
 }
 
 // ExecRunner runs commands with the system ssh, so ~/.ssh/config and the user's SSH agent apply.
@@ -38,8 +41,14 @@ type ExecRunner struct {
 	Timeout time.Duration // per command
 }
 
-// Run runs remote on target and waits for it, at most Timeout.
+// Run runs remote on target and waits for it, at most Timeout; it reads nothing on its standard
+// input.
 func (r ExecRunner) Run(ctx context.Context, target Target, remote string) (Result, error) {
+	return r.RunInput(ctx, target, remote, nil)
+}
+
+// RunInput runs remote on target with input on its standard input, at most Timeout.
+func (r ExecRunner) RunInput(ctx context.Context, target Target, remote string, input []byte) (Result, error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Timeout)
 	defer cancel()
 	binary := r.SSH
@@ -50,6 +59,9 @@ func (r ExecRunner) Run(ctx context.Context, target Target, remote string) (Resu
 	cmd.WaitDelay = time.Second // do not wait for pipes held by a killed process
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
+	if input != nil {
+		cmd.Stdin = bytes.NewReader(input)
+	}
 	err := cmd.Run()
 	res := Result{Stdout: stdout.Bytes(), Stderr: stderr.Bytes()}
 

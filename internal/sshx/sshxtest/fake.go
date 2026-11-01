@@ -19,13 +19,14 @@ type Fake struct {
 	mu      sync.Mutex
 	results map[string]sshx.Result
 	calls   []string
+	inputs  map[string][]byte // the standard input sent with a remote command, the last one
 }
 
 var _ sshx.Runner = (*Fake)(nil)
 
 // NewFake returns a fake without recorded results.
 func NewFake() *Fake {
-	return &Fake{results: map[string]sshx.Result{}}
+	return &Fake{results: map[string]sshx.Result{}, inputs: map[string][]byte{}}
 }
 
 // Set records the result of a remote command.
@@ -45,6 +46,21 @@ func (f *Fake) Run(_ context.Context, _ sshx.Target, remote string) (sshx.Result
 		return sshx.Result{}, fmt.Errorf("%w: %s", ErrUnexpected, remote)
 	}
 	return res, nil
+}
+
+// RunInput keeps input, then returns the recorded result of remote.
+func (f *Fake) RunInput(ctx context.Context, target sshx.Target, remote string, input []byte) (sshx.Result, error) {
+	f.mu.Lock()
+	f.inputs[remote] = append([]byte(nil), input...)
+	f.mu.Unlock()
+	return f.Run(ctx, target, remote)
+}
+
+// Input returns the standard input last sent with remote; nil when none was.
+func (f *Fake) Input(remote string) []byte {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.inputs[remote]
 }
 
 // Calls returns the remote commands received, in order.
