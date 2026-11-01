@@ -188,10 +188,18 @@ type checkedJSON struct {
 	Languages bool `json:"languages"`
 }
 
-func scanPath(ctx context.Context, env Env, ws *workspace.Workspace, path string, opts workspace.ScanOptions, asJSON bool) int {
-	results, err := ws.Scan(ctx, path, opts, nil)
+func scanTarget(ctx context.Context, env Env, ws *workspace.Workspace, on target, opts workspace.ScanOptions, asJSON bool) int {
+	tree, err := ws.DB().LoadTree(ctx)
 	if err != nil {
-		return env.fail(explain(env, path, err))
+		return env.fail(err.Error())
+	}
+	node, err := on.node(tree)
+	if err != nil {
+		return env.fail(on.explain(env, err))
+	}
+	results, err := ws.ScanNode(ctx, node, opts, nil)
+	if err != nil {
+		return env.fail(on.explain(env, err))
 	}
 	scans := make([]model.Scan, len(results))
 	for i, r := range results {
@@ -234,8 +242,9 @@ type treeJSON struct {
 	WordPress string `json:"wordpress,omitempty"`
 }
 
-// tree prints the site manager, each site with the status of its latest scan.
-func tree(ctx context.Context, env Env, ws *workspace.Workspace, asJSON bool) int {
+// tree prints the site manager, each site with the status of its latest scan; with a tag, only
+// the sites with that tag, by their paths.
+func tree(ctx context.Context, env Env, ws *workspace.Workspace, tag string, asJSON bool) int {
 	t, err := ws.DB().LoadTree(ctx)
 	if err != nil {
 		return env.fail(err.Error())
@@ -246,28 +255,44 @@ func tree(ctx context.Context, env Env, ws *workspace.Workspace, asJSON bool) in
 	}
 	nodes := []treeJSON{}
 	w := tabwriter.NewWriter(env.Out, 0, 0, 2, ' ', 0)
-	t.Walk(func(n model.Node, depth int) {
-		indent := strings.Repeat("  ", depth)
+	site := func(n model.Node, label string) {
 		entry := treeJSON{Path: t.PathOf(n), Kind: n.Kind.String()}
-		switch n.Kind {
-		case model.KindFolder:
-			f, _ := t.Folder(n.ID)
-			fmt.Fprintf(w, "%s%s/\n", indent, f.Name)
-		case model.KindHost:
-			h, _ := t.Host(n.ID)
-			fmt.Fprintf(w, "%s%s/\n", indent, h.Name)
-		case model.KindSite:
-			site, _ := t.Site(n.ID)
-			scan, scanned := latest[n.ID]
-			if !scanned {
-				fmt.Fprintf(w, "%s%s\t%s\n", indent, site.Name, env.t("detail.notScanned", nil))
-				break
-			}
+		if scan, scanned := latest[n.ID]; scanned {
 			entry.Status, entry.WordPress = string(scan.Status()), scan.WordPress
-			fmt.Fprintf(w, "%s%s\t%s\t%s\n", indent, site.Name, statusText(env, scan), summary(env, scan))
+			fmt.Fprintf(w, "%s\t%s\t%s\n", label, statusText(env, scan), summary(env, scan))
+		} else {
+			fmt.Fprintf(w, "%s\t%s\n", label, env.t("detail.notScanned", nil))
 		}
 		nodes = append(nodes, entry)
-	})
+	}
+	if tag != "" {
+		on := target{tag: tag}
+		node, err := on.node(t)
+		if err != nil {
+			return env.fail(on.explain(env, err))
+		}
+		for _, s := range t.SitesUnder(node) {
+			n := model.Node{Kind: model.KindSite, ID: s.ID}
+			site(n, t.PathOf(n))
+		}
+	} else {
+		t.Walk(func(n model.Node, depth int) {
+			indent := strings.Repeat("  ", depth)
+			switch n.Kind {
+			case model.KindFolder:
+				f, _ := t.Folder(n.ID)
+				fmt.Fprintf(w, "%s%s/\n", indent, f.Name)
+			case model.KindHost:
+				h, _ := t.Host(n.ID)
+				fmt.Fprintf(w, "%s%s/\n", indent, h.Name)
+			case model.KindSite:
+				s, _ := t.Site(n.ID)
+				site(n, indent+s.Name)
+				return
+			}
+			nodes = append(nodes, treeJSON{Path: t.PathOf(n), Kind: n.Kind.String()})
+		})
+	}
 	if asJSON {
 		writeJSON(env.Out, nodes)
 		return exitOK

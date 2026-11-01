@@ -31,24 +31,22 @@ type updateJSON struct {
 	FailedStep string           `json:"failedStep,omitempty"`
 }
 
-// updatePath previews the updates of the sites at path, asks, then updates them.
-func updatePath(ctx context.Context, env Env, ws *workspace.Workspace, path string, asJSON, yes bool) int {
+// updateTarget previews the updates of the sites of the target, asks, then updates them.
+func updateTarget(ctx context.Context, env Env, ws *workspace.Workspace, on target, asJSON, yes bool) int {
 	if asJSON && !yes {
 		return env.fail(env.t("cli.update.jsonNeedsYes", nil))
 	}
-	node := model.Root
-	if path != "" {
-		tree, err := ws.DB().LoadTree(ctx)
-		if err != nil {
-			return env.fail(err.Error())
-		}
-		if node, err = tree.Resolve(path); err != nil {
-			return env.fail(explain(env, path, err))
-		}
+	tree, err := ws.DB().LoadTree(ctx)
+	if err != nil {
+		return env.fail(err.Error())
+	}
+	node, err := on.node(tree)
+	if err != nil {
+		return env.fail(on.explain(env, err))
 	}
 	previews, err := ws.PreviewNode(ctx, node)
 	if err != nil {
-		return env.fail(explain(env, path, err))
+		return env.fail(on.explain(env, err))
 	}
 
 	// The sites that can be updated; the others keep the reason they cannot.

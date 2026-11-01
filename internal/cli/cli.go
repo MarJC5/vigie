@@ -114,9 +114,20 @@ func Run(ctx context.Context, opts Options, env Env) int {
 	if name == "scan" {
 		rest, checkFiles = withoutFlag(rest, "--check-files")
 	}
+	// --tag acts on the sites with a tag, wherever they are, in place of a path.
+	tagged := ""
+	if name == "tree" || name == "scan" || name == "update" {
+		var err error
+		if rest, tagged, err = withValue(rest, "--tag"); err != nil {
+			return env.fail(env.t("cli.needsValue", map[string]any{"option": "--tag"}))
+		}
+	}
 	args, asJSON, err := commandArgs(rest)
 	if err != nil {
 		return env.fail(env.t("cli.unknownOption", map[string]any{"option": err.Error()}))
+	}
+	if tagged != "" && len(args) > 0 {
+		return env.fail(env.t("cli.tagAndPath", nil))
 	}
 	if name == "discover" && len(args) != 1 {
 		return env.fail(env.t("cli.needsHost", nil))
@@ -127,13 +138,14 @@ func Run(ctx context.Context, opts Options, env Env) int {
 	}
 	defer ws.Close()
 	path := strings.Join(args, " ")
+	on := target{path: path, tag: tagged}
 	switch name {
 	case "tree":
-		return tree(ctx, env, ws, asJSON)
+		return tree(ctx, env, ws, tagged, asJSON)
 	case "scan":
-		return scanPath(ctx, env, ws, path, workspace.ScanOptions{CheckFiles: checkFiles, By: model.RunByCLI}, asJSON)
+		return scanTarget(ctx, env, ws, on, workspace.ScanOptions{CheckFiles: checkFiles, By: model.RunByCLI}, asJSON)
 	case "update":
-		return updatePath(ctx, env, ws, path, asJSON, yes)
+		return updateTarget(ctx, env, ws, on, asJSON, yes)
 	}
 	return discoverHost(ctx, env, ws, path, asJSON)
 }
@@ -177,6 +189,52 @@ func commandArgs(args []string) (rest []string, asJSON bool, err error) {
 		}
 	}
 	return rest, asJSON, nil
+}
+
+// withValue removes an option and the value after it from the arguments, and returns the value;
+// "" when the option is not there, an error when it has no value.
+func withValue(args []string, option string) ([]string, string, error) {
+	var rest []string
+	value := ""
+	for i := 0; i < len(args); i++ {
+		if args[i] != option {
+			rest = append(rest, args[i])
+			continue
+		}
+		if i+1 == len(args) || args[i+1] == "" || strings.HasPrefix(args[i+1], "-") {
+			return nil, "", errors.New(option)
+		}
+		i++
+		value = args[i]
+	}
+	return rest, value, nil
+}
+
+// target is what a command acts on: a path, everything when it is empty, or the sites with a tag.
+type target struct{ path, tag string }
+
+// errUnknownTag: no site has the tag given.
+var errUnknownTag = errors.New("no site has this tag")
+
+func (t target) node(tree *model.Tree) (model.Node, error) {
+	switch {
+	case t.tag != "":
+		if len(tree.SitesUnder(model.TagNode(t.tag))) == 0 {
+			return model.Node{}, errUnknownTag
+		}
+		return model.TagNode(t.tag), nil
+	case t.path == "":
+		return model.Root, nil
+	}
+	return tree.Resolve(t.path)
+}
+
+// explain turns an error of the target into a sentence for the user.
+func (t target) explain(env Env, err error) string {
+	if errors.Is(err, errUnknownTag) {
+		return env.t("cli.unknownTag", map[string]any{"tag": t.tag})
+	}
+	return explain(env, t.path, err)
 }
 
 // withoutFlag removes a flag from the arguments and tells whether it was there.
