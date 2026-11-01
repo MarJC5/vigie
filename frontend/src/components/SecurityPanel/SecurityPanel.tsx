@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { FindingView, ScanView, SubsiteView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
@@ -33,6 +34,8 @@ const wpvulnerability = { href: "https://www.wpvulnerability.com/", name: "WPVul
 /** The Security tab of a site: what its latest scan found, the worst first, by group. */
 export function SecurityPanel({ scan, onCheckFiles, scanning = false, onIgnore, onRestore, onOpen, subsites }: SecurityPanelProps) {
   const { t, i18n } = useTranslation();
+  // Once for every row: a network can have thousands of subsites and of administrators.
+  const labels = useMemo(() => labelsOf(subsites), [subsites]);
   const c = scan.counts;
   const summary = [
     c.urgent > 0 && t("security.summary.urgent", { count: c.urgent }),
@@ -70,7 +73,7 @@ export function SecurityPanel({ scan, onCheckFiles, scanning = false, onIgnore, 
           </h2>
           <ul className={styles.list}>
             {items.map((f) => (
-              <Row key={f.key} finding={f} group={group} onIgnore={onIgnore} onRestore={onRestore} onOpen={onOpen} lang={i18n.language} labels={labelsOf(subsites)} />
+              <Row key={f.key} finding={f} group={group} onIgnore={onIgnore} onRestore={onRestore} onOpen={onOpen} lang={i18n.language} labels={labels} />
             ))}
           </ul>
         </div>
@@ -90,10 +93,11 @@ export function SecurityPanel({ scan, onCheckFiles, scanning = false, onIgnore, 
 /** Findings in the rows of the Security tab, without its groups: a subsite's administrators. */
 export function FindingRows({ findings, label, subsites }: { findings: FindingView[]; label: string; subsites?: SubsiteView[] }) {
   const { i18n } = useTranslation();
+  const labels = useMemo(() => labelsOf(subsites), [subsites]);
   return (
     <ul className={styles.list} aria-label={label}>
       {findings.map((f) => (
-        <Row key={f.key} finding={f} group={groupOf(f)} lang={i18n.language} labels={labelsOf(subsites)} />
+        <Row key={f.key} finding={f} group={groupOf(f)} lang={i18n.language} labels={labels} />
       ))}
     </ul>
   );

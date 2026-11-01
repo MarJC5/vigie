@@ -1,9 +1,9 @@
-import { Fragment, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { ExtensionView, SubsiteView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { findingText } from "../../lib/findings";
-import { activation } from "../../lib/subsites";
+import { activation, labelsOf } from "../../lib/subsites";
 import { ignoredText } from "../../lib/updates";
 import { Icon } from "../Icon/Icon";
 import { StatusDot } from "../StatusDot/StatusDot";
@@ -49,7 +49,8 @@ export function ExtensionList({ extensions, onFinding, onOpen, subsites, onOpenS
   // The plugin or theme whose subsites are listed.
   const [opened, setOpened] = useState<string>();
   const network = extensions.some((e) => activation(e) !== undefined);
-  const labelOf = (blogId: number) => subsites?.find((s) => s.blogId === blogId)?.label ?? String(blogId);
+  const labels = useMemo(() => labelsOf(subsites), [subsites]);
+  const labelOf = (blogId: number) => labels[String(blogId)] ?? String(blogId);
   const shown = extensions.filter(keeps[filter]);
   const groups = [
     { kind: "plugin", title: t("ext.plugins"), items: shown.filter((e) => e.kind === "plugin") },
