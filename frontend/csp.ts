@@ -14,14 +14,15 @@ export const policy = [
   "form-action 'none'",
 ].join("; ");
 
-/** Puts the policy first in the built page's head; the dev server, which reloads through inline
- *  scripts and a WebSocket, is left without it. */
+/** Puts the policy first in the head of the window's built page (index.html); the dev server, which
+ *  reloads through inline scripts and a WebSocket, and Storybook's pages are left without it. */
 export function contentSecurityPolicy(): Plugin {
   return {
     name: "vigie-content-security-policy",
     apply: "build",
-    transformIndexHtml: () => [
-      { tag: "meta", attrs: { "http-equiv": "Content-Security-Policy", content: policy }, injectTo: "head-prepend" },
-    ],
+    transformIndexHtml: (_html, ctx) =>
+      ctx.path === "/index.html"
+        ? [{ tag: "meta", attrs: { "http-equiv": "Content-Security-Policy", content: policy }, injectTo: "head-prepend" }]
+        : [],
   };
 }

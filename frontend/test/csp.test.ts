@@ -6,13 +6,15 @@ import { describe, expect, it } from "vitest";
 import { contentSecurityPolicy, policy } from "../csp";
 
 describe("Content Security Policy", () => {
-  it("is added to the built page only, first in its head", () => {
+  it("is added to the window's built page only, first in its head", () => {
     const plugin = contentSecurityPolicy();
     expect(plugin.apply).toBe("build");
-    const transform = plugin.transformIndexHtml as () => Array<{ tag: string; attrs: Record<string, string>; injectTo: string }>;
-    expect(transform()).toEqual([
+    const transform = plugin.transformIndexHtml as (html: string, ctx: { path: string }) => Array<{ tag: string; attrs: Record<string, string>; injectTo: string }>;
+    expect(transform("", { path: "/index.html" })).toEqual([
       { tag: "meta", attrs: { "http-equiv": "Content-Security-Policy", content: policy }, injectTo: "head-prepend" },
     ]);
+    // Storybook's pages, built with the same configuration, keep their inline scripts.
+    expect(transform("", { path: "/iframe.html" })).toEqual([]);
   });
 
   it("allows the app's own files only, and data URIs for images", () => {
