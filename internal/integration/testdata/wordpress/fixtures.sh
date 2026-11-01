@@ -36,6 +36,16 @@ for slug in alpha beta gamma; do
 	wp site create --path="$SITES/network" --slug=$slug --title="$slug" --quiet
 done
 wp site archive 4 --path="$SITES/network" --quiet
+# What each subsite has (ADR-0029): Akismet active network-wide, Hello Dolly on alpha only, Twenty
+# Twenty-Four on beta, and marie administering alpha and beta without two-factor.
+NETWORK=https://network.example.test
+wp plugin activate akismet --network --path="$SITES/network" --quiet
+wp plugin activate hello --url=$NETWORK/alpha/ --path="$SITES/network" --quiet
+wp theme is-installed twentytwentyfour --path="$SITES/network" || wp theme install twentytwentyfour --path="$SITES/network" --quiet
+wp theme enable twentytwentyfour --network --path="$SITES/network" --quiet
+wp theme activate twentytwentyfour --url=$NETWORK/beta/ --path="$SITES/network" --quiet
+wp user create marie marie@example.test --role=administrator --user_pass=fixture-only --url=$NETWORK/alpha/ --path="$SITES/network" --quiet
+wp user set-role marie administrator --url=$NETWORK/beta/ --path="$SITES/network" --quiet
 
 # Older versions from wordpress.org, so updates are pending.
 new_site "$SITES/outdated" fixture_outdated

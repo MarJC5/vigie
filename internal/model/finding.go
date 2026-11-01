@@ -49,7 +49,8 @@ const (
 	KindUploadsPHP     FindingKind = "uploads-php"
 	KindUploadsPHPMore FindingKind = "uploads-php-more"
 	// KindAdministrator: Subject "user:<login>"; Facts email, registered, two-factor (on, off,
-	// unknown), super.
+	// unknown), super; on a network, sites (the IDs of the subsites they administer, comma
+	// separated, ADR-0029).
 	KindAdministrator FindingKind = "administrator"
 	// Settings, Subject "site": file editing allowed from the administration, PHP errors shown on
 	// the pages, hidden from search engines, an address without HTTPS, WP-Cron events overdue

@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'eval-file' '-' '--path=sites/network' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "{\"plugins\":[\"akismet\\/akismet.php\"],\"supers\":[{\"id\":1,\"login\":\"admin\",\"email\":\"admin@example.test\",\"registered\":\"2026-11-01 15:15:20\",\"providers\":\"\",\"wp2fa\":\"\"}],\"sites\":[{\"id\":1,\"plugins\":[],\"theme\":{\"slug\":\"twentytwentyfive\",\"name\":\"Twenty Twenty-Five\",\"version\":\"1.5\"},\"email\":\"admin@example.test\",\"admins\":[{\"id\":1,\"login\":\"admin\",\"email\":\"admin@example.test\",\"registered\":\"2026-11-01 15:15:20\",\"providers\":\"\",\"wp2fa\":\"\"}]},{\"id\":2,\"plugins\":[\"hello.php\"],\"theme\":{\"slug\":\"twentytwentyfive\",\"name\":\"Twenty Twenty-Five\",\"version\":\"1.5\"},\"email\":\"admin@example.test\",\"admins\":[{\"id\":1,\"login\":\"admin\",\"email\":\"admin@example.test\",\"registered\":\"2026-11-01 15:15:20\",\"providers\":\"\",\"wp2fa\":\"\"},{\"id\":2,\"login\":\"marie\",\"email\":\"marie@example.test\",\"registered\":\"2026-11-01 15:15:21\",\"providers\":\"\",\"wp2fa\":\"\"}]},{\"id\":3,\"plugins\":[],\"theme\":{\"slug\":\"twentytwentyfour\",\"name\":\"Twenty Twenty-Four\",\"version\":\"1.6\"},\"email\":\"admin@example.test\",\"admins\":[{\"id\":1,\"login\":\"admin\",\"email\":\"admin@example.test\",\"registered\":\"2026-11-01 15:15:20\",\"providers\":\"\",\"wp2fa\":\"\"},{\"id\":2,\"login\":\"marie\",\"email\":\"marie@example.test\",\"registered\":\"2026-11-01 15:15:21\",\"providers\":\"\",\"wp2fa\":\"\"}]}]}",
+  "stderr": ""
+}

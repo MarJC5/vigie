@@ -7,11 +7,29 @@
  * document. Of two-factor, only which methods a user turned on, never a secret.
  */
 
+// An administrator as Vigie reads them: never a password, a key or a two-factor secret.
+function vigie_account( $user ) {
+	return array(
+		'id'         => (int) $user->ID,
+		'login'      => $user->user_login,
+		'email'      => $user->user_email,
+		'registered' => $user->user_registered,
+		'providers'  => get_user_meta( $user->ID, '_two_factor_enabled_providers', true ),
+		'wp2fa'      => get_user_meta( $user->ID, 'wp_2fa_enabled_methods', true ),
+	);
+}
+
 $vigie_network = array(
 	'plugins' => array_keys( (array) get_site_option( 'active_sitewide_plugins', array() ) ),
-	'supers'  => array_values( (array) get_super_admins() ),
+	'supers'  => array(),
 	'sites'   => array(),
 );
+foreach ( (array) get_super_admins() as $vigie_login ) {
+	$vigie_user = get_user_by( 'login', $vigie_login );
+	if ( $vigie_user ) {
+		$vigie_network['supers'][] = vigie_account( $vigie_user );
+	}
+}
 
 // Every subsite but those archived, marked as spam or deleted; `number` 0 lifts the default 100.
 $vigie_ids = get_sites(
@@ -36,14 +54,7 @@ foreach ( $vigie_ids as $vigie_id ) {
 		)
 	);
 	foreach ( $vigie_users as $vigie_user ) {
-		$vigie_admins[] = array(
-			'id'         => (int) $vigie_user->ID,
-			'login'      => $vigie_user->user_login,
-			'email'      => $vigie_user->user_email,
-			'registered' => $vigie_user->user_registered,
-			'providers'  => get_user_meta( $vigie_user->ID, '_two_factor_enabled_providers', true ),
-			'wp2fa'      => get_user_meta( $vigie_user->ID, 'wp_2fa_enabled_methods', true ),
-		);
+		$vigie_admins[] = vigie_account( $vigie_user );
 	}
 	$vigie_network['sites'][] = array(
 		'id'      => (int) $vigie_id,

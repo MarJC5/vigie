@@ -264,6 +264,9 @@ var wordfence = []string{"wordfence", "wordfence-login-security"}
 // two-factor: what Two Factor, Solid Security and WP 2FA store in the user's meta, and Wordfence's
 // table when Wordfence is active.
 func (r *run) administrators(ctx context.Context, result *model.Scan) error {
+	if r.job.Site.Multisite {
+		return r.network(ctx, result)
+	}
 	out, err := r.read(ctx, wpcli.Administrators())
 	var admins []wpcli.Account
 	if err == nil {
@@ -325,6 +328,84 @@ func (r *run) administrators(ctx context.Context, result *model.Scan) error {
 	for _, login := range slices.Sorted(maps.Keys(supers)) {
 		result.Findings = append(result.Findings, model.Finding{Kind: model.KindAdministrator, Subject: "user:" + login,
 			Level: twoFactorLevel(twoFactorUnknown), Facts: map[string]string{"two-factor": twoFactorUnknown, "super": "true"}})
+	}
+	return nil
+}
+
+// network reads, in one go, what each subsite of a network has active and who administers it,
+// with the read-only script of ADR-0029: every administrator of the main site or of a subsite is
+// one finding, by login, with the subsites they administer; the super administrators are marked.
+func (r *run) network(ctx context.Context, result *model.Scan) error {
+	line, err := wpcli.Subsites().Remote(r.job.WPCLI, r.job.Site.Path)
+	var network wpcli.Network
+	if err == nil {
+		var res sshx.Result
+		if res, err = r.runInput(ctx, line, wpcli.SubsitesScript()); err == nil {
+			network, err = wpcli.ParseSubsites(res)
+		}
+	}
+	if err != nil {
+		if stops(ctx, err) {
+			return err
+		}
+		result.Findings = append(result.Findings, notChecked(checkAdministrators, err))
+		return nil
+	}
+	withWordfence, wordfenceKnown, err := r.wordfenceUsers(ctx, result)
+	if err != nil {
+		return err
+	}
+
+	type admin struct {
+		wpcli.SubsiteAdmin
+		super bool
+		sites []string
+	}
+	admins := map[string]*admin{}
+	var order []string
+	add := func(a wpcli.SubsiteAdmin) *admin {
+		if admins[a.Login] == nil {
+			admins[a.Login] = &admin{SubsiteAdmin: a}
+			order = append(order, a.Login)
+		}
+		return admins[a.Login]
+	}
+	for _, a := range network.Supers {
+		add(a).super = true
+	}
+	read := &model.NetworkRead{Plugins: network.Plugins, Sites: []model.SubsiteRead{}}
+	for _, s := range network.Sites {
+		site := model.SubsiteRead{BlogID: s.ID, Plugins: s.Plugins, Theme: s.Theme, ThemeName: s.ThemeName,
+			ThemeVersion: s.ThemeVersion, AdminEmail: s.Email, Admins: []string{}}
+		for _, a := range s.Admins {
+			add(a).sites = append(admins[a.Login].sites, strconv.Itoa(s.ID))
+			site.Admins = append(site.Admins, a.Login)
+		}
+		read.Sites = append(read.Sites, site)
+	}
+	result.Network = read
+
+	for _, login := range order {
+		a := admins[login]
+		state := twoFactorOff
+		switch {
+		case len(a.TwoFactor.Providers) > 0 || a.TwoFactor.WP2FA != "" || slices.Contains(withWordfence, a.ID):
+			state = twoFactorOn
+		case !wordfenceKnown:
+			state = twoFactorUnknown
+		}
+		facts := map[string]string{"email": a.Email, "two-factor": state}
+		if !a.Registered.IsZero() {
+			facts["registered"] = a.Registered.Format(time.DateOnly)
+		}
+		if a.super {
+			facts["super"] = "true"
+		}
+		if len(a.sites) > 0 {
+			facts["sites"] = strings.Join(a.sites, ",")
+		}
+		result.Findings = append(result.Findings, model.Finding{Kind: model.KindAdministrator, Subject: "user:" + login,
+			Level: twoFactorLevel(state), Facts: facts})
 	}
 	return nil
 }

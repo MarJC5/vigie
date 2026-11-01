@@ -10,6 +10,21 @@ type PHPWeb struct {
 	Unknown PHPWebUnknown
 }
 
+// NetworkRead is what each subsite of a network has active, and who administers it (ADR-0029).
+type NetworkRead struct {
+	Plugins []string      // slugs of the plugins active network-wide
+	Sites   []SubsiteRead // the subsites not archived, spam nor deleted
+}
+
+// SubsiteRead is one subsite as a scan read it.
+type SubsiteRead struct {
+	BlogID                         int
+	Plugins                        []string // slugs of the plugins active on it, besides the network's
+	Theme, ThemeName, ThemeVersion string
+	AdminEmail                     string
+	Admins                         []string // logins; their administrator findings tell their two-factor
+}
+
 // DebugLog is the log of PHP errors WordPress writes, as a scan found it (ADR-0028).
 type DebugLog struct {
 	Path    string // where it is, relative to the site's folder when within it; empty when there is none
@@ -103,9 +118,12 @@ type Scan struct {
 	AdminEmail        string
 	AdminEmailPending string
 	DebugLog          DebugLog
-	WPCLI             string // WP-CLI version
-	Home              string // the site's address
-	SiteURL           string // the WordPress address (siteurl), where wp-admin lives
+	// Network is what a scan of a network read of its subsites (ADR-0029); nil for a single site,
+	// or when the read failed (the administrators are then "not checked").
+	Network *NetworkRead
+	WPCLI   string // WP-CLI version
+	Home    string // the site's address
+	SiteURL string // the WordPress address (siteurl), where wp-admin lives
 
 	// Whether each update check is proven to have reached wordpress.org.
 	CoreChecked      bool

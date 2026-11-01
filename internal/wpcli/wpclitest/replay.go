@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strconv"
 	"testing"
 
@@ -63,6 +64,10 @@ var SecurityReads = map[string]wpcli.Command{
 	"option-new-admin-email":      wpcli.OptionGet("new_admin_email"),
 	"php-checks":                  wpcli.PHPChecks(),
 }
+
+// Networks are the recorded fixtures that are multisite networks: their scans read the subsites
+// with the script of ADR-0029, recorded as "subsites".
+var Networks = []string{"network"}
 
 // Derived are the security commands that follow from the recordings of a fixture, read by name:
 // the two-factor of each administrator, Wordfence's table with the prefix read, the PHP files in
@@ -158,6 +163,13 @@ func Replay(t testing.TB, fake *sshxtest.Fake, fixture, root, wp string) {
 			t.Fatal(err)
 		}
 		fake.Set(line, Recorded(t, fixture, name))
+	}
+	if slices.Contains(Networks, fixture) {
+		line, err := wpcli.Subsites().Remote(wp, root)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fake.Set(line, Recorded(t, fixture, "subsites"))
 	}
 }
 

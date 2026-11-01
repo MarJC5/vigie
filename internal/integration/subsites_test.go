@@ -36,7 +36,7 @@ func TestSubsitesScriptOnTheNetwork(t *testing.T) {
 	if !slices.Equal(ids, []int{1, 2, 3}) {
 		t.Errorf("subsites %v, want 1, 2 and 3 (4 is archived)", ids)
 	}
-	if !slices.Contains(network.Supers, "admin") {
+	if !slices.ContainsFunc(network.Supers, func(a wpcli.SubsiteAdmin) bool { return a.Login == "admin" && a.Email != "" }) {
 		t.Errorf("super administrators %v, want admin", network.Supers)
 	}
 	if len(network.Sites) > 0 && !slices.ContainsFunc(network.Sites[0].Admins, func(a wpcli.SubsiteAdmin) bool { return a.Login == "admin" }) {

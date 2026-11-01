@@ -28,8 +28,8 @@ func Subsites() Command {
 
 // Network is what the subsites script read of a network.
 type Network struct {
-	Plugins []string // slugs of the plugins active network-wide
-	Supers  []string // logins of the super administrators
+	Plugins []string       // slugs of the plugins active network-wide
+	Supers  []SubsiteAdmin // the super administrators
 	Sites   []Subsite
 }
 
@@ -53,9 +53,17 @@ func ParseSubsites(res sshx.Result) (Network, error) {
 	if err := Check(res); err != nil {
 		return Network{}, err
 	}
+	type account struct {
+		ID         int             `json:"id"`
+		Login      string          `json:"login"`
+		Email      string          `json:"email"`
+		Registered string          `json:"registered"`
+		Providers  json.RawMessage `json:"providers"` // a list, one name, or "" when none
+		WP2FA      string          `json:"wp2fa"`
+	}
 	var raw struct {
-		Plugins []string `json:"plugins"`
-		Supers  []string `json:"supers"`
+		Plugins []string  `json:"plugins"`
+		Supers  []account `json:"supers"`
 		Sites   []struct {
 			ID      int      `json:"id"`
 			Plugins []string `json:"plugins"`
@@ -64,23 +72,44 @@ func ParseSubsites(res sshx.Result) (Network, error) {
 				Name    string `json:"name"`
 				Version string `json:"version"`
 			} `json:"theme"`
-			Email  string `json:"email"`
-			Admins []struct {
-				ID         int             `json:"id"`
-				Login      string          `json:"login"`
-				Email      string          `json:"email"`
-				Registered string          `json:"registered"`
-				Providers  json.RawMessage `json:"providers"` // a list, one name, or "" when none
-				WP2FA      string          `json:"wp2fa"`
-			} `json:"admins"`
+			Email  string    `json:"email"`
+			Admins []account `json:"admins"`
 		} `json:"sites"`
 	}
 	if err := json.Unmarshal(bytes.TrimSpace(res.Stdout), &raw); err != nil {
 		return Network{}, fmt.Errorf("subsites: %w: %w", ErrUnexpectedOutput, err)
 	}
-	network := Network{Plugins: slugs(raw.Plugins), Supers: raw.Supers, Sites: []Subsite{}}
-	if network.Supers == nil {
-		network.Supers = []string{}
+	admin := func(a account) (SubsiteAdmin, error) {
+		admin := SubsiteAdmin{Account: Account{ID: a.ID, Login: a.Login, Email: a.Email}, TwoFactor: TwoFactor{WP2FA: a.WP2FA}}
+		if a.Registered != "" && a.Registered != "0000-00-00 00:00:00" {
+			at, err := time.ParseInLocation(time.DateTime, a.Registered, time.UTC)
+			if err != nil {
+				return admin, fmt.Errorf("user %s registered %q: %w", a.Login, a.Registered, ErrUnexpectedOutput)
+			}
+			admin.Registered = at
+		}
+		var list []string
+		var one string
+		switch {
+		case len(a.Providers) == 0 || string(a.Providers) == "null":
+		case json.Unmarshal(a.Providers, &list) == nil:
+			admin.TwoFactor.Providers = list
+		case json.Unmarshal(a.Providers, &one) == nil:
+			if one != "" {
+				admin.TwoFactor.Providers = []string{one}
+			}
+		default:
+			return admin, fmt.Errorf("two-factor providers of %s: %w", a.Login, ErrUnexpectedOutput)
+		}
+		return admin, nil
+	}
+	network := Network{Plugins: slugs(raw.Plugins), Supers: []SubsiteAdmin{}, Sites: []Subsite{}}
+	for _, a := range raw.Supers {
+		super, err := admin(a)
+		if err != nil {
+			return Network{}, err
+		}
+		network.Supers = append(network.Supers, super)
 	}
 	for _, s := range raw.Sites {
 		if s.ID <= 0 {
@@ -89,26 +118,9 @@ func ParseSubsites(res sshx.Result) (Network, error) {
 		site := Subsite{ID: s.ID, Plugins: slugs(s.Plugins), Theme: s.Theme.Slug, ThemeName: s.Theme.Name,
 			ThemeVersion: s.Theme.Version, Email: s.Email, Admins: []SubsiteAdmin{}}
 		for _, a := range s.Admins {
-			admin := SubsiteAdmin{Account: Account{ID: a.ID, Login: a.Login, Email: a.Email}, TwoFactor: TwoFactor{WP2FA: a.WP2FA}}
-			if a.Registered != "" && a.Registered != "0000-00-00 00:00:00" {
-				at, err := time.ParseInLocation(time.DateTime, a.Registered, time.UTC)
-				if err != nil {
-					return Network{}, fmt.Errorf("user %s registered %q: %w", a.Login, a.Registered, ErrUnexpectedOutput)
-				}
-				admin.Registered = at
-			}
-			var list []string
-			var one string
-			switch {
-			case len(a.Providers) == 0 || string(a.Providers) == "null":
-			case json.Unmarshal(a.Providers, &list) == nil:
-				admin.TwoFactor.Providers = list
-			case json.Unmarshal(a.Providers, &one) == nil:
-				if one != "" {
-					admin.TwoFactor.Providers = []string{one}
-				}
-			default:
-				return Network{}, fmt.Errorf("two-factor providers of %s: %w", a.Login, ErrUnexpectedOutput)
+			admin, err := admin(a)
+			if err != nil {
+				return Network{}, err
 			}
 			site.Admins = append(site.Admins, admin)
 		}

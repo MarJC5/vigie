@@ -220,6 +220,22 @@ func TestRecordSecurity(t *testing.T) {
 		}
 	}
 
+	// The subsites of the networks, read by the script of ADR-0029 over SSH, as Vigie sends it.
+	a := sshAccess(t)
+	for _, fixture := range wpclitest.Networks {
+		path := "~/" + strings.TrimPrefix(fixtureRoots[fixture], "/home/vigie/")
+		line, err := wpcli.Subsites().Remote("wp", path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res, err := a.runner(t, a.trusted(t)).RunInput(ctx, a.target(a.key), line, wpcli.SubsitesScript())
+		if err != nil {
+			t.Fatal(err)
+		}
+		writeRecording(t, filepath.Join(dir, fixture, "subsites.json"),
+			recorded{Args: []string{line}, Exit: res.ExitCode, Stdout: string(res.Stdout), Stderr: string(res.Stderr)})
+	}
+
 	// An option that does not exist.
 	line, err := wpcli.OptionGet("fixture_absent").Remote("wp", "~/sites/security")
 	if err != nil {

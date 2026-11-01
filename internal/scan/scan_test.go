@@ -133,6 +133,35 @@ func TestScanOfANetworkReadsItsSubsites(t *testing.T) {
 	if got.Outcome != model.ScanCompleted || len(subsites) != 4 {
 		t.Fatalf("scan = %q (%s), %d subsites; want completed with 4", got.Outcome, got.Error, len(subsites))
 	}
+	// What each subsite has (ADR-0029), from the bench's network: the archived one left out.
+	n := got.Network
+	if n == nil || !slices.Equal(n.Plugins, []string{"akismet"}) || len(n.Sites) != 3 {
+		t.Fatalf("network = %+v, want Akismet network-wide and 3 subsites", n)
+	}
+	alpha, beta := n.Sites[1], n.Sites[2]
+	if alpha.BlogID != 2 || !slices.Equal(alpha.Plugins, []string{"hello"}) || !slices.Contains(alpha.Admins, "marie") {
+		t.Errorf("alpha = %+v, want Hello Dolly and marie", alpha)
+	}
+	if beta.Theme != "twentytwentyfour" || beta.ThemeName != "Twenty Twenty-Four" || beta.AdminEmail == "" {
+		t.Errorf("beta = %+v, want Twenty Twenty-Four", beta)
+	}
+	// One finding per administrator, with their subsites; the super administrator first.
+	var admins []model.Finding
+	for _, f := range got.Findings {
+		if f.Kind == model.KindAdministrator {
+			admins = append(admins, f)
+		}
+	}
+	marie := find(t, got, model.KindAdministrator, "user:marie", "")
+	if marie.Level != model.LevelAttention || marie.Facts["two-factor"] != "off" || marie.Facts["sites"] != "2,3" || marie.Facts["super"] != "" {
+		t.Errorf("marie = %+v, want without two-factor on subsites 2 and 3", marie)
+	}
+	if admin := find(t, got, model.KindAdministrator, "user:admin", ""); admin.Facts["super"] != "true" || admin.Facts["sites"] != "1,2,3" {
+		t.Errorf("admin = %+v, want the super administrator of every subsite", admin)
+	}
+	if len(admins) != 2 || admins[0].Subject != "user:admin" {
+		t.Errorf("administrators = %+v, want admin (super) before marie", admins)
+	}
 }
 
 func TestScanStopsOnConnectionFailure(t *testing.T) {

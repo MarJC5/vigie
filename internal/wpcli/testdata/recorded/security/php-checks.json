@@ -3,6 +3,6 @@
     "'wp' 'transient' 'list' '--network' '--search=php_check_*' '--fields=name,expiration' '--format=json' '--path=sites/security' '--skip-plugins' '--skip-themes'"
   ],
   "exit": 0,
-  "stdout": "[{\"name\":\"php_check_20b1c6edcdb82a9f0e99fa9682c1c089\",\"expiration\":1794143487}]",
+  "stdout": "[{\"name\":\"php_check_20b1c6edcdb82a9f0e99fa9682c1c089\",\"expiration\":1794150946}]",
   "stderr": ""
 }

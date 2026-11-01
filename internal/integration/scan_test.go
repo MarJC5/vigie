@@ -86,6 +86,20 @@ func TestScanOverSSH(t *testing.T) {
 	if network.Outcome != model.ScanCompleted || len(subsites) != 4 {
 		t.Errorf("network: %q (%s), %d subsites; want 4", network.Outcome, network.Error, len(subsites))
 	}
+	// Each subsite read by the script over SSH (ADR-0029): marie, administrator of two subsites
+	// without two-factor, needs attention.
+	if n := network.Network; n == nil || len(n.Sites) != 3 || n.Sites[2].Theme != "twentytwentyfour" {
+		t.Errorf("network: subsites read %+v", n)
+	}
+	marie := false
+	for _, f := range network.Findings {
+		if f.Subject == "user:marie" && f.Level == model.LevelAttention && f.Facts["sites"] == "2,3" {
+			marie = true
+		}
+	}
+	if !marie {
+		t.Errorf("network: no finding for marie without two-factor on 2 and 3: %+v", network.Findings)
+	}
 
 	parent, _ := scanFixture(t, "~/sites/parent-config/public", false)
 	if parent.Outcome != model.ScanCompleted || parent.Home != "https://parent.example.test" {

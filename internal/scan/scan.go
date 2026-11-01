@@ -47,13 +47,13 @@ type Scanner struct {
 // checksums, the PHP files in its uploads.
 const filesSteps = 3
 
-// steps is the number of commands of a scan known before it starts, for the progress: 27, and the
-// subsites and super administrators of a network. The comparison of the files, each administrator,
-// each constant read and Wordfence add theirs once known. A theme in a plugin's folder takes two
-// more, read again with the plugins.
+// steps is the number of commands of a scan known before it starts, for the progress: 27; a
+// network reads its subsites' list too, and its administrators in one go (ADR-0029). The comparison
+// of the files, each administrator of a single site, each constant read and Wordfence add theirs
+// once known. A theme in a plugin's folder takes two more, read again with the plugins.
 func (j Job) steps() int {
 	if j.Site.Multisite {
-		return 29
+		return 28
 	}
 	return 27
 }
@@ -125,10 +125,19 @@ func (r *run) exec(ctx context.Context, cmd wpcli.Command, path string) (sshx.Re
 
 // run runs one command line within the host's limit and reports the progress.
 func (r *run) run(ctx context.Context, remote string) (sshx.Result, error) {
+	return r.runInput(ctx, remote, nil)
+}
+
+// runInput is run with a fixed text of Vigie's on the command's standard input.
+func (r *run) runInput(ctx context.Context, remote string, input []byte) (sshx.Result, error) {
 	var res sshx.Result
 	err := r.scanner.Limiter.Do(ctx, r.job.HostKey, r.job.Max, func() error {
 		var runErr error
-		res, runErr = r.scanner.Runner.Run(ctx, r.job.Target, remote)
+		if input != nil {
+			res, runErr = r.scanner.Runner.RunInput(ctx, r.job.Target, remote, input)
+		} else {
+			res, runErr = r.scanner.Runner.Run(ctx, r.job.Target, remote)
+		}
 		return runErr
 	})
 	r.done++
@@ -290,6 +299,12 @@ func sortFindings(findings []model.Finding) {
 	slices.SortStableFunc(findings, func(a, b model.Finding) int {
 		if c := cmp.Compare(slices.Index(levelOrder, a.Level), slices.Index(levelOrder, b.Level)); c != 0 {
 			return c
+		}
+		// The super administrators of a network before the other administrators (ADR-0029).
+		if a.Kind == model.KindAdministrator && b.Kind == model.KindAdministrator {
+			if c := cmp.Compare(b.Facts["super"], a.Facts["super"]); c != 0 {
+				return c
+			}
 		}
 		return cmp.Compare(a.Key(), b.Key())
 	})
