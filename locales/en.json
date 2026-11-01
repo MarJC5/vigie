@@ -543,7 +543,12 @@
       "confirmHost": "Delete the host",
       "confirmSite": "Delete the site",
       "confirmFolder": "Delete the folder",
-      "network": "network, {{count}} subsites"
+      "network": "network, {{count}} subsites",
+      "titleTag": "Remove “{{name}}” from every site?",
+      "leadTag_one": "The tag goes from its site, then from the list.",
+      "leadTag_other": "The tag goes from these {{count}} sites, then from the list.",
+      "keepTag": "The sites themselves do not change, in Vigie or on the servers.",
+      "confirmTag": "Remove the tag"
     },
     "host": {
       "title": "Edit the connection",
@@ -1364,6 +1369,32 @@
     "sites_one": "{{count}} site",
     "sites_other": "{{count}} sites",
     "create": "Create “{{tag}}”",
-    "new": "new"
+    "new": "new",
+    "menu": {
+      "scan": "Scan the sites",
+      "update": "Update the sites…",
+      "rename": "Rename the tag…",
+      "remove": "Remove from every site…"
+    },
+    "page": {
+      "scan": "Scan the sites",
+      "where": "Host",
+      "sites_one": "{{count}} site",
+      "sites_other": "{{count}} sites",
+      "hosts_one": "{{count}} host",
+      "hosts_other": "{{count}} hosts",
+      "folders_one": "{{count}} folder",
+      "folders_other": "{{count}} folders"
+    },
+    "rename": {
+      "title": "Rename “{{tag}}”",
+      "lead_one": "The new name replaces it on its site.",
+      "lead_other": "The new name replaces it on its {{count}} sites.",
+      "label": "Name",
+      "confirm": "Rename",
+      "mergeTitle": "“{{tag}}” already exists",
+      "merge_one": "Both become one tag, on {{count}} site.",
+      "merge_other": "Both become one tag, on {{count}} sites."
+    }
   }
 }

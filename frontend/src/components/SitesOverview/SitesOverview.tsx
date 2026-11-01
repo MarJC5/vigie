@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { findingText } from "../../lib/findings";
+import { whereOf } from "../../lib/tags";
 import type { ExtensionsAcross, Problem, SiteResultView, SiteRow } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { BulkSummary } from "../BulkSummary/BulkSummary";
 import { Button } from "../Button/Button";
@@ -15,7 +16,8 @@ import styles from "./SitesOverview.module.css";
 
 export interface SitesOverviewProps {
   title: string;
-  icon: "host" | "folder";
+  /** A tag's page lists sites from several hosts: the table says where each is. */
+  icon: "host" | "folder" | "tag";
   /** The connection of a host. */
   subtitle?: string;
   rows: SiteRow[];
@@ -179,6 +181,7 @@ export function SitesOverview({
                 label={t("host.table", { name: title })}
                 columns={{
                   site: t("host.col.site"),
+                  where: icon === "tag" ? t("tags.page.where") : undefined,
                   status: t("host.col.status"),
                   worst: t("host.col.worst"),
                   updates: t("host.col.updates"),
@@ -190,6 +193,7 @@ export function SitesOverview({
                   status: r.status,
                   worst: r.worst ? findingText(r.worst, t, i18n.language).title : "",
                   pending: r.pending,
+                  where: whereOf(r.path),
                 }))}
                 onSelect={onSelect}
                 onMenu={onSiteMenu}

@@ -126,3 +126,25 @@ export const PluginsTab: Story = {
     await expect(canvas.getAllByRole("list", { name: "Summary" }).length).toBeGreaterThan(0);
   },
 };
+
+// A tag's page (ADR-0025): its sites wherever they are, the table saying where each is.
+export const Tag: Story = {
+  args: {
+    title: "Client Dupont",
+    icon: "tag",
+    subtitle: "3 sites · 2 hosts · 2 folders",
+    scanLabel: "Scan the sites",
+    rows: [
+      ...hostRows.slice(0, 2),
+      { id: "shop", name: "shop-exemple.ch", path: "Personal/Managed VPS/shop-exemple.ch", status: "ok", wordpress: "7.1.4", phpCli: "8.3.26", pending: 0, worst: null },
+    ],
+    extensions: fn(async () => across),
+  },
+  play: async ({ canvas }) => {
+    const [table] = canvas.getAllByRole("table");
+    const t = within(table!);
+    await expect(t.getAllByRole("columnheader").map((h) => h.textContent)).toEqual(["Site", "Host", "Status", "Worst finding", "Updates"]);
+    await expect(t.getAllByRole("row")[3]).toHaveTextContent("shop-exemple.chPersonal / Managed VPS");
+    await expect(canvas.queryAllByRole("region", { name: "Notes" })).toHaveLength(0);
+  },
+};

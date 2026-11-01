@@ -14,6 +14,13 @@
   --vg-notice-tone: var(--vg-status-warn);
 }
 
+/* What to know that is no problem: the row's ground, no colored edge, the icon in gray. */
+.notice[data-tone="neutral"] {
+  --vg-notice-tone: var(--vg-text-muted);
+  background: var(--vg-surface-row);
+  box-shadow: none;
+}
+
 .icon {
   display: inline-flex;
   padding-top: 2px;

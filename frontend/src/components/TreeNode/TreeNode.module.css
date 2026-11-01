@@ -123,12 +123,23 @@
   text-overflow: ellipsis;
 }
 
+.tagIcon {
+  display: inline-flex;
+  flex: none;
+  color: var(--vg-text-muted);
+}
+
+/* Short of room, the name and the meta ("in the tags", "2 subsites") both give way, each by its
+   length, so neither is cut to a few letters. */
 .meta {
   margin-left: auto;
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
   font-size: var(--vg-text-caption);
   color: var(--vg-text-muted);
   white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* The updates waiting on a host's sites. */

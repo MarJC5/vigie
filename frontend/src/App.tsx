@@ -65,6 +65,8 @@ const editApi: EditApi = {
   SetAdminURL: Editor.SetAdminURL,
   SetNotes: Editor.SetNotes,
   SetTags: Editor.SetTags,
+  RenameTag: Editor.RenameTag,
+  RemoveTag: Editor.RemoveTag,
   TestConnection: HostWizard.TestConnection,
   Host: Editor.Host,
   EditHost: Editor.EditHost,

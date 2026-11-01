@@ -244,6 +244,8 @@ function fakeEdit(): EditApi {
     SetAdminURL: fn(async () => null),
     SetNotes: fn(async () => null),
     SetTags: fn(async () => null),
+    RenameTag: fn(async () => null),
+    RemoveTag: fn(async () => null),
     TestConnection: fn(async () => ({ phpVersion: "8.4.27", wpCli: "wp", wpCliVersion: "2.12.0", problem: null })),
     Host: fn(async () => ({ name: "Managed VPS", alias: "", hostname: "vps.example.test", port: 2222, user: "deploy", keyPath: "", wpCli: "wp", folderId: "personal", maxConcurrent: 0 })),
     EditHost: fn(async () => ({ keyCleared: false, problem: null })),

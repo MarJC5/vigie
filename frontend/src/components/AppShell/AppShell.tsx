@@ -20,6 +20,8 @@ import type {
   UpdatesState,
 } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { clock, day } from "../../lib/findings";
+import { hasTag, spread, tagId, tagOf, tagsGroupId } from "../../lib/tags";
+import { fold } from "../../lib/text";
 import { namesOf } from "../../lib/updates";
 import { AdminAddressDialog } from "../AdminAddressDialog/AdminAddressDialog";
 import { BulkDialog } from "../BulkDialog/BulkDialog";
@@ -35,6 +37,7 @@ import { InfoList, InfoRow } from "../InfoList/InfoList";
 import { type ColorChoice, Menu, type MenuEntry } from "../Menu/Menu";
 import { MoveDialog } from "../MoveDialog/MoveDialog";
 import { NavRail, type Section } from "../NavRail/NavRail";
+import { RenameTagDialog } from "../RenameTagDialog/RenameTagDialog";
 import { SearchField } from "../SearchField/SearchField";
 import { SiteOverview } from "../SiteOverview/SiteOverview";
 import { SitesOverview } from "../SitesOverview/SitesOverview";
@@ -70,6 +73,8 @@ export interface EditApi extends HostEditApi, FindSitesApi {
   SetAdminURL(id: string, address: string): Promise<Problem | null>;
   SetNotes(id: string, notes: string): Promise<Problem | null>;
   SetTags(id: string, tags: string[]): Promise<Problem | null>;
+  RenameTag(from: string, to: string): Promise<Problem | null>;
+  RemoveTag(tag: string): Promise<Problem | null>;
 }
 
 export interface AppShellProps {
@@ -135,7 +140,7 @@ interface Flow {
   follow: boolean;
 }
 
-type DialogKind = "move" | "delete" | "host" | "find";
+type DialogKind = "move" | "delete" | "host" | "find" | "renameTag";
 
 /** The main window: navigation rail, site manager pane and the detail of the selected item. */
 export function AppShell({
@@ -180,7 +185,8 @@ export function AppShell({
   const leave = (open: boolean, next: Set<string>) => {
     setPaneOpen(open);
     setFolded(next);
-    onTreeView?.({ hidden: !open, folded: nodes.filter((n) => next.has(n.id)).map((n) => n.id) });
+    const kept = nodes.filter((n) => next.has(n.id)).map((n) => n.id);
+    onTreeView?.({ hidden: !open, folded: next.has(tagsGroupId) ? [...kept, tagsGroupId] : kept });
   };
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState("");
@@ -189,6 +195,8 @@ export function AppShell({
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [editingId, setEditingId] = useState<string>();
   const [dialog, setDialog] = useState<{ kind: DialogKind; id: string } | null>(null);
+  // Tags changed: a tag's page reads its sites again.
+  const [tagEdits, setTagEdits] = useState(0);
   const [problem, setProblem] = useState<Problem | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [flow, setFlow] = useState<Flow | null>(null);
@@ -204,7 +212,18 @@ export function AppShell({
   // The connection test of a host: the stored connection, or the one being edited.
   const [hostTest, setHostTest] = useState<{ name: string; details: () => Promise<HostDetails> } | null>(null);
 
-  const byId = new Map(nodes.map((n) => [n.id, n]));
+  // A tag's page is a node of its own, addressed by tagId and not stored (ADR-0025).
+  const tagNodes = useMemo(
+    () =>
+      (tags ?? []).map(
+        (tag): Node => ({
+          id: tagId(tag.name), parentId: "", kind: "tag", name: tag.name, color: "none", ownColor: "none", path: `#${tag.name}`,
+          notes: "", tags: [], multisite: false, subsites: 0, status: "", updates: 0,
+        }),
+      ),
+    [tags],
+  );
+  const byId = new Map([...nodes, ...tagNodes].map((n) => [n.id, n]));
   const say = (p: Problem) => t(p.code, { message: p.detail });
 
   const openSearch = () => {
@@ -263,14 +282,16 @@ export function AppShell({
     };
   });
   useEffect(() => commands?.((action) => onCommand.current(action)), [commands]);
-  const selected = nodes.find((n) => n.id === selectedId);
+  const selected = selectedId ? byId.get(selectedId) : undefined;
   const running = scans.running ?? [];
   const left = running.reduce((n, r) => n + r.sites - r.done, 0);
 
-  // A node is being scanned when it, one of its parents, or everything is.
+  // A node is being scanned when it, one of its parents, or everything is; a site, also when one
+  // of its tags is.
   const scanning = (node: Node) => {
     const ids = new Set(running.map((r) => r.nodeId));
     if (ids.has("")) return true;
+    if (node.kind === "site" && [...ids].some((id) => tagOf(id) !== undefined && hasTag(node.tags, tagOf(id)!))) return true;
     for (let n: Node | undefined = node; n; n = nodes.find((p) => p.id === n!.parentId)) {
       if (ids.has(n.id)) return true;
     }
@@ -280,7 +301,9 @@ export function AppShell({
   // A node with a site in an update not over yet: it cannot be scanned or updated.
   const busySites = new Set(updates.sites ?? []);
   const updating = (node: Node) =>
-    node.kind === "site" ? busySites.has(node.id) : nodes.some((n) => busySites.has(n.id) && n.path.startsWith(`${node.path}/`));
+    node.kind === "site"
+      ? busySites.has(node.id)
+      : nodes.some((n) => busySites.has(n.id) && (node.kind === "tag" ? hasTag(n.tags, node.name) : n.path.startsWith(`${node.path}/`)));
   const scan = (id: string) => {
     const node = id ? byId.get(id) : undefined;
     if (id ? node && !updating(node) : busySites.size === 0) onScan?.(id);
@@ -320,7 +343,8 @@ export function AppShell({
     // In the folder itself, or next to a host or site; at the top level from the empty space.
     if (action === "newFolder") void createFolder(folderOf(id));
     if (action === "rename") setEditingId(id);
-    if (action === "move" || action === "delete" || action === "host" || action === "find") setDialog({ kind: action, id });
+    if (action === "move" || action === "delete" || action === "host" || action === "find" || action === "renameTag") setDialog({ kind: action, id });
+    if (action === "updateAll" && byId.get(id)) updateAll(byId.get(id)!);
     if (action === "test" && edit) setHostTest({ name: byId.get(id)?.name ?? "", details: () => edit.Host(id) });
     if (action === "admin") void data?.site(id).then((site) => setAdmin({ id, own: site.ownAdminUrl, computed: site.computedAdminUrl }));
   };
@@ -463,6 +487,7 @@ export function AppShell({
               <SiteTree
                 label={t("manager.label")}
                 nodes={nodes}
+                tags={tags}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
                 filter={query}
@@ -470,7 +495,8 @@ export function AppShell({
                 onCollapsedChange={(next) => leave(paneOpen, next)}
                 {...(edit && {
                   editingId,
-                  onEdit: setEditingId,
+                  // A tag is renamed in a dialog: it may merge with another.
+                  onEdit: (id: string) => (tagOf(id) !== undefined ? setDialog({ kind: "renameTag", id }) : setEditingId(id)),
                   onRename: (id: string, name: string) => {
                     setEditingId(undefined);
                     void run(() => edit.Rename(id, name));
@@ -506,7 +532,7 @@ export function AppShell({
               <Loaded
                 node={selected}
                 data={data}
-                revision={scans.completed + updates.completed + ignores}
+                revision={scans.completed + updates.completed + ignores + tagEdits}
                 scanning={scanning(selected)}
                 onScan={() => scan(selected.id)}
                 onSelect={setSelectedId}
@@ -529,11 +555,15 @@ export function AppShell({
                   })
                 }
                 usedTags={tags}
+                onOpenTag={(tag: string) => setSelectedId(tagId(tag))}
                 onSaveTags={
                   edit &&
                   (async (siteTags: string[]) => {
                     const refused = await edit.SetTags(selected.id, siteTags);
-                    if (!refused) await onChanged?.();
+                    if (!refused) {
+                      setTagEdits((n) => n + 1);
+                      await onChanged?.();
+                    }
                     return refused;
                   })
                 }
@@ -623,7 +653,27 @@ export function AppShell({
             setDialog(null);
             // The selection goes when it was the node or under it.
             for (let n = selected; n; n = byId.get(n.parentId)) if (n.id === dialogNode.id) setSelectedId(undefined);
-            void run(() => edit.Delete(dialogNode.id));
+            if (dialogNode.kind === "tag") setTagEdits((n) => n + 1);
+            void run(() => (dialogNode.kind === "tag" ? edit.RemoveTag(dialogNode.name) : edit.Delete(dialogNode.id)));
+          }}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {edit && dialog && dialogNode && dialog.kind === "renameTag" && (
+        <RenameTagDialog
+          tag={dialogNode.name}
+          tags={tags ?? []}
+          nodes={nodes}
+          onRename={async (name) => {
+            const refused = await edit.RenameTag(dialogNode.name, name);
+            if (refused) return refused;
+            setDialog(null);
+            // The page follows the tag: renamed onto another, it is that one's.
+            const merged = (tags ?? []).find((u) => fold(u.name) === fold(name.trim()) && fold(u.name) !== fold(dialogNode.name));
+            setSelectedId(tagId(merged?.name ?? name.trim().replace(/\s+/g, " ")));
+            setTagEdits((n) => n + 1);
+            await onChanged?.();
+            return null;
           }}
           onClose={() => setDialog(null)}
         />
@@ -720,6 +770,13 @@ function menuEntries(node: Node, nodes: Node[], t: T, canExport: boolean): MenuE
   const remove = (key: string, disabled = false) =>
     item("delete", t(key), "trash", { danger: true, shortcut: "⌘⌫", keyshortcuts: "Meta+Backspace", disabled });
   const newFolder = item("newFolder", t("edit.menu.newFolder"), "folder", { shortcut: "⇧⌘N", keyshortcuts: "Shift+Meta+N" });
+  if (node.kind === "tag") {
+    return [
+      item("scan", t("tags.menu.scan"), "refresh", { shortcut: "⌘R", keyshortcuts: "Meta+R" }), item("updateAll", t("tags.menu.update"), "update"),
+      separator, item("renameTag", t("tags.menu.rename"), "rename", { shortcut: "↩", keyshortcuts: "Enter" }),
+      separator, item("delete", t("tags.menu.remove"), "trash", { danger: true, shortcut: "⌘⌫", keyshortcuts: "Meta+Backspace" }),
+    ];
+  }
   if (node.kind === "site") {
     return [scan, newFolder, separator, rename, colors, item("admin", t("admin.menu"), "external"), separator, remove("edit.menu.deleteSite")];
   }
@@ -766,6 +823,7 @@ function Loaded({
   onSaveNotes,
   usedTags,
   onSaveTags,
+  onOpenTag,
 }: {
   node: Node;
   data: ShellData;
@@ -794,6 +852,8 @@ function Loaded({
   usedTags?: TagView[];
   /** Saves the tags of the site shown; without it, they are only read. */
   onSaveTags?: (tags: string[]) => Promise<Problem | null>;
+  /** Opens a tag's page. */
+  onOpenTag?: (tag: string) => void;
 }) {
   const { t } = useTranslation();
   const [view, setView] = useState<{ id: string; view: View }>();
@@ -814,6 +874,8 @@ function Loaded({
         }
         case "host":
           return { kind: "host", host: await data.host(node.id) };
+        case "tag":
+          return { kind: "tag", rows: await data.sites(node.id) };
       }
       return { kind: "folder", rows: await data.sites(node.id) };
     };
@@ -854,10 +916,36 @@ function Loaded({
         tags={node.tags ?? []}
         usedTags={usedTags}
         onSaveTags={onSaveTags}
+        onOpenTag={onOpenTag}
       />
     );
   }
   const bulkProps = { onUpdateAll, updating, bulk, onDismissBulk, onSiteMenu, notes: node.notes, onSaveNotes, onOpen, extensions };
+  if (v.kind === "tag") {
+    const where = spread(v.rows.map((r) => r.path));
+    const subtitle = [
+      t("tags.page.sites", { count: where.sites }),
+      t("tags.page.hosts", { count: where.hosts }),
+      ...(where.folders > 0 ? [t("tags.page.folders", { count: where.folders })] : []),
+    ].join(" · ");
+    // A tag has no notes of its own.
+    return (
+      <SitesOverview
+        title={node.name}
+        icon="tag"
+        subtitle={subtitle}
+        rows={v.rows}
+        scanLabel={t("tags.page.scan")}
+        scanning={scanning}
+        onScan={onScan}
+        onSelect={onSelect}
+        onMore={onMore}
+        {...bulkProps}
+        notes={undefined}
+        onSaveNotes={undefined}
+      />
+    );
+  }
   if (v.kind === "host") {
     const h = v.host;
     const subtitle = h.alias
@@ -893,7 +981,11 @@ function Loaded({
   );
 }
 
-type View = { kind: "site"; site: SiteView; history?: OperationView[] } | { kind: "host"; host: HostView } | { kind: "folder"; rows: SiteRow[] };
+type View =
+  | { kind: "site"; site: SiteView; history?: OperationView[] }
+  | { kind: "host"; host: HostView }
+  | { kind: "folder"; rows: SiteRow[] }
+  | { kind: "tag"; rows: SiteRow[] };
 
 function Detail({ node }: { node: Node }) {
   const { t } = useTranslation();
@@ -916,7 +1008,7 @@ function Summary({ node, nodes }: { node: Node; nodes: Node[] }) {
   const { t } = useTranslation();
   if (node.kind === "site") return null;
   const prefix = `${node.path}/`;
-  const count = nodes.filter((n) => n.kind === "site" && n.path.startsWith(prefix)).length;
+  const count = nodes.filter((n) => n.kind === "site" && (node.kind === "tag" ? hasTag(n.tags, node.name) : n.path.startsWith(prefix))).length;
   return <span>{t("bottom.sites", { name: node.name, count })}</span>;
 }
 

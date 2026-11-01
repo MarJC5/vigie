@@ -1,7 +1,8 @@
 import { type DragEvent, type KeyboardEvent, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { Node } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { Node, TagView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { tagId, tagsGroupId } from "../../lib/tags";
 import { fold } from "../../lib/text";
 import type { Status } from "../StatusDot/StatusDot";
 import { type SiteColor, TreeNode } from "../TreeNode/TreeNode";
@@ -29,6 +30,8 @@ export interface SiteTreeProps {
   onMove?: (id: string, folderId: string) => void;
   /** Follows a drag: the target folder ("" the root), undefined when there is none; null at the end. */
   onDragChange?: (drag: Drag | null) => void;
+  /** The tags in use, in a Tags group under the folders (ADR-0025); a tag's row has the ID tagId(tag). */
+  tags?: TagView[];
   /** The folders and hosts folded, when kept above the tree (so they outlive it); else its own. */
   collapsed?: Set<string>;
   onCollapsedChange?: (collapsed: Set<string>) => void;
@@ -45,7 +48,7 @@ export interface Drag {
 /** The site manager tree: folders and hosts fold, arrow keys move between visible items. */
 export function SiteTree({
   label, nodes, selectedId, onSelect, filter = "", editingId, onEdit, onRename, onCancelEdit, onDelete, onMenu, onMove,
-  onDragChange, collapsed: kept, onCollapsedChange,
+  onDragChange, tags, collapsed: kept, onCollapsedChange,
 }: SiteTreeProps) {
   const { t } = useTranslation();
   const [own, setOwn] = useState<Set<string>>(new Set());
@@ -126,6 +129,15 @@ export function SiteTree({
     return nodes.filter((n) => !hidden(n)).map((n) => ({ node: n, depth: depthOf(n), found: undefined as Found }));
   }, [nodes, collapsed, filter, editingId]);
 
+  // The Tags group, folded like a folder; a search keeps the tags that hold it, unfolded.
+  const tagRows = useMemo(() => {
+    const query = fold(filter.trim());
+    const list = (tags ?? []).filter((tag) => !query || fold(tag.name).includes(query));
+    if (list.length === 0) return [];
+    const open = query !== "" || !collapsed.has(tagsGroupId);
+    return [{ group: true, tag: undefined }, ...(open ? list.map((tag) => ({ group: false, tag })) : [])];
+  }, [tags, filter, collapsed]);
+
   const toggle = (id: string) => {
     const next = new Set(collapsed);
     if (!next.delete(id)) next.add(id);
@@ -134,7 +146,8 @@ export function SiteTree({
 
   const onKeyDown = (event: KeyboardEvent) => {
     const row = document.activeElement as HTMLElement | null;
-    const id = row?.dataset.id;
+    // The Tags group itself has no actions.
+    const id = row?.dataset.id === tagsGroupId ? undefined : row?.dataset.id;
     if (id && ((event.metaKey && event.key === "Backspace") || event.key === "Delete")) {
       event.preventDefault();
       onDelete?.(id);
@@ -156,7 +169,7 @@ export function SiteTree({
     }
   };
 
-  const hasSelection = visible.some(({ node }) => node.id === selectedId);
+  const hasSelection = visible.some(({ node }) => node.id === selectedId) || tagRows.some((r) => r.tag && tagId(r.tag.name) === selectedId);
 
   return (
     <div
@@ -210,6 +223,40 @@ export function SiteTree({
           }
         />
       ))}
+      {tagRows.map((r, index) =>
+        r.tag ? (
+          <TreeNode
+            key={tagId(r.tag.name)}
+            kind="tag"
+            name={r.tag.name}
+            depth={1}
+            selected={tagId(r.tag.name) === selectedId}
+            meta={String(r.tag.sites)}
+            itemId={tagId(r.tag.name)}
+            onSelect={() => onSelect(tagId(r.tag!.name))}
+            onEdit={onEdit && (() => onEdit(tagId(r.tag!.name)))}
+            onContextMenu={
+              onMenu &&
+              ((event) => {
+                event.preventDefault();
+                onMenu(tagId(r.tag!.name), { x: event.clientX, y: event.clientY });
+              })
+            }
+          />
+        ) : (
+          <TreeNode
+            key={tagsGroupId}
+            kind="folder"
+            name={t("tags.label")}
+            depth={0}
+            expanded={filter.trim() !== "" || !collapsed.has(tagsGroupId)}
+            tabbable={!hasSelection && visible.length === 0 && index === 0}
+            itemId={tagsGroupId}
+            onSelect={() => toggle(tagsGroupId)}
+            onToggle={() => toggle(tagsGroupId)}
+          />
+        ),
+      )}
     </div>
   );
 }

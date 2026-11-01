@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, fireEvent, fn, userEvent, waitFor, within } from "storybook/test";
 
-import { sampleTree } from "../../fixtures/tree";
+import { sampleTags, sampleTree } from "../../fixtures/tree";
 import { SiteTree } from "./SiteTree";
 
 function Controlled() {
@@ -208,5 +208,35 @@ export const DropAtTheRoot: Story = {
     await waitFor(() => expect(tree).toHaveAttribute("data-drop-target", "true"));
     fireEvent.drop(tree!, { dataTransfer: data });
     await expect(args.onMove).toHaveBeenCalledWith("vps", "");
+  },
+};
+
+// The Tags group under the folders (ADR-0025): a tag opens its page, its menu; the group folds.
+export const Tags: Story = {
+  args: { tags: sampleTags, selectedId: "tag:Prioritaire", onSelect: fn(), onMenu: fn() },
+  play: async ({ canvas, args }) => {
+    const [tree] = canvas.getAllByRole("tree");
+    const rows = within(tree!);
+    const group = rows.getByRole("treeitem", { name: "Tags" });
+    await expect(group).toHaveAttribute("aria-expanded", "true");
+    const tag = rows.getByRole("treeitem", { name: "Contrat de maintenance 6" });
+    await expect(rows.getByRole("treeitem", { name: "Prioritaire 2" })).toHaveAttribute("aria-selected", "true");
+    await userEvent.click(tag);
+    await expect(args.onSelect).toHaveBeenCalledWith("tag:Contrat de maintenance");
+    fireEvent.contextMenu(tag, { clientX: 40, clientY: 300 });
+    await expect(args.onMenu).toHaveBeenCalledWith("tag:Contrat de maintenance", { x: 40, y: 300 });
+    await userEvent.click(group);
+    await expect(group).toHaveAttribute("aria-expanded", "false");
+    await expect(rows.queryByRole("treeitem", { name: /^Prioritaire/ })).toBeNull();
+  },
+};
+
+// The search keeps the tags that hold what is typed.
+export const TagsFound: Story = {
+  args: { tags: sampleTags, filter: "prio" },
+  play: async ({ canvas }) => {
+    const [tree] = canvas.getAllByRole("tree");
+    const names = within(tree!).getAllByRole("treeitem").map((r) => r.textContent);
+    await expect(names).toEqual(["Clients", "Shared hosting5", "boulangerie-exemple.chin the tags", "Tags", "Prioritaire2", "Priorité basse1"]);
   },
 };

@@ -44,3 +44,20 @@ export const AFolderNotEmpty: Story = {
     await expect(within(dialog!).queryByRole("button", { name: "Delete the folder" })).toBeNull();
   },
 };
+
+// A tag is removed from every site that has it, listed with where each is (ADR-0025).
+export const ATag: Story = {
+  args: {
+    node: { id: "tag:Client Dupont", parentId: "", kind: "tag", name: "Client Dupont", color: "none", ownColor: "none", path: "#Client Dupont",
+      notes: "", tags: [], multisite: false, subsites: 0, status: "", updates: 0 },
+  },
+  play: async ({ canvas, args }) => {
+    const dialog = canvas.getAllByRole("dialog", { name: "Remove “Client Dupont” from every site?" }).find((d) => d.contains(document.activeElement))!;
+    await expect(dialog).toHaveAccessibleDescription("The tag goes from these 2 sites, then from the list.");
+    const sites = within(dialog).getAllByRole("listitem");
+    await expect(sites.map((s) => s.textContent)).toEqual(["atelier-exemple.chClients / Shared hosting", "boulangerie-exemple.chClients / Shared hosting"]);
+    await expect(within(dialog).getByText("The sites themselves do not change, in Vigie or on the servers.")).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Remove the tag" }));
+    await expect(args.onDelete).toHaveBeenCalled();
+  },
+};

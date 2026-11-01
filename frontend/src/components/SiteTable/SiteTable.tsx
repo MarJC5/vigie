@@ -12,11 +12,14 @@ export interface SiteRowData {
   /** The worst finding not set aside, in words; empty when none. */
   worst: string;
   pending: number;
+  /** Its folders and host, when the table has the column. */
+  where?: string;
 }
 
 export interface SiteTableProps {
   label: string;
-  columns: { site: string; status: string; worst: string; updates: string };
+  /** where: its folders and host, for sites from several hosts (a tag's). */
+  columns: { site: string; where?: string; status: string; worst: string; updates: string };
   notScanned: string;
   rows: SiteRowData[];
   onSelect: (id: string) => void;
@@ -67,6 +70,7 @@ export function SiteTable({ label, columns, notScanned, rows, onSelect, onMenu }
         <thead>
           <tr>
             {header("site", columns.site)}
+            {columns.where && <th scope="col">{columns.where}</th>}
             {header("status", columns.status)}
             <th scope="col">{columns.worst}</th>
             {header("updates", columns.updates)}
@@ -89,6 +93,7 @@ export function SiteTable({ label, columns, notScanned, rows, onSelect, onMenu }
                   {row.name}
                 </button>
               </td>
+              {columns.where && <td className={styles.muted}>{row.where}</td>}
               <td>{row.status ? <StatusDot status={row.status as Status} withLabel /> : <span className={styles.muted}>{notScanned}</span>}</td>
               <td className={`${styles.muted} ${styles.worst}`} title={row.worst || undefined}>
                 {row.worst}

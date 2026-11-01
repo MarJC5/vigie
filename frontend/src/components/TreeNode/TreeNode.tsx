@@ -8,7 +8,8 @@ import styles from "./TreeNode.module.css";
 export type SiteColor = "red" | "green" | "blue" | "yellow" | "cyan" | "magenta" | "orange";
 
 export interface TreeNodeProps {
-  kind: "folder" | "host" | "site";
+  /** A tag's row opens the page of its sites (ADR-0025). */
+  kind: "folder" | "host" | "site" | "tag";
   name: string;
   /** 0 at the root. */
   depth: number;
@@ -55,7 +56,7 @@ export function TreeNode({
   onDragStart, onDragEnd, onDragOver, onDrop, onContextMenu,
 }: TreeNodeProps) {
   const { t } = useTranslation();
-  const branch = kind !== "site";
+  const branch = kind === "folder" || kind === "host";
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.key === "Enter" && selected && onEdit) {
       event.preventDefault();
@@ -69,8 +70,9 @@ export function TreeNode({
     }
   };
   const style = {
-    // A site's mark sits in the column of its host's tile (past the host's caret and gap).
-    "--vg-node-indent": `${depth * 14 + (branch ? 0 : 6)}px`,
+    // A site's mark sits in the column of its host's tile (past the host's caret and gap); a tag's
+    // icon in the column of a host's caret.
+    "--vg-node-indent": `${depth * 14 + (kind === "site" ? 6 : 0)}px`,
     ...(color ? { "--vg-node-color": `var(--vg-site-${color})` } : {}),
   } as CSSProperties;
 
@@ -113,6 +115,11 @@ export function TreeNode({
       {kind === "host" && (
         <span className={styles.tile}>
           <Icon name="host" size={14} />
+        </span>
+      )}
+      {kind === "tag" && (
+        <span className={styles.tagIcon}>
+          <Icon name="tag" size={14} />
         </span>
       )}
       {status && (

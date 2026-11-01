@@ -568,7 +568,13 @@
       "confirmHost": "Supprimer l'hébergement",
       "confirmSite": "Supprimer le site",
       "confirmFolder": "Supprimer le dossier",
-      "network": "réseau, {{count}} sous-sites"
+      "network": "réseau, {{count}} sous-sites",
+      "titleTag": "Retirer « {{name}} » de tous les sites ?",
+      "leadTag_one": "L'étiquette disparaît de son site, puis de la liste.",
+      "leadTag_other": "L'étiquette disparaît de ces {{count}} sites, puis de la liste.",
+      "leadTag_many": "L'étiquette disparaît de ces {{count}} sites, puis de la liste.",
+      "keepTag": "Les sites eux-mêmes ne changent pas, ni dans Vigie ni sur les serveurs.",
+      "confirmTag": "Retirer l'étiquette"
     },
     "host": {
       "title": "Modifier la connexion",
@@ -1422,6 +1428,37 @@
     "sites_many": "{{count}} sites",
     "sites_other": "{{count}} sites",
     "create": "Créer « {{tag}} »",
-    "new": "nouvelle"
+    "new": "nouvelle",
+    "menu": {
+      "scan": "Relever les sites",
+      "update": "Mettre à jour les sites…",
+      "rename": "Renommer l'étiquette…",
+      "remove": "Retirer de tous les sites…"
+    },
+    "page": {
+      "scan": "Relever les sites",
+      "where": "Hébergement",
+      "sites_one": "{{count}} site",
+      "sites_other": "{{count}} sites",
+      "sites_many": "{{count}} sites",
+      "hosts_one": "{{count}} hébergement",
+      "hosts_other": "{{count}} hébergements",
+      "hosts_many": "{{count}} hébergements",
+      "folders_one": "{{count}} dossier",
+      "folders_other": "{{count}} dossiers",
+      "folders_many": "{{count}} dossiers"
+    },
+    "rename": {
+      "title": "Renommer « {{tag}} »",
+      "lead_one": "Le nouveau nom remplace l'ancien sur son site.",
+      "lead_other": "Le nouveau nom remplace l'ancien sur ses {{count}} sites.",
+      "lead_many": "Le nouveau nom remplace l'ancien sur ses {{count}} sites.",
+      "label": "Nom",
+      "confirm": "Renommer",
+      "mergeTitle": "« {{tag}} » existe déjà",
+      "merge_one": "Les deux deviennent une seule étiquette, sur {{count}} site.",
+      "merge_other": "Les deux deviennent une seule étiquette, sur {{count}} sites.",
+      "merge_many": "Les deux deviennent une seule étiquette, sur {{count}} sites."
+    }
   }
 }

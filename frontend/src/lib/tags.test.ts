@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { tagChoices } from "./tags";
+import { hasTag, spread, tagChoices, tagId, tagOf, whereOf } from "./tags";
 import { fold } from "./text";
 
 const used = [
@@ -29,5 +29,19 @@ describe("tags", () => {
     expect(tagChoices(used, [], " PRIORITAIRE ")).toEqual([{ name: "Prioritaire", sites: 2, isNew: false }]);
     expect(tagChoices(used, ["Client Dupont"], "client dupont")).toEqual([]);
     expect(tagChoices(used, [], "  ")).toEqual([]);
+  });
+});
+
+describe("a tag's page", () => {
+  it("is addressed by the tag", () => {
+    expect(tagId("Contrat")).toBe("tag:Contrat");
+    expect(tagOf("tag:Contrat")).toBe("Contrat");
+    expect(tagOf("clients")).toBeUndefined();
+  });
+
+  it("says where its sites are", () => {
+    expect(whereOf("Clients/Shared hosting/atelier-exemple.ch")).toBe("Clients / Shared hosting");
+    expect(spread(["Clients/Shared/a", "Clients/Shared/b", "Clients/VPS/c", "Personal/Other/d", "Solo/e"])).toEqual({ sites: 5, hosts: 4, folders: 2 });
+    expect(hasTag(["Priorité"], "PRIORITE")).toBe(true);
   });
 });
