@@ -126,6 +126,9 @@ func (s *Scanner) start(nodeID string, opts workspace.ScanOptions) *Problem {
 			}
 			s.OnScanned(tree, before, after, changes)
 		}
+		// The history kept in check before the end is told (ADR-0031): what the window reads next is
+		// pruned already. A failure is left for the next run.
+		_, _ = s.ws.Prune(context.WithoutCancel(ctx))
 		s.mu.Lock()
 		delete(s.running, nodeID)
 		for i, id := range s.order {

@@ -270,6 +270,8 @@ func scanTarget(ctx context.Context, env Env, ws *workspace.Workspace, on target
 	if err != nil {
 		return env.fail(on.explain(env, err))
 	}
+	// The history kept in check after the run (ADR-0031); a failure is left for the next one.
+	_, _ = ws.Prune(context.WithoutCancel(ctx))
 	scans := make([]model.Scan, len(results))
 	for i, r := range results {
 		scans[i] = r.Scan

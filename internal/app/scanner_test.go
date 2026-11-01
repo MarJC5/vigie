@@ -243,3 +243,29 @@ func TestNoUpdateWhileScanning(t *testing.T) {
 		t.Errorf("Update after the scan = %+v, want it no longer refused for the scan", p)
 	}
 }
+
+// After a run, the history is kept in check (ADR-0031): a scan of a site older than a year is gone,
+// the scans of the run stay.
+func TestARunPrunesTheHistory(t *testing.T) {
+	ws, db, host := benchSites(t, sshxtest.NewFake())
+	ctx := context.Background()
+	tree, err := db.LoadTree(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	site := tree.SitesUnder(model.Node{Kind: model.KindHost, ID: host.ID})[0]
+	old := model.Scan{ID: model.NewID(), SiteID: site.ID, Started: time.Now().Add(-400 * 24 * time.Hour), Finished: time.Now().Add(-400 * 24 * time.Hour),
+		Outcome: model.ScanFailed, Failure: "refused", Recorded: true, RecordedStatus: model.StatusUnknown, RecordedChanges: []model.Change{}}
+	if err := db.SaveScan(ctx, old); err != nil {
+		t.Fatal(err)
+	}
+	ev := newEvents()
+	if p := app.NewScanner(ws, ev.emit).Scan(host.ID.String()); p != nil {
+		t.Fatal(p)
+	}
+	ev.idle(t)
+	scans, err := db.Scans(ctx, site.ID)
+	if err != nil || len(scans) != 1 || scans[0].ID == old.ID {
+		t.Fatalf("scans of the site = %d, %v; want the run's only", len(scans), err)
+	}
+}

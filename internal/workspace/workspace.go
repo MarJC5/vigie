@@ -284,6 +284,11 @@ func (w *Workspace) prepare(ctx context.Context, r *Scanned, previous model.Scan
 	return nil
 }
 
+// Prune keeps the history in check (ADR-0031), after a run; a failure is left for the next one.
+func (w *Workspace) Prune(ctx context.Context) (store.PruneReport, error) {
+	return w.db.Prune(ctx, w.deps.Now())
+}
+
 // everythingScannedSetting holds when the latest complete scan of everything ended.
 const everythingScannedSetting = "scan.everything"
 
