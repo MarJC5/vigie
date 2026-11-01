@@ -1,4 +1,4 @@
-import { Browser, Events } from "@wailsio/runtime";
+import { Browser, Clipboard, Events } from "@wailsio/runtime";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { I18nextProvider } from "react-i18next";
 
@@ -61,6 +61,7 @@ const editApi: EditApi = {
   Move: Editor.Move,
   SetColor: Editor.SetColor,
   Delete: Editor.Delete,
+  SetAdminURL: Editor.SetAdminURL,
   Host: Editor.Host,
   EditHost: Editor.EditHost,
   HostKeys: HostWizard.HostKeys,
@@ -91,6 +92,7 @@ const securityApi: SecurityApi = { Ignore: Security.Ignore, Unignore: Security.U
 
 // Links open in the user's browser, never in the window.
 const openURL = (href: string) => void Browser.OpenURL(href);
+const copyText = (text: string) => Clipboard.SetText(text);
 
 // The commands of the native menu bar.
 const menuCommands = (handler: (action: string) => void) => Events.On(VigieMenu, (event) => handler(event.data.action));
@@ -134,6 +136,7 @@ export function App() {
   const [background, setBackground] = useState<BackgroundSettings>({ on: false, autoScan: 0, notify: false });
   const [loginItem, setLoginItem] = useState<LoginItemState>({ supported: false, on: false });
   const [nextScan, setNextScan] = useState("");
+  const [canOpenSSH, setCanOpenSSH] = useState(false);
   // The Activity page: its days, its filter, the journal read.
   const [journal, setJournal] = useState<Journal>();
   const [journalDays, setJournalDays] = useState(30);
@@ -148,6 +151,7 @@ export function App() {
       setLoaded({ i18n, nodes: tree.nodes ?? [], version, theme: theme as Theme });
     });
     void Security.Lookups().then(setLookups);
+    void SiteManager.CanOpenSSH().then(setCanOpenSSH);
     void Preferences.Background().then(setBackground);
     void LoginItem.State().then(setLoginItem);
     void Scanner.State().then(setScans);
@@ -275,6 +279,8 @@ export function App() {
           onCheckFiles={(nodeId) => scan(nodeId, true)}
           security={securityApi}
           onOpen={openURL}
+          onCopy={copyText}
+          canOpenSSH={canOpenSSH}
           section={section}
           onSection={setSection}
           settingsPage={

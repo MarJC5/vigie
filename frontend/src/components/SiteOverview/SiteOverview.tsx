@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { FindingView, OperationView, ScanView, SiteView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
@@ -10,6 +10,7 @@ import { DetailHeader } from "../DetailHeader/DetailHeader";
 import { Dialog } from "../Dialog/Dialog";
 import { InfoList, InfoRow } from "../InfoList/InfoList";
 import { Notice } from "../Notice/Notice";
+import { type QuickLink, QuickLinks } from "../QuickLinks/QuickLinks";
 import { SecurityPanel } from "../SecurityPanel/SecurityPanel";
 import { StatusDot } from "../StatusDot/StatusDot";
 import { TabBar } from "../TabBar/TabBar";
@@ -41,8 +42,12 @@ export interface SiteOverviewProps {
   /** Opens the dialog that sets a finding aside; without it, findings are only listed. */
   onIgnore?: (finding: FindingView) => void;
   onRestore?: (finding: FindingView) => void;
-  /** Opens an address in the browser. */
+  /** Opens an address in the browser, or an ssh:// address in the user's terminal. */
   onOpen?: (href: string) => void;
+  /** Puts a text on the clipboard; without it, no "Copy SSH command". */
+  onCopy?: (text: string) => Promise<unknown> | void;
+  /** The system opens ssh:// addresses in a terminal: "SSH terminal" is offered. */
+  terminal?: boolean;
 }
 
 /** A site with its latest scan: an overview, the updates waiting, and the history of its updates. */
@@ -62,6 +67,8 @@ export function SiteOverview({
   onIgnore,
   onRestore,
   onOpen,
+  onCopy,
+  terminal = false,
 }: SiteOverviewProps) {
   const { t, i18n } = useTranslation();
   const [tab, setTab] = useState("overview");
@@ -79,11 +86,33 @@ export function SiteOverview({
   const completed = scan?.outcome === "completed";
   const toLookAt = completed && scan ? scan.counts.urgent + scan.counts.attention : 0;
 
+  // "Copied" for two seconds after the SSH command was copied.
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+  // The quick links (ADR-0023): the site, its dashboard, a shell on its account.
+  const links: QuickLink[] = [];
+  if (onOpen && site.url) links.push({ label: t("site.openSite"), icon: "globe", onClick: () => onOpen(site.url) });
+  // The admin address from the Go side: the user's, else the WordPress address followed by /wp-admin/.
+  if (onOpen && site.adminUrl) links.push({ label: t("site.wpAdmin"), icon: "external", onClick: () => onOpen(site.adminUrl) });
+  if (onOpen && terminal && site.sshUrl) links.push({ label: t("site.terminal"), icon: "terminal", onClick: () => onOpen(site.sshUrl) });
+  if (onCopy && site.sshCommand) {
+    links.push({
+      label: copied ? t("site.copied") : t("site.copySsh"),
+      icon: copied ? "check" : "copy",
+      onClick: () => void Promise.resolve(onCopy(site.sshCommand)).then(() => setCopied(true)),
+    });
+  }
+
   return (
     <div className={styles.overview}>
       <DetailHeader
         title={site.name}
         meta={scan ? t("site.lastScan", { when: since(scan.finished, i18n.language, now) }) : undefined}
+        links={<QuickLinks label={t("site.links")} links={links} />}
       >
         {onMore && (
           <Button

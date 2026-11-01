@@ -13,6 +13,33 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+// Under the title, the quick links (ADR-0023): the site, its dashboard, a shell on its account.
+export const QuickLinks: Story = {
+  args: { onOpen: fn(), onCopy: fn(async () => {}), terminal: true },
+  play: async ({ canvas, args }) => {
+    const [links] = canvas.getAllByRole("list", { name: "Site links" });
+    const row = within(links!);
+    await userEvent.click(row.getByRole("button", { name: "Open site" }));
+    await expect(args.onOpen).toHaveBeenCalledWith("https://boulangerie-exemple.ch");
+    await userEvent.click(row.getByRole("button", { name: "wp-admin" }));
+    await expect(args.onOpen).toHaveBeenCalledWith("https://boulangerie-exemple.ch/wp-admin/");
+    await userEvent.click(row.getByRole("button", { name: "SSH terminal" }));
+    await expect(args.onOpen).toHaveBeenCalledWith("ssh://u12ab@ssh.example-host.ch:22");
+    await userEvent.click(row.getByRole("button", { name: "Copy SSH command" }));
+    await expect(args.onCopy).toHaveBeenCalledWith(`ssh -t u12ab@ssh.example-host.ch "cd 'sites/boulangerie' && exec \\$SHELL -l"`);
+    await expect(await row.findByRole("button", { name: "Command copied" })).toBeVisible();
+  },
+};
+
+// Without a handler for ssh:// addresses, no terminal; without an address, no site nor wp-admin.
+export const QuickLinksWithoutTerminal: Story = {
+  args: { site: newSite, onOpen: fn(), onCopy: fn(), terminal: false },
+  play: async ({ canvas }) => {
+    const [links] = canvas.getAllByRole("list", { name: "Site links" });
+    await expect(within(links!).getAllByRole("button").map((b) => b.textContent)).toEqual(["Copy SSH command"]);
+  },
+};
+
 export const NeedsAttention: Story = {
   play: async ({ canvas, args }) => {
     await expect(canvas.getAllByRole("heading", { level: 1, name: "boulangerie-exemple.ch" })).toHaveLength(2);

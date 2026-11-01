@@ -17,6 +17,7 @@ import type {
 } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { clock, day } from "../../lib/findings";
 import { namesOf } from "../../lib/updates";
+import { AdminAddressDialog } from "../AdminAddressDialog/AdminAddressDialog";
 import { BulkDialog } from "../BulkDialog/BulkDialog";
 import { Button } from "../Button/Button";
 import { DeleteDialog } from "../DeleteDialog/DeleteDialog";
@@ -59,6 +60,7 @@ export interface EditApi extends HostEditApi, FindSitesApi {
   Move(id: string, folderId: string): Promise<Problem | null>;
   SetColor(id: string, color: string): Promise<Problem | null>;
   Delete(id: string): Promise<Problem | null>;
+  SetAdminURL(id: string, address: string): Promise<Problem | null>;
 }
 
 export interface AppShellProps {
@@ -100,6 +102,10 @@ export interface AppShellProps {
   security?: SecurityApi;
   /** Opens an address in the browser. */
   onOpen?: (href: string) => void;
+  /** Puts a text on the clipboard (the SSH command of a site). */
+  onCopy?: (text: string) => Promise<unknown> | void;
+  /** The system opens ssh:// addresses in a terminal. */
+  canOpenSSH?: boolean;
   /** When the next automatic scan is due (RFC 3339), at the foot of the site list; none while off. */
   nextScan?: string;
 }
@@ -141,6 +147,8 @@ export function AppShell({
   onExport,
   security,
   onOpen,
+  onCopy,
+  canOpenSSH,
   nextScan,
 }: AppShellProps) {
   const { t } = useTranslation();
@@ -166,6 +174,8 @@ export function AppShell({
   const [ignoring, setIgnoring] = useState<{ site: SiteView; finding: FindingView; problem: Problem | null } | null>(null);
   // Grows when an ignore changes: the detail is read again.
   const [ignores, setIgnores] = useState(0);
+  // The admin address of a site being given, with the site's own and computed ones.
+  const [admin, setAdmin] = useState<{ id: string; own: string; computed: string } | null>(null);
 
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const say = (p: Problem) => t(p.code, { message: p.detail });
@@ -284,6 +294,7 @@ export function AppShell({
     if (action === "newFolder") void createFolder(folderOf(id));
     if (action === "rename") setEditingId(id);
     if (action === "move" || action === "delete" || action === "host" || action === "find") setDialog({ kind: action, id });
+    if (action === "admin") void data?.site(id).then((site) => setAdmin({ id, own: site.ownAdminUrl, computed: site.computedAdminUrl }));
   };
 
   const menuNode = menu ? byId.get(menu.id) : undefined;
@@ -341,7 +352,7 @@ export function AppShell({
     );
   };
 
-  const inert = (dialog !== null || bulkDialog !== null || ignoring !== null) || undefined;
+  const inert = (dialog !== null || bulkDialog !== null || ignoring !== null || admin !== null) || undefined;
 
   const ignore = async (untilVersion: string, reason: string) => {
     if (!security || !ignoring) return;
@@ -477,6 +488,8 @@ export function AppShell({
                 onIgnore={security && ((site, finding) => setIgnoring({ site, finding, problem: null }))}
                 onRestore={security && ((site, finding) => void restore(site, finding))}
                 onOpen={onOpen}
+                onCopy={onCopy}
+                terminal={canOpenSSH}
                 {...(updatesApi && {
                   onUpdate: (site: SiteView, keys: Set<string>) =>
                     setFlow({ site: { id: site.id, name: site.name }, keys, names: namesOf(site.scan?.updates ?? []), follow: false }),
@@ -568,6 +581,21 @@ export function AppShell({
           onClose={() => setDialog(null)}
         />
       )}
+      {edit && admin && (
+        <AdminAddressDialog
+          own={admin.own}
+          computed={admin.computed}
+          onClose={() => setAdmin(null)}
+          onSave={async (address) => {
+            const refused = await edit.SetAdminURL(admin.id, address);
+            if (!refused) {
+              setAdmin(null);
+              setIgnores((n) => n + 1); // the site's page reads its address again
+            }
+            return refused;
+          }}
+        />
+      )}
       {edit && dialog && dialogNode && dialog.kind === "host" && (
         <HostDialog
           api={edit}
@@ -629,7 +657,7 @@ function menuEntries(node: Node, nodes: Node[], t: T, canExport: boolean): MenuE
     item("delete", t(key), "trash", { danger: true, shortcut: "⌘⌫", keyshortcuts: "Meta+Backspace", disabled });
   const newFolder = item("newFolder", t("edit.menu.newFolder"), "folder", { shortcut: "⇧⌘N", keyshortcuts: "Shift+Meta+N" });
   if (node.kind === "site") {
-    return [scan, newFolder, separator, rename, colors, separator, remove("edit.menu.deleteSite")];
+    return [scan, newFolder, separator, rename, colors, item("admin", t("admin.menu"), "external"), separator, remove("edit.menu.deleteSite")];
   }
   const exported = canExport ? [item("export", t("edit.menu.export"), "archive")] : [];
   if (node.kind === "host") {
@@ -669,6 +697,8 @@ function Loaded({
   onIgnore,
   onRestore,
   onOpen,
+  onCopy,
+  terminal,
 }: {
   node: Node;
   data: ShellData;
@@ -690,6 +720,8 @@ function Loaded({
   onIgnore?: (site: SiteView, finding: FindingView) => void;
   onRestore?: (site: SiteView, finding: FindingView) => void;
   onOpen?: (href: string) => void;
+  onCopy?: (text: string) => Promise<unknown> | void;
+  terminal?: boolean;
 }) {
   const { t } = useTranslation();
   const [view, setView] = useState<{ id: string; view: View }>();
@@ -737,6 +769,8 @@ function Loaded({
         onIgnore={onIgnore && ((finding) => onIgnore(site, finding))}
         onRestore={onRestore && ((finding) => onRestore(site, finding))}
         onOpen={onOpen}
+        onCopy={onCopy}
+        terminal={terminal}
       />
     );
   }

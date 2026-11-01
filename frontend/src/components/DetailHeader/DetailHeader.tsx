@@ -14,10 +14,12 @@ export interface DetailHeaderProps {
   children?: ReactNode;
   /** The main actions of the page, on the right of the title line. */
   actions?: ReactNode;
+  /** Under the title, for example the quick links of a site. */
+  links?: ReactNode;
 }
 
 /** The top of a detail pane: a very large name, quiet facts around it. */
-export function DetailHeader({ title, icon, subtitle, meta, children, actions }: DetailHeaderProps) {
+export function DetailHeader({ title, icon, subtitle, meta, children, actions, links }: DetailHeaderProps) {
   return (
     <div className={styles.header}>
       <div className={styles.line}>
@@ -43,6 +45,7 @@ export function DetailHeader({ title, icon, subtitle, meta, children, actions }:
           {subtitle}
         </p>
       )}
+      {links}
     </div>
   );
 }

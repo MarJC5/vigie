@@ -1,0 +1,39 @@
+.links {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* A thin rule before every link but the first. */
+.item + .item {
+  box-shadow: inset 1px 0 0 var(--vg-border);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  color: var(--vg-text-muted);
+  font: var(--vg-text-small) var(--vg-font);
+  cursor: pointer;
+}
+
+.item:first-child .link {
+  padding-left: 0;
+}
+
+.link:hover {
+  color: var(--vg-text);
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
