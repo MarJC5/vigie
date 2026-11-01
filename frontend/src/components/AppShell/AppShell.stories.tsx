@@ -393,6 +393,30 @@ export const IgnoreAFinding: Story = {
   },
 };
 
+// Help > Vigie Help in the menu bar opens the Help page.
+export const HelpFromTheMenuBar: Story = {
+  args: {
+    onSection: fn(),
+    commands: (handler: (action: string) => void) => {
+      setTimeout(() => handler("help"), 0);
+      return () => {};
+    },
+  },
+  play: async ({ args }) => {
+    await waitFor(() => expect(args.onSection).toHaveBeenCalledWith("help"));
+  },
+};
+
+// The Help page takes the place of the site list, with Help current in the rail.
+export const Help: Story = {
+  args: { section: "help", onSection: fn(), helpPage: <h1>Help</h1> },
+  play: async ({ canvas }) => {
+    await expect(canvas.queryByRole("tree")).toBeNull();
+    const [help] = canvas.getAllByRole("link", { name: "Help" });
+    await expect(help).toHaveAttribute("aria-current", "page");
+  },
+};
+
 // The rail opens the settings, which take the place of the site list.
 export const Settings: Story = {
   args: { section: "settings", onSection: fn(), settingsPage: <h1>Settings</h1> },

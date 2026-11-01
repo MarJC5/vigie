@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent } from "storybook/test";
 
-import { HelpPage } from "./HelpPage";
+import { HelpPage, type HelpTab } from "./HelpPage";
 
 // Each story renders once per theme, so the page's landmarks repeat by construction; the end-to-end
 // test checks the window has one of each.
@@ -84,3 +84,23 @@ export const ImportExportTopic: Story = {
     await expect(canvas.getAllByRole("heading", { level: 3, name: "From another program" })).toHaveLength(2);
   },
 };
+
+// Every topic, in each language: its title, then its link to the full doc on GitHub.
+const topic = (tab: HelpTab, lang: "en" | "fr", title: string, doc: string): Story => ({
+  args: { tab },
+  globals: { lang },
+  play: async ({ canvas, canvasElement, args }) => {
+    await expect(canvas.getAllByRole("heading", { level: 2, name: title })).toHaveLength(2);
+    const more = canvasElement.querySelector<HTMLAnchorElement>("[role=tabpanel] p:last-child a");
+    await userEvent.click(more!);
+    await expect(args.onOpen).toHaveBeenCalledWith(`https://github.com/MarJC5/vigie/blob/main/docs/${lang === "fr" ? "fr/" : ""}${doc}`);
+  },
+});
+
+export const UpdateTopicInFrench = topic("update", "fr", "Mettre à jour un site, et revenir en arrière", "updates.md");
+export const StatusTopicInEnglish = topic("status", "en", "Read a site's status, and set a finding aside", "security.md");
+export const ServerTopic = topic("server", "en", "What Vigie reads on a server, and what it sends", "security.md");
+export const ServerTopicInFrench = topic("server", "fr", "Ce que Vigie lit sur un serveur, et ce qu'elle envoie", "security.md");
+export const ImportExportTopicInFrench = topic("import-export", "fr", "Importer et exporter", "data.md");
+export const BackgroundTopic = topic("background", "en", "Keep Vigie running in the background", "background.md");
+export const BackgroundTopicInFrench = topic("background", "fr", "Garder Vigie en arrière-plan", "background.md");
