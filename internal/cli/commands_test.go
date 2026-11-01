@@ -215,6 +215,11 @@ func TestScanJSON(t *testing.T) {
 		Error        string    `json:"error"`
 		FilesChecked string    `json:"filesChecked"`
 		Findings     []finding `json:"findings"`
+		PHPWeb       struct {
+			Version, Seen, Unknown string
+		} `json:"phpWeb"`
+		AdminEmail string          `json:"adminEmail"`
+		DebugLog   json.RawMessage `json:"debugLog"`
 	}
 	if err := json.Unmarshal([]byte(out), &results); err != nil {
 		t.Fatalf("not JSON: %v\n%s", err, out)
@@ -225,6 +230,10 @@ func TestScanJSON(t *testing.T) {
 	first := results[0]
 	if first.Status != "warn" || first.WordPress != "7.1.3" || first.Pending.Plugins != 1 || !first.Checked.Core || first.FilesChecked == "" {
 		t.Errorf("first = %+v", first)
+	}
+	// The complements (ADR-0028): nobody opened this bench site's dashboard, and it keeps no debug.log.
+	if first.PHPWeb.Unknown != "not-noted" || first.PHPWeb.Version != "" || first.AdminEmail != "admin@example.test" || first.DebugLog != nil {
+		t.Errorf("first: PHP on the web %+v, admin email %q, debug.log %s", first.PHPWeb, first.AdminEmail, first.DebugLog)
 	}
 	var docker, vulnerabilities *finding
 	for i, f := range first.Findings {

@@ -163,23 +163,42 @@ func exitFor(scans []model.Scan) int {
 }
 
 type scanJSON struct {
-	Path      string      `json:"path"`
-	Outcome   string      `json:"outcome"`
-	Status    string      `json:"status"`
-	Failure   string      `json:"failure,omitempty"`
-	Error     string      `json:"error,omitempty"`
-	WordPress string      `json:"wordpress,omitempty"`
-	PHPCLI    string      `json:"phpCli,omitempty"`
-	WPCLI     string      `json:"wpCli,omitempty"`
-	Home      string      `json:"home,omitempty"`
-	Pending   pendingJSON `json:"pending"`
-	Checked   checkedJSON `json:"checked"`
-	Subsites  int         `json:"subsites,omitempty"`
+	Path      string `json:"path"`
+	Outcome   string `json:"outcome"`
+	Status    string `json:"status"`
+	Failure   string `json:"failure,omitempty"`
+	Error     string `json:"error,omitempty"`
+	WordPress string `json:"wordpress,omitempty"`
+	PHPCLI    string `json:"phpCli,omitempty"`
+	// PHPWeb is the PHP serving the pages, as the dashboard noted it (ADR-0028).
+	PHPWeb *phpWebJSON `json:"phpWeb,omitempty"`
+	WPCLI  string      `json:"wpCli,omitempty"`
+	Home   string      `json:"home,omitempty"`
+	// AdminEmail is where WordPress sends its notices; AdminEmailPending the address waiting for
+	// its confirmation.
+	AdminEmail        string        `json:"adminEmail,omitempty"`
+	AdminEmailPending string        `json:"adminEmailPending,omitempty"`
+	DebugLog          *debugLogJSON `json:"debugLog,omitempty"`
+	Pending           pendingJSON   `json:"pending"`
+	Checked           checkedJSON   `json:"checked"`
+	Subsites          int           `json:"subsites,omitempty"`
 	// FilesChecked is when the files were last compared with wordpress.org's.
 	FilesChecked string        `json:"filesChecked,omitempty"`
 	Findings     []findingJSON `json:"findings"`
 	// Changes are what changed since the complete scan before; empty after a first scan.
 	Changes []changeJSON `json:"changes"`
+}
+
+type phpWebJSON struct {
+	Version string `json:"version,omitempty"`
+	Seen    string `json:"seen,omitempty"`    // RFC 3339
+	Unknown string `json:"unknown,omitempty"` // why not read: not-noted, object-cache, unmatched
+}
+
+type debugLogJSON struct {
+	Path    string `json:"path"`
+	Size    int64  `json:"size"`
+	Written bool   `json:"written"` // WordPress writes to it; a file left from before otherwise
 }
 
 // changeJSON is a change since the complete scan before (model.Change).
@@ -272,6 +291,16 @@ func scanTarget(ctx context.Context, env Env, ws *workspace.Workspace, on target
 			}
 			if !s.FilesChecked.IsZero() {
 				out[i].FilesChecked = s.FilesChecked.UTC().Format(time.RFC3339)
+			}
+			if web := s.PHPWeb; web != (model.PHPWeb{}) {
+				out[i].PHPWeb = &phpWebJSON{Version: web.Version, Unknown: string(web.Unknown)}
+				if !web.Seen.IsZero() {
+					out[i].PHPWeb.Seen = web.Seen.UTC().Format(time.RFC3339)
+				}
+			}
+			out[i].AdminEmail, out[i].AdminEmailPending = s.AdminEmail, s.AdminEmailPending
+			if d := s.DebugLog; d.Path != "" {
+				out[i].DebugLog = &debugLogJSON{Path: d.Path, Size: d.Size, Written: d.Written}
 			}
 		}
 		writeJSON(env.Out, out)
