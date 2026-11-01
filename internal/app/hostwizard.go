@@ -31,6 +31,7 @@ type Problem struct {
 var (
 	errKeyNotReceived = errors.New("key not received from the server")
 	errNodeNotFound   = errors.New("no folder, host or site with this ID")
+	errTagNotFound    = errors.New("no site has this tag")
 )
 
 // problemCodes maps known errors to their text; ProblemOf checks them in this order.
@@ -48,6 +49,11 @@ var problemCodes = []struct {
 	{model.ErrUnknownColor, "problem.unknownColor"},
 	{model.ErrNotesTooLong, "problem.notesTooLong"},
 	{model.ErrInvalidAddress, "problem.invalidAddress"},
+	{model.ErrEmptyTag, "problem.emptyTag"},
+	{model.ErrTagTooLong, "problem.tagTooLong"},
+	{model.ErrTagCharacter, "problem.tagCharacter"},
+	{model.ErrTooManyTags, "problem.tooManyTags"},
+	{errTagNotFound, "problem.tagNotFound"},
 	{store.ErrNotEmpty, "problem.folderNotEmpty"},
 	{store.ErrBusy, "problem.busy"},
 	{wpcli.ErrNoDumpTool, "problem.noDumpTool"},

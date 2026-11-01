@@ -86,6 +86,7 @@ export type {
     SiteRow,
     SiteView,
     StepView,
+    TagView,
     TestResult,
     Tree,
     TreeView,

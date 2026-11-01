@@ -710,6 +710,11 @@ export interface Node {
      * Markdown, shown on its page and read by the search
      */
     "notes": string;
+
+    /**
+     * a site's, in its order; read by the search too
+     */
+    "tags": string[] | null;
     "multisite": boolean;
     "subsites": number;
 
@@ -1066,6 +1071,14 @@ export interface StepView {
 }
 
 /**
+ * TagView is a tag in use, by name without case or accents, with how many sites have it.
+ */
+export interface TagView {
+    "name": string;
+    "sites": number;
+}
+
+/**
  * TestResult is the answer of TestConnection.
  */
 export interface TestResult {
@@ -1076,10 +1089,11 @@ export interface TestResult {
 }
 
 /**
- * Tree lists the nodes depth first, parents before their children.
+ * Tree lists the nodes depth first, parents before their children, and the tags in use.
  */
 export interface Tree {
     "nodes": Node[] | null;
+    "tags": TagView[] | null;
 }
 
 /**

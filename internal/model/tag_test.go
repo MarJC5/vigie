@@ -69,3 +69,49 @@ func TestSiteTagsRefuseABadTagOrTooMany(t *testing.T) {
 		t.Errorf("SiteTags with a repeat over the limit = %d tags, %v; repeats do not count", len(got), err)
 	}
 }
+
+// taggedTree is two folders, a host in each, and tags across them.
+func taggedTree(t *testing.T) *model.Tree {
+	t.Helper()
+	tr := model.NewTree()
+	clients := model.Folder{ID: model.NewID(), Name: "Clients"}
+	personal := model.Folder{ID: model.NewID(), Name: "Personal", Position: 1}
+	shared := model.Host{ID: model.NewID(), FolderID: clients.ID, Name: "Shared", Alias: "shared"}
+	vps := model.Host{ID: model.NewID(), FolderID: personal.ID, Name: "VPS", Alias: "vps"}
+	for _, err := range []error{
+		tr.AddFolder(clients), tr.AddFolder(personal), tr.AddHost(shared), tr.AddHost(vps),
+		tr.AddSite(model.Site{ID: model.NewID(), HostID: shared.ID, Name: "a.ch", Tags: []string{"Contrat", "Prioritaire"}}),
+		tr.AddSite(model.Site{ID: model.NewID(), HostID: shared.ID, Name: "b.ch", Position: 1}),
+		tr.AddSite(model.Site{ID: model.NewID(), HostID: vps.ID, Name: "c.ch", Tags: []string{"Contrat"}}),
+	} {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	return tr
+}
+
+func TestTheSitesOfATagAcrossFolders(t *testing.T) {
+	tr := taggedTree(t)
+	var names []string
+	for _, s := range tr.SitesUnder(model.TagNode("CONTRAT")) {
+		names = append(names, s.Name)
+	}
+	if strings.Join(names, " ") != "a.ch c.ch" {
+		t.Fatalf("SitesUnder(tag) = %q, want the sites tagged, in tree order, case ignored", names)
+	}
+	if got := tr.PathOf(model.TagNode("Contrat")); got != "#Contrat" {
+		t.Errorf("PathOf(tag) = %q, want #Contrat", got)
+	}
+	if len(tr.SitesUnder(model.TagNode("Nothing"))) != 0 {
+		t.Error("SitesUnder(an unused tag) is not empty")
+	}
+}
+
+func TestTheTagsInUseWithTheirSites(t *testing.T) {
+	got := taggedTree(t).Tags()
+	want := []model.TagCount{{Name: "Contrat", Sites: 2}, {Name: "Prioritaire", Sites: 1}}
+	if !slices.Equal(got, want) {
+		t.Fatalf("Tags() = %+v, want %+v (by name, without case)", got, want)
+	}
+}

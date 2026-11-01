@@ -51,10 +51,24 @@ export function Move(id: string, folderID: string): $CancellablePromise<$models.
 }
 
 /**
+ * RemoveTag takes a tag off every site that has it.
+ */
+export function RemoveTag(tag: string): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(1104036254, tag);
+}
+
+/**
  * Rename gives a folder, host or site a new name.
  */
 export function Rename(id: string, name: string): $CancellablePromise<$models.Problem | null> {
     return $Call.ByID(121417988, id, name);
+}
+
+/**
+ * RenameTag renames a tag on every site that has it; renamed to another tag, both become one.
+ */
+export function RenameTag($from: string, to: string): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(45565100, $from, to);
 }
 
 /**
@@ -76,4 +90,12 @@ export function SetColor(id: string, color: string): $CancellablePromise<$models
  */
 export function SetNotes(id: string, notes: string): $CancellablePromise<$models.Problem | null> {
     return $Call.ByID(1983710223, id, notes);
+}
+
+/**
+ * SetTags gives a site its tags (ADR-0025): trimmed, each once, a tag another site has taking
+ * the spelling it has there.
+ */
+export function SetTags(id: string, tags: string[] | null): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(4211368835, id, tags);
 }

@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"uuid"
 
@@ -189,10 +190,20 @@ func (s *Scanner) send() {
 	s.emit(ScansEvent, s.State())
 }
 
-// nodeByID finds a folder, host or site by its ID; "" is the whole tree.
+// TagPrefix starts the ID of a tag's page, followed by the tag: the services take it as a node,
+// for the sites with that tag (ADR-0025).
+const TagPrefix = "tag:"
+
+// nodeByID finds a folder, host or site by its ID, or a tag by TagPrefix; "" is the whole tree.
 func nodeByID(tree *model.Tree, id string) (model.Node, error) {
 	if id == "" {
 		return model.Root, nil
+	}
+	if tag, ok := strings.CutPrefix(id, TagPrefix); ok {
+		if len(tree.SitesUnder(model.TagNode(tag))) == 0 {
+			return model.Node{}, fmt.Errorf("tag %q: %w", tag, errTagNotFound)
+		}
+		return model.TagNode(tag), nil
 	}
 	parsed, err := uuid.Parse(id)
 	if err != nil {

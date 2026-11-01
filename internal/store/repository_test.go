@@ -280,3 +280,35 @@ func TestAddHostWithSitesIsAllOrNothing(t *testing.T) {
 		t.Fatalf("stored sites = %d, want 2", len(got))
 	}
 }
+
+// The tags of several sites change together, or not at all.
+func TestSaveTagsOfSeveralSites(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	host := model.Host{ID: model.NewID(), Name: "h", Alias: "h"}
+	a := model.Site{ID: model.NewID(), HostID: host.ID, Name: "a", Tags: []string{"Old", "Kept"}}
+	b := model.Site{ID: model.NewID(), HostID: host.ID, Name: "b", Tags: []string{"Old"}}
+	must(t, db.SaveHost(ctx, host))
+	must(t, db.SaveSite(ctx, a))
+	must(t, db.SaveSite(ctx, b))
+
+	must(t, db.SaveTags(ctx, map[model.ID][]string{a.ID: {"New", "Kept"}, b.ID: {}}))
+	tree, err := db.LoadTree(ctx)
+	must(t, err)
+	if got, _ := tree.Site(a.ID); !slices.Equal(got.Tags, []string{"New", "Kept"}) {
+		t.Errorf("tags of a = %q, want New,Kept in order", got.Tags)
+	}
+	if got, _ := tree.Site(b.ID); len(got.Tags) != 0 {
+		t.Errorf("tags of b = %q, want none", got.Tags)
+	}
+
+	missing := model.NewID()
+	if err := db.SaveTags(ctx, map[model.ID][]string{a.ID: {"Lost"}, missing: {"x"}}); !errors.Is(err, model.ErrNotFound) {
+		t.Fatalf("SaveTags with a missing site: %v, want ErrNotFound", err)
+	}
+	tree, err = db.LoadTree(ctx)
+	must(t, err)
+	if got, _ := tree.Site(a.ID); !slices.Equal(got.Tags, []string{"New", "Kept"}) {
+		t.Errorf("tags of a after a refused change = %q, want them unchanged", got.Tags)
+	}
+}

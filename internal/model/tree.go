@@ -16,6 +16,7 @@ const (
 	KindFolder NodeKind = iota
 	KindHost
 	KindSite
+	KindTag // the sites with a tag, wherever they are (ADR-0025): not stored, not moved
 )
 
 func (k NodeKind) String() string {
@@ -26,14 +27,22 @@ func (k NodeKind) String() string {
 		return "host"
 	case KindSite:
 		return "site"
+	case KindTag:
+		return "tag"
 	}
 	return fmt.Sprintf("NodeKind(%d)", int(k))
 }
 
-// Node points to a folder, host or site of the tree.
+// Node points to a folder, host or site of the tree, or to the sites with a tag.
 type Node struct {
 	Kind NodeKind
 	ID   ID
+	Tag  string // KindTag only
+}
+
+// TagNode points to the sites with a tag, compared without case or accents.
+func TagNode(tag string) Node {
+	return Node{Kind: KindTag, Tag: tag}
 }
 
 // Root is the top of the tree: the folder without ID that holds root folders and hosts.
@@ -230,6 +239,8 @@ func (t *Tree) PathOf(n Node) string {
 	var parts []string
 	folder := NoID
 	switch n.Kind {
+	case KindTag:
+		return "#" + n.Tag
 	case KindSite:
 		s := t.sites[n.ID]
 		h := t.hosts[s.HostID]
@@ -283,8 +294,8 @@ func (t *Tree) Walk(fn func(n Node, depth int)) {
 	t.walkFolder(NoID, 0, fn)
 }
 
-// SitesUnder returns the site itself, the sites of a host, or every site under a folder (Root
-// for all), in tree order.
+// SitesUnder returns the site itself, the sites of a host, every site under a folder (Root for
+// all), or the sites with a tag, in tree order.
 func (t *Tree) SitesUnder(n Node) []Site {
 	var sites []Site
 	collect := func(node Node, _ int) {
@@ -309,6 +320,13 @@ func (t *Tree) SitesUnder(n Node) []Site {
 		})
 	case KindFolder:
 		t.walkFolder(n.ID, 0, collect)
+	case KindTag:
+		key := TagKey(n.Tag)
+		t.walkFolder(NoID, 0, func(node Node, depth int) {
+			if node.Kind == KindSite && slices.ContainsFunc(t.sites[node.ID].Tags, func(tag string) bool { return TagKey(tag) == key }) {
+				collect(node, depth)
+			}
+		})
 	}
 	return sites
 }

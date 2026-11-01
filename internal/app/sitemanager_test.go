@@ -3,6 +3,7 @@ package app_test
 import (
 	"context"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/MarJC5/vigie/internal/app"
@@ -52,17 +53,17 @@ func TestTreeListsNodesParentsFirstWithEffectiveColors(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []app.Node{
-		{ID: clients.ID.String(), Kind: "folder", Name: "Clients", Color: "blue", OwnColor: "blue", Path: "Clients"},
+		{ID: clients.ID.String(), Kind: "folder", Name: "Clients", Color: "blue", OwnColor: "blue", Path: "Clients", Tags: []string{}},
 		{ID: host.ID.String(), ParentID: clients.ID.String(), Kind: "host", Name: "Shared hosting", Color: "blue", OwnColor: "none",
-			Path: "Clients/Shared hosting"},
+			Path: "Clients/Shared hosting", Tags: []string{}},
 		{ID: site.ID.String(), ParentID: host.ID.String(), Kind: "site", Name: "atelier-exemple.ch", Color: "blue", OwnColor: "none",
-			Path: "Clients/Shared hosting/atelier-exemple.ch", Multisite: true, Subsites: 2},
+			Path: "Clients/Shared hosting/atelier-exemple.ch", Multisite: true, Subsites: 2, Tags: []string{}},
 	}
 	if len(tree.Nodes) != len(want) {
 		t.Fatalf("Tree() has %d nodes, want %d: %+v", len(tree.Nodes), len(want), tree.Nodes)
 	}
 	for i := range want {
-		if tree.Nodes[i] != want[i] {
+		if !reflect.DeepEqual(tree.Nodes[i], want[i]) {
 			t.Errorf("node %d = %+v\nwant %+v", i, tree.Nodes[i], want[i])
 		}
 	}

@@ -260,14 +260,33 @@ func saveSite(ctx context.Context, tx *sql.Tx, s model.Site) error {
 	return saveSiteChildren(ctx, tx, s)
 }
 
-// saveSiteChildren replaces the tags (in order, without repeats) and the subsites of a site.
-func saveSiteChildren(ctx context.Context, tx *sql.Tx, s model.Site) error {
-	id := s.ID.String()
+// SaveTags replaces the tags of several sites at once (a tag renamed or removed on all of them):
+// every site is changed, or none.
+func (db *DB) SaveTags(ctx context.Context, tags map[model.ID][]string) error {
+	return db.withTx(ctx, func(tx *sql.Tx) error {
+		for id, siteTags := range tags {
+			ok, err := exists(ctx, tx, "sites", id)
+			if err != nil {
+				return err
+			}
+			if !ok {
+				return fmt.Errorf("site %s: %w", id, model.ErrNotFound)
+			}
+			if err := saveTags(ctx, tx, id.String(), siteTags); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// saveTags replaces the tags of a site, in order, without repeats.
+func saveTags(ctx context.Context, tx *sql.Tx, id string, tags []string) error {
 	if _, err := tx.ExecContext(ctx, "DELETE FROM site_tags WHERE site_id = ?", id); err != nil {
 		return err
 	}
 	seen := map[string]bool{}
-	for i, tag := range s.Tags {
+	for i, tag := range tags {
 		if seen[tag] {
 			continue
 		}
@@ -275,6 +294,15 @@ func saveSiteChildren(ctx context.Context, tx *sql.Tx, s model.Site) error {
 		if _, err := tx.ExecContext(ctx, "INSERT INTO site_tags (site_id, position, tag) VALUES (?, ?, ?)", id, i, tag); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// saveSiteChildren replaces the tags (in order, without repeats) and the subsites of a site.
+func saveSiteChildren(ctx context.Context, tx *sql.Tx, s model.Site) error {
+	id := s.ID.String()
+	if err := saveTags(ctx, tx, id, s.Tags); err != nil {
+		return err
 	}
 	if _, err := tx.ExecContext(ctx, "DELETE FROM subsites WHERE site_id = ?", id); err != nil {
 		return err

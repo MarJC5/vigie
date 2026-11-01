@@ -1,7 +1,9 @@
 package model
 
 import (
+	"cmp"
 	"errors"
+	"slices"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -81,4 +83,32 @@ func SiteTags(given, used []string) ([]string, error) {
 		return nil, ErrTooManyTags
 	}
 	return tags, nil
+}
+
+// TagCount is a tag in use, with how many sites have it.
+type TagCount struct {
+	Name  string
+	Sites int
+}
+
+// Tags lists the tags of the sites, by name without case or accents, each in the spelling it has.
+// A tag no site has any more is gone.
+func (t *Tree) Tags() []TagCount {
+	byKey := map[string]*TagCount{}
+	for _, s := range t.sites {
+		for _, tag := range s.Tags {
+			c, ok := byKey[TagKey(tag)]
+			if !ok {
+				c = &TagCount{Name: tag}
+				byKey[TagKey(tag)] = c
+			}
+			c.Sites++
+		}
+	}
+	tags := make([]TagCount, 0, len(byKey))
+	for _, c := range byKey {
+		tags = append(tags, *c)
+	}
+	slices.SortFunc(tags, func(a, b TagCount) int { return cmp.Compare(TagKey(a.Name), TagKey(b.Name)) })
+	return tags
 }
