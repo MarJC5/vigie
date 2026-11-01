@@ -474,8 +474,8 @@ func ParsePHPChecks(res sshx.Result) ([]PHPCheck, bool, error) {
 	}
 	cached := strings.Contains(string(res.Stderr), "external object cache")
 	var list []struct {
-		Name       string `json:"name"`
-		Expiration string `json:"expiration"`
+		Name       string          `json:"name"`
+		Expiration json.RawMessage `json:"expiration"` // a number in WP-CLI 2.12, "false" when it never expires
 	}
 	if err := decode(res.Stdout, &list); err != nil {
 		return nil, false, fmt.Errorf("transient list: %w", err)
@@ -487,8 +487,8 @@ func ParsePHPChecks(res sshx.Result) ([]PHPCheck, bool, error) {
 			return nil, false, fmt.Errorf("transient %q: %w", e.Name, ErrUnexpectedOutput)
 		}
 		c := PHPCheck{Hash: hash}
-		if e.Expiration != "false" {
-			at, err := strconv.ParseInt(e.Expiration, 10, 64)
+		if expiration := strings.Trim(string(e.Expiration), `"`); expiration != "false" {
+			at, err := strconv.ParseInt(expiration, 10, 64)
 			if err != nil {
 				return nil, false, fmt.Errorf("transient %s expires %q: %w", e.Name, e.Expiration, ErrUnexpectedOutput)
 			}

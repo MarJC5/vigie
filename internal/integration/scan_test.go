@@ -54,6 +54,7 @@ func TestScanOverSSH(t *testing.T) {
 		"cron-overdue|site|":                         model.LevelAttention,
 		"autoload-size|site|":                        model.LevelAttention,
 		"database-version|site|":                     model.LevelInfo,
+		"debug-fatal|site|":                          model.LevelAttention,
 	} {
 		if found[key] != want {
 			t.Errorf("security: %s = %q, want %q", key, found[key], want)
@@ -61,6 +62,13 @@ func TestScanOverSSH(t *testing.T) {
 	}
 	if security.Status() != model.StatusUrgent {
 		t.Errorf("security: status %q, want urgent", security.Status())
+	}
+	// The complements (ADR-0028): the PHP the dashboard's check was made with, the admin email
+	// waiting for confirmation, a debug.log left from before.
+	if security.PHPWeb.Version != security.PHPCLI || security.AdminEmailPending != "webmaster@example.test" ||
+		security.DebugLog.Path != "wp-content/debug.log" || security.DebugLog.Written {
+		t.Errorf("security: PHP on the web %+v, admin email waiting %q, debug.log %+v",
+			security.PHPWeb, security.AdminEmailPending, security.DebugLog)
 	}
 
 	offline, _ := scanFixture(t, "~/sites/offline", false)

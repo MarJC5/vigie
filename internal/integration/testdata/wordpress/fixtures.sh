@@ -200,6 +200,15 @@ wp config set WP_DEBUG true --raw --path="$SITES/security" --quiet
 wp option update blog_public 0 --path="$SITES/security" --quiet
 wp eval 'add_option( "fixture_big", str_repeat( "x", 900000 ), "", "yes" );' --path="$SITES/security"
 wp cron event schedule fixture_overdue 2020-01-01 --path="$SITES/security" --quiet
+# The scan's complements (ADR-0028): the dashboard's check of the PHP version serving it, made by
+# WordPress's own function as the dashboard makes it; a debug.log left from before (WP_DEBUG_LOG is
+# not set) with a fatal error of today and an older one; a new admin email waiting for confirmation.
+wp eval 'require_once ABSPATH . "wp-admin/includes/misc.php"; wp_check_php_version();' --path="$SITES/security"
+printf '%s\n' \
+	"[01-Jan-2026 08:00:00 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function fixture_old() in $SITES/security/wp-content/fixture-old.php:3" \
+	"[$(date -u '+%d-%b-%Y %H:%M:%S') UTC] PHP Fatal error:  Uncaught Error: Call to undefined function fixture_missing() in $SITES/security/wp-content/fixture-new.php:9" \
+	> "$SITES/security/wp-content/debug.log"
+wp option update new_admin_email webmaster@example.test --path="$SITES/security" --quiet
 
 # A server without outbound HTTP, like hosts that block it: every update check fails.
 new_site "$SITES/offline" fixture_offline

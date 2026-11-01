@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'config' 'get' 'WP_DEBUG_LOG' '--type=constant' '--format=json' '--path=sites/plugin-theme' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error: The constant 'WP_DEBUG_LOG' is not defined in the 'wp-config.php' file.\n"
+}

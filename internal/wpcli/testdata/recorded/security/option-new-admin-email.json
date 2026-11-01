@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'option' 'get' 'new_admin_email' '--path=sites/security' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 0,
+  "stdout": "webmaster@example.test\n",
+  "stderr": ""
+}

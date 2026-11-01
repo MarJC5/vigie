@@ -184,6 +184,25 @@ func TestParseDebugLog(t *testing.T) {
 	}
 }
 
+func TestDebugLogFile(t *testing.T) {
+	for _, tt := range []struct {
+		log  wpcli.DebugLog
+		want string
+	}{
+		{wpcli.DebugLog{Enabled: true}, "/home/u/site/wp-content/debug.log"},
+		{wpcli.DebugLog{}, "/home/u/site/wp-content/debug.log"}, // a file left from before is looked for there
+		{wpcli.DebugLog{Enabled: true, Path: "/var/log/site.log"}, "/var/log/site.log"},
+	} {
+		if got, err := wpcli.DebugLogFile("/home/u/site", tt.log); err != nil || got != tt.want {
+			t.Errorf("DebugLogFile(%+v) = %q, %v; want %q", tt.log, got, err, tt.want)
+		}
+	}
+	// Relative to PHP's working folder, which the command line does not share: not guessed.
+	if _, err := wpcli.DebugLogFile("/home/u/site", wpcli.DebugLog{Enabled: true, Path: "logs/php.log"}); !errors.Is(err, wpcli.ErrBadArgument) {
+		t.Errorf("DebugLogFile() of a relative path = %v, want ErrBadArgument", err)
+	}
+}
+
 func FuzzUpdateParsers(f *testing.F) {
 	for _, name := range []string{"preview-plugins", "preview-themes", "update-plugin", "update-plugin-missing", "theme-dir", "db-export", "constant-debug-log"} {
 		r := load(f, "updates", name)

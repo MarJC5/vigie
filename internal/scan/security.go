@@ -31,6 +31,8 @@ const (
 	checkCertificate     = "certificate"
 	checkDomain          = "domain"
 	checkDebugLog        = "debug-log"
+	checkPHPWeb          = "php-web"
+	checkDebugLogFile    = "debug-log-file"
 )
 
 // fileChecks are the checks of the files' comparison, carried over with it.
@@ -213,31 +215,45 @@ func pluginFiles(problems []wpcli.FileProblem, versions map[string]string) []mod
 	return findings
 }
 
+// realRoot reads the site's folder with its links resolved, once: the uploads and debug.log are
+// found from it.
+func (r *run) realRoot(ctx context.Context) (string, error) {
+	if r.root != "" {
+		return r.root, nil
+	}
+	out, err := r.shell(ctx, func() (string, error) { return remote.RealRoot(r.job.Site.Path) })
+	if err != nil {
+		return "", err
+	}
+	if r.root, err = wpcli.ParseDir(out); err != nil {
+		return "", err
+	}
+	return r.root, nil
+}
+
 // uploads lists PHP files under the uploads folder of the site's real folder.
 func (r *run) uploads(ctx context.Context, result *model.Scan) error {
-	root, err := r.shell(ctx, func() (string, error) { return remote.RealRoot(r.job.Site.Path) })
+	dir, err := r.realRoot(ctx)
+	var out []byte
 	if err == nil {
-		var dir string
-		if dir, err = wpcli.ParseDir(root); err == nil {
-			var out []byte
-			if out, err = r.shell(ctx, func() (string, error) { return remote.UploadsPHP(dir) }); err == nil {
-				files, more := remote.ParseUploadsPHP(dir, out)
-				for _, f := range files {
-					result.Findings = append(result.Findings, model.Finding{Kind: model.KindUploadsPHP, Subject: "site",
-						Identifier: f, Level: model.LevelUrgent})
-				}
-				if more {
-					result.Findings = append(result.Findings, model.Finding{Kind: model.KindUploadsPHPMore, Subject: "site",
-						Level: model.LevelUrgent, Facts: map[string]string{"shown": strconv.Itoa(remote.UploadsShown)}})
-				}
-				return nil
-			}
+		out, err = r.shell(ctx, func() (string, error) { return remote.UploadsPHP(dir) })
+	}
+	if err != nil {
+		if stops(ctx, err) {
+			return err
 		}
+		result.Findings = append(result.Findings, notChecked(checkUploads, err))
+		return nil
 	}
-	if stops(ctx, err) {
-		return err
+	files, more := remote.ParseUploadsPHP(dir, out)
+	for _, f := range files {
+		result.Findings = append(result.Findings, model.Finding{Kind: model.KindUploadsPHP, Subject: "site",
+			Identifier: f, Level: model.LevelUrgent})
 	}
-	result.Findings = append(result.Findings, notChecked(checkUploads, err))
+	if more {
+		result.Findings = append(result.Findings, model.Finding{Kind: model.KindUploadsPHPMore, Subject: "site",
+			Level: model.LevelUrgent, Facts: map[string]string{"shown": strconv.Itoa(remote.UploadsShown)}})
+	}
 	return nil
 }
 
@@ -342,12 +358,21 @@ func (r *run) wordfenceUsers(ctx context.Context, result *model.Scan) (ids []int
 	return ids, true, nil
 }
 
-// settings reads wp-config.php's constants, the options and WP-Cron. Whether the site answers in
-// HTTPS is asked from the machine: WP-CLI reads the address without the plugins and wp-config.php
-// switches that make it https on a request.
+// settings reads wp-config.php's constants, the options, debug.log and WP-Cron. Whether the site
+// answers in HTTPS is asked from the machine: WP-CLI reads the address without the plugins and
+// wp-config.php switches that make it https on a request.
 func (r *run) settings(ctx context.Context, result *model.Scan) error {
-	if err := r.constants(ctx, result); err != nil {
+	values, err := r.constants(ctx, result)
+	if err != nil {
 		return err
+	}
+	if err := r.adminEmail(ctx, result); err != nil {
+		return err
+	}
+	if values != nil {
+		if err := r.debugLog(ctx, result, values); err != nil {
+			return err
+		}
 	}
 	res, err := r.exec(ctx, wpcli.OptionGet("blog_public"), r.job.Site.Path)
 	if err != nil {
@@ -366,11 +391,12 @@ func (r *run) settings(ctx context.Context, result *model.Scan) error {
 }
 
 // The constants of wp-config.php the rules read; only those defined are asked.
-var constants = []string{"WP_DEBUG", "WP_DEBUG_DISPLAY", "DISALLOW_FILE_EDIT"}
+var constants = []string{"WP_DEBUG", "WP_DEBUG_DISPLAY", "WP_DEBUG_LOG", "DISALLOW_FILE_EDIT"}
 
 // constants reads whether files can be edited from the administration, and whether PHP errors
-// show on the pages (WP_DEBUG, with WP_DEBUG_DISPLAY true by default).
-func (r *run) constants(ctx context.Context, result *model.Scan) error {
+// show on the pages (WP_DEBUG, with WP_DEBUG_DISPLAY true by default). It returns the values read,
+// a constant not defined left out; nil when they could not be read.
+func (r *run) constants(ctx context.Context, result *model.Scan) (map[string]any, error) {
 	out, err := r.read(ctx, wpcli.ConfigNames())
 	var names []string
 	if err == nil {
@@ -389,10 +415,10 @@ func (r *run) constants(ctx context.Context, result *model.Scan) error {
 	}
 	if err != nil {
 		if stops(ctx, err) {
-			return err
+			return nil, err
 		}
 		result.Findings = append(result.Findings, notChecked(checkSettings, err))
-		return nil
+		return nil, nil
 	}
 	if v, ok := values["DISALLOW_FILE_EDIT"]; !ok || !phpTrue(v) {
 		result.Findings = append(result.Findings, model.Finding{Kind: model.KindFileEditing, Subject: "site", Level: model.LevelAttention})
@@ -400,6 +426,83 @@ func (r *run) constants(ctx context.Context, result *model.Scan) error {
 	if display, ok := values["WP_DEBUG_DISPLAY"]; phpTrue(values["WP_DEBUG"]) && (!ok || phpTrue(display)) {
 		result.Findings = append(result.Findings, model.Finding{Kind: model.KindErrorsDisplayed, Subject: "site", Level: model.LevelAttention})
 	}
+	return values, nil
+}
+
+// adminEmail reads where WordPress sends its notices, and the address waiting for its
+// confirmation (ADR-0028).
+func (r *run) adminEmail(ctx context.Context, result *model.Scan) error {
+	for name, into := range map[string]*string{"admin_email": &result.AdminEmail, "new_admin_email": &result.AdminEmailPending} {
+		res, err := r.exec(ctx, wpcli.OptionGet(name), r.job.Site.Path)
+		if err == nil {
+			*into, _, err = wpcli.ParseOption(res)
+		}
+		if err != nil {
+			if stops(ctx, err) {
+				return err
+			}
+			result.Findings = append(result.Findings, notChecked(checkSettings, err))
+			return nil
+		}
+	}
+	if result.AdminEmailPending == result.AdminEmail {
+		result.AdminEmailPending = "" // what WordPress leaves once confirmed
+	}
+	return nil
+}
+
+// debugLog reads debug.log where WordPress writes it, or where one left from before would be: its
+// size, and its fatal errors of the last week as one finding (ADR-0028).
+func (r *run) debugLog(ctx context.Context, result *model.Scan, values map[string]any) error {
+	log, err := wpcli.DebugLogOf(values["WP_DEBUG"], values["WP_DEBUG_LOG"])
+	var root, file string
+	if err == nil {
+		root, err = r.realRoot(ctx)
+	}
+	if err == nil {
+		file, err = wpcli.DebugLogFile(root, log)
+	}
+	var read remote.DebugLogRead
+	if err == nil {
+		var out []byte
+		if out, err = r.shell(ctx, func() (string, error) { return remote.DebugLog(file) }); err == nil {
+			read, err = remote.ParseDebugLog(out, r.scanner.Now())
+		}
+	}
+	if err != nil {
+		if stops(ctx, err) {
+			return err
+		}
+		result.Findings = append(result.Findings, notChecked(checkDebugLogFile, err))
+		return nil
+	}
+	if !read.Exists && !log.Enabled {
+		return nil
+	}
+	result.DebugLog = model.DebugLog{Path: strings.TrimPrefix(file, root+"/"), Size: read.Size, Written: log.Enabled}
+	if read.Recent > 0 {
+		result.Findings = append(result.Findings, model.Finding{Kind: model.KindDebugFatal, Subject: "site", Level: model.LevelAttention,
+			Facts: map[string]string{"count": strconv.Itoa(read.Recent), "last": read.Last.Format(time.RFC3339), "message": read.Message}})
+	}
+	return nil
+}
+
+// phpWeb reads which PHP version serves the pages, from the dashboard's checks WordPress keeps a
+// week (ADR-0028).
+func (r *run) phpWeb(ctx context.Context, result *model.Scan) error {
+	res, err := r.exec(ctx, wpcli.PHPChecks(), r.job.Site.Path)
+	if err == nil {
+		var checks []wpcli.PHPCheck
+		var cached bool
+		if checks, cached, err = wpcli.ParsePHPChecks(res); err == nil {
+			result.PHPWeb = wpcli.WebPHP(checks, cached, result.PHPCLI, r.scanner.Now())
+			return nil
+		}
+	}
+	if stops(ctx, err) {
+		return err
+	}
+	result.Findings = append(result.Findings, notChecked(checkPHPWeb, err))
 	return nil
 }
 

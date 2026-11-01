@@ -144,10 +144,12 @@ func TestSecurityScanOfTheSecuritySite(t *testing.T) {
 		{model.KindCronOverdue, "site", "", "hook=fixture_overdue", model.LevelAttention},
 		{model.KindAutoloadSize, "site", "", "limit=800000", model.LevelAttention},
 		{model.KindDatabaseVersion, "site", "", "version=11.8.9-MariaDB-ubu2404", model.LevelInfo},
+		// The fatal error of the day the bench was made; the one of January is too old.
+		{model.KindDebugFatal, "site", "", "count=1", model.LevelAttention},
 		// From the machine.
 		{model.KindVulnerability, "plugin:akismet", "affects", "severity=high", model.LevelUrgent},
 		{model.KindVulnerability, "core", "core-1", "name=WordPress 7.x", model.LevelAttention},
-		{model.KindPHPSupport, "php", "", "end=2028-12-31", model.LevelAttention},
+		{model.KindPHPSupport, "php", "", "on=web", model.LevelAttention},
 		{model.KindPluginClosed, "plugin:wordfence", "", "reason=security-issue", model.LevelUrgent},
 		{model.KindPluginAbandoned, "plugin:hello", "", "last-release=2023-10-29", model.LevelAttention},
 		{model.KindCertificate, "site", "", "issuer=Bench CA", model.LevelUrgent},
@@ -180,6 +182,20 @@ func TestSecurityScanOfTheSecuritySite(t *testing.T) {
 	if has(got, model.KindCheck) {
 		t.Errorf("checks not run: %+v", got.Findings)
 	}
+	// The complements (ADR-0028): the dashboard's check, made by WordPress on the bench, names the
+	// PHP serving the pages (the command line's there); a debug.log left from before, logging off.
+	if got.PHPWeb.Version != got.PHPCLI || got.PHPWeb.Seen.IsZero() || got.PHPWeb.Unknown != model.PHPWebRead {
+		t.Errorf("PHP on the web = %+v, want %s with its date", got.PHPWeb, got.PHPCLI)
+	}
+	if got.AdminEmail != "admin@example.test" || got.AdminEmailPending != "webmaster@example.test" {
+		t.Errorf("admin email = %q, pending %q", got.AdminEmail, got.AdminEmailPending)
+	}
+	if d := got.DebugLog; d.Path != "wp-content/debug.log" || d.Written || d.Size == 0 {
+		t.Errorf("debug.log = %+v, want one left from before in wp-content", d)
+	}
+	if f := find(t, got, model.KindDebugFatal, "site", ""); !strings.Contains(f.Facts["message"], "fixture_missing()") || f.Facts["last"] == "" {
+		t.Errorf("fatal errors = %+v", f.Facts)
+	}
 	// Worst first.
 	if got.Findings[0].Level != model.LevelUrgent || got.Findings[len(got.Findings)-1].Level != model.LevelInfo {
 		t.Errorf("findings not ordered: first %+v, last %+v", got.Findings[0], got.Findings[len(got.Findings)-1])
@@ -190,6 +206,27 @@ func TestSecurityScanOfTheSecuritySite(t *testing.T) {
 		if !slices.Contains(l.asked, want) {
 			t.Errorf("%s not asked; asked %v", want, l.asked)
 		}
+	}
+}
+
+// A site whose dashboard noted nothing and that keeps no debug.log: said so, and the PHP checks are
+// about the command line's version.
+func TestComplementsOfAPlainSite(t *testing.T) {
+	l := &lookups{php: lookup.PHPReport{Report: lookup.Report{Known: true}, Status: "s"}}
+	s := scanner(replay(t, "plain"))
+	s.Lookups = l
+	got, _ := s.Site(context.Background(), job("plain"), nil)
+	if got.PHPWeb != (model.PHPWeb{Unknown: model.PHPWebNotNoted}) {
+		t.Errorf("PHP on the web = %+v, want not noted", got.PHPWeb)
+	}
+	if got.DebugLog != (model.DebugLog{}) || has(got, model.KindDebugFatal) {
+		t.Errorf("debug.log = %+v", got.DebugLog)
+	}
+	if got.AdminEmail != "admin@example.test" || got.AdminEmailPending != "" {
+		t.Errorf("admin email = %q, pending %q", got.AdminEmail, got.AdminEmailPending)
+	}
+	if f := find(t, got, model.KindPHPSupport, "php", ""); f.Facts["on"] != "cli" || f.Version != got.PHPCLI {
+		t.Errorf("PHP support = %+v, want the command line's", f)
 	}
 }
 

@@ -25,7 +25,8 @@ const (
 	// record's uuid; Facts name, severity, score, kev, unfixed, fixed, sources (links, space
 	// separated), fetched (when the answer is from an older cache).
 	KindVulnerability FindingKind = "vulnerability"
-	// KindPHPSupport: Subject "php"; Facts status ("s" security fixes only, "d" unmaintained), end.
+	// KindPHPSupport: Subject "php"; Facts status ("s" security fixes only, "d" unmaintained), end, on
+	// ("web": the PHP serving the pages, ADR-0028; "cli": the command line's, when the web's is not known).
 	KindPHPSupport FindingKind = "php-support"
 	// KindPluginClosed: Facts date, reason (wordpress.org's, such as "security-issue"), other-plugin
 	// ("true" when the files say the closed plugin is another one of the same name).

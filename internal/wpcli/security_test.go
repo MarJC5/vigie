@@ -61,6 +61,7 @@ func TestSecurityRecordingsAreCurrent(t *testing.T) {
 		"transient-sizes":      {"security", wpcli.OptionSizes(true)},
 		"cron-events":          {"security", wpcli.CronEvents()},
 		"db-version":           {"security", wpcli.DatabaseVersion()},
+		"php-checks":           {"security", wpcli.PHPChecks()},
 	} {
 		want, err := rec.cmd.Remote("wp", "~/sites/"+rec.site)
 		if err != nil {
@@ -272,7 +273,8 @@ func TestParseDatabaseVersion(t *testing.T) {
 }
 
 func TestParsePHPChecks(t *testing.T) {
-	out := `[{"name":"php_check_1f3870be274f6c49b3e31a0c6728957f","expiration":"1793600000"},{"name":"php_check_abc","expiration":"false"}]`
+	// A number as WP-CLI 2.12 writes it, a string as its code reads.
+	out := `[{"name":"php_check_1f3870be274f6c49b3e31a0c6728957f","expiration":1793600000},{"name":"php_check_abc","expiration":"false"}]`
 	got, cached, err := wpcli.ParsePHPChecks(sshx.Result{Stdout: []byte(out)})
 	want := []wpcli.PHPCheck{
 		{Hash: "1f3870be274f6c49b3e31a0c6728957f", Expires: time.Unix(1793600000, 0).UTC()},
@@ -286,6 +288,9 @@ func TestParsePHPChecks(t *testing.T) {
 	warned := sshx.Result{Stdout: []byte("[]"), Stderr: []byte("Warning: Transients are stored in an external object cache, and this command only shows those stored in the database.\n")}
 	if got, cached, err := wpcli.ParsePHPChecks(warned); err != nil || !cached || len(got) != 0 {
 		t.Errorf("ParsePHPChecks() with an object cache = %+v, %v, %v", got, cached, err)
+	}
+	if got, _, err := wpcli.ParsePHPChecks(result(load(t, "security", "php-checks"))); err != nil || len(got) != 1 || got[0].Expires.IsZero() {
+		t.Errorf("ParsePHPChecks() as recorded = %+v, %v", got, err)
 	}
 	if _, _, err := wpcli.ParsePHPChecks(sshx.Result{ExitCode: 1, Stderr: []byte("Error: boom")}); err == nil {
 		t.Error("ParsePHPChecks() of a failed command: no error")

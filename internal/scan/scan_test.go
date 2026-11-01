@@ -159,11 +159,12 @@ func TestProgressCountsTheSteps(t *testing.T) {
 		t.Fatal("no progress reported")
 	}
 	last := steps[len(steps)-1]
-	// 15 commands for the versions, the addresses and the updates; for security, 4 to compare the
-	// files, then the administrators and the one's two-factor, the constants' names and WP_DEBUG,
-	// the search engines, WP-Cron, the options and transients, the database version: 28, then the end.
-	if last.Total != 28 || len(steps) != 29 {
-		t.Errorf("progress = %d reports, total %d; want 28 commands and the end", len(steps), last.Total)
+	// 15 commands for the versions, the addresses and the updates, and the dashboard's checks of
+	// PHP; for security, 4 to compare the files, then the administrators and the one's two-factor,
+	// the constants' names and WP_DEBUG, the admin email and the one waiting, debug.log, the search
+	// engines, WP-Cron, the options and transients, the database version: 32, then the end.
+	if last.Total != 32 || len(steps) != 33 {
+		t.Errorf("progress = %d reports, total %d; want 32 commands and the end", len(steps), last.Total)
 	}
 	if last.Done != last.Total || !slices.IsSortedFunc(steps, func(a, b scan.Progress) int { return a.Done - b.Done }) {
 		t.Fatalf("progress = %+v, want increasing up to the total", steps)

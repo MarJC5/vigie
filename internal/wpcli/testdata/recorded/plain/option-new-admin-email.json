@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'option' 'get' 'new_admin_email' '--path=sites/plain' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error: Could not get 'new_admin_email' option. Does it exist?\n"
+}

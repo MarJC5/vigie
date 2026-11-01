@@ -44,18 +44,18 @@ type Scanner struct {
 }
 
 // filesSteps are the commands of the comparison of the files: WordPress's and the plugins'
-// checksums, the site's real folder, the PHP files in its uploads.
-const filesSteps = 4
+// checksums, the PHP files in its uploads.
+const filesSteps = 3
 
-// steps is the number of commands of a scan known before it starts, for the progress: 22, and the
+// steps is the number of commands of a scan known before it starts, for the progress: 27, and the
 // subsites and super administrators of a network. The comparison of the files, each administrator,
 // each constant read and Wordfence add theirs once known. A theme in a plugin's folder takes two
 // more, read again with the plugins.
 func (j Job) steps() int {
 	if j.Site.Multisite {
-		return 24
+		return 29
 	}
-	return 22
+	return 27
 }
 
 // Site scans one site. The scan is always returned, also when it failed or was cancelled; for a
@@ -108,6 +108,7 @@ type run struct {
 	// themesInPlugins: the active theme lives in a plugin's folder, so the theme reads load the
 	// plugins.
 	themesInPlugins bool
+	root            string // the site's real folder, once read
 }
 
 // exec runs one WP-CLI command within the host's limit and reports the progress.
@@ -222,6 +223,10 @@ func (r *run) scan(ctx context.Context, result *model.Scan) ([]model.Subsite, er
 		return nil, err
 	}
 	if err := r.languages(ctx, result); err != nil {
+		return nil, err
+	}
+	// Before the outside lookups, which check the PHP serving the pages when it is known.
+	if err := r.phpWeb(ctx, result); err != nil {
 		return nil, err
 	}
 

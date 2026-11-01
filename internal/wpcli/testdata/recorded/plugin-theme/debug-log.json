@@ -1,0 +1,8 @@
+{
+  "args": [
+    "f='/home/vigie/sites/plugin-theme/wp-content/debug.log'; [ -f \"$f\" ] || exit 0; wc -c \u003c \"$f\"; tail -c 1048576 \"$f\" | grep -E 'PHP (Fatal|Parse) error' | tail -n 50"
+  ],
+  "exit": 0,
+  "stdout": "",
+  "stderr": ""
+}

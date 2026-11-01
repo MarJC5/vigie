@@ -58,23 +58,35 @@ var SecurityReads = map[string]wpcli.Command{
 	"option-sizes":                wpcli.OptionSizes(false),
 	"transient-sizes":             wpcli.OptionSizes(true),
 	"db-version":                  wpcli.DatabaseVersion(),
+	"constant-wp-debug-log":       wpcli.ConfigConstant("WP_DEBUG_LOG"),
+	"option-admin-email":          wpcli.OptionGet("admin_email"),
+	"option-new-admin-email":      wpcli.OptionGet("new_admin_email"),
+	"php-checks":                  wpcli.PHPChecks(),
 }
 
-// Derived are the security commands that follow from the recordings of a fixture: the two-factor
-// of each administrator, Wordfence's table with the prefix read, the PHP files in the uploads of
-// the real folder read. A read that failed gives none.
-func Derived(administrators, prefix, realRoot []byte) map[string]Line {
+// Derived are the security commands that follow from the recordings of a fixture, read by name:
+// the two-factor of each administrator, Wordfence's table with the prefix read, the PHP files in
+// the uploads and debug.log, found from the real folder and the constants read. A read that failed
+// gives none.
+func Derived(read func(name string) sshx.Result) map[string]Line {
 	lines := map[string]Line{}
-	if admins, err := wpcli.ParseAdministrators(administrators); err == nil {
+	if admins, err := wpcli.ParseAdministrators(read("administrators").Stdout); err == nil {
 		for _, a := range admins {
 			lines["two-factor-"+strconv.Itoa(a.ID)] = Line{Cmd: wpcli.TwoFactorMeta(a.ID)}
 		}
 	}
-	if p, err := wpcli.ParseDatabasePrefix(prefix); err == nil {
+	if p, err := wpcli.ParseDatabasePrefix(read("db-prefix").Stdout); err == nil {
 		lines["wordfence-two-factor"] = Line{Cmd: wpcli.WordfenceTwoFactorUsers(p)}
 	}
-	if dir, err := wpcli.ParseDir(realRoot); err == nil {
-		lines["uploads-php"] = Line{Shell: func() (string, error) { return remote.UploadsPHP(dir) }}
+	dir, err := wpcli.ParseDir(read("real-root").Stdout)
+	if err != nil {
+		return lines
+	}
+	lines["uploads-php"] = Line{Shell: func() (string, error) { return remote.UploadsPHP(dir) }}
+	if log, err := wpcli.ParseDebugLog(read("constant-wp-debug"), read("constant-wp-debug-log")); err == nil {
+		if file, err := wpcli.DebugLogFile(dir, log); err == nil {
+			lines["debug-log"] = Line{Shell: func() (string, error) { return remote.DebugLog(file) }}
+		}
 	}
 	return lines
 }
@@ -137,8 +149,7 @@ func Replay(t testing.TB, fake *sshxtest.Fake, fixture, root, wp string) {
 	for name, cmd := range SecurityReads {
 		lines[name] = Line{Cmd: cmd}
 	}
-	for name, l := range Derived([]byte(Recorded(t, fixture, "administrators").Stdout), []byte(Recorded(t, fixture, "db-prefix").Stdout),
-		[]byte(Recorded(t, fixture, "real-root").Stdout)) {
+	for name, l := range Derived(func(name string) sshx.Result { return Recorded(t, fixture, name) }) {
 		lines[name] = l
 	}
 	for name, l := range lines {

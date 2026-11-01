@@ -319,6 +319,15 @@ func ParseDebugLog(debug, log sshx.Result) (DebugLog, error) {
 	if err != nil {
 		return DebugLog{}, err
 	}
+	value, _, err := ParseConstant(log)
+	if err != nil {
+		return DebugLog{}, err
+	}
+	return DebugLogOf(on, value)
+}
+
+// DebugLogOf is ParseDebugLog from the constants' values (nil when not defined).
+func DebugLogOf(on, value any) (DebugLog, error) {
 	switch on.(type) {
 	case bool, float64, string, nil:
 	default:
@@ -326,10 +335,6 @@ func ParseDebugLog(debug, log sshx.Result) (DebugLog, error) {
 	}
 	if !phpTrue(on) {
 		return DebugLog{}, nil
-	}
-	value, _, err := ParseConstant(log)
-	if err != nil {
-		return DebugLog{}, err
 	}
 	switch v := value.(type) {
 	case bool:
@@ -345,6 +350,19 @@ func ParseDebugLog(debug, log sshx.Result) (DebugLog, error) {
 		return DebugLog{}, nil
 	}
 	return DebugLog{}, fmt.Errorf("WP_DEBUG_LOG %v: %w", value, ErrUnexpectedOutput)
+}
+
+// DebugLogFile is where the log is for a site whose real folder is root: the file WP_DEBUG_LOG
+// names, else the content folder's debug.log, also where a log left from before is looked for. A
+// relative name is relative to PHP's working folder, which the command line does not share: refused.
+func DebugLogFile(root string, log DebugLog) (string, error) {
+	if log.Path == "" {
+		return root + "/wp-content/debug.log", nil
+	}
+	if !strings.HasPrefix(log.Path, "/") {
+		return "", fmt.Errorf("WP_DEBUG_LOG %q is relative: %w", log.Path, ErrBadArgument)
+	}
+	return log.Path, nil
 }
 
 // phpTrue tells whether a constant's value is true for PHP: false, 0, "", "0" and null are not.

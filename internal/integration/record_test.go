@@ -14,6 +14,7 @@ import (
 
 	"github.com/MarJC5/vigie/internal/discover"
 	"github.com/MarJC5/vigie/internal/remote"
+	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/wpcli"
 	"github.com/MarJC5/vigie/internal/wpcli/wpclitest"
 )
@@ -201,15 +202,16 @@ func TestRecordSecurity(t *testing.T) {
 			lines[name] = wpclitest.Line{Cmd: cmd}
 		}
 		lines["real-root"] = wpclitest.RealRoot(path)
-		out := map[string]string{}
+		out := map[string]sshx.Result{}
 		for name, l := range lines {
 			line, err := l.Remote("wp", path)
 			if err != nil {
 				t.Fatal(err)
 			}
-			out[name] = run(filepath.Join(dir, fixture, name+".json"), line).Stdout
+			r := run(filepath.Join(dir, fixture, name+".json"), line)
+			out[name] = sshx.Result{Stdout: []byte(r.Stdout), Stderr: []byte(r.Stderr), ExitCode: r.Exit}
 		}
-		for name, l := range wpclitest.Derived([]byte(out["administrators"]), []byte(out["db-prefix"]), []byte(out["real-root"])) {
+		for name, l := range wpclitest.Derived(func(name string) sshx.Result { return out[name] }) {
 			line, err := l.Remote("wp", path)
 			if err != nil {
 				t.Fatal(err)

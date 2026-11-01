@@ -1,0 +1,8 @@
+{
+  "args": [
+    "'wp' 'option' 'get' 'admin_email' '--path=sites/broken' '--skip-plugins' '--skip-themes'"
+  ],
+  "exit": 1,
+  "stdout": "",
+  "stderr": "Error: Error establishing a database connection.\n"
+}

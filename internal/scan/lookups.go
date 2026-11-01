@@ -84,8 +84,11 @@ func (s Scanner) lookups(ctx context.Context, scan model.Scan) lookupsDone {
 		})
 	}
 	do(func() { l.core(ctx, scan.WordPress) })
-	if scan.PHPCLI != "" {
-		do(func() { l.php(ctx, scan.PHPCLI) })
+	// The PHP serving the pages when it is known, the command line's otherwise (ADR-0028).
+	if scan.PHPWeb.Version != "" {
+		do(func() { l.php(ctx, scan.PHPWeb.Version, "web") })
+	} else if scan.PHPCLI != "" {
+		do(func() { l.php(ctx, scan.PHPCLI, "cli") })
 	}
 	for _, item := range scan.Items {
 		switch {
@@ -172,7 +175,8 @@ func (l *lookupRun) core(ctx context.Context, wordpress string) {
 	l.vulnerabilities("core", wordpress, report, true)
 }
 
-func (l *lookupRun) php(ctx context.Context, php string) {
+// php checks a PHP version, on "web" (serving the pages) or "cli" (the command line's).
+func (l *lookupRun) php(ctx context.Context, php, on string) {
 	report, err := l.scanner.Lookups.PHP(ctx, php)
 	if err != nil {
 		l.fail(checkVulnerabilities, err)
@@ -180,7 +184,7 @@ func (l *lookupRun) php(ctx context.Context, php string) {
 	}
 	l.vulnerabilities("php", php, report.Report, false)
 	if report.Status == "s" || report.Status == "d" {
-		facts := map[string]string{"status": report.Status, "end": report.EndOfLife}
+		facts := map[string]string{"status": report.Status, "end": report.EndOfLife, "on": on}
 		l.stale(facts, report.Fetched)
 		l.add(model.Finding{Kind: model.KindPHPSupport, Subject: "php", Version: php, Level: model.LevelAttention, Facts: facts})
 	}
