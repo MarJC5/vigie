@@ -130,6 +130,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   about it. It also reads the admin email and the one waiting for its confirmation, and
   `debug.log`: its size, whether WordPress still writes it, and its fatal errors of the last week,
   as one finding with the latest's message. On a site's Overview and in `vigie scan --json`.
+- A multisite network in detail: it unfolds in the site list to its subsites, each with its page
+  (its address, state, theme, plugins, admin email and administrators); its Plugins tab says where
+  each plugin and theme is active (across the network, on some subsites, nowhere). A scan reads
+  every subsite in one go, with a read-only script sent to WP-CLI, and every administrator of a
+  subsite is a finding as those of the main site are, the super administrators first.
 
 ### Changed
 

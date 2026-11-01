@@ -1,9 +1,10 @@
 // Command seed prepares a data directory for the end-to-end test of the window: the interface
 // language when -lang is given, and unless -empty a fictional site manager that mirrors the fixture of the interface
-// stories, with fictional scans of two of its sites and the history of updates of one (never real
-// hosts or sites).
+// stories, with fictional scans of two of its sites and the history of updates of one; with
+// -network, instead, one host with a multisite network scanned (ADR-0029). Never real hosts or
+// sites.
 //
-// Usage: seed [-lang en|fr] [-empty] <data-dir>
+// Usage: seed [-lang en|fr] [-empty | -network] <data-dir>
 package main
 
 import (
@@ -22,18 +23,19 @@ import (
 func main() {
 	lang := flag.String("lang", "", "interface language; the system language when empty")
 	empty := flag.Bool("empty", false, "no folders, hosts or sites")
+	network := flag.Bool("network", false, "one host with a multisite network scanned, instead of the site manager")
 	flag.Parse()
 	if flag.NArg() != 1 {
-		fmt.Fprintln(os.Stderr, "usage: seed [-lang en|fr] [-empty] <data-dir>")
+		fmt.Fprintln(os.Stderr, "usage: seed [-lang en|fr] [-empty | -network] <data-dir>")
 		os.Exit(2)
 	}
-	if err := seed(context.Background(), flag.Arg(0), *lang, *empty); err != nil {
+	if err := seed(context.Background(), flag.Arg(0), *lang, *empty, *network); err != nil {
 		fmt.Fprintln(os.Stderr, "seed:", err)
 		os.Exit(1)
 	}
 }
 
-func seed(ctx context.Context, dir, lang string, empty bool) error {
+func seed(ctx context.Context, dir, lang string, empty, network bool) error {
 	if err := store.EnsureDataDir(dir); err != nil {
 		return err
 	}
@@ -50,6 +52,9 @@ func seed(ctx context.Context, dir, lang string, empty bool) error {
 		if err := app.NewPreferences(db, nil).SetLanguage(ctx, lang); err != nil {
 			return err
 		}
+	}
+	if network {
+		return seedNetwork(ctx, db)
 	}
 	if empty {
 		return nil
@@ -201,4 +206,56 @@ func scans(upToDate, outdated model.ID) []model.Scan {
 func ignore(ctx context.Context, db *store.DB, site model.ID) error {
 	return db.SaveIgnore(ctx, model.Ignore{SiteID: site, Key: model.Finding{Kind: model.KindHiddenFromSearch, Subject: "site"}.Key(),
 		Reason: "staging copy, hidden on purpose", Created: time.Now().Add(-24 * time.Hour)})
+}
+
+// seedNetwork stores one host with a multisite network and a scan of it that read its subsites
+// (ADR-0029): Contact Form 7 on two subsites, WooCommerce across the network, a super administrator
+// and a subsites' administrator without two-factor, an archived subsite.
+func seedNetwork(ctx context.Context, db *store.DB) error {
+	folder := model.Folder{ID: model.NewID(), Name: "Schools"}
+	host := model.Host{ID: model.NewID(), FolderID: folder.ID, Name: "Network hosting", Alias: "network"}
+	site := model.Site{ID: model.NewID(), HostID: host.ID, Name: "reseau-ecoles.ch", URL: "https://reseau-ecoles.ch", Multisite: true,
+		Subsites: []model.Subsite{
+			{BlogID: 1, URL: "https://reseau-ecoles.ch/", Public: true},
+			{BlogID: 2, URL: "https://reseau-ecoles.ch/alpha/", Public: true},
+			{BlogID: 3, URL: "https://reseau-ecoles.ch/beta/", Public: true},
+			{BlogID: 4, URL: "https://reseau-ecoles.ch/gamma/", Public: true, Archived: true},
+		}}
+	finished := time.Now().Add(-3 * time.Minute)
+	admin := func(login, level, state string, facts map[string]string) model.Finding {
+		facts["two-factor"], facts["email"], facts["registered"] = state, login+"@reseau-ecoles.ch", "2021-02-04"
+		return model.Finding{Kind: model.KindAdministrator, Subject: "user:" + login, Level: model.FindingLevel(level), Facts: facts}
+	}
+	scan := model.Scan{
+		ID: model.NewID(), SiteID: site.ID, Started: finished.Add(-6 * time.Second), Finished: finished, Outcome: model.ScanCompleted,
+		WordPress: "7.1.3", PHPCLI: "8.4.27", WPCLI: "2.12.0", Home: "https://reseau-ecoles.ch",
+		CoreChecked: true, PluginsChecked: true, ThemesChecked: true, LanguagesChecked: true,
+		Items: []model.ScanItem{
+			{Kind: model.ItemCore, Version: "7.1.3", Update: model.UpdateNone},
+			{Kind: model.ItemPlugin, Slug: "woocommerce", Title: "WooCommerce", Status: "active-network", Version: "9.8.1", Update: model.UpdateNone, OnWordPressOrg: true},
+			{Kind: model.ItemPlugin, Slug: "contact-form-7", Title: "Contact Form 7", Status: "inactive", Version: "6.0.4", Update: model.UpdateNone, OnWordPressOrg: true},
+			{Kind: model.ItemPlugin, Slug: "hello", Title: "Hello Dolly", Status: "inactive", Version: "1.7.2", Update: model.UpdateNone, OnWordPressOrg: true},
+			{Kind: model.ItemTheme, Slug: "twentytwentyfive", Title: "Twenty Twenty-Five", Status: "active", Version: "1.2", Update: model.UpdateNone, OnWordPressOrg: true},
+			{Kind: model.ItemTheme, Slug: "astra", Title: "Astra", Status: "inactive", Version: "4.8.1", Update: model.UpdateNone, OnWordPressOrg: true},
+		},
+		Findings: []model.Finding{
+			admin("jdupont", "attention", "off", map[string]string{"super": "true", "sites": "1"}),
+			admin("marie", "attention", "off", map[string]string{"sites": "2,3"}),
+			admin("admin", "info", "on", map[string]string{"super": "true", "sites": "1,2"}),
+		},
+		Network: &model.NetworkRead{Plugins: []string{"woocommerce"}, Sites: []model.SubsiteRead{
+			{BlogID: 1, Plugins: []string{}, Theme: "twentytwentyfive", ThemeName: "Twenty Twenty-Five", ThemeVersion: "1.2",
+				AdminEmail: "admin@reseau-ecoles.ch", Admins: []string{"admin", "jdupont"}},
+			{BlogID: 2, Plugins: []string{"contact-form-7"}, Theme: "astra", ThemeName: "Astra", ThemeVersion: "4.8.1",
+				AdminEmail: "direction@ecole-alpha.ch", Admins: []string{"admin", "marie"}},
+			{BlogID: 3, Plugins: []string{"contact-form-7"}, Theme: "astra", ThemeName: "Astra", ThemeVersion: "4.8.1",
+				AdminEmail: "beta@reseau-ecoles.ch", Admins: []string{"marie"}},
+		}},
+	}
+	for _, err := range []error{db.SaveFolder(ctx, folder), db.SaveHost(ctx, host), db.SaveSite(ctx, site)} {
+		if err != nil {
+			return err
+		}
+	}
+	return db.SaveScan(ctx, scan)
 }

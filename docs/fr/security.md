@@ -29,6 +29,15 @@ commandes shell (le vrai dossier du site, un `find` dans ses téléversements, e
   de l'utilisateur, Wordfence dans sa propre table quand Wordfence est actif (cette lecture demande
   le client `mysql` sur le serveur). **Jamais** un secret de double authentification, un code de
   secours ou un mot de passe.
+- **Les sous-sites d'un réseau** (multisite), en une fois : un script PHP en lecture seule livré
+  avec Vigie, `internal/wpcli/subsites.php`, envoyé à `wp eval-file -` par l'entrée standard, pour
+  que WordPress ne se charge qu'une fois pour tous les sous-sites. Il n'appelle que des fonctions
+  de lecture de WordPress (un test en vérifie la liste) et imprime, pour chaque sous-site ni
+  archivé, ni spam, ni supprimé, les extensions actives, le thème, l'e-mail d'administration et
+  les administrateurs avec leurs méthodes de double authentification. Pour le réseau, les
+  extensions actives partout et les super administrateurs. Chaque administrateur, du site principal
+  ou d'un sous-site, devient alors un constat, avec les sous-sites qu'il administre, les super
+  administrateurs en premier.
 - **Réglages** : les noms des constantes de `wp-config.php`, puis les valeurs de `WP_DEBUG`,
   `WP_DEBUG_DISPLAY`, `WP_DEBUG_LOG` et `DISALLOW_FILE_EDIT` seulement. **Jamais** le mot de passe
   de la base de données, les clés ni les sels.

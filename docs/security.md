@@ -25,6 +25,14 @@ site's real folder, a `find` in its uploads, and the end of `debug.log`):
   turned on: Two Factor, Solid Security and WP 2FA in the user's meta, Wordfence in its own table
   when Wordfence is active (that read needs the `mysql` client on the server). **Never** a
   two-factor secret, a backup code or a password.
+- **A network's subsites** (multisite), in one go: a read-only PHP script embedded in Vigie,
+  `internal/wpcli/subsites.php`, sent to `wp eval-file -` on standard input, so that WordPress
+  loads once for every subsite. It only calls WordPress's reading functions (a test checks the list)
+  and prints, for each subsite not archived, spam or deleted, the plugins active on it, its theme,
+  its admin email and its administrators with their two-factor methods; for the network, the
+  plugins active network-wide and the super administrators. Each administrator, of the main site or
+  of a subsite, is then one finding, with the subsites they administer, the super administrators
+  first.
 - **Settings**: the names of the constants of `wp-config.php`, then the values of `WP_DEBUG`,
   `WP_DEBUG_DISPLAY`, `WP_DEBUG_LOG` and `DISALLOW_FILE_EDIT` only. **Never** the database
   password, the keys or the salts.

@@ -28,7 +28,8 @@ to protect. Vigie takes another route:
   themes, translations), known vulnerabilities, abandoned plugins, file integrity, administrators
   and two-factor status, TLS certificate and domain expiry; and what changed since the previous
   scan (a new administrator, a plugin installed or a version changed outside Vigie, files changed).
-- Multisite networks handled as one site, with their subsites.
+- Multisite networks handled as one site, with their subsites: the plugins, theme and
+  administrators of each.
 - Safe updates, on one site or in bulk: backup first, update, check the site, and roll back on
   failure, including premium plugins.
 - English and French interface.

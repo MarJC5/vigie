@@ -61,5 +61,7 @@ export default defineConfig({
     // The background settings: the mode, automatic scans, the next scan shown.
     server(34127, "-lang en -empty"),
     server(34128, "-lang en -empty"),
+    // A multisite network scanned (ADR-0029), read only.
+    server(34129, "-lang fr -network"),
   ],
 });
