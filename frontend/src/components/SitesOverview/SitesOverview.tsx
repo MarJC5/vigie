@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { findingText } from "../../lib/findings";
@@ -63,6 +64,9 @@ export function SitesOverview({
   const { t, i18n } = useTranslation();
   const pending = rows.reduce((n, r) => n + r.pending, 0);
   const count = (status: string) => rows.filter((r) => r.status === status).length;
+  // A status chosen in the counts shows only its sites (ADR-0023, point 5).
+  const [filter, setFilter] = useState<string>();
+  const shown = filter === undefined ? rows : rows.filter((r) => r.status === filter);
   if (bulk && bulk.length > 0) {
     return (
       <>
@@ -117,13 +121,21 @@ export function SitesOverview({
         label={t("host.summary")}
         items={[
           { label: t("host.sites"), value: rows.length },
-          { label: t("host.urgent"), value: count("danger"), tone: "danger" },
-          { label: t("host.attention"), value: count("warn"), tone: "warn" },
-          { label: t("host.partial"), value: count("partial") },
-          { label: t("host.ok"), value: count("ok") },
-          ...(count("") > 0 ? [{ label: t("host.notScanned"), value: count("") }] : []),
+          { label: t("host.urgent"), value: count("danger"), tone: "danger", filter: "danger" },
+          { label: t("host.attention"), value: count("warn"), tone: "warn", filter: "warn" },
+          { label: t("host.partial"), value: count("partial"), filter: "partial" },
+          { label: t("host.ok"), value: count("ok"), filter: "ok" },
+          ...(count("") > 0 ? [{ label: t("host.notScanned"), value: count(""), filter: "" }] : []),
         ]}
-      />
+        selected={filter}
+        onSelect={rows.length > 1 ? setFilter : undefined}
+      >
+        {filter !== undefined && (
+          <Button variant="text" onClick={() => setFilter(undefined)}>
+            {t("host.showAll")}
+          </Button>
+        )}
+      </Counts>
       {rows.length === 0 ? (
         <p className={styles.empty}>{t(icon === "host" ? "edit.emptyHost" : "edit.emptyFolder")}</p>
       ) : (
@@ -136,7 +148,7 @@ export function SitesOverview({
             updates: t("host.col.updates"),
           }}
           notScanned={t("detail.notScanned")}
-          rows={rows.map((r) => ({
+          rows={shown.map((r) => ({
             id: r.id,
             name: r.name,
             status: r.status,

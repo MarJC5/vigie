@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fn, userEvent } from "storybook/test";
+import { expect, fn, userEvent, within } from "storybook/test";
 
 import { hostRows } from "../../fixtures/scans";
 import { bulk } from "../../fixtures/updates";
@@ -85,3 +85,28 @@ export const AfterAnUpdate: Story = {
   },
 };
 
+// The counts filter the table, Show all brings every site back; the headers sort it (ADR-0023).
+export const SortAndFilter: Story = {
+  play: async ({ canvas }) => {
+    const [table] = canvas.getAllByRole("table");
+    const names = () => within(table!).getAllByRole("row").slice(1).map((r) => r.querySelector("button")!.textContent);
+    const [summary] = canvas.getAllByRole("list", { name: "Summary" });
+    const urgent = within(summary!).getByRole("button", { name: /Urgent/ });
+    await userEvent.click(urgent);
+    await expect(urgent).toHaveAttribute("aria-pressed", "true");
+    await expect(names()).toEqual(["boulangerie-exemple.ch"]);
+    // A count at zero has nothing to show: not a button.
+    await expect(within(summary!).queryByRole("button", { name: /Need attention/ })).toBeNull();
+    await userEvent.click(canvas.getAllByRole("button", { name: "Show all" })[0]!);
+    await expect(names()).toHaveLength(3);
+    // The most updates first, then the other way; the status sorts the worst first.
+    const updates = within(table!).getByRole("button", { name: "Updates" });
+    await userEvent.click(updates);
+    await expect(updates.closest("th")).toHaveAttribute("aria-sort", "descending");
+    await expect(names()).toEqual(["boulangerie-exemple.ch", "atelier-exemple.ch", "nouveau.example.test"]);
+    await userEvent.click(updates);
+    await expect(names()).toEqual(["nouveau.example.test", "atelier-exemple.ch", "boulangerie-exemple.ch"]);
+    await userEvent.click(within(table!).getByRole("button", { name: "Status" }));
+    await expect(names()[0]).toBe("boulangerie-exemple.ch");
+  },
+};

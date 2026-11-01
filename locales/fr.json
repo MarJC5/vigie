@@ -438,7 +438,8 @@
     },
     "urgent": "Urgents",
     "ok": "À jour",
-    "partial": "Pas entièrement vérifiés"
+    "partial": "Pas entièrement vérifiés",
+    "showAll": "Tout afficher"
   },
   "notify": {
     "urgent_one": "{{name}} est devenu urgent",

@@ -24,10 +24,47 @@
   gap: var(--vg-space-2);
 }
 
+.item {
+  display: flex;
+}
+
 .count {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 2px;
+}
+
+/* Counts that filter: each in a quiet pad, the one chosen on the selection's ground. */
+.counts[data-filters] {
+  gap: var(--vg-space-2);
+}
+
+.counts[data-filters] .count {
+  padding: 6px var(--vg-space-3);
+  border: 0;
+  border-radius: var(--vg-radius-control);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.counts[data-filters] button.count {
+  cursor: pointer;
+}
+
+.counts[data-filters] button.count:hover {
+  background: var(--vg-surface-hover);
+}
+
+.counts[data-filters] button.count[aria-pressed="true"] {
+  background: var(--vg-surface-selected);
+}
+
+.counts[data-filters] button.count:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 2px;
 }
 
 .label {

@@ -62,3 +62,26 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* A header that sorts: its text, and the direction once chosen. */
+.sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.sort:hover {
+  text-decoration: underline;
+}
+
+.sort:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}

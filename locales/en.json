@@ -418,7 +418,8 @@
     },
     "urgent": "Urgent",
     "ok": "Up to date",
-    "partial": "Not fully checked"
+    "partial": "Not fully checked",
+    "showAll": "Show all"
   },
   "notify": {
     "urgent_one": "{{name}} turned urgent",
