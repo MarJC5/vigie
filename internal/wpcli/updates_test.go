@@ -164,6 +164,14 @@ func TestParseDebugLog(t *testing.T) {
 		{"WP_DEBUG off", text("false"), log, wpcli.DebugLog{}},
 		{"WP_DEBUG_LOG not defined", debug, missing, wpcli.DebugLog{}},
 		{"WP_DEBUG_LOG false", debug, text("false"), wpcli.DebugLog{}},
+		// As wp_debug_mode(): "true" and "1" in any case, and 1, name the content folder's debug.log.
+		{`WP_DEBUG_LOG "1"`, debug, text(`"1"`), wpcli.DebugLog{Enabled: true}},
+		{`WP_DEBUG_LOG "TRUE"`, debug, text(`"TRUE"`), wpcli.DebugLog{Enabled: true}},
+		{"WP_DEBUG_LOG 1", debug, text("1"), wpcli.DebugLog{Enabled: true}},
+		{"WP_DEBUG_LOG 2: not a string, no log", debug, text("2"), wpcli.DebugLog{}},
+		{`WP_DEBUG_LOG ""`, debug, text(`""`), wpcli.DebugLog{}},
+		{`WP_DEBUG "1": true for PHP`, text(`"1"`), log, wpcli.DebugLog{Enabled: true}},
+		{"WP_DEBUG 0", text("0"), log, wpcli.DebugLog{}},
 	}
 	for _, tt := range tests {
 		got, err := wpcli.ParseDebugLog(tt.debug, tt.log)

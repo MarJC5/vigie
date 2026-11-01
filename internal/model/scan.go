@@ -10,6 +10,13 @@ type PHPWeb struct {
 	Unknown PHPWebUnknown
 }
 
+// DebugLog is the log of PHP errors WordPress writes, as a scan found it (ADR-0028).
+type DebugLog struct {
+	Path    string // where it is, relative to the site's folder when within it; empty when there is none
+	Size    int64
+	Written bool // WordPress writes to it (WP_DEBUG and WP_DEBUG_LOG); a file left from before otherwise
+}
+
 // PHPWebUnknown is why the PHP serving the pages was not read.
 type PHPWebUnknown string
 
@@ -91,9 +98,14 @@ type Scan struct {
 	WordPress string // installed version
 	PHPCLI    string // PHP on the command line
 	PHPWeb    PHPWeb // PHP serving the pages, as the dashboard noted it
-	WPCLI     string // WP-CLI version
-	Home      string // the site's address
-	SiteURL   string // the WordPress address (siteurl), where wp-admin lives
+	// AdminEmail is where WordPress sends its notices (admin_email); AdminEmailPending the address
+	// waiting for its confirmation (new_admin_email), when there is one.
+	AdminEmail        string
+	AdminEmailPending string
+	DebugLog          DebugLog
+	WPCLI             string // WP-CLI version
+	Home              string // the site's address
+	SiteURL           string // the WordPress address (siteurl), where wp-admin lives
 
 	// Whether each update check is proven to have reached wordpress.org.
 	CoreChecked      bool

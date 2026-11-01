@@ -310,12 +310,22 @@ type DebugLog struct {
 	Path    string // its own file; empty for debug.log in the content folder
 }
 
-// ParseDebugLog reads the constants WP_DEBUG and WP_DEBUG_LOG: WordPress writes its log only with
-// both, to the content folder's debug.log, or to the file WP_DEBUG_LOG names.
+// ParseDebugLog reads the constants WP_DEBUG and WP_DEBUG_LOG as wp_debug_mode() does: WordPress
+// writes its log only when WP_DEBUG is true for PHP, to the content folder's debug.log when
+// WP_DEBUG_LOG is "true" or "1" (in any case, or true, or 1), to the file it names when it is
+// another string.
 func ParseDebugLog(debug, log sshx.Result) (DebugLog, error) {
 	on, _, err := ParseConstant(debug)
-	if err != nil || on != true {
+	if err != nil {
 		return DebugLog{}, err
+	}
+	switch on.(type) {
+	case bool, float64, string, nil:
+	default:
+		return DebugLog{}, fmt.Errorf("WP_DEBUG %v: %w", on, ErrUnexpectedOutput)
+	}
+	if !phpTrue(on) {
+		return DebugLog{}, nil
 	}
 	value, _, err := ParseConstant(log)
 	if err != nil {
@@ -324,12 +334,30 @@ func ParseDebugLog(debug, log sshx.Result) (DebugLog, error) {
 	switch v := value.(type) {
 	case bool:
 		return DebugLog{Enabled: v}, nil
+	case float64:
+		return DebugLog{Enabled: v == 1}, nil
 	case string:
+		if l := strings.ToLower(v); l == "true" || l == "1" {
+			return DebugLog{Enabled: true}, nil
+		}
 		return DebugLog{Enabled: v != "", Path: v}, nil
 	case nil:
 		return DebugLog{}, nil
 	}
 	return DebugLog{}, fmt.Errorf("WP_DEBUG_LOG %v: %w", value, ErrUnexpectedOutput)
+}
+
+// phpTrue tells whether a constant's value is true for PHP: false, 0, "", "0" and null are not.
+func phpTrue(v any) bool {
+	switch v := v.(type) {
+	case bool:
+		return v
+	case float64:
+		return v != 0
+	case string:
+		return v != "" && v != "0"
+	}
+	return v != nil
 }
 
 // ParseConstant reads ConfigConstant's result: its JSON value (a bool, string, number or nil), or

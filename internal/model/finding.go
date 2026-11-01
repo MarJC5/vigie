@@ -68,6 +68,9 @@ const (
 	KindDomain FindingKind = "domain"
 	// KindDebugLog: the site serves its debug.log to anyone; Facts url.
 	KindDebugLog FindingKind = "debug-log"
+	// KindDebugFatal: fatal or parse errors written to debug.log in the last 7 days; Facts count,
+	// last (RFC 3339), message (the latest's, cut).
+	KindDebugFatal FindingKind = "debug-fatal"
 	// KindCheck: a check that could not run, Identifier its name; Facts reason ("off": the
 	// destination is turned off or not agreed to; "error"), error.
 	KindCheck FindingKind = "check"

@@ -54,6 +54,8 @@ func TestRemoteCommands(t *testing.T) {
 		{"size", func() (string, error) { return remote.FileSize("/home/u/sites/a/wp-content/debug.log") }, `wc -c < '/home/u/sites/a/wp-content/debug.log'`},
 		{"fatal errors", func() (string, error) { return remote.FatalsSince("/home/u/sites/a/wp-content/debug.log", 1200) },
 			`tail -c +1201 '/home/u/sites/a/wp-content/debug.log' | grep -m 3 'PHP Fatal error'`},
+		{"debug.log of a scan", func() (string, error) { return remote.DebugLog("/home/u/sites/a/wp-content/debug.log") },
+			`f='/home/u/sites/a/wp-content/debug.log'; [ -f "$f" ] || exit 0; wc -c < "$f"; tail -c 1048576 "$f" | grep -E 'PHP (Fatal|Parse) error' | tail -n 50`},
 		{"backups", func() (string, error) { return remote.ListBackups(site) }, `ls -1 '.vigie/backups/01a18704-356b-77be-ab41-b92a0d67a6bc'`},
 		{"remove a backup", func() (string, error) { return remote.RemoveBackup(dir) }, `rm -rf '` + dir + `'`},
 	}
@@ -86,6 +88,7 @@ func TestRemoteCommandsRefuseBadPaths(t *testing.T) {
 		},
 		"debug log not absolute": func() (string, error) { return remote.FileSize("wp-content/debug.log") },
 		"a negative offset":      func() (string, error) { return remote.FatalsSince("/a/debug.log", -1) },
+		"a scan's log relative":  func() (string, error) { return remote.DebugLog("debug.log") },
 		"a dump out of a backup": func() (string, error) { return remote.Uncompress("/tmp/x.sql.gz") },
 		"home as a root":         func() (string, error) { return remote.RealRoot("~") },
 	} {
@@ -198,5 +201,35 @@ func TestParseUploadsPHP(t *testing.T) {
 		if files, _ := remote.ParseUploadsPHP(root, []byte(line)); (len(files) == 0) != tc.dropped {
 			t.Errorf("%s (%s bytes) %q: listed %v, want dropped %v", tc.file, tc.size, tc.content, files, tc.dropped)
 		}
+	}
+}
+
+func TestParseDebugLog(t *testing.T) {
+	now := time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC)
+	long := strings.Repeat("x", 400)
+	out := "4012345\n" +
+		"[20-Oct-2026 08:00:00 UTC] PHP Fatal error:  Old one in /a.php:1\n" +
+		"[30-Oct-2026 09:15:00 UTC] PHP Parse error:  syntax error, unexpected '}' in /b.php on line 3\n" +
+		"PHP Fatal error:  without a date\n" +
+		"[31-Oct-2026 02:14:07 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function wc_get_order() " + long + "\n"
+	got, err := remote.ParseDebugLog([]byte(out), now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := remote.DebugLogRead{Exists: true, Size: 4012345, Recent: 2,
+		Last:    time.Date(2026, 10, 31, 2, 14, 7, 0, time.UTC),
+		Message: ("PHP Fatal error:  Uncaught Error: Call to undefined function wc_get_order() " + long)[:300]}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("ParseDebugLog() = %+v\nwant %+v", got, want)
+	}
+
+	if got, err := remote.ParseDebugLog(nil, now); err != nil || got.Exists {
+		t.Errorf("ParseDebugLog() of no file = %+v, %v", got, err)
+	}
+	if got, err := remote.ParseDebugLog([]byte("  812\n"), now); err != nil || got != (remote.DebugLogRead{Exists: true, Size: 812}) {
+		t.Errorf("ParseDebugLog() without errors = %+v, %v", got, err)
+	}
+	if _, err := remote.ParseDebugLog([]byte("lots\n"), now); err == nil {
+		t.Error("ParseDebugLog() of a size that is not a number: no error")
 	}
 }

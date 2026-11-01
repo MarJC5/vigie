@@ -1,6 +1,7 @@
-// Package remote builds the shell commands Vigie runs on a server around WP-CLI during an update:
-// backups, restores, the size and the new lines of debug.log, the dump tool. They are fixed; their
-// values are quoted, and a path outside Vigie's backups or a site's folders is refused.
+// Package remote builds the shell commands Vigie runs on a server around WP-CLI: during an update,
+// backups, restores, the size and the new lines of debug.log, the dump tool; during a scan, the PHP
+// files of the uploads and what debug.log holds. They are fixed; their values are quoted, and a path
+// outside Vigie's backups or a site's folders is refused.
 package remote
 
 import (
@@ -176,6 +177,77 @@ func FatalsSince(file string, offset int64) (string, error) {
 	}
 	q, err := quoted(file)
 	return "tail -c +" + strconv.FormatInt(offset+1, 10) + " " + q + " | grep -m 3 'PHP Fatal error'", err
+}
+
+// DebugLog reads, in one go, a scan's view of a site's debug.log (ADR-0028): nothing when there is no
+// such file; else its size, then the last fatal and parse errors of its last megabyte, at most
+// debugLines of them.
+func DebugLog(file string) (string, error) {
+	if err := folder(file); err != nil {
+		return "", err
+	}
+	q, err := quoted(file)
+	if err != nil {
+		return "", err
+	}
+	return "f=" + q + `; [ -f "$f" ] || exit 0; wc -c < "$f"; tail -c ` + strconv.Itoa(debugTail) + ` "$f" | grep -E 'PHP (Fatal|Parse) error' | tail -n ` +
+		strconv.Itoa(debugLines), nil
+}
+
+const (
+	debugTail  = 1 << 20 // the bytes of the end of debug.log searched
+	debugLines = 50      // the error lines transferred at most
+	// RecentFatals is how far back a fatal error counts as recent.
+	RecentFatals = 7 * 24 * time.Hour
+	// fatalShown is how much of the latest error's message is kept.
+	fatalShown = 300
+)
+
+// DebugLogRead is what a scan read of a site's debug.log.
+type DebugLogRead struct {
+	Exists  bool
+	Size    int64
+	Recent  int       // the fatal and parse errors of the last RecentFatals
+	Last    time.Time // the latest of them, UTC
+	Message string    // its message, without its time, cut at fatalShown characters
+}
+
+// logTime is the time PHP writes before each line of its log ("[d-M-Y H:i:s e]"), in UTC since
+// WordPress sets it.
+var logTime = regexp.MustCompile(`^\[(\d{2}-[A-Z][a-z]{2}-\d{4} \d{2}:\d{2}:\d{2}) ([^\]]+)\] `)
+
+// ParseDebugLog reads DebugLog's answer; the errors without a time PHP wrote are not counted.
+func ParseDebugLog(out []byte, now time.Time) (DebugLogRead, error) {
+	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
+	if len(lines) == 1 && lines[0] == "" {
+		return DebugLogRead{}, nil
+	}
+	size, err := strconv.ParseInt(strings.TrimSpace(lines[0]), 10, 64)
+	if err != nil || size < 0 {
+		return DebugLogRead{}, fmt.Errorf("size %q: %w", lines[0], wpcli.ErrUnexpectedOutput)
+	}
+	read := DebugLogRead{Exists: true, Size: size}
+	for _, line := range lines[1:] {
+		m := logTime.FindStringSubmatch(line)
+		if m == nil {
+			continue
+		}
+		loc, err := time.LoadLocation(m[2])
+		if err != nil {
+			continue
+		}
+		at, err := time.ParseInLocation("02-Jan-2006 15:04:05", m[1], loc)
+		if err != nil || now.Sub(at) > RecentFatals {
+			continue
+		}
+		read.Recent++
+		if at = at.UTC(); !at.Before(read.Last) {
+			read.Last = at
+			message := []rune(strings.TrimSpace(line[len(m[0]):]))
+			read.Message = string(message[:min(len(message), fatalShown)])
+		}
+	}
+	return read, nil
 }
 
 // UploadsPHP lists the PHP files under a site's uploads folder, where WordPress never puts any: one
