@@ -28,7 +28,10 @@ func scanOf(site model.Site, started time.Time, wp string) model.Scan {
 		Started: started, Finished: started.Add(3 * time.Second),
 		Outcome:   model.ScanCompleted,
 		WordPress: wp, PHPCLI: "8.4.27", WPCLI: "2.12.0", Home: "https://" + site.Name,
-		SiteURL:     "https://" + site.Name + "/wp",
+		SiteURL:    "https://" + site.Name + "/wp",
+		PHPWeb:     model.PHPWeb{Version: "8.2.29", Seen: started.Add(-24 * time.Hour)},
+		AdminEmail: "admin@" + site.Name, AdminEmailPending: "webmaster@" + site.Name,
+		DebugLog:    model.DebugLog{Path: "wp-content/debug.log", Size: 40052, Written: true},
 		CoreChecked: true, PluginsChecked: true, ThemesChecked: false, LanguagesChecked: true,
 		Items: []model.ScanItem{
 			{Kind: model.ItemCore, Status: "minor", Version: wp, Update: model.UpdateAvailable, UpdateVersion: "7.1.4"},
@@ -47,6 +50,7 @@ func TestScansAreKeptAndTheLatestIsRead(t *testing.T) {
 	first, second := scanOf(a, start, "7.1.2"), scanOf(a, start.Add(time.Hour), "7.1.3")
 	other := scanOf(b, start, "7.0")
 	other.Outcome, other.Failure, other.Error, other.Items = model.ScanFailed, "timedOut", "ssh: connect to host: Operation timed out", nil
+	other.PHPWeb, other.AdminEmail, other.AdminEmailPending, other.DebugLog = model.PHPWeb{Unknown: model.PHPWebObjectCache}, "", "", model.DebugLog{}
 	for _, s := range []model.Scan{first, second, other} {
 		must(t, db.SaveScan(ctx, s))
 	}

@@ -33,7 +33,10 @@ func scannedIn(t *testing.T) (*app.SiteManager, *store.DB, model.Host, model.Sit
 	err := db.SaveScan(ctx, model.Scan{
 		ID: model.NewID(), SiteID: outdated.ID, Started: finished.Add(-3 * time.Second), Finished: finished,
 		Outcome: model.ScanCompleted, WordPress: "7.1.3", PHPCLI: "8.4.27", WPCLI: "2.12.0", Home: "https://outdated.example.test",
-		SiteURL:     "https://outdated.example.test/wp",
+		SiteURL:    "https://outdated.example.test/wp",
+		PHPWeb:     model.PHPWeb{Version: "8.2.29", Seen: finished.Add(-24 * time.Hour)},
+		AdminEmail: "admin@outdated.example.test", AdminEmailPending: "webmaster@outdated.example.test",
+		DebugLog:    model.DebugLog{Path: "wp-content/debug.log", Size: 40052, Written: true},
 		CoreChecked: true, PluginsChecked: true, ThemesChecked: true, LanguagesChecked: false,
 		Items: []model.ScanItem{
 			{Kind: model.ItemCore, Status: "minor", Version: "7.1.3", Update: model.UpdateAvailable, UpdateVersion: "7.1.4"},
@@ -103,6 +106,12 @@ func TestSiteDetail(t *testing.T) {
 	}
 	if s.Plugins != 2 || s.Themes != 1 {
 		t.Fatalf("installed: %d plugins, %d themes", s.Plugins, s.Themes)
+	}
+	// The complements (ADR-0028).
+	if s.PHPWeb != (app.PHPWebView{Version: "8.2.29", Seen: "2026-10-28T09:00:03Z"}) || s.AdminEmail != "admin@outdated.example.test" ||
+		s.AdminEmailPending != "webmaster@outdated.example.test" ||
+		s.DebugLog == nil || *s.DebugLog != (app.DebugLogView{Path: "wp-content/debug.log", Size: 40052, Written: true}) {
+		t.Fatalf("PHP on the web %+v, admin email %q (%q), debug.log %+v", s.PHPWeb, s.AdminEmail, s.AdminEmailPending, s.DebugLog)
 	}
 	// Every plugin and theme, as the scan read them (ADR-0024), WordPress and translations left out.
 	want := []app.ExtensionView{

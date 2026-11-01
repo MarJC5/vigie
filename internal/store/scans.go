@@ -37,11 +37,13 @@ func saveScan(ctx context.Context, tx *sql.Tx, s model.Scan) error {
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO scans (id, site_id, started_at, finished_at, outcome, failure, error,
 			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
-			files_checked_at, run_id, site_url)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			files_checked_at, run_id, site_url, php_web, php_web_seen_at, php_web_unknown, admin_email, admin_email_pending,
+			debug_log_path, debug_log_size, debug_log_written)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		s.ID.String(), s.SiteID.String(), timeText(s.Started), timeText(s.Finished), string(s.Outcome), s.Failure, s.Error,
 		s.WordPress, s.PHPCLI, s.WPCLI, s.Home, s.CoreChecked, s.PluginsChecked, s.ThemesChecked, s.LanguagesChecked,
-		optionalTime(s.FilesChecked), optionalID(s.RunID), s.SiteURL)
+		optionalTime(s.FilesChecked), optionalID(s.RunID), s.SiteURL, s.PHPWeb.Version, optionalTime(s.PHPWeb.Seen),
+		string(s.PHPWeb.Unknown), s.AdminEmail, s.AdminEmailPending, s.DebugLog.Path, s.DebugLog.Size, s.DebugLog.Written)
 	if err != nil {
 		return err
 	}
@@ -127,7 +129,8 @@ func (db *DB) Scans(ctx context.Context, siteID model.ID) ([]model.Scan, error) 
 func (db *DB) readScans(ctx context.Context, where string, args ...any) ([]model.Scan, error) {
 	rows, err := db.sql.QueryContext(ctx, `SELECT id, site_id, started_at, finished_at, outcome, failure, error,
 			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
-			files_checked_at, run_id, site_url
+			files_checked_at, run_id, site_url, php_web, php_web_seen_at, php_web_unknown, admin_email, admin_email_pending,
+			debug_log_path, debug_log_size, debug_log_written
 		FROM scans s WHERE `+where+` ORDER BY id`, args...)
 	if err != nil {
 		return nil, err
@@ -136,10 +139,16 @@ func (db *DB) readScans(ctx context.Context, where string, args ...any) ([]model
 	var scans []model.Scan
 	for rows.Next() {
 		var s model.Scan
-		var id, site, started, finished, outcome, filesChecked, run string
+		var id, site, started, finished, outcome, filesChecked, run, webSeen, webUnknown string
 		if err := rows.Scan(&id, &site, &started, &finished, &outcome, &s.Failure, &s.Error,
 			&s.WordPress, &s.PHPCLI, &s.WPCLI, &s.Home,
-			&s.CoreChecked, &s.PluginsChecked, &s.ThemesChecked, &s.LanguagesChecked, &filesChecked, &run, &s.SiteURL); err != nil {
+			&s.CoreChecked, &s.PluginsChecked, &s.ThemesChecked, &s.LanguagesChecked, &filesChecked, &run, &s.SiteURL,
+			&s.PHPWeb.Version, &webSeen, &webUnknown, &s.AdminEmail, &s.AdminEmailPending,
+			&s.DebugLog.Path, &s.DebugLog.Size, &s.DebugLog.Written); err != nil {
+			return nil, err
+		}
+		s.PHPWeb.Unknown = model.PHPWebUnknown(webUnknown)
+		if s.PHPWeb.Seen, err = parseOptionalTime(webSeen); err != nil {
 			return nil, err
 		}
 		if s.RunID, err = parseOptionalID(run); err != nil {

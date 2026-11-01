@@ -235,6 +235,22 @@ export interface CreateResult {
 }
 
 /**
+ * DebugLogView is the site's debug.log (ADR-0028).
+ */
+export interface DebugLogView {
+    /**
+     * relative to the site's folder when within it
+     */
+    "path": string;
+
+    /**
+     * bytes
+     */
+    "size": number;
+    "written": boolean;
+}
+
+/**
  * DestinationView is a service a scan may ask, and whether it is turned on.
  */
 export interface DestinationView {
@@ -831,6 +847,27 @@ export interface OperationView {
 }
 
 /**
+ * PHPWebView is the PHP serving the pages, as the dashboard noted it (ADR-0028).
+ */
+export interface PHPWebView {
+    /**
+     * "" when not read
+     */
+    "version": string;
+
+    /**
+     * RFC 3339, "" when unknown
+     */
+    "seen": string;
+
+    /**
+     * Unknown is why it was not read: not-noted, object-cache, unmatched; "" when read, or when the
+     * check could not run (a finding says so).
+     */
+    "unknown": string;
+}
+
+/**
  * PendingView counts the updates that can be installed.
  */
 export interface PendingView {
@@ -914,8 +951,21 @@ export interface ScanView {
     "problem": Problem | null;
     "wordpress": string;
     "phpCli": string;
+    "phpWeb": PHPWebView;
     "wpCli": string;
     "home": string;
+
+    /**
+     * AdminEmail is where WordPress sends its notices; AdminEmailPending the address waiting for
+     * its confirmation, "" when none (ADR-0028).
+     */
+    "adminEmail": string;
+    "adminEmailPending": string;
+
+    /**
+     * nil when there is none
+     */
+    "debugLog": DebugLogView | null;
     "checked": ChecksView;
     "pending": PendingView;
 

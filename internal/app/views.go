@@ -39,20 +39,42 @@ type SiteView struct {
 	ChangesSince string       `json:"changesSince"`
 }
 
+// PHPWebView is the PHP serving the pages, as the dashboard noted it (ADR-0028).
+type PHPWebView struct {
+	Version string `json:"version"` // "" when not read
+	Seen    string `json:"seen"`    // RFC 3339, "" when unknown
+	// Unknown is why it was not read: not-noted, object-cache, unmatched; "" when read, or when the
+	// check could not run (a finding says so).
+	Unknown string `json:"unknown"`
+}
+
+// DebugLogView is the site's debug.log (ADR-0028).
+type DebugLogView struct {
+	Path    string `json:"path"` // relative to the site's folder when within it
+	Size    int64  `json:"size"` // bytes
+	Written bool   `json:"written"`
+}
+
 // ScanView is a scan as the interface shows it.
 type ScanView struct {
-	Finished  string      `json:"finished"` // RFC 3339
-	Outcome   string      `json:"outcome"`
-	Status    string      `json:"status"`
-	Problem   *Problem    `json:"problem"` // why the scan did not complete
-	WordPress string      `json:"wordpress"`
-	PHPCLI    string      `json:"phpCli"`
-	WPCLI     string      `json:"wpCli"`
-	Home      string      `json:"home"`
-	Checked   ChecksView  `json:"checked"`
-	Pending   PendingView `json:"pending"`
-	Plugins   int         `json:"plugins"` // installed
-	Themes    int         `json:"themes"`
+	Finished  string     `json:"finished"` // RFC 3339
+	Outcome   string     `json:"outcome"`
+	Status    string     `json:"status"`
+	Problem   *Problem   `json:"problem"` // why the scan did not complete
+	WordPress string     `json:"wordpress"`
+	PHPCLI    string     `json:"phpCli"`
+	PHPWeb    PHPWebView `json:"phpWeb"`
+	WPCLI     string     `json:"wpCli"`
+	Home      string     `json:"home"`
+	// AdminEmail is where WordPress sends its notices; AdminEmailPending the address waiting for
+	// its confirmation, "" when none (ADR-0028).
+	AdminEmail        string        `json:"adminEmail"`
+	AdminEmailPending string        `json:"adminEmailPending"`
+	DebugLog          *DebugLogView `json:"debugLog"` // nil when there is none
+	Checked           ChecksView    `json:"checked"`
+	Pending           PendingView   `json:"pending"`
+	Plugins           int           `json:"plugins"` // installed
+	Themes            int           `json:"themes"`
 	// Updates lists what needs attention: available, impossible for now, or in an unknown state.
 	Updates []UpdateView `json:"updates"`
 	// SourceUnknown names the plugins whose updates Vigie cannot see (not on wordpress.org).
@@ -188,6 +210,8 @@ func scanView(s model.Scan) *ScanView {
 	v := &ScanView{
 		Finished: s.Finished.UTC().Format(time.RFC3339), Outcome: string(s.Outcome), Status: string(s.Status()),
 		Problem: ScanProblem(s), WordPress: s.WordPress, PHPCLI: s.PHPCLI, WPCLI: s.WPCLI, Home: s.Home,
+		PHPWeb:     PHPWebView{Version: s.PHPWeb.Version, Seen: rfc3339(s.PHPWeb.Seen), Unknown: string(s.PHPWeb.Unknown)},
+		AdminEmail: s.AdminEmail, AdminEmailPending: s.AdminEmailPending,
 		Checked:       ChecksView{Core: s.CoreChecked, Plugins: s.PluginsChecked, Themes: s.ThemesChecked, Languages: s.LanguagesChecked},
 		Pending:       PendingView{Core: p.Core, Plugins: p.Plugins, Themes: p.Themes, Languages: p.Languages},
 		Updates:       []UpdateView{},
@@ -195,6 +219,9 @@ func scanView(s model.Scan) *ScanView {
 		FilesChecked:  rfc3339(s.FilesChecked),
 		Findings:      findingViews(s),
 		Extensions:    []ExtensionView{},
+	}
+	if s.DebugLog.Path != "" {
+		v.DebugLog = &DebugLogView{Path: s.DebugLog.Path, Size: s.DebugLog.Size, Written: s.DebugLog.Written}
 	}
 	if s.Attempt != nil {
 		v.Attempt = &AttemptView{Finished: rfc3339(s.Attempt.Finished), Problem: ScanProblem(*s.Attempt)}
