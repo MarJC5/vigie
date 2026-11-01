@@ -30,6 +30,11 @@ export const outdatedSite: SiteView = {
   path: "~/sites/boulangerie",
   url: "https://boulangerie-exemple.ch",
   multisite: false,
+  sshCommand: `ssh -t u12ab@ssh.example-host.ch "cd 'sites/boulangerie' && exec \\$SHELL -l"`,
+  sshUrl: "ssh://u12ab@ssh.example-host.ch:22",
+  adminUrl: "https://boulangerie-exemple.ch/wp-admin/",
+  ownAdminUrl: "",
+  computedAdminUrl: "https://boulangerie-exemple.ch/wp-admin/",
   scan: scan({
     status: "warn",
     home: "https://boulangerie-exemple.ch",
@@ -52,6 +57,11 @@ export const upToDateSite: SiteView = {
   path: "~/sites/atelier",
   url: "https://atelier-exemple.ch",
   multisite: false,
+  sshCommand: `ssh -t u12ab@ssh.example-host.ch "cd 'sites/atelier' && exec \\$SHELL -l"`,
+  sshUrl: "ssh://u12ab@ssh.example-host.ch:22",
+  adminUrl: "https://atelier-exemple.ch/wp-admin/",
+  ownAdminUrl: "",
+  computedAdminUrl: "https://atelier-exemple.ch/wp-admin/",
   scan: scan({}),
 };
 
@@ -61,6 +71,11 @@ export const offlineSite: SiteView = {
   path: "~/sites/cabinet",
   url: "https://cabinet-exemple.ch",
   multisite: false,
+  sshCommand: `ssh -t u12ab@ssh.example-host.ch "cd 'sites/cabinet' && exec \\$SHELL -l"`,
+  sshUrl: "ssh://u12ab@ssh.example-host.ch:22",
+  adminUrl: "https://cabinet-exemple.ch/wp-admin/",
+  ownAdminUrl: "",
+  computedAdminUrl: "https://cabinet-exemple.ch/wp-admin/",
   scan: scan({ status: "warn", checked: { core: false, plugins: false, themes: false, languages: false } }),
 };
 
@@ -70,6 +85,11 @@ export const failedSite: SiteView = {
   path: "~/sites/vieux",
   url: "",
   multisite: false,
+  sshCommand: `ssh -t u12ab@ssh.example-host.ch "cd 'sites/vieux' && exec \\$SHELL -l"`,
+  sshUrl: "ssh://u12ab@ssh.example-host.ch:22",
+  adminUrl: "",
+  ownAdminUrl: "",
+  computedAdminUrl: "",
   scan: scan({
     outcome: "failed",
     status: "unknown",
@@ -83,7 +103,7 @@ export const failedSite: SiteView = {
   }),
 };
 
-export const newSite: SiteView = { id: "new", name: "nouveau.example.test", path: "~/sites/nouveau", url: "", multisite: false, scan: null };
+export const newSite: SiteView = { id: "new", name: "nouveau.example.test", path: "~/sites/nouveau", url: "", multisite: false, scan: null, sshCommand: `ssh -t u12ab@ssh.example-host.ch "cd 'sites/nouveau' && exec \\$SHELL -l"`, sshUrl: "ssh://u12ab@ssh.example-host.ch:22", adminUrl: "", ownAdminUrl: "", computedAdminUrl: "" };
 
 export const hostRows: SiteRow[] = [
   { id: "atelier", name: "atelier-exemple.ch", path: "Clients/Shared hosting/atelier-exemple.ch", status: "ok", wordpress: "7.1.3", phpCli: "8.4.27", pending: 0, worst: null },

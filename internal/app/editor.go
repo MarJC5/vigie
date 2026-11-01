@@ -95,6 +95,18 @@ func (e *Editor) SetNotes(ctx context.Context, id, notes string) *Problem {
 	return ProblemOf(e.ws.SetNotes(ctx, n, notes))
 }
 
+// SetAdminURL gives a site the admin address the user knows (ADR-0023, amended); "" clears it.
+func (e *Editor) SetAdminURL(ctx context.Context, id, address string) *Problem {
+	n, err := e.node(ctx, id)
+	if err != nil {
+		return ProblemOf(err)
+	}
+	if n.Kind != model.KindSite {
+		return ProblemOf(errNodeNotFound) // only a site has a dashboard
+	}
+	return ProblemOf(e.ws.SetAdminURL(ctx, n, address))
+}
+
 // Delete removes a site, a host with its sites, or an empty folder from Vigie.
 func (e *Editor) Delete(ctx context.Context, id string) *Problem {
 	n, err := e.node(ctx, id)

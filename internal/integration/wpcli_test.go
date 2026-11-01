@@ -33,6 +33,7 @@ func TestParsersReadLiveOutputs(t *testing.T) {
 	}{
 		"core version": {wpcli.CoreVersion(), func(b []byte) error { _, err := wpcli.ParseCoreVersion(b); return err }},
 		"home":         {wpcli.OptionGet("home"), func(b []byte) error { _, err := wpcli.ParseHome(b); return err }},
+		"siteurl":      {wpcli.OptionGet("siteurl"), func(b []byte) error { _, err := wpcli.ParseSiteURL(b); return err }},
 		"core updates": {wpcli.CoreCheckUpdate(), func(b []byte) error { _, err := wpcli.ParseCoreUpdates(b); return err }},
 		"plugins":      {wpcli.PluginList(), func(b []byte) error { _, err := wpcli.ParsePlugins(b); return err }},
 		"themes":       {wpcli.ThemeList(), func(b []byte) error { _, err := wpcli.ParseThemes(b); return err }},

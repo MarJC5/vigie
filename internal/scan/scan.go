@@ -47,15 +47,15 @@ type Scanner struct {
 // checksums, the site's real folder, the PHP files in its uploads.
 const filesSteps = 4
 
-// steps is the number of commands of a scan known before it starts, for the progress: 21, and the
+// steps is the number of commands of a scan known before it starts, for the progress: 22, and the
 // subsites and super administrators of a network. The comparison of the files, each administrator,
 // each constant read and Wordfence add theirs once known. A theme in a plugin's folder takes two
 // more, read again with the plugins.
 func (j Job) steps() int {
 	if j.Site.Multisite {
-		return 23
+		return 24
 	}
-	return 21
+	return 22
 }
 
 // Site scans one site. The scan is always returned, also when it failed or was cancelled; for a
@@ -206,6 +206,12 @@ func (r *run) scan(ctx context.Context, result *model.Scan) ([]model.Subsite, er
 		return nil, err
 	}
 	if result.Home, err = wpcli.ParseHome(out); err != nil {
+		return nil, err
+	}
+	if out, err = r.read(ctx, wpcli.OptionGet("siteurl")); err != nil {
+		return nil, err
+	}
+	if result.SiteURL, err = wpcli.ParseSiteURL(out); err != nil {
 		return nil, err
 	}
 

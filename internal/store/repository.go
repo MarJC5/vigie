@@ -248,12 +248,12 @@ func saveSite(ctx context.Context, tx *sql.Tx, s model.Site) error {
 	if taken {
 		return fmt.Errorf("%q: %w", s.Name, model.ErrDuplicateName)
 	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO sites (id, host_id, name, path, url, wp_cli, color, notes, position, multisite)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	_, err = tx.ExecContext(ctx, `INSERT INTO sites (id, host_id, name, path, url, wp_cli, color, notes, position, multisite, admin_url)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT (id) DO UPDATE SET host_id = excluded.host_id, name = excluded.name, path = excluded.path,
 			url = excluded.url, wp_cli = excluded.wp_cli, color = excluded.color, notes = excluded.notes,
-			position = excluded.position, multisite = excluded.multisite`,
-		s.ID.String(), s.HostID.String(), s.Name, s.Path, s.URL, s.WPCLI, int(s.Color), s.Notes, s.Position, s.Multisite)
+			position = excluded.position, multisite = excluded.multisite, admin_url = excluded.admin_url`,
+		s.ID.String(), s.HostID.String(), s.Name, s.Path, s.URL, s.WPCLI, int(s.Color), s.Notes, s.Position, s.Multisite, s.AdminURL)
 	if err != nil {
 		return duplicate(err, s.Name)
 	}

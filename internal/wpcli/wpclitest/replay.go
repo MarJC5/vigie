@@ -25,6 +25,7 @@ var commands = map[string]wpcli.Command{
 	"core-is-installed-network": wpcli.CoreIsInstalled(true),
 	"core-version":              wpcli.CoreVersion(),
 	"option-home":               wpcli.OptionGet("home"),
+	"option-siteurl":            wpcli.OptionGet("siteurl"),
 	"option-stylesheet":         wpcli.OptionGet("stylesheet"),
 	"core-check-update":         wpcli.CoreCheckUpdate(),
 	"update-core-data":          wpcli.UpdateData(wpcli.UpdatesOfCore),

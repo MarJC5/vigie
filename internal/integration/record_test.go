@@ -21,6 +21,7 @@ import (
 var (
 	record = flag.Bool("record", false, "write the WP-CLI outputs of the fixtures to internal/wpcli/testdata/recorded")
 	only   = flag.String("fixtures", "", "record the read commands of these fixtures only, comma separated")
+	names  = flag.String("commands", "", "record these read commands only, by the name of their recording, comma separated")
 )
 
 // recorded is one WP-CLI call on a fixture, as the parsers' tests replay it.
@@ -41,6 +42,7 @@ var recordings = []struct {
 	{"core-is-installed", []string{"core", "is-installed", "--skip-plugins", "--skip-themes"}},
 	{"core-is-installed-network", []string{"core", "is-installed", "--network", "--skip-plugins", "--skip-themes"}},
 	{"option-home", []string{"option", "get", "home", "--skip-plugins", "--skip-themes"}},
+	{"option-siteurl", []string{"option", "get", "siteurl", "--skip-plugins", "--skip-themes"}},
 	{"option-stylesheet", []string{"option", "get", "stylesheet", "--skip-plugins", "--skip-themes"}},
 	{"core-check-update", []string{"core", "check-update", "--format=json", "--skip-plugins", "--skip-themes"}},
 	{"plugin-list", []string{"plugin", "list", "--format=json", "--skip-plugins", "--skip-themes",
@@ -96,6 +98,9 @@ func TestRecord(t *testing.T) {
 			t.Fatal(err)
 		}
 		for _, r := range recordings {
+			if *names != "" && !slices.Contains(strings.Split(*names, ","), r.name) {
+				continue
+			}
 			res, err := runAs(context.Background(), append(append([]string{"wp"}, r.args...), "--path="+root)...)
 			if err != nil {
 				t.Fatal(err)

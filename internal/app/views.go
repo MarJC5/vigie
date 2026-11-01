@@ -3,11 +3,14 @@ package app
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 	"uuid"
 
 	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/scan"
+	"github.com/MarJC5/vigie/internal/sshx"
+	"github.com/MarJC5/vigie/internal/wpcli"
 )
 
 // SiteView is a site with its latest scan.
@@ -18,6 +21,18 @@ type SiteView struct {
 	URL       string    `json:"url"`
 	Multisite bool      `json:"multisite"`
 	Scan      *ScanView `json:"scan"` // nil: never scanned
+	// SSHCommand opens a shell on its account, in its folder, pasted in a terminal; "" when it
+	// cannot be written (a control character in the folder or the key's path).
+	SSHCommand string `json:"sshCommand"`
+	// SSHURL is the ssh:// address of its host, for the system to open in the user's terminal.
+	SSHURL string `json:"sshUrl"`
+	// AdminURL opens its dashboard: the address the user gave, else the WordPress address the
+	// latest scan read (else its own address) followed by /wp-admin/; "" when none is known.
+	AdminURL string `json:"adminUrl"`
+	// OwnAdminURL is the address the user gave, "" when the computed one is used.
+	OwnAdminURL string `json:"ownAdminUrl"`
+	// ComputedAdminURL is the WordPress address (else the site's) followed by /wp-admin/.
+	ComputedAdminURL string `json:"computedAdminUrl"`
 }
 
 // ScanView is a scan as the interface shows it.
@@ -244,8 +259,28 @@ func (s *SiteManager) SiteDetail(ctx context.Context, siteID string) (SiteView, 
 		return SiteView{}, err
 	}
 	view := SiteView{ID: siteID, Name: site.Name, Path: site.Path, URL: site.URL, Multisite: site.Multisite}
+	if host, ok := tree.Host(site.HostID); ok {
+		target := sshx.TargetFor(host)
+		dir, err := wpcli.ServerPath(site.Path)
+		if err != nil {
+			dir = "" // the home directory
+		}
+		view.SSHCommand, _ = target.ShellCommand(dir)
+		view.SSHURL = target.URL()
+	}
+	base := site.URL
 	if scan, ok := latest[id]; ok {
 		view.Scan = scanView(scan)
+		if scan.SiteURL != "" {
+			base = scan.SiteURL
+		}
+	}
+	if base != "" {
+		view.ComputedAdminURL = strings.TrimRight(base, "/") + "/wp-admin/"
+	}
+	view.OwnAdminURL, view.AdminURL = site.AdminURL, site.AdminURL
+	if view.AdminURL == "" {
+		view.AdminURL = view.ComputedAdminURL
 	}
 	return view, nil
 }

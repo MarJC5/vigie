@@ -41,6 +41,7 @@ func TestSaveAndLoadTree(t *testing.T) {
 	site := model.Site{
 		ID: model.NewID(), HostID: host.ID, Name: "network.example", Path: "~/sites/network", URL: "https://network.example",
 		WPCLI: "/opt/wp", Color: model.ColorRed, Notes: "Multisite", Tags: []string{"client-a", "priority"},
+		AdminURL:  "https://network.example/connexion",
 		Multisite: true,
 		Subsites: []model.Subsite{
 			{BlogID: 1, URL: "https://network.example", Public: true, Pinned: true},
@@ -74,7 +75,7 @@ func TestSaveAndLoadTree(t *testing.T) {
 
 func siteEqual(a, b model.Site) bool {
 	return a.ID == b.ID && a.HostID == b.HostID && a.Name == b.Name && a.Path == b.Path && a.URL == b.URL &&
-		a.WPCLI == b.WPCLI && a.Color == b.Color && a.Notes == b.Notes && a.Position == b.Position &&
+		a.WPCLI == b.WPCLI && a.Color == b.Color && a.Notes == b.Notes && a.AdminURL == b.AdminURL && a.Position == b.Position &&
 		a.Multisite == b.Multisite && slices.Equal(a.Tags, b.Tags) && slices.Equal(a.Subsites, b.Subsites)
 }
 

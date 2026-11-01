@@ -33,6 +33,8 @@ var (
 	ErrSiteMoved = errors.New("a site stays under its host")
 	// ErrNotesTooLong: notes are kept short enough to read, search and export (ADR-0023).
 	ErrNotesTooLong = errors.New("notes are too long")
+	// ErrInvalidAddress: an address the browser opens is an http or https one, with a host.
+	ErrInvalidAddress = errors.New("not a web address")
 )
 
 // MaxNotes is the most characters the notes of a folder, host or site hold.
@@ -182,6 +184,9 @@ type Site struct {
 	Notes    string
 	Tags     []string
 	Position int
+	// AdminURL is the admin address the user gave, for a login a plugin renamed; "" for the
+	// WordPress address followed by /wp-admin/.
+	AdminURL string
 
 	Multisite bool
 	Subsites  []Subsite

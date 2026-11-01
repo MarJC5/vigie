@@ -58,6 +58,13 @@ export function Rename(id: string, name: string): $CancellablePromise<$models.Pr
 }
 
 /**
+ * SetAdminURL gives a site the admin address the user knows (ADR-0023, amended); "" clears it.
+ */
+export function SetAdminURL(id: string, address: string): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(2238491690, id, address);
+}
+
+/**
  * SetColor gives a node one of the eight colors by name ("none": inherit its parent's).
  */
 export function SetColor(id: string, color: string): $CancellablePromise<$models.Problem | null> {

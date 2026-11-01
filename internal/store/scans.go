@@ -36,11 +36,11 @@ func saveScan(ctx context.Context, tx *sql.Tx, s model.Scan) error {
 	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO scans (id, site_id, started_at, finished_at, outcome, failure, error,
 			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
-			files_checked_at, run_id)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			files_checked_at, run_id, site_url)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		s.ID.String(), s.SiteID.String(), timeText(s.Started), timeText(s.Finished), string(s.Outcome), s.Failure, s.Error,
 		s.WordPress, s.PHPCLI, s.WPCLI, s.Home, s.CoreChecked, s.PluginsChecked, s.ThemesChecked, s.LanguagesChecked,
-		optionalTime(s.FilesChecked), optionalID(s.RunID))
+		optionalTime(s.FilesChecked), optionalID(s.RunID), s.SiteURL)
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func (db *DB) Scans(ctx context.Context, siteID model.ID) ([]model.Scan, error) 
 func (db *DB) readScans(ctx context.Context, where string, args ...any) ([]model.Scan, error) {
 	rows, err := db.sql.QueryContext(ctx, `SELECT id, site_id, started_at, finished_at, outcome, failure, error,
 			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
-			files_checked_at, run_id
+			files_checked_at, run_id, site_url
 		FROM scans s WHERE `+where+` ORDER BY id`, args...)
 	if err != nil {
 		return nil, err
@@ -138,7 +138,7 @@ func (db *DB) readScans(ctx context.Context, where string, args ...any) ([]model
 		var id, site, started, finished, outcome, filesChecked, run string
 		if err := rows.Scan(&id, &site, &started, &finished, &outcome, &s.Failure, &s.Error,
 			&s.WordPress, &s.PHPCLI, &s.WPCLI, &s.Home,
-			&s.CoreChecked, &s.PluginsChecked, &s.ThemesChecked, &s.LanguagesChecked, &filesChecked, &run); err != nil {
+			&s.CoreChecked, &s.PluginsChecked, &s.ThemesChecked, &s.LanguagesChecked, &filesChecked, &run, &s.SiteURL); err != nil {
 			return nil, err
 		}
 		if s.RunID, err = parseOptionalID(run); err != nil {

@@ -42,7 +42,9 @@ ce qu'un add-on répond.
   `trustedKeys` : les clés publiques du serveur que vous avez approuvées, chacune avec le `name` que
   lui donne le `known_hosts` de Vigie (`host` ou `[host]:port`), son `type` et sa `key`.
 * **sites** : `id`, `host`, `name`, `path` (la racine de WordPress sur le serveur), `url`, `wpCli`,
-  `color`, `notes`, `tags`, `position`, `multisite` et, pour un réseau, ses `subsites`.
+  `color`, `notes`, `tags`, `position`, `multisite` et, pour un réseau, ses `subsites`. L'adresse
+  d'administration donnée à un site (pour une connexion renommée par une extension) n'est pas encore
+  dans le format : elle reste sur cet ordinateur.
 * **ignores** (constats ignorés) : les constats mis de côté : `site`, la `key` du constat,
   `untilVersion` (`""` quand c'est définitif), `reason`, `created`.
 * **history** (historique), seulement si vous le demandez : les relevés des sites exportés, avec ce

@@ -3,6 +3,7 @@ package workspace
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 	"unicode/utf8"
 
@@ -56,6 +57,22 @@ func (w *Workspace) SetNotes(ctx context.Context, n model.Node, notes string) er
 		func(f *model.Folder) { f.Notes = notes },
 		func(h *model.Host) { h.Notes = notes },
 		func(s *model.Site) { s.Notes = notes })
+}
+
+// SetAdminURL gives a site the admin address the user knows, for a login a plugin renamed: an
+// http or https address; "" goes back to the WordPress address followed by /wp-admin/.
+func (w *Workspace) SetAdminURL(ctx context.Context, n model.Node, address string) error {
+	if n.Kind != model.KindSite {
+		return fmt.Errorf("%s %s: %w", n.Kind, n.ID, model.ErrNotFound)
+	}
+	address = strings.TrimSpace(address)
+	if address != "" {
+		u, err := url.Parse(address)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+			return fmt.Errorf("%q: %w", address, model.ErrInvalidAddress)
+		}
+	}
+	return w.edit(ctx, n, nil, nil, func(s *model.Site) { s.AdminURL = address })
 }
 
 // edit changes the stored node with the function of its kind, then saves it.

@@ -36,8 +36,11 @@
   },
   "site": {
     "openSite": "Ouvrir le site",
+    "wpAdmin": "wp-admin",
     "terminal": "Terminal SSH",
     "copySsh": "Copier la commande SSH",
+    "copied": "Commande copiée",
+    "links": "Liens du site",
     "more": "Plus d'actions",
     "lastScan": "Dernier relevé : {{when}}"
   },
@@ -255,6 +258,7 @@
     "siteMoved": "Un site reste sous son hébergement. S'il a changé de compte, supprimez-le ici et utilisez « Chercher de nouveaux sites » sur cet hébergement.",
     "unknownColor": "Cette couleur n'existe pas.",
     "notesTooLong": "Les notes tiennent en 20 000 caractères au plus.",
+    "invalidAddress": "Indiquez une adresse web, qui commence par https:// (ou http://).",
     "folderNotEmpty": "Seul un dossier vide peut être supprimé : déplacez ou supprimez d'abord ce qu'il contient.",
     "moveIntoItself": "Un dossier ne peut pas aller dans lui-même ni dans l'un de ses dossiers.",
     "busy": "Une mise à jour ou un retour en arrière est déjà en cours sur ce site : attendez sa fin.",
@@ -1288,5 +1292,14 @@
       },
       "shortcuts": "Raccourcis"
     }
+  },
+  "admin": {
+    "title": "Adresse d'administration",
+    "lead": "Si une extension a renommé la page de connexion (WPS Hide Login, Solid Security…), indiquez l'adresse que vous utilisez. Sinon, Vigie prend l'adresse de WordPress suivie de /wp-admin/.",
+    "label": "Adresse",
+    "computed": "Calculée : {{address}}",
+    "reset": "Revenir à l'adresse calculée",
+    "save": "Enregistrer",
+    "menu": "Adresse d'administration…"
   }
 }

@@ -902,6 +902,33 @@ export interface SiteView {
      * nil: never scanned
      */
     "scan": ScanView | null;
+
+    /**
+     * SSHCommand opens a shell on its account, in its folder, pasted in a terminal; "" when it
+     * cannot be written (a control character in the folder or the key's path).
+     */
+    "sshCommand": string;
+
+    /**
+     * SSHURL is the ssh:// address of its host, for the system to open in the user's terminal.
+     */
+    "sshUrl": string;
+
+    /**
+     * AdminURL opens its dashboard: the address the user gave, else the WordPress address the
+     * latest scan read (else its own address) followed by /wp-admin/; "" when none is known.
+     */
+    "adminUrl": string;
+
+    /**
+     * OwnAdminURL is the address the user gave, "" when the computed one is used.
+     */
+    "ownAdminUrl": string;
+
+    /**
+     * ComputedAdminURL is the WordPress address (else the site's) followed by /wp-admin/.
+     */
+    "computedAdminUrl": string;
 }
 
 /**

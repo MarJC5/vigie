@@ -60,6 +60,9 @@ func TestEditTheTree(t *testing.T) {
 	if p := e.SetNotes(ctx, ids["site"], "**Client**: Plain"); p != nil {
 		t.Fatal(p)
 	}
+	if p := e.SetAdminURL(ctx, ids["site"], " https://plain.example.test/connexion "); p != nil {
+		t.Fatal(p)
+	}
 	if got := sitePath(t, ws, ids["site"]); got != "Personal/Bench/plain.example.test" {
 		t.Errorf("site path = %q", got)
 	}
@@ -67,8 +70,8 @@ func TestEditTheTree(t *testing.T) {
 	if h, _ := tree.Host(uuid.MustParse(ids["host"])); h.Color != model.ColorOrange {
 		t.Errorf("host color = %s", h.Color)
 	}
-	if s, _ := tree.Site(uuid.MustParse(ids["site"])); s.Notes != "**Client**: Plain" {
-		t.Errorf("site notes = %q", s.Notes)
+	if s, _ := tree.Site(uuid.MustParse(ids["site"])); s.Notes != "**Client**: Plain" || s.AdminURL != "https://plain.example.test/connexion" {
+		t.Errorf("site notes = %q, admin address %q", s.Notes, s.AdminURL)
 	}
 	if p := e.Delete(ctx, ids["clients"]); p != nil {
 		t.Fatal(p)
@@ -83,17 +86,20 @@ func TestEditProblems(t *testing.T) {
 		got  *app.Problem
 		want string
 	}{
-		"folder holding a host": {e.Delete(ctx, ids["clients"]), "problem.folderNotEmpty"},
-		"folder into its child": {e.Move(ctx, ids["clients"], inner.ID), "problem.moveIntoItself"},
-		"site into a folder":    {e.Move(ctx, ids["site"], inner.ID), "problem.siteMoved"},
-		"unknown color":         {e.SetColor(ctx, ids["host"], "purple"), "problem.unknownColor"},
-		"notes too long":        {e.SetNotes(ctx, ids["host"], strings.Repeat("x", model.MaxNotes+1)), "problem.notesTooLong"},
-		"name taken":            {e.Rename(ctx, inner.ID, "bench"), "problem.duplicateName"},
-		"empty name":            {e.CreateFolder(ctx, "", " ").Problem, "problem.emptyName"},
-		"missing node":          {e.Rename(ctx, model.NewID().String(), "x"), "problem.notFound"},
-		"not an id":             {e.Delete(ctx, "nope"), "problem.notFound"},
-		"into a missing folder": {e.Move(ctx, ids["host"], model.NewID().String()), "problem.folderNotFound"},
-		"folder under a site":   {e.CreateFolder(ctx, ids["site"], "x").Problem, "problem.folderNotFound"},
+		"folder holding a host":   {e.Delete(ctx, ids["clients"]), "problem.folderNotEmpty"},
+		"folder into its child":   {e.Move(ctx, ids["clients"], inner.ID), "problem.moveIntoItself"},
+		"site into a folder":      {e.Move(ctx, ids["site"], inner.ID), "problem.siteMoved"},
+		"unknown color":           {e.SetColor(ctx, ids["host"], "purple"), "problem.unknownColor"},
+		"notes too long":          {e.SetNotes(ctx, ids["host"], strings.Repeat("x", model.MaxNotes+1)), "problem.notesTooLong"},
+		"admin address not web":   {e.SetAdminURL(ctx, ids["site"], "ftp://plain.example.test"), "problem.invalidAddress"},
+		"admin address no host":   {e.SetAdminURL(ctx, ids["site"], "https:///wp-admin"), "problem.invalidAddress"},
+		"admin address of a host": {e.SetAdminURL(ctx, ids["host"], "https://plain.example.test"), "problem.notFound"},
+		"name taken":              {e.Rename(ctx, inner.ID, "bench"), "problem.duplicateName"},
+		"empty name":              {e.CreateFolder(ctx, "", " ").Problem, "problem.emptyName"},
+		"missing node":            {e.Rename(ctx, model.NewID().String(), "x"), "problem.notFound"},
+		"not an id":               {e.Delete(ctx, "nope"), "problem.notFound"},
+		"into a missing folder":   {e.Move(ctx, ids["host"], model.NewID().String()), "problem.folderNotFound"},
+		"folder under a site":     {e.CreateFolder(ctx, ids["site"], "x").Problem, "problem.folderNotFound"},
 	} {
 		if code(tc.got) != tc.want {
 			t.Errorf("%s: %+v, want %s", name, tc.got, tc.want)

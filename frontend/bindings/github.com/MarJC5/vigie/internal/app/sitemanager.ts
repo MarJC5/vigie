@@ -15,6 +15,14 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 import * as $models from "./models.js";
 
 /**
+ * CanOpenSSH tells whether the system opens ssh:// addresses in a terminal (ADR-0023): macOS's
+ * Terminal declares them; on Linux, a program set for x-scheme-handler/ssh does.
+ */
+export function CanOpenSSH(): $CancellablePromise<boolean> {
+    return $Call.ByID(1439933353);
+}
+
+/**
  * HostDetail returns a host with its connection and its sites.
  */
 export function HostDetail(hostID: string): $CancellablePromise<$models.HostView> {

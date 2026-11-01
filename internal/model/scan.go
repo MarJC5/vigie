@@ -71,6 +71,7 @@ type Scan struct {
 	PHPCLI    string // PHP on the command line
 	WPCLI     string // WP-CLI version
 	Home      string // the site's address
+	SiteURL   string // the WordPress address (siteurl), where wp-admin lives
 
 	// Whether each update check is proven to have reached wordpress.org.
 	CoreChecked      bool

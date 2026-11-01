@@ -41,7 +41,9 @@ format. An add-on in another language reads the JSON Schema. See [addons.md](add
   server you trusted, each with the `name` Vigie's `known_hosts` gives it (`host` or
   `[host]:port`), its `type` and its `key`.
 * **sites**: `id`, `host`, `name`, `path` (the WordPress root on the server), `url`, `wpCli`,
-  `color`, `notes`, `tags`, `position`, `multisite` and, for a network, its `subsites`.
+  `color`, `notes`, `tags`, `position`, `multisite` and, for a network, its `subsites`. The admin
+  address you give a site (for a login a plugin renamed) is not in the format yet: it stays on this
+  computer.
 * **ignores**: the findings you set aside: `site`, the finding's `key`, `untilVersion` (`""` when
   permanent), `reason`, `created`.
 * **history**, only when you ask for it: the scans of the sites exported, with what they read

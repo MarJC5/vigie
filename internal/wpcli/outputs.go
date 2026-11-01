@@ -113,12 +113,22 @@ func ParseCoreVersion(out []byte) (string, error) {
 
 // ParseHome reads `option get home`: an http or https address.
 func ParseHome(out []byte) (string, error) {
-	home := strings.TrimSpace(string(out))
-	u, err := url.Parse(home)
+	return parseAddress("home", out)
+}
+
+// ParseSiteURL reads `option get siteurl`, the WordPress address where wp-admin lives: an http
+// or https address, the site's own or a subfolder of it.
+func ParseSiteURL(out []byte) (string, error) {
+	return parseAddress("siteurl", out)
+}
+
+func parseAddress(option string, out []byte) (string, error) {
+	address := strings.TrimSpace(string(out))
+	u, err := url.Parse(address)
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-		return "", fmt.Errorf("home %q: %w", home, ErrUnexpectedOutput)
+		return "", fmt.Errorf("%s %q: %w", option, address, ErrUnexpectedOutput)
 	}
-	return home, nil
+	return address, nil
 }
 
 // ParseActiveTheme reads `option get stylesheet`: the folder name of the active theme, on one

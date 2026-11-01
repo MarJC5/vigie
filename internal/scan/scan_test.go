@@ -63,8 +63,9 @@ func TestScanOfAnOutdatedSite(t *testing.T) {
 	if got.Outcome != model.ScanCompleted || got.SiteID != j.Site.ID || got.ID == model.NoID {
 		t.Fatalf("scan = %+v, want a completed scan of the site", got)
 	}
-	if got.WordPress != "7.1.3" || got.WPCLI != "2.12.0" || !strings.HasPrefix(got.PHPCLI, "8.4.") || got.Home != "https://outdated.example.test" {
-		t.Errorf("versions = %q, %q, %q, %q", got.WordPress, got.WPCLI, got.PHPCLI, got.Home)
+	if got.WordPress != "7.1.3" || got.WPCLI != "2.12.0" || !strings.HasPrefix(got.PHPCLI, "8.4.") || got.Home != "https://outdated.example.test" ||
+		got.SiteURL != "https://outdated.example.test" {
+		t.Errorf("versions = %q, %q, %q, %q, %q", got.WordPress, got.WPCLI, got.PHPCLI, got.Home, got.SiteURL)
 	}
 	if !got.CoreChecked || !got.PluginsChecked || !got.ThemesChecked || !got.LanguagesChecked {
 		t.Errorf("checks = %v %v %v %v, want all proven", got.CoreChecked, got.PluginsChecked, got.ThemesChecked, got.LanguagesChecked)
@@ -158,11 +159,11 @@ func TestProgressCountsTheSteps(t *testing.T) {
 		t.Fatal("no progress reported")
 	}
 	last := steps[len(steps)-1]
-	// 14 commands for the versions and updates; for security, 4 to compare the files, then the
-	// administrators and the one's two-factor, the constants' names and WP_DEBUG, the search
-	// engines, WP-Cron, the options and transients, the database version: 27, then the end.
-	if last.Total != 27 || len(steps) != 28 {
-		t.Errorf("progress = %d reports, total %d; want 27 commands and the end", len(steps), last.Total)
+	// 15 commands for the versions, the addresses and the updates; for security, 4 to compare the
+	// files, then the administrators and the one's two-factor, the constants' names and WP_DEBUG,
+	// the search engines, WP-Cron, the options and transients, the database version: 28, then the end.
+	if last.Total != 28 || len(steps) != 29 {
+		t.Errorf("progress = %d reports, total %d; want 28 commands and the end", len(steps), last.Total)
 	}
 	if last.Done != last.Total || !slices.IsSortedFunc(steps, func(a, b scan.Progress) int { return a.Done - b.Done }) {
 		t.Fatalf("progress = %+v, want increasing up to the total", steps)

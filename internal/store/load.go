@@ -101,7 +101,7 @@ func (db *DB) loadSites(ctx context.Context, tree *model.Tree) error {
 	if err != nil {
 		return err
 	}
-	rows, err := db.sql.QueryContext(ctx, `SELECT id, host_id, name, path, url, wp_cli, color, notes, position, multisite
+	rows, err := db.sql.QueryContext(ctx, `SELECT id, host_id, name, path, url, wp_cli, color, notes, position, multisite, admin_url
 		FROM sites ORDER BY position, name`)
 	if err != nil {
 		return err
@@ -110,7 +110,7 @@ func (db *DB) loadSites(ctx context.Context, tree *model.Tree) error {
 	for rows.Next() {
 		var s model.Site
 		var id, host string
-		if err := rows.Scan(&id, &host, &s.Name, &s.Path, &s.URL, &s.WPCLI, &s.Color, &s.Notes, &s.Position, &s.Multisite); err != nil {
+		if err := rows.Scan(&id, &host, &s.Name, &s.Path, &s.URL, &s.WPCLI, &s.Color, &s.Notes, &s.Position, &s.Multisite, &s.AdminURL); err != nil {
 			return err
 		}
 		if s.ID, err = uuid.Parse(id); err != nil {

@@ -1,0 +1,12 @@
+{
+  "args": [
+    "option",
+    "get",
+    "siteurl",
+    "--skip-plugins",
+    "--skip-themes"
+  ],
+  "exit": 0,
+  "stdout": "https://outdated.example.test\n",
+  "stderr": ""
+}

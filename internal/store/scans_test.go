@@ -28,6 +28,7 @@ func scanOf(site model.Site, started time.Time, wp string) model.Scan {
 		Started: started, Finished: started.Add(3 * time.Second),
 		Outcome:   model.ScanCompleted,
 		WordPress: wp, PHPCLI: "8.4.27", WPCLI: "2.12.0", Home: "https://" + site.Name,
+		SiteURL:     "https://" + site.Name + "/wp",
 		CoreChecked: true, PluginsChecked: true, ThemesChecked: false, LanguagesChecked: true,
 		Items: []model.ScanItem{
 			{Kind: model.ItemCore, Status: "minor", Version: wp, Update: model.UpdateAvailable, UpdateVersion: "7.1.4"},

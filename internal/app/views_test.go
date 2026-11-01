@@ -32,6 +32,7 @@ func scannedIn(t *testing.T) (*app.SiteManager, *store.DB, model.Host, model.Sit
 	err := db.SaveScan(ctx, model.Scan{
 		ID: model.NewID(), SiteID: outdated.ID, Started: finished.Add(-3 * time.Second), Finished: finished,
 		Outcome: model.ScanCompleted, WordPress: "7.1.3", PHPCLI: "8.4.27", WPCLI: "2.12.0", Home: "https://outdated.example.test",
+		SiteURL:     "https://outdated.example.test/wp",
 		CoreChecked: true, PluginsChecked: true, ThemesChecked: true, LanguagesChecked: false,
 		Items: []model.ScanItem{
 			{Kind: model.ItemCore, Status: "minor", Version: "7.1.3", Update: model.UpdateAvailable, UpdateVersion: "7.1.4"},
@@ -83,6 +84,14 @@ func TestSiteDetail(t *testing.T) {
 	got, err := m.SiteDetail(context.Background(), outdated.ID.String())
 	if err != nil {
 		t.Fatal(err)
+	}
+	// A shell on its account, in its folder (ADR-0023): the alias, the path relative to the home.
+	if got.SSHCommand != `ssh -t bench "cd 'sites/outdated' && exec \$SHELL -l"` || got.SSHURL != "ssh://bench" {
+		t.Errorf("SSH command %q, address %q", got.SSHCommand, got.SSHURL)
+	}
+	// wp-admin under the WordPress address the scan read, here a subfolder of the site.
+	if got.AdminURL != "https://outdated.example.test/wp/wp-admin/" || got.OwnAdminURL != "" {
+		t.Errorf("admin address %q, own %q", got.AdminURL, got.OwnAdminURL)
 	}
 	s := got.Scan
 	if s == nil || s.Status != "warn" || s.WordPress != "7.1.3" || s.Finished != "2026-10-29T09:00:03Z" || s.Problem != nil {
@@ -184,5 +193,27 @@ func TestACancelledScanKeepsThePreviousResults(t *testing.T) {
 		if n.ID == outdated.ID.String() && n.Status != "warn" {
 			t.Errorf("tree status %q, want it kept", n.Status)
 		}
+	}
+}
+
+// The admin address the user gave, for a login a plugin renamed, replaces the computed one; a site
+// never scanned and without an address has none.
+func TestSiteDetailAdminAddress(t *testing.T) {
+	ctx := context.Background()
+	m, db, _, outdated, fresh := scannedIn(t)
+	outdated.AdminURL = "https://outdated.example.test/connexion"
+	if err := db.SaveSite(ctx, outdated); err != nil {
+		t.Fatal(err)
+	}
+	got, err := m.SiteDetail(ctx, outdated.ID.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.AdminURL != "https://outdated.example.test/connexion" || got.OwnAdminURL != got.AdminURL ||
+		got.ComputedAdminURL != "https://outdated.example.test/wp/wp-admin/" {
+		t.Errorf("admin address %q, own %q, computed %q", got.AdminURL, got.OwnAdminURL, got.ComputedAdminURL)
+	}
+	if got, _ := m.SiteDetail(ctx, fresh.ID.String()); got.AdminURL != "" {
+		t.Errorf("never scanned, no address: admin address %q", got.AdminURL)
 	}
 }
