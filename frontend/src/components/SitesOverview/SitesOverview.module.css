@@ -1,3 +1,32 @@
+/* As a site's page: the name and the tabs stay at the top while the tab scrolls under them, drawn
+   from the edges of the window's content area (a sticky box stops at the area's padding, hence a
+   top that takes it back). */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-5);
+}
+
+.header {
+  position: sticky;
+  top: calc(-1 * var(--vg-space-5));
+  z-index: 1;
+  margin: calc(-1 * var(--vg-space-5)) calc(-1 * var(--vg-space-6)) 0;
+  padding: var(--vg-space-5) var(--vg-space-6) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-4);
+  background: var(--vg-surface-main);
+}
+
+/* The counts, the table and the notes stand apart, as the sections of a page. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-5);
+  min-width: 0;
+}
+
 .empty {
   margin: 0;
   max-width: 60ch;

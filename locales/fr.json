@@ -442,7 +442,11 @@
     "urgent": "Urgents",
     "ok": "À jour",
     "partial": "Pas entièrement vérifiés",
-    "showAll": "Tout afficher"
+    "showAll": "Tout afficher",
+    "tabs": {
+      "label": "Onglets",
+      "sites": "Sites"
+    }
   },
   "notify": {
     "urgent_one": "{{name}} est devenu urgent",
@@ -1365,6 +1369,31 @@
     },
     "auto": "Auto",
     "notOrg": "Hors wordpress.org",
-    "notScanned": "Relevez le site pour voir ses extensions et ses thèmes."
+    "notScanned": "Relevez le site pour voir ses extensions et ses thèmes.",
+    "across": {
+      "search": "Chercher une extension ou un thème",
+      "leftOut_one": "{{count}} site laissé de côté, pas encore connu : {{names}}.",
+      "leftOut_many": "{{count}} sites laissés de côté, pas encore connus : {{names}}.",
+      "leftOut_other": "{{count}} sites laissés de côté, pas encore connus : {{names}}.",
+      "none": "Aucune extension ni aucun thème connu : relevez d'abord les sites.",
+      "noMatch": "Rien ne correspond à cette recherche.",
+      "table": "Extensions et thèmes des sites",
+      "open": "Sites",
+      "sites": "Sites",
+      "versions": "Versions",
+      "updates": "Mises à jour",
+      "sitesOf": "Sites qui utilisent {{name}}",
+      "kind": {
+        "plugin": "Extension",
+        "theme": "Thème"
+      },
+      "of": "{{count}} sur {{total}}",
+      "versionCount_one": "{{count}} version",
+      "versionCount_many": "{{count}} versions",
+      "versionCount_other": "{{count}} versions",
+      "updateCount_one": "{{count}} site",
+      "updateCount_many": "{{count}} sites",
+      "updateCount_other": "{{count}} sites"
+    }
   }
 }

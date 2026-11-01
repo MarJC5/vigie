@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 
+import { across } from "../../fixtures/extensions";
 import { hostRows } from "../../fixtures/scans";
 import { bulk } from "../../fixtures/updates";
 import { SitesOverview } from "./SitesOverview";
@@ -108,5 +109,20 @@ export const SortAndFilter: Story = {
     await expect(names()).toEqual(["nouveau.example.test", "atelier-exemple.ch", "boulangerie-exemple.ch"]);
     await userEvent.click(within(table!).getByRole("button", { name: "Status" }));
     await expect(names()[0]).toBe("boulangerie-exemple.ch");
+  },
+};
+
+// Two tabs on a host: its sites, and their plugins and themes, read when the tab opens (ADR-0024).
+export const PluginsTab: Story = {
+  args: { extensions: fn(async () => across) },
+  play: async ({ canvas, args }) => {
+    const [plugins] = canvas.getAllByRole("tab", { name: "Plugins" });
+    await expect(args.extensions).not.toHaveBeenCalled();
+    await userEvent.click(plugins!);
+    await expect(args.extensions).toHaveBeenCalled();
+    await expect((await canvas.findAllByRole("table", { name: "Plugins and themes across the sites" })).length).toBeGreaterThan(0);
+    const [sites] = canvas.getAllByRole("tab", { name: "Sites" });
+    await userEvent.click(sites!);
+    await expect(canvas.getAllByRole("list", { name: "Summary" }).length).toBeGreaterThan(0);
   },
 };

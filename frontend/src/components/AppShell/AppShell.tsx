@@ -1,8 +1,9 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type {
   CreateResult,
+  ExtensionsAcross,
   FindingView,
   HostDetails,
   HostView,
@@ -47,6 +48,8 @@ export interface ShellData {
   sites(nodeId: string): Promise<SiteRow[]>;
   /** The updates and rollbacks of a site, the newest first; without it, no History tab. */
   history?(siteId: string): Promise<OperationView[]>;
+  /** The plugins and themes across the sites of a host or folder; without it, no Plugins tab. */
+  extensions?(nodeId: string): Promise<ExtensionsAcross>;
 }
 
 /** The Go service that sets findings aside (app.Security). */
@@ -759,6 +762,12 @@ function Loaded({
 }) {
   const { t } = useTranslation();
   const [view, setView] = useState<{ id: string; view: View }>();
+  // The list across a host's or folder's sites, read again after a scan (revision).
+  const extensions = useMemo(
+    () => (data.extensions && node.kind !== "site" ? () => data.extensions!(node.id) : undefined),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- revision: read again after a scan
+    [data, node.id, node.kind, revision],
+  );
 
   useEffect(() => {
     let current = true;
@@ -810,7 +819,7 @@ function Loaded({
       />
     );
   }
-  const bulkProps = { onUpdateAll, updating, bulk, onDismissBulk, onSiteMenu, notes: node.notes, onSaveNotes, onOpen };
+  const bulkProps = { onUpdateAll, updating, bulk, onDismissBulk, onSiteMenu, notes: node.notes, onSaveNotes, onOpen, extensions };
   if (v.kind === "host") {
     const h = v.host;
     const subtitle = h.alias

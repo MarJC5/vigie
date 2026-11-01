@@ -42,6 +42,7 @@ const shellData: ShellData = {
   host: (id) => SiteManager.HostDetail(id),
   sites: (id) => SiteManager.Sites(id).then((rows) => rows ?? []),
   history: (id) => Updates.History(id).then((ops) => ops ?? []),
+  extensions: (id) => SiteManager.Extensions(id),
 };
 
 // What updates sites, from the updates service.

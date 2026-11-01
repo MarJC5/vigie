@@ -422,7 +422,11 @@
     "urgent": "Urgent",
     "ok": "Up to date",
     "partial": "Not fully checked",
-    "showAll": "Show all"
+    "showAll": "Show all",
+    "tabs": {
+      "label": "Host tabs",
+      "sites": "Sites"
+    }
   },
   "notify": {
     "urgent_one": "{{name}} turned urgent",
@@ -1311,6 +1315,28 @@
     },
     "auto": "Auto",
     "notOrg": "Not on wordpress.org",
-    "notScanned": "Scan the site to see its plugins and themes."
+    "notScanned": "Scan the site to see its plugins and themes.",
+    "across": {
+      "search": "Search plugins and themes",
+      "leftOut_one": "{{count}} site left out, not known yet: {{names}}.",
+      "leftOut_other": "{{count}} sites left out, not known yet: {{names}}.",
+      "none": "No plugin or theme known: scan the sites first.",
+      "noMatch": "Nothing matches this search.",
+      "table": "Plugins and themes across the sites",
+      "open": "Sites",
+      "sites": "Sites",
+      "versions": "Versions",
+      "updates": "Updates",
+      "sitesOf": "Sites running {{name}}",
+      "kind": {
+        "plugin": "Plugin",
+        "theme": "Theme"
+      },
+      "of": "{{count}} of {{total}}",
+      "versionCount_one": "{{count}} version",
+      "versionCount_other": "{{count}} versions",
+      "updateCount_one": "{{count}} site",
+      "updateCount_other": "{{count}} sites"
+    }
   }
 }
