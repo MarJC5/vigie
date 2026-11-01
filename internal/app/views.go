@@ -138,6 +138,8 @@ type UpdateView struct {
 	Version       string `json:"version"`
 	UpdateVersion string `json:"updateVersion"`
 	Update        string `json:"update"` // available, unavailable, unknown
+	// OnWordPressOrg: a plugin wordpress.org knows, whose changelog is there.
+	OnWordPressOrg bool `json:"onWordPressOrg"`
 	// Key ignores an update offered with Security.Ignore (ADR-0026); "" for a translation, updated
 	// with the others.
 	Key    string      `json:"key"`
@@ -212,6 +214,7 @@ func scanView(s model.Scan) *ScanView {
 			u := UpdateView{
 				Kind: string(item.Kind), Slug: item.Slug, Title: item.Title, Language: item.Language,
 				Version: item.Version, UpdateVersion: item.UpdateVersion, Update: string(item.Update), Ignore: ignoreView(item.Ignore),
+				OnWordPressOrg: item.OnWordPressOrg,
 			}
 			if item.Kind != model.ItemLanguage && item.Update == model.UpdateAvailable {
 				u.Key = model.UpdateKey(item)

@@ -19,6 +19,19 @@ export function keyOf(kind: string, slug: string): string {
   return `${kind}:${slug}`;
 }
 
+/** Where the changes of an update are read (ADR-0026): a plugin wordpress.org knows, on the
+ Development tab of its page; WordPress, in the release notes of the version offered (x.y.z, or
+ x.y for a major one). Themes and other plugins have none there. */
+export function changelogOf(item: { kind: string; slug: string; to: string; onWordPressOrg?: boolean }): string | undefined {
+  if (item.kind === "plugin" && item.onWordPressOrg) return `https://wordpress.org/plugins/${item.slug}/#developers`;
+  if (item.kind !== "core") return undefined;
+  const version = /^(\d+)\.(\d+)(?:\.(\d+))?$/.exec(item.to);
+  if (!version) return undefined;
+  const [, major, minor, patch] = version;
+  const parts = patch && patch !== "0" ? [major, minor, patch] : [major, minor];
+  return `https://wordpress.org/documentation/wordpress-version/version-${parts.join("-")}/`;
+}
+
 /** One item of the Updates tab; an item not offered (newer PHP needed, state unknown) cannot be
  chosen. */
 export interface Choice {

@@ -5,6 +5,7 @@ import { bulk, completed, failed, preview, rolledBack, running } from "../fixtur
 import {
   backupPath,
   bulkCounts,
+  changelogOf,
   choicesOf,
   durationText,
   failedStep,
@@ -144,5 +145,21 @@ describe("rowText", () => {
   it("writes durations", () => {
     expect(durationText(t, 6)).toBe('update.duration.seconds {"s":6}');
     expect(durationText(t, 72)).toBe('update.duration.minutes {"m":1,"s":12}');
+  });
+});
+
+describe("changelogOf", () => {
+  it("links a plugin wordpress.org knows to its Development tab", () => {
+    expect(changelogOf({ kind: "plugin", slug: "akismet", to: "5.7.2", onWordPressOrg: true })).toBe("https://wordpress.org/plugins/akismet/#developers");
+    expect(changelogOf({ kind: "plugin", slug: "theme-builder-pro", to: "2.2", onWordPressOrg: false })).toBeUndefined();
+    expect(changelogOf({ kind: "theme", slug: "twentytwentyfive", to: "1.3", onWordPressOrg: true })).toBeUndefined();
+    expect(changelogOf({ kind: "language", slug: "", to: "", onWordPressOrg: false })).toBeUndefined();
+  });
+
+  it("links WordPress to the release notes of the version offered", () => {
+    expect(changelogOf({ kind: "core", slug: "", to: "7.1.4" })).toBe("https://wordpress.org/documentation/wordpress-version/version-7-1-4/");
+    expect(changelogOf({ kind: "core", slug: "", to: "7.2" })).toBe("https://wordpress.org/documentation/wordpress-version/version-7-2/");
+    expect(changelogOf({ kind: "core", slug: "", to: "7.2.0" })).toBe("https://wordpress.org/documentation/wordpress-version/version-7-2/");
+    expect(changelogOf({ kind: "core", slug: "", to: "7.2-beta1" })).toBeUndefined();
   });
 });

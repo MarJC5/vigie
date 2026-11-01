@@ -1163,6 +1163,11 @@ export interface UpdateView {
     "update": string;
 
     /**
+     * OnWordPressOrg: a plugin wordpress.org knows, whose changelog is there.
+     */
+    "onWordPressOrg": boolean;
+
+    /**
      * Key ignores an update offered with Security.Ignore (ADR-0026); "" for a translation, updated
      * with the others.
      */
