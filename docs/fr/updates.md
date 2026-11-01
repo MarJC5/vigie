@@ -12,6 +12,14 @@ comment le supprimer.
   `mysqldump`). Sans lui, rien n'est mis à jour : Vigie sauvegarde la base avant chaque mise à
   jour.
 - Une seule mise à jour ou un seul retour en arrière à la fois sur un site.
+- Une mise à jour peut être **ignorée** depuis l'onglet Mises à jour, jusqu'à ce qu'une version plus
+  récente soit proposée, ou définitivement avec une raison (une version que vous gardez exprès).
+  Elle ne compte alors plus nulle part (état, compteurs, notifications), **Tout mettre à jour** et
+  `vigie update` la laissent de côté et le disent, et la mise à jour du site ne l'installe que si
+  vous la cochez. Les mises de côté restent sur votre ordinateur, avec les autres.
+- Chaque mise à jour proposée renvoie à son changelog quand wordpress.org en a un : l'onglet
+  Development d'une extension, les notes de version de WordPress. Votre navigateur l'ouvre, Vigie
+  ne télécharge rien.
 
 ## Les étapes d'une mise à jour
 

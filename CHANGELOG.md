@@ -115,6 +115,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `--tag <tag>` on `vigie tree`, `scan` and `update`, for the sites with a tag. A `tags` column in
   a CSV site list; tags read from a file follow the rules of a tag, and those left out are named
   in the preview.
+- An update can be ignored from a site's Updates tab, until a newer version is offered or
+  permanently with a reason: it counts nowhere then, Update all and `vigie update` leave it out and
+  say so, and the site's own update installs it only when ticked. The Plugins tab says so too.
+- Each update offered links to its changelog when wordpress.org has one: a plugin's Development
+  tab, the release notes of WordPress.
 
 ### Changed
 

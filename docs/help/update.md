@@ -15,6 +15,9 @@ At the first problem, the update stops: the next items are not started.
 For every site of a host or folder, open it and choose **Update all**: a preview by site, then
 each site is updated as above.
 
+A version you keep on purpose: **Ignore…** on its row, until the next version or permanently with
+a reason. It no longer counts, and **Update all** leaves it out.
+
 ## Roll back
 
 When the latest update of a site failed, **Roll back** puts the failed item back as it was. For

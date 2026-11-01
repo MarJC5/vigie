@@ -62,3 +62,33 @@ test("a scan before the user answered asks first, and the settings agree or with
   await panel().getByRole("button", { name: "Withdraw consent" }).click();
   await expect(panel()).toContainText("Not given: nothing is sent");
 });
+
+// An update ignored (ADR-0026): apart in the Updates tab, counted nowhere, said on the Plugins tab,
+// then put back.
+test("an update is ignored with a reason, then put back", async () => {
+  await page.getByRole("navigation", { name: "Navigation" }).getByRole("link", { name: "Sites" }).click();
+  await tree().getByRole("treeitem", { name: /boulangerie-exemple\.ch/ }).click();
+  const tab = page.getByRole("tab", { name: /^Updates/ });
+  await expect(tab).toContainText("3");
+  await tab.click();
+  await expect(panel().getByRole("link", { name: /Changelog/ })).toBeVisible();
+
+  await panel().getByRole("button", { name: "Ignore the update of Akismet Anti-spam" }).click();
+  const dialog = page.getByRole("dialog", { name: "Ignore the update of Akismet Anti-spam?" });
+  await dialog.getByRole("radio", { name: /Permanently/ }).check();
+  await dialog.getByRole("textbox").fill("The theme uses its internal API");
+  await dialog.getByRole("button", { name: "Ignore" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+
+  const ignored = panel().getByRole("group", { name: /^Ignored/ });
+  await expect(ignored).toContainText("“The theme uses its internal API”");
+  await expect(ignored.getByRole("checkbox", { name: /Akismet/ })).not.toBeChecked();
+  await expect(tab).toContainText("2");
+  await page.getByRole("tab", { name: "Plugins" }).click();
+  await expect(panel()).toContainText("→ 5.7.2 · ignored");
+
+  await tab.click();
+  await panel().getByRole("button", { name: "Stop ignoring the update of Akismet Anti-spam" }).click();
+  await expect(panel().getByRole("group", { name: /^Ignored/ })).toHaveCount(0);
+  await expect(tab).toContainText("3");
+});

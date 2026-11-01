@@ -10,6 +10,12 @@ page lists what an update writes on the server, how long it keeps it, and how to
 - The server must have a database dump tool (`mariadb-dump` or `mysqldump`). Without one, nothing
   is updated: Vigie dumps the database before every update.
 - Only one update or rollback runs on a site at a time.
+- An update can be **ignored** from the Updates tab, until a newer version is offered, or
+  permanently with a reason (a version you keep on purpose). It then counts nowhere (status,
+  counts, notifications), **Update all** and `vigie update` leave it out and say so, and the site's
+  own update installs it only when you tick it. The ignores stay on your computer, with the others.
+- Each update offered links to its changelog when wordpress.org has one: a plugin's Development
+  tab, WordPress's release notes. Your browser opens it; Vigie fetches nothing.
 
 ## The steps of an update
 

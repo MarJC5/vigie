@@ -15,6 +15,9 @@ Au premier problème, la mise à jour s'arrête : les éléments suivants ne so
 Pour tous les sites d'un hébergement ou d'un dossier, ouvrez-le et choisissez **Tout mettre à
 jour** : un aperçu par site, puis chaque site est mis à jour comme ci-dessus.
 
+Une version gardée exprès : **Ignorer…** sur sa ligne, jusqu'à la version suivante ou
+définitivement avec une raison. Elle ne compte plus, et **Tout mettre à jour** la laisse de côté.
+
 ## Revenir en arrière
 
 Quand la dernière mise à jour d'un site a échoué, **Revenir en arrière** remet l'élément en échec
