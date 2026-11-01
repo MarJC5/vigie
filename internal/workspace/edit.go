@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/MarJC5/vigie/internal/discover"
 	"github.com/MarJC5/vigie/internal/model"
@@ -42,6 +43,19 @@ func (w *Workspace) SetColor(ctx context.Context, n model.Node, c model.Color) e
 		func(f *model.Folder) { f.Color = c },
 		func(h *model.Host) { h.Color = c },
 		func(s *model.Site) { s.Color = c })
+}
+
+// SetNotes writes the Markdown notes of a folder, host or site, and nothing else: at most
+// model.MaxNotes characters, line breaks as "\n".
+func (w *Workspace) SetNotes(ctx context.Context, n model.Node, notes string) error {
+	notes = strings.ReplaceAll(notes, "\r\n", "\n")
+	if utf8.RuneCountInString(notes) > model.MaxNotes {
+		return model.ErrNotesTooLong
+	}
+	return w.edit(ctx, n,
+		func(f *model.Folder) { f.Notes = notes },
+		func(h *model.Host) { h.Notes = notes },
+		func(s *model.Site) { s.Notes = notes })
 }
 
 // edit changes the stored node with the function of its kind, then saves it.

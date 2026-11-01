@@ -63,3 +63,10 @@ export function Rename(id: string, name: string): $CancellablePromise<$models.Pr
 export function SetColor(id: string, color: string): $CancellablePromise<$models.Problem | null> {
     return $Call.ByID(3683665357, id, color);
 }
+
+/**
+ * SetNotes writes the Markdown notes of a node (ADR-0023), at most model.MaxNotes characters.
+ */
+export function SetNotes(id: string, notes: string): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(1983710223, id, notes);
+}

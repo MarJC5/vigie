@@ -239,6 +239,7 @@
     "notFound": "This item no longer exists: the list was changed meanwhile.",
     "siteMoved": "A site stays under its host. If it moved to another account, delete it here and use \"Find new sites\" on that host.",
     "unknownColor": "This color does not exist.",
+    "notesTooLong": "Notes hold 20,000 characters at most.",
     "folderNotEmpty": "Only an empty folder can be deleted: move or delete what it holds first.",
     "moveIntoItself": "A folder cannot go into itself or one of its folders.",
     "busy": "An update or a rollback already runs on this site: wait for its end.",

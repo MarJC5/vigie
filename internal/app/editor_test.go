@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 	"uuid"
@@ -56,12 +57,18 @@ func TestEditTheTree(t *testing.T) {
 	if p := e.SetColor(ctx, ids["host"], "orange"); p != nil {
 		t.Fatal(p)
 	}
+	if p := e.SetNotes(ctx, ids["site"], "**Client**: Plain"); p != nil {
+		t.Fatal(p)
+	}
 	if got := sitePath(t, ws, ids["site"]); got != "Personal/Bench/plain.example.test" {
 		t.Errorf("site path = %q", got)
 	}
 	tree, _ := ws.DB().LoadTree(ctx)
 	if h, _ := tree.Host(uuid.MustParse(ids["host"])); h.Color != model.ColorOrange {
 		t.Errorf("host color = %s", h.Color)
+	}
+	if s, _ := tree.Site(uuid.MustParse(ids["site"])); s.Notes != "**Client**: Plain" {
+		t.Errorf("site notes = %q", s.Notes)
 	}
 	if p := e.Delete(ctx, ids["clients"]); p != nil {
 		t.Fatal(p)
@@ -80,6 +87,7 @@ func TestEditProblems(t *testing.T) {
 		"folder into its child": {e.Move(ctx, ids["clients"], inner.ID), "problem.moveIntoItself"},
 		"site into a folder":    {e.Move(ctx, ids["site"], inner.ID), "problem.siteMoved"},
 		"unknown color":         {e.SetColor(ctx, ids["host"], "purple"), "problem.unknownColor"},
+		"notes too long":        {e.SetNotes(ctx, ids["host"], strings.Repeat("x", model.MaxNotes+1)), "problem.notesTooLong"},
 		"name taken":            {e.Rename(ctx, inner.ID, "bench"), "problem.duplicateName"},
 		"empty name":            {e.CreateFolder(ctx, "", " ").Problem, "problem.emptyName"},
 		"missing node":          {e.Rename(ctx, model.NewID().String(), "x"), "problem.notFound"},

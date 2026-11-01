@@ -86,6 +86,15 @@ func (e *Editor) SetColor(ctx context.Context, id, color string) *Problem {
 	return ProblemOf(e.ws.SetColor(ctx, n, c))
 }
 
+// SetNotes writes the Markdown notes of a node (ADR-0023), at most model.MaxNotes characters.
+func (e *Editor) SetNotes(ctx context.Context, id, notes string) *Problem {
+	n, err := e.node(ctx, id)
+	if err != nil {
+		return ProblemOf(err)
+	}
+	return ProblemOf(e.ws.SetNotes(ctx, n, notes))
+}
+
 // Delete removes a site, a host with its sites, or an empty folder from Vigie.
 func (e *Editor) Delete(ctx context.Context, id string) *Problem {
 	n, err := e.node(ctx, id)

@@ -46,6 +46,7 @@ var problemCodes = []struct {
 	{model.ErrDuplicateName, "problem.duplicateName"},
 	{model.ErrSiteMoved, "problem.siteMoved"},
 	{model.ErrUnknownColor, "problem.unknownColor"},
+	{model.ErrNotesTooLong, "problem.notesTooLong"},
 	{store.ErrNotEmpty, "problem.folderNotEmpty"},
 	{store.ErrBusy, "problem.busy"},
 	{wpcli.ErrNoDumpTool, "problem.noDumpTool"},

@@ -3,6 +3,7 @@ package workspace_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/MarJC5/vigie/internal/discover"
@@ -111,6 +112,29 @@ func TestSetColor(t *testing.T) {
 	}
 	if err := ws.SetColor(ctx, host, 9); !errors.Is(err, model.ErrUnknownColor) {
 		t.Errorf("unknown color: %v, want ErrUnknownColor", err)
+	}
+}
+
+// Notes are written alone, up to model.MaxNotes characters (not bytes), line breaks as \n.
+func TestSetNotes(t *testing.T) {
+	ctx := context.Background()
+	ws, db := bench(t)
+	host := resolve(t, ws, "Clients/Bench")
+	if err := ws.SetNotes(ctx, host, "**Client**: Bench\r\n- contract until 2027"); err != nil {
+		t.Fatal(err)
+	}
+	tree, err := db.LoadTree(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if h, _ := tree.Host(host.ID); h.Notes != "**Client**: Bench\n- contract until 2027" || h.Alias != "bench" {
+		t.Errorf("host after SetNotes = %+v", h)
+	}
+	if err := ws.SetNotes(ctx, host, strings.Repeat("é", model.MaxNotes)); err != nil {
+		t.Errorf("%d characters of two bytes each: %v", model.MaxNotes, err)
+	}
+	if err := ws.SetNotes(ctx, host, strings.Repeat("é", model.MaxNotes+1)); !errors.Is(err, model.ErrNotesTooLong) {
+		t.Errorf("%d characters: %v, want ErrNotesTooLong", model.MaxNotes+1, err)
 	}
 }
 

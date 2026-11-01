@@ -31,7 +31,12 @@ var (
 	ErrUnknownColor  = errors.New("unknown color")
 	// ErrSiteMoved: a site belongs to its host for good; its path and scans are the host's.
 	ErrSiteMoved = errors.New("a site stays under its host")
+	// ErrNotesTooLong: notes are kept short enough to read, search and export (ADR-0023).
+	ErrNotesTooLong = errors.New("notes are too long")
 )
+
+// MaxNotes is the most characters the notes of a folder, host or site hold.
+const MaxNotes = 20000
 
 // ValidateName checks a folder, host or site name. Names are used in command line paths
 // ("Clients/Infomaniak/misits.ch"), so they cannot contain a slash.

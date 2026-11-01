@@ -613,6 +613,11 @@ export interface Node {
      * command line path, for example "Clients/Shared hosting/atelier-exemple.ch"
      */
     "path": string;
+
+    /**
+     * Markdown, shown on its page and read by the search
+     */
+    "notes": string;
     "multisite": boolean;
     "subsites": number;
 

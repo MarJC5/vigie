@@ -6,6 +6,7 @@ const node = (n: Partial<Node> & Pick<Node, "id" | "kind" | "name">): Node => ({
   color: "none",
   ownColor: "none",
   path: n.name,
+  notes: "",
   multisite: false,
   subsites: 0,
   status: "",

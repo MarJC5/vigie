@@ -254,6 +254,7 @@
     "notFound": "Cet élément n'existe plus : la liste a changé entre-temps.",
     "siteMoved": "Un site reste sous son hébergement. S'il a changé de compte, supprimez-le ici et utilisez « Chercher de nouveaux sites » sur cet hébergement.",
     "unknownColor": "Cette couleur n'existe pas.",
+    "notesTooLong": "Les notes tiennent en 20 000 caractères au plus.",
     "folderNotEmpty": "Seul un dossier vide peut être supprimé : déplacez ou supprimez d'abord ce qu'il contient.",
     "moveIntoItself": "Un dossier ne peut pas aller dans lui-même ni dans l'un de ses dossiers.",
     "busy": "Une mise à jour ou un retour en arrière est déjà en cours sur ce site : attendez sa fin.",
