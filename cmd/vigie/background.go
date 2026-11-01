@@ -74,13 +74,13 @@ func (k *keeper) start(ctx context.Context) {
 	k.wails.Event.OnApplicationEvent(events.Mac.ApplicationShouldHandleReopen, func(*application.ApplicationEvent) { k.open() })
 	k.prefs.OnBackground = func(b app.BackgroundSettings) { k.apply(b) }
 	k.wails.Event.On(app.ScansEvent, func(*application.CustomEvent) { k.refresh(ctx) })
-	k.scanner.OnScanned = func(tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan) {
+	k.scanner.OnScanned = func(tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan, changes map[model.ID][]model.Change) {
 		if b, err := k.prefs.Background(ctx); err == nil && b.Notify {
 			run := model.NoID
 			if len(after) > 0 {
 				run = after[0].RunID
 			}
-			k.alert(app.Alerts(tree, before, after), run)
+			k.alert(append(app.Alerts(tree, before, after), app.ChangeAlerts(tree, changes)...), run)
 		}
 	}
 
@@ -163,7 +163,7 @@ func (k *keeper) alert(alerts []app.Alert, run model.ID) {
 	if len(alerts) == 0 || !k.notifications() {
 		return
 	}
-	for _, kind := range []string{app.AlertUrgent, app.AlertUnreachable} {
+	for _, kind := range []string{app.AlertUrgent, app.AlertUnreachable, app.AlertAdmin, app.AlertInstalled} {
 		var names []string
 		for _, a := range alerts {
 			if a.Kind == kind {

@@ -104,7 +104,9 @@ func TestTheEndOfAScanIsToldWithWhatCameBefore(t *testing.T) {
 	s := app.NewScanner(ws, ev.emit)
 	var before map[model.ID]model.Scan
 	var after []model.Scan
-	s.OnScanned = func(_ *model.Tree, b map[model.ID]model.Scan, a []model.Scan) { before, after = b, a }
+	s.OnScanned = func(_ *model.Tree, b map[model.ID]model.Scan, a []model.Scan, _ map[model.ID][]model.Change) {
+		before, after = b, a
+	}
 	if p := s.Scan(host.ID.String()); p != nil {
 		t.Fatal(p)
 	}

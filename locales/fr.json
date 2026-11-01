@@ -488,7 +488,13 @@
     "urgent_other": "{{count}} sites sont devenus urgents : {{names}}",
     "unreachable_one": "{{name}} est injoignable",
     "unreachable_many": "{{count}} hébergements sont injoignables : {{names}}",
-    "unreachable_other": "{{count}} hébergements sont injoignables : {{names}}"
+    "unreachable_other": "{{count}} hébergements sont injoignables : {{names}}",
+    "admin_one": "Nouvel administrateur sur {{name}}",
+    "admin_other": "Nouveaux administrateurs sur {{count}} sites : {{names}}",
+    "admin_many": "Nouveaux administrateurs sur {{count}} sites : {{names}}",
+    "installed_one": "Extension ou thème installé hors de Vigie sur {{name}}",
+    "installed_other": "Extensions ou thèmes installés hors de Vigie sur {{count}} sites : {{names}}",
+    "installed_many": "Extensions ou thèmes installés hors de Vigie sur {{count}} sites : {{names}}"
   },
   "activity": {
     "title": "Activité",

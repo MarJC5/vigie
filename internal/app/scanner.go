@@ -33,9 +33,9 @@ type ScansState struct {
 type Scanner struct {
 	ws   *workspace.Workspace
 	emit func(name string, data any)
-	// OnScanned, when set, hears the end of each scan: the latest scans before it, and the ones it
-	// made, before the window is told the scan ended.
-	OnScanned func(tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan)
+	// OnScanned, when set, hears the end of each scan: the latest scans before it, the ones it made,
+	// and what changed on each site (ADR-0027), before the window is told the scan ended.
+	OnScanned func(tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan, changes map[model.ID][]model.Change)
 
 	mu        sync.Mutex
 	order     []string // node IDs, in the order they started
@@ -119,10 +119,12 @@ func (s *Scanner) start(nodeID string, opts workspace.ScanOptions) *Problem {
 		results, _ := s.ws.ScanNode(ctx, node, opts, func(p scan.Progress) { s.progress(nodeID, p) })
 		if s.OnScanned != nil && before != nil {
 			after := make([]model.Scan, len(results))
+			changes := map[model.ID][]model.Change{}
 			for i, r := range results {
 				after[i] = r.Scan
+				changes[r.Scan.SiteID] = r.Changes
 			}
-			s.OnScanned(tree, before, after)
+			s.OnScanned(tree, before, after, changes)
 		}
 		s.mu.Lock()
 		delete(s.running, nodeID)

@@ -466,7 +466,11 @@
     "urgent_one": "{{name}} turned urgent",
     "urgent_other": "{{count}} sites turned urgent: {{names}}",
     "unreachable_one": "{{name}} cannot be reached",
-    "unreachable_other": "{{count}} hosts cannot be reached: {{names}}"
+    "unreachable_other": "{{count}} hosts cannot be reached: {{names}}",
+    "admin_one": "New administrator on {{name}}",
+    "admin_other": "New administrators on {{count}} sites: {{names}}",
+    "installed_one": "Plugin or theme installed outside Vigie on {{name}}",
+    "installed_other": "Plugins or themes installed outside Vigie on {{count}} sites: {{names}}"
   },
   "activity": {
     "title": "Activity",

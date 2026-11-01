@@ -51,3 +51,32 @@ func TestAlertsTellOnlyWhatGotWorse(t *testing.T) {
 		t.Errorf("Alerts() for a host still unreachable = %+v, want none", again)
 	}
 }
+
+// Two changes notify (ADR-0027): a new administrator and a plugin or theme installed outside
+// Vigie, once per site; the others do not.
+func TestChangeAlerts(t *testing.T) {
+	host := model.Host{ID: model.NewID(), Name: "Shared hosting", Alias: "shared"}
+	shop := model.Site{ID: model.NewID(), HostID: host.ID, Name: "shop.example.test", Path: "~/sites/shop"}
+	blog := model.Site{ID: model.NewID(), HostID: host.ID, Name: "blog.example.test", Path: "~/sites/blog", Position: 1}
+	tree := model.NewTree()
+	for _, err := range []error{tree.AddHost(host), tree.AddSite(shop), tree.AddSite(blog)} {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	changes := map[model.ID][]model.Change{
+		shop.ID: {
+			{Kind: model.ChangeAdminAdded, Subject: "user:root2"}, {Kind: model.ChangeAdminAdded, Subject: "user:root3"},
+			{Kind: model.ChangeInstalled, Subject: "plugin:wp-file-manager"}, {Kind: model.ChangeVersion, Subject: "core"},
+		},
+		blog.ID: {{Kind: model.ChangeVersion, Subject: "plugin:akismet"}, {Kind: model.ChangeAdminRemoved, Subject: "user:intern"}},
+	}
+	var got []string
+	for _, a := range app.ChangeAlerts(tree, changes) {
+		got = append(got, a.Kind+" "+a.Name)
+	}
+	slices.Sort(got)
+	if want := []string{"admin shop.example.test", "installed shop.example.test"}; !slices.Equal(got, want) {
+		t.Errorf("ChangeAlerts() = %q, want %q", got, want)
+	}
+}

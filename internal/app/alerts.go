@@ -11,6 +11,8 @@ import (
 const (
 	AlertUrgent      = "urgent"      // a site turned urgent
 	AlertUnreachable = "unreachable" // a host Vigie could not connect to any more
+	AlertAdmin       = "admin"       // a site got a new administrator (ADR-0027)
+	AlertInstalled   = "installed"   // a plugin or theme was installed on a site outside Vigie
 )
 
 // Alert is something a scan made worse: a site turned urgent (Name and NodeID are the site's), or a
@@ -48,4 +50,21 @@ func Alerts(tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan
 // unreachable tells whether a scan could not connect to its host.
 func unreachable(s model.Scan) bool {
 	return s.Outcome == model.ScanFailed && s.Failure != "" && s.Failure != scan.FailureUnreadable
+}
+
+// ChangeAlerts tells, once per site, the changes that notify (ADR-0027): a new administrator, and
+// a plugin or theme installed outside Vigie (Vigie never installs one).
+func ChangeAlerts(tree *model.Tree, changes map[model.ID][]model.Change) []Alert {
+	var alerts []Alert
+	for _, site := range tree.SitesUnder(model.Root) {
+		for _, kind := range []struct {
+			change model.ChangeKind
+			alert  string
+		}{{model.ChangeAdminAdded, AlertAdmin}, {model.ChangeInstalled, AlertInstalled}} {
+			if slices.ContainsFunc(changes[site.ID], func(c model.Change) bool { return c.Kind == kind.change }) {
+				alerts = append(alerts, Alert{Kind: kind.alert, Name: site.Name, NodeID: site.ID})
+			}
+		}
+	}
+	return alerts
 }
