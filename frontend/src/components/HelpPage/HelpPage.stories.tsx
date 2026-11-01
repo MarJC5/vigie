@@ -13,10 +13,10 @@ const meta = {
   component: HelpPage,
   args: { tab: "start", onTab: fn(), onOpen: fn(), onAddHost: fn() },
   parameters: twoThemes,
-  // The window's content area: its padding, its height, and the page filling it.
+  // The window's content area: its padding, the page taking its height.
   decorators: [
     (Story) => (
-      <div style={{ height: 760, display: "flex", flexDirection: "column", padding: "24px 32px", boxSizing: "border-box" }}>
+      <div style={{ display: "flex", flexDirection: "column", padding: "24px 32px", boxSizing: "border-box" }}>
         <Story />
       </div>
     ),

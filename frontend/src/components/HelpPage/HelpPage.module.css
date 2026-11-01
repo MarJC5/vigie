@@ -1,17 +1,21 @@
-/* The page fills the window's content area: the title and the tabs stay, the tab's content scrolls
-   under them, up to the edges of the window (whose padding it takes back). */
+/* As the other pages: the window's content area scrolls, the title and the tabs stay at the top on
+   its ground (a sticky box stops at the area's padding, hence a top that takes it back). */
 .page {
-  flex: 1;
-  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--vg-space-3);
+  gap: var(--vg-space-5);
 }
 
 .header {
+  position: sticky;
+  top: calc(-1 * var(--vg-space-5));
+  z-index: 1;
+  margin: calc(-1 * var(--vg-space-5)) calc(-1 * var(--vg-space-6)) 0;
+  padding: var(--vg-space-5) var(--vg-space-6) 0;
   display: flex;
   flex-direction: column;
-  gap: var(--vg-space-3);
+  gap: var(--vg-space-4);
+  background: var(--vg-surface-main);
 }
 
 .title {
@@ -22,21 +26,9 @@
   letter-spacing: -0.01em;
 }
 
-.tabs {
-  box-shadow: inset 0 -1px 0 var(--vg-border);
-}
 
 .body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  margin: 0 calc(-1 * var(--vg-space-6)) calc(-1 * var(--vg-space-5));
-  padding: var(--vg-space-3) var(--vg-space-6) var(--vg-space-6);
-}
-
-.body:focus-visible {
-  outline: 2px solid var(--vg-focus);
-  outline-offset: -2px;
+  min-width: 0;
 }
 
 /* Getting started: the steps and the refusals, the shortcuts beside. */
@@ -63,9 +55,9 @@
 
 .heading {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--vg-text-title);
+  line-height: var(--vg-leading-tight);
   font-weight: var(--vg-weight-strong);
-  line-height: 1.2;
 }
 
 .steps {

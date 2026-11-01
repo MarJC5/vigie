@@ -15,7 +15,8 @@
 
 .title {
   margin: 0;
-  font-size: var(--vg-text-heading);
+  font-size: var(--vg-text-title);
+  line-height: var(--vg-leading-tight);
   font-weight: var(--vg-weight-strong);
 }
 

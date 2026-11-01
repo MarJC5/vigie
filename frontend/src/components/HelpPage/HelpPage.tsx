@@ -47,7 +47,8 @@ export function HelpPage({ tab, onTab, onOpen, onAddHost }: HelpPageProps) {
 
   // A new tab starts at its top.
   useEffect(() => {
-    body.current?.scrollTo({ top: 0 });
+    // The window's content area scrolls the page: back to its top.
+    body.current?.closest("main")?.scrollTo({ top: 0 });
   }, [tab]);
 
   // Stable while the language is: the topic is not drawn again on each render.
@@ -67,17 +68,15 @@ export function HelpPage({ tab, onTab, onOpen, onAddHost }: HelpPageProps) {
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.title}>{t("help.title")}</h1>
-        <div className={styles.tabs}>
-          <TabBar
-            label={t("help.title")}
-            tabs={(["start", ...topicNames] as HelpTab[]).map((id) => ({ id, label: t(`help.tabs.${id}`) }))}
-            value={tab}
-            onChange={(id) => onTab(id as HelpTab)}
-            panelId={panel}
-          />
-        </div>
+        <TabBar
+          label={t("help.title")}
+          tabs={(["start", ...topicNames] as HelpTab[]).map((id) => ({ id, label: t(`help.tabs.${id}`) }))}
+          value={tab}
+          onChange={(id) => onTab(id as HelpTab)}
+          panelId={panel}
+        />
       </div>
-      <div ref={body} id={panel} role="tabpanel" tabIndex={0} aria-labelledby={`${panel}-${tab}`} className={styles.body}>
+      <div ref={body} id={panel} role="tabpanel" aria-labelledby={`${panel}-${tab}`} className={styles.body}>
         {tab === "start" ? (
           <div className={styles.columns}>
             <div className={styles.main}>
