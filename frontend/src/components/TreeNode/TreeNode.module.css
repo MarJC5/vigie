@@ -40,13 +40,12 @@
   color: var(--vg-text);
 }
 
-.node[data-kind="host"] .name,
-.node[aria-selected="true"] .name,
-.node[data-attention] .name {
+/* Hosts in the strong weight; sites never, so that a list of them reads at a glance. */
+.node[data-kind="host"] .name {
   font-weight: var(--vg-weight-strong);
 }
 
-/* A site that needs you: white. */
+/* A site that needs you: white, in the regular weight. */
 .node[data-attention] {
   color: var(--vg-text);
 }
