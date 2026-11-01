@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/wpcli"
 )
 
@@ -49,24 +48,18 @@ wp eval 'echo "under WP-CLI: memory_limit=", ini_get("memory_limit"), "\n";' --p
 
 	a := sshAccess(t)
 	runner := a.runner(t, a.trusted(t))
-	runner.Timeout = 2 * time.Minute // the app's limit for one command (workspace.commandTimeout)
+	// The app's settings (workspace): 2 minutes for one command; a shared connection kept 60 seconds
+	// without a client. The bench's 1 second is for its tests of failed connections: a new shared
+	// connection that its own client reaches later than that is gone ("master hello exchange
+	// failed"), which a busy machine can make happen.
+	runner.Timeout = 2 * time.Minute
+	runner.Options.ControlPersist = time.Minute
 	line, err := wpcli.Subsites().Remote("wp", "~/sites/big")
 	if err != nil {
 		t.Fatal(err)
 	}
 	// The script as Vigie sends it, then its peak memory on standard error, for this test only.
 	script := append(wpcli.SubsitesScript(), []byte("\nfwrite( STDERR, 'peak=' . memory_get_peak_usage( true ) );\n")...)
-
-	// One retry when ssh's shared connection fails its handshake, said in the log: the growth leaves
-	// minutes without a command, and that failure is looked at apart.
-	send := func(remote string) (sshx.Result, error) {
-		res, err := runner.RunInput(ctx, a.target(a.key), remote, script)
-		if err != nil && strings.Contains(err.Error(), "mux") {
-			t.Logf("shared connection failed (%v), tried again", err)
-			res, err = runner.RunInput(ctx, a.target(a.key), remote, script)
-		}
-		return res, err
-	}
 
 	from := 1
 	for _, size := range bigSteps {
@@ -88,7 +81,7 @@ wp eval 'echo "under WP-CLI: memory_limit=", ini_get("memory_limit"), "\n";' --p
 		grown := time.Since(grow)
 
 		start := time.Now()
-		out, err := send(line)
+		out, err := runner.RunInput(ctx, a.target(a.key), line, script)
 		took := time.Since(start)
 		if err != nil || out.ExitCode != 0 {
 			t.Errorf("%d subsites: the script failed after %s: %v, exit %d, %s", size, took.Round(time.Second), err, out.ExitCode,
