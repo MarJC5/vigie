@@ -6,7 +6,7 @@ import { playwright } from "@vitest/browser-playwright";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
-import { contentSecurityPolicy } from "./csp";
+import { contentSecurityPolicy } from "./csp.ts";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
