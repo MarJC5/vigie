@@ -4,10 +4,10 @@ import { useTranslation } from "react-i18next";
 import type { BackgroundSettings, LoginItemState, LookupsView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { clock, day, keyOf } from "../../lib/findings";
 import { Button } from "../Button/Button";
-import { Icon } from "../Icon/Icon";
 import { SelectField } from "../SelectField/SelectField";
 import { Switch } from "../Switch/Switch";
 import { TabBar } from "../TabBar/TabBar";
+import { ExternalLink } from "../ExternalLink/ExternalLink";
 import styles from "./SettingsPage.module.css";
 
 export type SettingsTab = "general" | "lookups" | "data" | "about";
@@ -171,9 +171,9 @@ export function SettingsPage({
             <Row title={t("settings.version")} desc={t("settings.versionDesc", { version })} />
             <Row title={t("settings.license")} desc={t("settings.licenseDesc")} />
             <Row title={t("settings.sourceTitle")} desc={t("settings.sourceDesc")}>
-              <Link href={wpvulnerability.href} onOpen={onOpen}>
+              <ExternalLink href={wpvulnerability.href} onOpen={onOpen}>
                 {wpvulnerability.name}
-              </Link>
+              </ExternalLink>
             </Row>
           </Section>
         )}
@@ -224,9 +224,9 @@ function Lookups({
           {agreed ? <Button onClick={onWithdraw}>{t("settings.withdraw")}</Button> : <Button variant="primary" onClick={onAgree}>{t("settings.agree")}</Button>}
         </Row>
         <Row title={t("settings.sourceTitle")} desc={t("settings.sourceDesc")}>
-          <Link href={wpvulnerability.href} onOpen={onOpen}>
+          <ExternalLink href={wpvulnerability.href} onOpen={onOpen}>
             {wpvulnerability.name}
-          </Link>
+          </ExternalLink>
         </Row>
       </Section>
     </>
@@ -252,24 +252,5 @@ function Row({ title, desc, note, children }: { title: string; desc: string; not
       </span>
       <span className={styles.control}>{children}</span>
     </div>
-  );
-}
-
-function Link({ href, onOpen, children }: { href: string; onOpen?: (href: string) => void; children: ReactNode }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className={styles.link}
-      onClick={(event) => {
-        if (!onOpen) return;
-        event.preventDefault();
-        onOpen(href);
-      }}
-    >
-      {children}
-      <Icon name="external" size={13} />
-    </a>
   );
 }

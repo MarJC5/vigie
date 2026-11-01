@@ -10,6 +10,7 @@ import { Checkbox } from "../Checkbox/Checkbox";
 import { Icon } from "../Icon/Icon";
 import { SelectField } from "../SelectField/SelectField";
 import { TextField } from "../TextField/TextField";
+import { ExternalLink } from "../ExternalLink/ExternalLink";
 import styles from "./AddonPage.module.css";
 
 export interface AddonPageProps {
@@ -146,17 +147,9 @@ export function AddonPage({ addon, values, onValue, onChooseFile, onRun, running
             )}
           </dl>
           {addon.install && !addon.installed && (
-            <a
-              href={addon.install}
-              className={styles.link}
-              onClick={(event) => {
-                event.preventDefault();
-                onLink(addon.install);
-              }}
-            >
+            <ExternalLink href={addon.install} onOpen={onLink}>
               {t("addons.howTo")}
-              <Icon name="external" size={13} />
-            </a>
+            </ExternalLink>
           )}
         </section>
       </div>

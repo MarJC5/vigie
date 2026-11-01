@@ -1,7 +1,10 @@
+/* The same everywhere: a line under the tabs, the page's actions resting 8 px above it, never
+   making the bar taller than the tabs (ADR-0004, one look per component). */
 .bar {
   display: flex;
   align-items: flex-end;
   gap: var(--vg-space-5);
+  box-shadow: inset 0 -1px 0 var(--vg-border);
 }
 
 .tabs {
@@ -9,9 +12,12 @@
   gap: 22px;
 }
 
+/* A 36 px button 8 px above the line takes 44 px: it reaches 6 px above the 38 px tabs, into the
+   space over them, rather than pushing them down. */
 .actions {
   margin-left: auto;
-  padding-bottom: var(--vg-space-2);
+  margin-top: -6px;
+  margin-bottom: var(--vg-space-2);
   display: flex;
   align-items: center;
   gap: var(--vg-space-3);

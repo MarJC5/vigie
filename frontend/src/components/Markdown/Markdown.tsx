@@ -2,7 +2,7 @@ import { Children, isValidElement, type ReactNode, useMemo } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { Icon } from "../Icon/Icon";
+import { ExternalLink } from "../ExternalLink/ExternalLink";
 import styles from "./Markdown.module.css";
 
 export interface MarkdownProps {
@@ -80,19 +80,23 @@ export function Markdown({ text, onLink, level = 2, external = web }: MarkdownPr
       h2: heading(2),
       h3: heading(3),
       h4: heading(4),
-      a: ({ href = "", children }) => (
-        <a
-          href={href}
-          className={styles.link}
-          onClick={(event) => {
-            event.preventDefault();
-            onLink(href);
-          }}
-        >
-          {children}
-          {external(href) && <Icon name="external" size={13} />}
-        </a>
-      ),
+      a: ({ href = "", children }) =>
+        external(href) ? (
+          <ExternalLink href={href} onOpen={onLink} size="inline">
+            {children}
+          </ExternalLink>
+        ) : (
+          <a
+            href={href}
+            className={styles.link}
+            onClick={(event) => {
+              event.preventDefault();
+              onLink(href);
+            }}
+          >
+            {children}
+          </a>
+        ),
       table: ({ children }) => (
         <div className={styles.table}>
           <table>{children}</table>

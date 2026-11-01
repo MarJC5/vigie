@@ -5,6 +5,7 @@ import { clock, day, findingText, type Group, groupsOf, ignoreText } from "../..
 import { Button } from "../Button/Button";
 import { Icon } from "../Icon/Icon";
 import { type Status, StatusDot } from "../StatusDot/StatusDot";
+import { ExternalLink } from "../ExternalLink/ExternalLink";
 import styles from "./SecurityPanel.module.css";
 
 export interface SecurityPanelProps {
@@ -74,9 +75,9 @@ export function SecurityPanel({ scan, onCheckFiles, scanning = false, onIgnore, 
 
       <p className={styles.credit}>
         {t("security.creditBefore")}{" "}
-        <Link href={wpvulnerability.href} onOpen={onOpen}>
+        <ExternalLink href={wpvulnerability.href} onOpen={onOpen} size="inline">
           {wpvulnerability.name}
-        </Link>
+        </ExternalLink>
         {t("security.creditAfter")}
       </p>
     </div>
@@ -125,10 +126,9 @@ function Row({
       </span>
       <span className={styles.linkCell}>
         {text.link && (
-          <Link href={text.link.href} onOpen={onOpen}>
+          <ExternalLink href={text.link.href} onOpen={onOpen}>
             {text.link.label}
-            <Icon name="external" size={13} />
-          </Link>
+          </ExternalLink>
         )}
       </span>
       <span className={styles.action}>
@@ -148,20 +148,3 @@ function Row({
 }
 
 /** A link out of the window: the browser opens it. */
-function Link({ href, onOpen, children }: { href: string; onOpen?: (href: string) => void; children: React.ReactNode }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className={styles.link}
-      onClick={(event) => {
-        if (!onOpen) return;
-        event.preventDefault();
-        onOpen(href);
-      }}
-    >
-      {children}
-    </a>
-  );
-}

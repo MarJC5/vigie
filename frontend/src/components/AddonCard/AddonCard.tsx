@@ -5,6 +5,7 @@ import { textIn } from "../../lib/addons";
 import { AddonImage } from "../AddonImage/AddonImage";
 import { Button } from "../Button/Button";
 import { Icon } from "../Icon/Icon";
+import { ExternalLink } from "../ExternalLink/ExternalLink";
 import styles from "./AddonCard.module.css";
 
 export interface AddonCardProps {
@@ -39,17 +40,9 @@ export function AddonCard({ addon, tab, onOpen, onLink }: AddonCardProps) {
               {t("addons.installedNote")}
             </span>
           ) : (
-            <a
-              href={addon.install}
-              className={styles.link}
-              onClick={(event) => {
-                event.preventDefault();
-                onLink(addon.install);
-              }}
-            >
+            <ExternalLink href={addon.install} onOpen={onLink}>
               {t("addons.howTo")}
-              <Icon name="external" size={13} />
-            </a>
+            </ExternalLink>
           )}
         </div>
       </div>

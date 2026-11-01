@@ -16,11 +16,6 @@
 }
 
 .back:focus-visible,
-.link:focus-visible {
-  outline: 2px solid var(--vg-focus);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
 
 .backIcon {
   display: inline-flex;
@@ -159,16 +154,6 @@
   white-space: pre-wrap;
 }
 
-.link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  align-self: flex-start;
-  font-size: var(--vg-text-small);
-  font-weight: var(--vg-weight-strong);
-  color: var(--vg-accent-text);
-  text-decoration: none;
-}
 
 /* Neutral: no colored edge, the icon in gray. */
 .problem {
