@@ -73,6 +73,12 @@
   padding: var(--vg-space-5) var(--vg-space-6);
 }
 
+/* With the site list folded, its button comes first: the page's header starts under it instead of
+   taking back the area's top padding, which would cover it. */
+.folded {
+  --vg-page-top: 0px;
+}
+
 /* The empty state fills the window and centers itself. */
 .main > section:not(.detail) {
   flex: 1;

@@ -469,7 +469,7 @@ export function AppShell({
         </aside>
       )}
       {/* Focusable so the keyboard can scroll a long detail, WebKit included. */}
-      <main className={styles.main} tabIndex={0} inert={inert}>
+      <main className={paneOpen ? styles.main : `${styles.main} ${styles.folded}`} tabIndex={0} inert={inert}>
         {!paneOpen && (
           <Button variant="icon" icon="sidebar" label={t("manager.expand")} onClick={() => setPaneOpen(true)} />
         )}
