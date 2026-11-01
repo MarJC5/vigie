@@ -226,7 +226,7 @@ func (w *Workspace) ScanNode(ctx context.Context, node model.Node, opts ScanOpti
 
 	// Kept even when the scan was cancelled: the history shows it.
 	keep := context.WithoutCancel(ctx)
-	saved := errors.Join(w.saveScans(keep, run.ID, sites, results), w.changes(keep, latest, results))
+	saved := w.saveScans(keep, run.ID, sites, latest, results)
 	ended := model.RunCompleted
 	if ctx.Err() != nil {
 		ended = model.RunCancelled
@@ -243,10 +243,14 @@ func (w *Workspace) ScanNode(ctx context.Context, node model.Node, opts ScanOpti
 	return results, nil
 }
 
-// saveScans stores the scans of a run with their subsites, and applies their sites' ignores.
-func (w *Workspace) saveScans(ctx context.Context, run model.ID, sites []model.Site, results []Scanned) error {
+// saveScans stores the scans of a run with their subsites, each prepared first.
+func (w *Workspace) saveScans(ctx context.Context, run model.ID, sites []model.Site, latest map[model.ID]model.Scan, results []Scanned) error {
 	for i := range results {
 		results[i].Scan.RunID = run
+		previous, ok := latest[sites[i].ID]
+		if err := w.prepare(ctx, &results[i], previous, ok); err != nil {
+			return err
+		}
 		r := results[i]
 		if err := w.db.SaveScan(ctx, r.Scan); err != nil {
 			return err
@@ -256,29 +260,27 @@ func (w *Workspace) saveScans(ctx context.Context, run model.ID, sites []model.S
 				return err
 			}
 		}
-		ignores, err := w.db.Ignores(ctx, sites[i].ID)
-		if err != nil {
-			return err
-		}
-		results[i].Scan.ApplyIgnores(ignores)
 	}
 	return nil
 }
 
-// changes tells each complete scan what changed since its site's complete scan before, with
-// Vigie's operations on the site.
-func (w *Workspace) changes(ctx context.Context, before map[model.ID]model.Scan, results []Scanned) error {
-	for i, r := range results {
-		previous, ok := before[r.Scan.SiteID]
-		if !ok || r.Scan.Outcome != model.ScanCompleted {
-			continue
-		}
+// prepare readies a scan to be stored: what changed since its site's complete scan before, with
+// Vigie's operations on the site (ADR-0027), its site's ignores applied, and what it tells of itself
+// noted for the journal (ADR-0030).
+func (w *Workspace) prepare(ctx context.Context, r *Scanned, previous model.Scan, hasPrevious bool) error {
+	if hasPrevious && r.Scan.Outcome == model.ScanCompleted {
 		ops, err := w.db.Operations(ctx, r.Scan.SiteID)
 		if err != nil {
 			return err
 		}
-		results[i].Changes = model.Changes(previous, r.Scan, ops)
+		r.Changes = model.Changes(previous, r.Scan, ops)
 	}
+	ignores, err := w.db.Ignores(ctx, r.Scan.SiteID)
+	if err != nil {
+		return err
+	}
+	r.Scan.ApplyIgnores(ignores)
+	r.Scan.Recorded, r.Scan.RecordedStatus, r.Scan.RecordedChanges = true, r.Scan.Status(), r.Changes
 	return nil
 }
 

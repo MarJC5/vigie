@@ -121,9 +121,16 @@ type Scan struct {
 	// Network is what a scan of a network read of its subsites (ADR-0029); nil for a single site,
 	// or when the read failed (the administrators are then "not checked").
 	Network *NetworkRead
-	WPCLI   string // WP-CLI version
-	Home    string // the site's address
-	SiteURL string // the WordPress address (siteurl), where wp-admin lives
+	// What the scan noted of itself when it was made, for the journal (ADR-0030): its status with
+	// the ignores of then, and what changed since the site's complete scan before (empty when
+	// nothing did, or there was none). Recorded is false for a scan stored before ADR-0030 until
+	// it is computed once.
+	Recorded        bool
+	RecordedStatus  SiteStatus
+	RecordedChanges []Change
+	WPCLI           string // WP-CLI version
+	Home            string // the site's address
+	SiteURL         string // the WordPress address (siteurl), where wp-admin lives
 
 	// Whether each update check is proven to have reached wordpress.org.
 	CoreChecked      bool

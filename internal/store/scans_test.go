@@ -31,7 +31,12 @@ func scanOf(site model.Site, started time.Time, wp string) model.Scan {
 		SiteURL:    "https://" + site.Name + "/wp",
 		PHPWeb:     model.PHPWeb{Version: "8.2.29", Seen: started.Add(-24 * time.Hour)},
 		AdminEmail: "admin@" + site.Name, AdminEmailPending: "webmaster@" + site.Name,
-		DebugLog:    model.DebugLog{Path: "wp-content/debug.log", Size: 40052, Written: true},
+		DebugLog: model.DebugLog{Path: "wp-content/debug.log", Size: 40052, Written: true},
+		// What the scan noted of itself for the journal (ADR-0030).
+		Recorded: true, RecordedStatus: model.StatusAttention, RecordedChanges: []model.Change{
+			{Kind: model.ChangeVersion, Subject: "plugin:akismet", Title: "Akismet", From: "5.2", To: "5.3"},
+			{Kind: model.ChangeFinding, Subject: "site", Finding: &model.Finding{Kind: model.KindFileEditing, Subject: "site", Level: model.LevelAttention}},
+		},
 		CoreChecked: true, PluginsChecked: true, ThemesChecked: false, LanguagesChecked: true,
 		Items: []model.ScanItem{
 			{Kind: model.ItemCore, Status: "minor", Version: wp, Update: model.UpdateAvailable, UpdateVersion: "7.1.4"},
@@ -51,6 +56,8 @@ func TestScansAreKeptAndTheLatestIsRead(t *testing.T) {
 	other := scanOf(b, start, "7.0")
 	other.Outcome, other.Failure, other.Error, other.Items = model.ScanFailed, "timedOut", "ssh: connect to host: Operation timed out", nil
 	other.PHPWeb, other.AdminEmail, other.AdminEmailPending, other.DebugLog = model.PHPWeb{Unknown: model.PHPWebObjectCache}, "", "", model.DebugLog{}
+	// A scan stored before ADR-0030 noted nothing.
+	other.Recorded, other.RecordedStatus, other.RecordedChanges = false, "", nil
 	for _, s := range []model.Scan{first, second, other} {
 		must(t, db.SaveScan(ctx, s))
 	}

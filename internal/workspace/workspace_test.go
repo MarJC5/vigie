@@ -241,6 +241,20 @@ func TestAScanAppliesTheIgnoresOfItsSite(t *testing.T) {
 	if results[0].Scan.Status() != model.StatusAttention {
 		t.Errorf("Status() = %q, want needs attention once the urgent finding is ignored", results[0].Scan.Status())
 	}
+	// Stored with what it noted of itself for the journal (ADR-0030): its status with the ignores
+	// of then; a first scan has no changes.
+	stored, ok, err := db.LatestScan(ctx, node.ID)
+	if err != nil || !ok || !stored.Recorded || stored.RecordedStatus != model.StatusAttention || len(stored.RecordedChanges) != 0 {
+		t.Fatalf("stored scan noted %v, %q, %+v (%v)", stored.Recorded, stored.RecordedStatus, stored.RecordedChanges, err)
+	}
+	// Ignoring nothing more, a second scan notes the same status, and no change from the first.
+	if _, err := ws.Scan(ctx, "Clients/Bench/outdated.example.test", workspace.ScanOptions{}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if stored, _, err = db.LatestScan(ctx, node.ID); err != nil || !stored.Recorded || stored.RecordedStatus != model.StatusAttention ||
+		stored.RecordedChanges == nil || len(stored.RecordedChanges) != 0 {
+		t.Fatalf("second scan noted %v, %q, %+v (%v)", stored.Recorded, stored.RecordedStatus, stored.RecordedChanges, err)
+	}
 }
 
 // Nothing is asked of an outside service before the user agreed, nor of one turned off.

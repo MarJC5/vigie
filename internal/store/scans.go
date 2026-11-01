@@ -38,6 +38,19 @@ func saveScan(ctx context.Context, tx *sql.Tx, s model.Scan) error {
 	if !ok {
 		return fmt.Errorf("site %s: %w", s.SiteID, model.ErrNotFound)
 	}
+	// What the scan noted of itself (ADR-0030), or NULL when it did not.
+	var recordedChanges any
+	if s.Recorded {
+		changes := s.RecordedChanges
+		if changes == nil {
+			changes = []model.Change{}
+		}
+		data, err := json.Marshal(changes)
+		if err != nil {
+			return err
+		}
+		recordedChanges = string(data)
+	}
 	// The plugins active network-wide, or NULL when the scan read no subsites.
 	var networkPlugins any
 	if s.Network != nil {
@@ -48,13 +61,13 @@ func saveScan(ctx context.Context, tx *sql.Tx, s model.Scan) error {
 	_, err = tx.ExecContext(ctx, `INSERT INTO scans (id, site_id, started_at, finished_at, outcome, failure, error,
 			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
 			files_checked_at, run_id, site_url, php_web, php_web_seen_at, php_web_unknown, admin_email, admin_email_pending,
-			debug_log_path, debug_log_size, debug_log_written, network_plugins)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			debug_log_path, debug_log_size, debug_log_written, network_plugins, recorded_status, recorded_changes)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		s.ID.String(), s.SiteID.String(), timeText(s.Started), timeText(s.Finished), string(s.Outcome), s.Failure, s.Error,
 		s.WordPress, s.PHPCLI, s.WPCLI, s.Home, s.CoreChecked, s.PluginsChecked, s.ThemesChecked, s.LanguagesChecked,
 		optionalTime(s.FilesChecked), optionalID(s.RunID), s.SiteURL, s.PHPWeb.Version, optionalTime(s.PHPWeb.Seen),
 		string(s.PHPWeb.Unknown), s.AdminEmail, s.AdminEmailPending, s.DebugLog.Path, s.DebugLog.Size, s.DebugLog.Written,
-		networkPlugins)
+		networkPlugins, string(s.RecordedStatus), recordedChanges)
 	if err != nil {
 		return err
 	}
@@ -173,7 +186,7 @@ func (db *DB) readScans(ctx context.Context, where string, args ...any) ([]model
 	rows, err := db.sql.QueryContext(ctx, `SELECT id, site_id, started_at, finished_at, outcome, failure, error,
 			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
 			files_checked_at, run_id, site_url, php_web, php_web_seen_at, php_web_unknown, admin_email, admin_email_pending,
-			debug_log_path, debug_log_size, debug_log_written, network_plugins
+			debug_log_path, debug_log_size, debug_log_written, network_plugins, recorded_status, recorded_changes
 		FROM scans s WHERE `+where+` ORDER BY id`, args...)
 	if err != nil {
 		return nil, err
@@ -183,13 +196,20 @@ func (db *DB) readScans(ctx context.Context, where string, args ...any) ([]model
 	for rows.Next() {
 		var s model.Scan
 		var id, site, started, finished, outcome, filesChecked, run, webSeen, webUnknown string
-		var networkPlugins sql.NullString
+		var networkPlugins, recordedChanges sql.NullString
+		var recordedStatus string
 		if err := rows.Scan(&id, &site, &started, &finished, &outcome, &s.Failure, &s.Error,
 			&s.WordPress, &s.PHPCLI, &s.WPCLI, &s.Home,
 			&s.CoreChecked, &s.PluginsChecked, &s.ThemesChecked, &s.LanguagesChecked, &filesChecked, &run, &s.SiteURL,
 			&s.PHPWeb.Version, &webSeen, &webUnknown, &s.AdminEmail, &s.AdminEmailPending,
-			&s.DebugLog.Path, &s.DebugLog.Size, &s.DebugLog.Written, &networkPlugins); err != nil {
+			&s.DebugLog.Path, &s.DebugLog.Size, &s.DebugLog.Written, &networkPlugins, &recordedStatus, &recordedChanges); err != nil {
 			return nil, err
+		}
+		if recordedChanges.Valid {
+			s.Recorded, s.RecordedStatus = true, model.SiteStatus(recordedStatus)
+			if err := json.Unmarshal([]byte(recordedChanges.String), &s.RecordedChanges); err != nil {
+				return nil, err
+			}
 		}
 		if networkPlugins.Valid {
 			s.Network = &model.NetworkRead{Sites: []model.SubsiteRead{}}

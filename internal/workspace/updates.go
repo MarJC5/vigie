@@ -278,6 +278,12 @@ func (w *Workspace) rescan(ctx context.Context, job update.Job) {
 	}
 	s, subsites := w.scanner().Site(ctx, scan.Job{Site: job.Site, Target: job.Target, HostKey: job.HostKey, Max: job.Max,
 		WPCLI: job.WPCLI, Previous: latest[job.Site.ID]}, nil)
+	scanned := Scanned{Scan: s}
+	previous, ok := latest[job.Site.ID]
+	if err := w.prepare(ctx, &scanned, previous, ok); err != nil {
+		return
+	}
+	s = scanned.Scan
 	if err := w.db.SaveScan(ctx, s); err != nil {
 		return
 	}
