@@ -78,3 +78,8 @@
   border-radius: var(--vg-radius-control);
   background: var(--vg-surface-row);
 }
+
+/* A value the scan could not read, in gray: its note says why. */
+.missing {
+  color: var(--vg-text-muted);
+}

@@ -32,3 +32,32 @@
   font-variant-numeric: tabular-nums;
   min-width: 0;
 }
+
+/* A row with a note: the value and its note one above the other. */
+.row[data-noted] {
+  padding-block: var(--vg-space-3);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: var(--vg-space-3);
+  min-width: 0;
+}
+
+.note,
+.aside {
+  font-size: var(--vg-text-small);
+  color: var(--vg-text-muted);
+}
+
+.note {
+  overflow-wrap: anywhere;
+}

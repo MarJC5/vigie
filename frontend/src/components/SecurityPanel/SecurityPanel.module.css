@@ -110,6 +110,20 @@
   overflow-wrap: anywhere;
 }
 
+/* Words read on the server, as they are: in the system's monospace, as the docs' code blocks. */
+.quote {
+  display: block;
+  margin-top: var(--vg-space-1);
+  padding: var(--vg-space-2) var(--vg-space-3);
+  border-radius: var(--vg-radius-control);
+  background: var(--vg-field);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 
 
 

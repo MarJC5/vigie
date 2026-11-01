@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { FindingView, OperationView, Problem, ScanView, SiteView, TagView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { sizeText } from "../../lib/data";
 import { clock, day } from "../../lib/findings";
 import { since } from "../../lib/time";
 import { type Choice, choicesOf, namesOf, offeredKeys } from "../../lib/updates";
@@ -10,7 +11,7 @@ import { ChangeList } from "../ChangeList/ChangeList";
 import { DetailHeader } from "../DetailHeader/DetailHeader";
 import { Dialog } from "../Dialog/Dialog";
 import { ExtensionList } from "../ExtensionList/ExtensionList";
-import { InfoList, InfoRow } from "../InfoList/InfoList";
+import { InfoAside, InfoList, InfoRow } from "../InfoList/InfoList";
 import { NotesPanel } from "../NotesPanel/NotesPanel";
 import { Notice } from "../Notice/Notice";
 import { type QuickLink, QuickLinks } from "../QuickLinks/QuickLinks";
@@ -270,7 +271,17 @@ function Overview({ site, onExtensions }: { site: SiteView; onExtensions: () => 
               .join(" · ")}
           </InfoRow>
           <InfoRow label={t("overview.phpCli")}>{scan.phpCli}</InfoRow>
+          <PHPWebRow scan={scan} />
           <InfoRow label={t("overview.wpCli")}>{scan.wpCli}</InfoRow>
+          {scan.adminEmail && (
+            <InfoRow
+              label={t("overview.adminEmail")}
+              note={scan.adminEmailPending ? t("overview.adminEmailPending", { email: scan.adminEmailPending }) : undefined}
+            >
+              <span data-selectable>{scan.adminEmail}</span>
+            </InfoRow>
+          )}
+          {complements(scan) && <DebugLogRow scan={scan} />}
           <InfoRow label={t("overview.plugins")}>
             <StatusDot status={scan.pending.plugins > 0 || !scan.checked.plugins ? "warn" : "ok"} />
             <span className={styles.unknownLine}>
@@ -313,6 +324,60 @@ function Overview({ site, onExtensions }: { site: SiteView; onExtensions: () => 
         <span data-selectable>{site.path}</span>
       </InfoRow>
     </InfoList>
+  );
+}
+
+/** Whether the scan read its complements (ADR-0028): a scan made before them, or whose settings
+ could not be read, says nothing of them. */
+function complements(scan: ScanView): boolean {
+  return scan.adminEmail !== "" || scan.debugLog !== null || scan.phpWeb.version !== "" || scan.phpWeb.unknown !== "";
+}
+
+/** The PHP serving the pages, as the dashboard noted it, or why it is not known. */
+function PHPWebRow({ scan }: { scan: ScanView }) {
+  const { t } = useTranslation();
+  const web = scan.phpWeb;
+  const label = t("overview.phpWeb");
+  if (web.version) {
+    return (
+      <InfoRow label={label} note={t("overview.phpWebChecks")}>
+        {web.version}
+        {web.seen && <InfoAside>{t("overview.phpWebSeen", { day: day(web.seen) })}</InfoAside>}
+      </InfoRow>
+    );
+  }
+  const why: Record<string, [string, string]> = {
+    "not-noted": ["overview.phpWebNotKnown", "overview.phpWebNotNoted"],
+    "object-cache": ["overview.phpWebNotKnown", "overview.phpWebObjectCache"],
+    unmatched: ["overview.phpWebDiffers", "overview.phpWebUnmatched"],
+  };
+  const [value, note] = why[web.unknown] ?? [];
+  if (!value || !note) return null;
+  return (
+    <InfoRow label={label} note={t(note)}>
+      <span className={styles.missing}>{t(value)}</span>
+    </InfoRow>
+  );
+}
+
+/** debug.log: its size and whether WordPress writes it, or that there is none. */
+function DebugLogRow({ scan }: { scan: ScanView }) {
+  const { t, i18n } = useTranslation();
+  const log = scan.debugLog;
+  const label = t("overview.debugLog");
+  if (!log) {
+    return (
+      <InfoRow label={label}>
+        <span className={styles.missing}>{t("overview.debugLogNone")}</span>
+        <InfoAside>{t("overview.debugLogNoneNote")}</InfoAside>
+      </InfoRow>
+    );
+  }
+  return (
+    <InfoRow label={label}>
+      {log.size > 0 ? sizeText(log.size, i18n.language) : t("overview.debugLogEmpty")}
+      <InfoAside>{log.written ? t("overview.debugLogWritten", { path: log.path }) : t("overview.debugLogLeft")}</InfoAside>
+    </InfoRow>
   );
 }
 

@@ -9,6 +9,8 @@ export interface FindingText {
   detail: string;
   /** Where to read more: the vulnerability's record, the plugin's page on wordpress.org. */
   link?: { label: string; href: string };
+  /** Words read on the server, shown as they are: the latest fatal error of debug.log. */
+  quote?: string;
 }
 
 /** The groups of the Security tab, in their order; set aside findings go last, whatever their level. */
@@ -91,11 +93,22 @@ export function findingText(f: FindingView, t: T, lang: string): FindingText {
         link: sources[0] ? { label: linkLabel(sources[0]), href: sources[0] } : undefined,
       };
     }
-    case "php-support":
+    case "php-support": {
+      // About the PHP serving the pages when the scan knew it (ADR-0028).
+      const web = facts.on === "web" ? "Web" : "";
       return {
-        title: k(facts.status === "d" ? "phpSupport.unmaintained" : "phpSupport.securityOnly", { version: f.version }),
+        title: k(`${facts.status === "d" ? "phpSupport.unmaintained" : "phpSupport.securityOnly"}${web}`, { version: f.version }),
         detail: facts.end ? k("phpSupport.end", { date: day(facts.end) }) : "",
       };
+    }
+    case "debug-fatal": {
+      const count = Number(facts.count ?? 0);
+      return {
+        title: k("debugFatal.title", { count }),
+        detail: facts.last ? k(count > 1 ? "debugFatal.latest" : "debugFatal.one", { day: day(facts.last), time: clock(facts.last) }) : "",
+        quote: facts.message,
+      };
+    }
     case "plugin-closed": {
       const reason = closeReasons.includes(facts.reason ?? "") ? k(`closeReason.${facts.reason}`) : (facts.reason ?? "");
       return {

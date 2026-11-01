@@ -122,6 +122,11 @@ function Row({
             {text.detail}
           </span>
         )}
+        {text.quote && (
+          <code className={styles.quote} data-selectable>
+            {text.quote}
+          </code>
+        )}
         {finding.ignore && <span className={styles.detail}>{ignoreText(finding, t)}</span>}
       </span>
       <span className={styles.linkCell}>

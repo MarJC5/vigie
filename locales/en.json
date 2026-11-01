@@ -430,7 +430,23 @@
     "attemptTitle": "The latest scan did not complete",
     "attemptText": "{{reason}}. These results are from the scan of {{date}} at {{time}}.",
     "showPlugins": "Show the plugins",
-    "showThemes": "Show the themes"
+    "showThemes": "Show the themes",
+    "phpWeb": "PHP on the web",
+    "phpWebSeen": "seen by the dashboard on {{day}}",
+    "phpWebChecks": "The PHP checks are about this version: it serves the visitors.",
+    "phpWebNotKnown": "Not known",
+    "phpWebNotNoted": "The dashboard was not opened this week: WordPress has not noted its version.",
+    "phpWebObjectCache": "WordPress keeps its note in an object cache, which Vigie does not read.",
+    "phpWebDiffers": "Differs from the command line",
+    "phpWebUnmatched": "Version not read: likely a build of a distribution. The PHP checks are about the command line's.",
+    "adminEmail": "Admin email",
+    "adminEmailPending": "Waiting for confirmation: {{email}}",
+    "debugLog": "debug.log",
+    "debugLogNone": "None",
+    "debugLogNoneNote": "WordPress writes none",
+    "debugLogEmpty": "Empty",
+    "debugLogWritten": "written by WordPress to {{path}}",
+    "debugLogLeft": "left from before: WordPress no longer writes to it"
   },
   "updates": {
     "label": "Pending updates",
@@ -910,7 +926,9 @@
       "phpSupport": {
         "securityOnly": "PHP {{version}} gets security fixes only",
         "unmaintained": "PHP {{version}} is no longer maintained",
-        "end": "End of life on {{date}}"
+        "end": "End of life on {{date}}",
+        "securityOnlyWeb": "PHP {{version}} on the web gets security fixes only",
+        "unmaintainedWeb": "PHP {{version}} on the web is no longer maintained"
       },
       "pluginClosed": {
         "title": "{{name}} is closed on wordpress.org",
@@ -1027,7 +1045,15 @@
         "certificate": "Certificate not checked",
         "domain": "Domain expiry not checked",
         "debug-log": "debug.log not checked",
-        "off": "Lookups outside not agreed to, or turned off in Settings."
+        "off": "Lookups outside not agreed to, or turned off in Settings.",
+        "php-web": "PHP on the web not read",
+        "debug-log-file": "debug.log not read"
+      },
+      "debugFatal": {
+        "title_one": "{{count}} fatal error in debug.log in the last 7 days",
+        "title_other": "{{count}} fatal errors in debug.log in the last 7 days",
+        "latest": "The latest on {{day}} at {{time}}:",
+        "one": "On {{day}} at {{time}}:"
       }
     }
   },

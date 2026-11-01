@@ -93,5 +93,25 @@ export const hidden = finding({
   ignore: { untilVersion: "", reason: "staging copy, hidden on purpose", created: "2026-10-12T09:30:00Z" },
 });
 
+// The scan's complements (ADR-0028): fatal errors of the last week, PHP on the web near its end.
+export const debugFatal = finding({
+  kind: "debug-fatal",
+  level: "attention",
+  facts: {
+    count: "3",
+    last: "2026-10-31T02:14:07Z",
+    message:
+      "PHP Fatal error:  Uncaught Error: Call to undefined function wc_get_order() in /home/clients/u12ab/sites/boulangerie/wp-content/themes/astra-child/functions.php:42",
+  },
+});
+
+export const phpWeb = finding({
+  kind: "php-support",
+  level: "attention",
+  subject: "php",
+  version: "8.2.29",
+  facts: { status: "s", end: "2026-12-31", on: "web" },
+});
+
 /** A site's findings, the worst first, as a scan ranks them. */
 export const findings: FindingView[] = [exploited, publicLog, xss, closed, sameName, noTwoFactor, fileEditing, notChecked, domainSilent, certificate, hidden];

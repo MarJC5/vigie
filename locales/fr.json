@@ -450,7 +450,23 @@
     "attemptTitle": "Le dernier relevé n'a pas abouti",
     "attemptText": "{{reason}}. Ces résultats datent du relevé du {{date}} à {{time}}.",
     "showPlugins": "Voir les extensions",
-    "showThemes": "Voir les thèmes"
+    "showThemes": "Voir les thèmes",
+    "phpWeb": "PHP sur le web",
+    "phpWebSeen": "vu par le tableau de bord le {{day}}",
+    "phpWebChecks": "Les contrôles de PHP portent sur cette version : c'est elle qui sert les visiteurs.",
+    "phpWebNotKnown": "Pas connue",
+    "phpWebNotNoted": "Le tableau de bord n'a pas été ouvert cette semaine : WordPress n'a pas noté sa version.",
+    "phpWebObjectCache": "WordPress garde sa note dans un cache d'objets, que Vigie ne lit pas.",
+    "phpWebDiffers": "Différente de la ligne de commande",
+    "phpWebUnmatched": "Version non lue : sans doute une version propre à une distribution. Les contrôles de PHP portent sur la ligne de commande.",
+    "adminEmail": "E-mail d'administration",
+    "adminEmailPending": "En attente de confirmation : {{email}}",
+    "debugLog": "debug.log",
+    "debugLogNone": "Aucun",
+    "debugLogNoneNote": "WordPress n'en écrit pas",
+    "debugLogEmpty": "Vide",
+    "debugLogWritten": "écrit par WordPress dans {{path}}",
+    "debugLogLeft": "resté d'avant : WordPress n'y écrit plus"
   },
   "updates": {
     "label": "Mises à jour en attente",
@@ -954,7 +970,9 @@
       "phpSupport": {
         "securityOnly": "PHP {{version}} ne reçoit plus que des correctifs de sécurité",
         "unmaintained": "PHP {{version}} n'est plus maintenu",
-        "end": "Fin de vie le {{date}}"
+        "end": "Fin de vie le {{date}}",
+        "securityOnlyWeb": "PHP {{version}} sur le web ne reçoit plus que des correctifs de sécurité",
+        "unmaintainedWeb": "PHP {{version}} sur le web n'est plus maintenu"
       },
       "pluginClosed": {
         "title": "{{name}} est fermée sur wordpress.org",
@@ -1075,7 +1093,16 @@
         "certificate": "Certificat non vérifié",
         "domain": "Expiration du domaine non vérifiée",
         "debug-log": "debug.log non vérifié",
-        "off": "Recherches extérieures pas encore acceptées, ou désactivées dans Réglages."
+        "off": "Recherches extérieures pas encore acceptées, ou désactivées dans Réglages.",
+        "php-web": "PHP sur le web non lu",
+        "debug-log-file": "debug.log non lu"
+      },
+      "debugFatal": {
+        "title_one": "{{count}} erreur fatale dans debug.log ces 7 derniers jours",
+        "title_many": "{{count}} erreurs fatales dans debug.log ces 7 derniers jours",
+        "title_other": "{{count}} erreurs fatales dans debug.log ces 7 derniers jours",
+        "latest": "La dernière le {{day}} à {{time}} :",
+        "one": "Le {{day}} à {{time}} :"
       }
     }
   },

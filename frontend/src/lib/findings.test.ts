@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import en from "../../../locales/en.json";
 import fr from "../../../locales/fr.json";
-import { certificate, closed, domainSilent, exploited, findings, hidden, notChecked, noTwoFactor, sameName, xss } from "../fixtures/findings";
+import { certificate, closed, debugFatal, domainSilent, exploited, findings, hidden, notChecked, noTwoFactor, phpWeb, sameName, xss } from "../fixtures/findings";
 import { createI18n } from "../i18n";
 import { day, findingText, groupsOf, ignoreText, keyOf } from "./findings";
 
@@ -54,9 +54,28 @@ describe("findingText", () => {
     expect(findingText(notChecked, t("fr"), "fr").title).toBe("wordpress.org non interrogé");
   });
 
+  it("writes the scan's complements: fatal errors with the latest's words, PHP on the web", () => {
+    expect(findingText(debugFatal, t("fr"), "fr")).toEqual({
+      title: "3 erreurs fatales dans debug.log ces 7 derniers jours",
+      detail: expect.stringMatching(/^La dernière le 31\.10\.2026 à \d{2}:14\u00a0:$/),
+      quote: debugFatal.facts?.message,
+    });
+    const one = { ...debugFatal, facts: { ...debugFatal.facts, count: "1" } };
+    expect(findingText(one, t("en"), "en").title).toBe("1 fatal error in debug.log in the last 7 days");
+    expect(findingText(phpWeb, t("fr"), "fr")).toEqual({
+      title: "PHP 8.2.29 sur le web ne reçoit plus que des correctifs de sécurité",
+      detail: "Fin de vie le 31.12.2026",
+    });
+    const cli = { ...phpWeb, facts: { ...phpWeb.facts, on: "cli" } };
+    expect(findingText(cli, t("en"), "en").title).toBe("PHP 8.2.29 gets security fixes only");
+    for (const id of ["php-web", "debug-log-file"]) {
+      expect(findingText({ ...notChecked, identifier: id }, t("en"), "en").title).toMatch(/not read$/);
+    }
+  });
+
   it("has a title in both languages for every finding", () => {
     for (const lang of ["en", "fr"]) {
-      for (const f of findings) {
+      for (const f of [...findings, debugFatal, phpWeb]) {
         const text = findingText(f, t(lang), lang);
         expect(text.title, f.key).not.toMatch(/security\.finding|undefined/);
         expect(text.detail, f.key).not.toMatch(/security\.finding|undefined/);

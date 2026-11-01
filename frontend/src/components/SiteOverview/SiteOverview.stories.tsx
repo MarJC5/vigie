@@ -3,7 +3,7 @@ import { expect, fn, userEvent, within } from "storybook/test";
 
 import { siteChanges } from "../../fixtures/changes";
 import { extensions } from "../../fixtures/extensions";
-import { findings, xss } from "../../fixtures/findings";
+import { debugFatal, fileEditing, findings, phpWeb, xss } from "../../fixtures/findings";
 import { failedSite, newSite, offlineSite, outdatedSite, upToDateSite } from "../../fixtures/scans";
 import { sampleTags } from "../../fixtures/tree";
 import { historyToRollBack } from "../../fixtures/updates";
@@ -301,5 +301,94 @@ export const SinceThePreviousScan: Story = {
 export const NothingSinceThePreviousScan: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.queryByRole("heading", { name: /^Since the previous scan/ })).toBeNull();
+  },
+};
+
+// The scan's complements (ADR-0028): PHP on the web as the dashboard noted it, the admin email and
+// the one waiting for confirmation, debug.log written by WordPress.
+export const Complements: Story = {
+  globals: { lang: "fr" },
+  args: {
+    site: {
+      ...outdatedSite,
+      scan: {
+        ...outdatedSite.scan!,
+        phpWeb: { version: "8.2.29", seen: "2026-10-30T09:12:00Z", unknown: "" },
+        adminEmail: "contact@boulangerie-exemple.ch",
+        adminEmailPending: "marie@boulangerie-exemple.ch",
+        debugLog: { path: "wp-content/debug.log", size: 38_200_000, written: true },
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    const row = (label: string) => page.getByText(label, { selector: "dt" }).parentElement!;
+    await expect(row("PHP sur le web")).toHaveTextContent("8.2.29vu par le tableau de bord le 30.10.2026");
+    await expect(row("PHP sur le web")).toHaveTextContent("c'est elle qui sert les visiteurs");
+    await expect(row("E-mail d'administration")).toHaveTextContent("contact@boulangerie-exemple.chEn attente de confirmation : marie@boulangerie-exemple.ch");
+    await expect(row("debug.log")).toHaveTextContent("38,2 Moécrit par WordPress dans wp-content/debug.log");
+  },
+};
+
+// Not known: nobody opened the dashboard this week, WordPress writes no debug.log.
+export const ComplementsNotKnown: Story = {
+  args: { site: { ...outdatedSite, scan: { ...outdatedSite.scan!, adminEmail: "contact@boulangerie-exemple.ch" } } },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=light]")!);
+    const row = (label: string) => page.getByText(label, { selector: "dt" }).parentElement!;
+    await expect(row("PHP on the web")).toHaveTextContent("Not knownThe dashboard was not opened this week");
+    await expect(row("debug.log")).toHaveTextContent("NoneWordPress writes none");
+  },
+};
+
+// A version Vigie cannot name, and a debug.log left from before.
+export const ComplementsDiffers: Story = {
+  args: {
+    site: {
+      ...outdatedSite,
+      scan: {
+        ...outdatedSite.scan!,
+        phpWeb: { version: "", seen: "", unknown: "unmatched" },
+        adminEmail: "webmaster@boulangerie-exemple.ch",
+        debugLog: { path: "wp-content/debug.log", size: 3_100_000, written: false },
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    const row = (label: string) => page.getByText(label, { selector: "dt" }).parentElement!;
+    await expect(row("PHP on the web")).toHaveTextContent("Differs from the command lineVersion not read");
+    await expect(row("debug.log")).toHaveTextContent("3.1 MBleft from before: WordPress no longer writes to it");
+  },
+};
+
+// A scan made before the complements says nothing of them.
+export const ComplementsNotRead: Story = {
+  args: { site: { ...outdatedSite, scan: { ...outdatedSite.scan!, phpWeb: { version: "", seen: "", unknown: "" }, adminEmail: "" } } },
+  play: async ({ canvas }) => {
+    for (const label of ["PHP on the web", "Admin email", "debug.log"]) {
+      await expect(canvas.queryAllByText(label, { selector: "dt" })).toHaveLength(0);
+    }
+  },
+};
+
+// In the Security tab: the fatal errors of the last week, the latest's words as they are; the PHP
+// checks about the version serving the pages.
+export const ComplementsSecurity: Story = {
+  globals: { lang: "fr" },
+  args: {
+    site: {
+      ...outdatedSite,
+      scan: { ...outdatedSite.scan!, findings: [debugFatal, phpWeb, fileEditing], counts: { urgent: 0, attention: 3, notChecked: 0, ignored: 0 } },
+    },
+    onIgnore: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await userEvent.click(page.getByRole("tab", { name: /Sécurité/ }));
+    const panel = within(page.getByRole("tabpanel"));
+    await expect(panel.getByText("3 erreurs fatales dans debug.log ces 7 derniers jours")).toBeInTheDocument();
+    await expect(panel.getByText(/Call to undefined function wc_get_order\(\)/, { selector: "code" })).toBeInTheDocument();
+    await expect(panel.getByText("PHP 8.2.29 sur le web ne reçoit plus que des correctifs de sécurité")).toBeInTheDocument();
   },
 };
