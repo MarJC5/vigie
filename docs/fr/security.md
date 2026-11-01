@@ -8,8 +8,9 @@ résultats sont classés.
 
 ## Ce qui est lu sur le serveur
 
-Des commandes WP-CLI en lecture seule, sans charger les extensions ni les thèmes, et deux commandes
-shell (le vrai dossier du site, et un `find` dans ses téléversements) :
+Des commandes WP-CLI en lecture seule, sans charger les extensions ni les thèmes, et trois
+commandes shell (le vrai dossier du site, un `find` dans ses téléversements, et la fin de
+`debug.log`) :
 
 - **Fichiers comparés avec wordpress.org** : `wp core verify-checksums` et
   `wp plugin verify-checksums --all`. Le serveur télécharge les sommes de contrôle publiées et lit
@@ -29,10 +30,25 @@ shell (le vrai dossier du site, et un `find` dans ses téléversements) :
   le client `mysql` sur le serveur). **Jamais** un secret de double authentification, un code de
   secours ou un mot de passe.
 - **Réglages** : les noms des constantes de `wp-config.php`, puis les valeurs de `WP_DEBUG`,
-  `WP_DEBUG_DISPLAY` et `DISALLOW_FILE_EDIT` seulement. **Jamais** le mot de passe de la base de
-  données, les clés ni les sels.
-- **Options** : si les moteurs de recherche sont priés de ne pas indexer le site, et la taille des
-  options chargées sur chaque page (noms et tailles, jamais leurs valeurs).
+  `WP_DEBUG_DISPLAY`, `WP_DEBUG_LOG` et `DISALLOW_FILE_EDIT` seulement. **Jamais** le mot de passe
+  de la base de données, les clés ni les sels.
+- **Options** : si les moteurs de recherche sont priés de ne pas indexer le site, la taille des
+  options chargées sur chaque page (noms et tailles, jamais leurs valeurs), et l'e-mail
+  d'administration avec celui qui attend sa confirmation (`admin_email`, `new_admin_email`), où
+  WordPress envoie ses avis. Il reste sur votre ordinateur, comme les adresses des administrateurs.
+- **PHP qui sert les pages**, qu'un hébergeur peut régler autrement que celui de la ligne de
+  commande : le tableau de bord de WordPress interroge wordpress.org sur sa version de PHP et
+  garde la réponse une semaine, sous une clé tirée de cette version (`wp_check_php_version()`).
+  Vigie liste ces clés et leur expiration (`wp transient list --network --search=php_check_*`),
+  jamais les réponses, et retrouve sur votre ordinateur la version de chacune. Elle n'est connue que
+  si quelqu'un a ouvert le tableau de bord dans la semaine. Sinon, ou quand les notes sont dans un
+  cache d'objets externe que WP-CLI ne sait pas lister, la fenêtre dit qu'elle n'est pas connue, et
+  pourquoi. Quand elle est connue, les contrôles de PHP ci-dessous portent sur elle.
+- **`debug.log`**, là où WordPress l'écrit (`WP_DEBUG_LOG`), ou celui resté d'avant dans
+  `wp-content` : sa taille, et les erreurs fatales et d'analyse de son dernier mégaoctet, au plus
+  50 lignes. Celles des 7 derniers jours donnent un constat avec leur nombre, la date de la dernière
+  et son message, coupé à 300 caractères. Il peut contenir un chemin du serveur, et reste sur votre
+  ordinateur.
 - **WP-Cron** : les tâches planifiées et leur échéance (pas `wp cron test`, qui les exécuterait).
 - **Version du serveur de base de données**, quand le client `mysql` est sur le serveur.
 
@@ -89,10 +105,12 @@ fiche.
   Quand presque tous diffèrent, c'est sans doute une autre extension du même nom. Quand aucun ne
   figure dans la liste de wordpress.org, ils n'ont pas pu être comparés, ce qui est seulement
   signalé.
-- PHP qui ne reçoit plus que des correctifs de sécurité, ou qui n'est plus maintenu
+- PHP qui ne reçoit plus que des correctifs de sécurité, ou qui n'est plus maintenu (celui qui
+  sert les pages quand il est connu, celui de la ligne de commande sinon)
 - un administrateur sans double authentification
 - la modification des fichiers permise depuis le tableau de bord
 - des erreurs PHP affichées sur les pages
+- des erreurs fatales dans `debug.log` ces 7 derniers jours
 - le site masqué aux moteurs de recherche
 - un site qui ne répond pas en HTTPS
 - des tâches WP-Cron en retard de plus d'une heure

@@ -7,8 +7,8 @@ agreed. This page lists both, and how the results are ranked.
 
 ## What is read on the server
 
-Read-only WP-CLI commands, with the plugins and themes not loaded, and two shell commands (the
-site's real folder, and a `find` in its uploads):
+Read-only WP-CLI commands, with the plugins and themes not loaded, and three shell commands (the
+site's real folder, a `find` in its uploads, and the end of `debug.log`):
 
 - **Files compared with wordpress.org**: `wp core verify-checksums` and
   `wp plugin verify-checksums --all`. The server downloads the published checksums and reads every
@@ -26,10 +26,23 @@ site's real folder, and a `find` in its uploads):
   when Wordfence is active (that read needs the `mysql` client on the server). **Never** a
   two-factor secret, a backup code or a password.
 - **Settings**: the names of the constants of `wp-config.php`, then the values of `WP_DEBUG`,
-  `WP_DEBUG_DISPLAY` and `DISALLOW_FILE_EDIT` only. **Never** the database password, the keys or
-  the salts.
-- **Options**: whether search engines are asked not to index the site, and the size of the options
-  loaded on every page (names and sizes, never their values).
+  `WP_DEBUG_DISPLAY`, `WP_DEBUG_LOG` and `DISALLOW_FILE_EDIT` only. **Never** the database
+  password, the keys or the salts.
+- **Options**: whether search engines are asked not to index the site, the size of the options
+  loaded on every page (names and sizes, never their values), and the admin email with the one
+  waiting for its confirmation (`admin_email`, `new_admin_email`), where WordPress sends its
+  notices. It stays on your computer, as the administrators' addresses do.
+- **PHP serving the pages**, which a host can set apart from the command line's: WordPress's
+  dashboard asks wordpress.org about its PHP version and keeps the answer a week, under a key made
+  from that version (`wp_check_php_version()`). Vigie lists those keys and their expiry
+  (`wp transient list --network --search=php_check_*`), never the answers, and finds on your
+  computer which version each was made from. It is known only when someone opened the dashboard
+  in the last week; otherwise, or when the notes are in an external object cache WP-CLI cannot
+  list, the window says it is not known, and why. When known, the PHP checks below are about it.
+- **`debug.log`**, where WordPress writes it (`WP_DEBUG_LOG`), or one left in `wp-content` from
+  before: its size, and the fatal and parse errors of its last megabyte, at most 50 lines. Those of
+  the last 7 days give one finding with their count, the date of the latest and its message, cut at
+  300 characters; it can hold a path of the server, and stays on your computer.
 - **WP-Cron**: the scheduled events and when each is due (not `wp cron test`, which would run them).
 - **Database server version**, when the `mysql` client is on the server.
 
@@ -77,9 +90,10 @@ known vulnerability is not the same as safe. Vigie links to each record's source
 plugin closed for another reason, or without a release for two years; files of a plugin that differ
 from wordpress.org's (one finding per plugin; when nearly every file differs, it is probably
 another plugin of the same name; when none of them matches wordpress.org's list, they could not be
-compared, which is only shown); PHP with security fixes only, or no longer maintained; an
+compared, which is only shown); PHP with security fixes only, or no longer maintained (the PHP
+serving the pages when it is known, the command line's otherwise); an
 administrator without two-factor; file editing allowed from the dashboard; PHP errors shown on the
-pages; the site hidden from search engines; a site that does not answer in HTTPS; WP-Cron events
+pages; fatal errors in `debug.log` in the last 7 days; the site hidden from search engines; a site that does not answer in HTTPS; WP-Cron events
 overdue by more than an hour; options loaded on every page above 800,000 bytes (WordPress's own
 limit); a certificate or a domain expiring within 30 days.
 

@@ -125,9 +125,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   outside it, files of WordPress or a plugin newly different, a new finding. Under each scan in the
   Activity journal, above a site's Overview, under each site in `vigie scan` and as `changes` in
   `--json`. A new administrator, and a plugin or theme installed outside Vigie, notify.
+- A scan reads the PHP serving the pages, from the check WordPress's dashboard keeps a week (known
+  when someone opened the dashboard that week, and said so otherwise); the PHP checks are then
+  about it. It also reads the admin email and the one waiting for its confirmation, and
+  `debug.log`: its size, whether WordPress still writes it, and its fatal errors of the last week,
+  as one finding with the latest's message. On a site's Overview and in `vigie scan --json`.
 
 ### Changed
 
+- `WP_DEBUG_LOG` is read as WordPress reads it: "true" and "1", in any case, name
+  `wp-content/debug.log`, and `WP_DEBUG` counts whenever it is true for PHP.
 - A scan cancelled or failed after a complete one no longer hides it: the complete one stays shown,
   and the window says why nothing newer is.
 - Whether wordpress.org knows a plugin is asked from your computer when you agreed to it: a server

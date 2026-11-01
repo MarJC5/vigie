@@ -164,6 +164,11 @@ func scans(upToDate, outdated model.ID) []model.Scan {
 		{Kind: model.ItemLanguage, Slug: "akismet", Language: "fr_FR", Update: model.UpdateAvailable},
 	}
 	warn.FilesChecked = finished
+	// The scan's complements (ADR-0028): PHP on the web older than the command line's, a new admin
+	// email waiting for its confirmation, debug.log written by WordPress.
+	warn.PHPWeb = model.PHPWeb{Version: "8.2.29", Seen: finished.Add(-26 * time.Hour)}
+	warn.AdminEmail, warn.AdminEmailPending = "contact@boulangerie-exemple.ch", "marie@boulangerie-exemple.ch"
+	warn.DebugLog = model.DebugLog{Path: "wp-content/debug.log", Size: 38_200_000, Written: true}
 	// Nothing urgent: the site keeps needing attention for its updates. Hidden from search engines is
 	// ignored (see ignores).
 	warn.Findings = []model.Finding{
