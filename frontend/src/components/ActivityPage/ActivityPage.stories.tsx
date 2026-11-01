@@ -12,17 +12,18 @@ const at = (day: number, h: number, m = 0) => new Date(2026, 9, day, h, m).toISO
 const journal: Journal = {
   since: at(1, 14),
   entries: [
-    { kind: "run", at: at(31, 10, 12), ended: at(31, 10, 13), by: "user", path: "Clients/Shared hosting", siteId: "", sites: 3, outcome: "completed", summary: "", changes: [], notices: [] },
+    { kind: "run", at: at(31, 10, 12), ended: at(31, 10, 13), by: "user", path: "Clients/Shared hosting", siteId: "", sites: 3, outcome: "completed", summary: "", changes: [], siteChanges: [], notices: [] },
     {
       kind: "run", at: at(31, 3), ended: at(31, 3, 4), by: "schedule", path: "", siteId: "", sites: 4, outcome: "completed", summary: "",
       changes: [
         { kind: "urgent", nodeId: "boulangerie", name: "boulangerie-exemple.ch" },
         { kind: "recovered", nodeId: "atelier", name: "atelier-exemple.ch" },
       ],
+      siteChanges: [],
       notices: [{ kind: "urgent", names: ["boulangerie-exemple.ch"] }],
     },
-    { kind: "update", at: at(30, 16, 40), ended: at(30, 16, 42), by: "", path: "Clients/Shared hosting/boulangerie-exemple.ch", siteId: "boulangerie", sites: 0, outcome: "completed", summary: "Akismet 5.3 → 5.7.2", changes: [], notices: [] },
-    { kind: "run", at: at(28, 9, 5), ended: at(28, 9, 6), by: "cli", path: "Personal/Managed VPS", siteId: "", sites: 1, outcome: "cancelled", summary: "", changes: [], notices: [] },
+    { kind: "update", at: at(30, 16, 40), ended: at(30, 16, 42), by: "", path: "Clients/Shared hosting/boulangerie-exemple.ch", siteId: "boulangerie", sites: 0, outcome: "completed", summary: "Akismet 5.3 → 5.7.2", changes: [], siteChanges: [], notices: [] },
+    { kind: "run", at: at(28, 9, 5), ended: at(28, 9, 6), by: "cli", path: "Personal/Managed VPS", siteId: "", sites: 1, outcome: "cancelled", summary: "", changes: [], siteChanges: [], notices: [] },
   ],
 };
 

@@ -28,17 +28,20 @@ type NoticeView struct {
 // ActivityEntry is a line of the journal: a run with what it changed and what Vigie notified, a
 // scan made before runs were recorded, an update or a rollback.
 type ActivityEntry struct {
-	Kind    string       `json:"kind"`    // "run", "scan", "update", "rollback"
-	At      string       `json:"at"`      // when it started, RFC 3339
-	Ended   string       `json:"ended"`   // "" while it runs
-	By      string       `json:"by"`      // a run's: "user", "schedule", "cli"
-	Path    string       `json:"path"`    // a run's node ("" for everything), else its site's path
-	SiteID  string       `json:"siteId"`  // a scan's or an operation's site
-	Sites   int          `json:"sites"`   // a run's
-	Outcome string       `json:"outcome"` // as stored: a run's, a scan's or an operation's
-	Summary string       `json:"summary"` // an operation's
-	Changes []Change     `json:"changes"`
-	Notices []NoticeView `json:"notices"`
+	Kind    string   `json:"kind"`    // "run", "scan", "update", "rollback"
+	At      string   `json:"at"`      // when it started, RFC 3339
+	Ended   string   `json:"ended"`   // "" while it runs
+	By      string   `json:"by"`      // a run's: "user", "schedule", "cli"
+	Path    string   `json:"path"`    // a run's node ("" for everything), else its site's path
+	SiteID  string   `json:"siteId"`  // a scan's or an operation's site
+	Sites   int      `json:"sites"`   // a run's
+	Outcome string   `json:"outcome"` // as stored: a run's, a scan's or an operation's
+	Summary string   `json:"summary"` // an operation's
+	Changes []Change `json:"changes"`
+	// SiteChanges are what changed on each site since its previous complete scan (ADR-0027): a
+	// run's, or a scan's without a run.
+	SiteChanges []SiteChangesView `json:"siteChanges"`
+	Notices     []NoticeView      `json:"notices"`
 }
 
 // Journal is the journal of the days asked, newest first.
@@ -102,28 +105,53 @@ func (a *Activity) Journal(ctx context.Context, days int, nodeID string) (Journa
 	if err != nil {
 		return Journal{}, err
 	}
-	ops, err := a.repo.OperationsSince(ctx, since)
+	// Vigie's operations from the oldest scan read, to tell the versions it changed.
+	from := since
+	for _, s := range scans {
+		if s.Started.Before(from) {
+			from = s.Started
+		}
+	}
+	ops, err := a.repo.OperationsSince(ctx, from)
 	if err != nil {
 		return Journal{}, err
 	}
 
 	entries := []ActivityEntry{}
-	changes := map[model.ID][]Change{} // by run
-	touched := map[model.ID]bool{}     // runs with a site shown
+	changes := map[model.ID][]Change{}              // by run
+	siteChanges := map[model.ID][]SiteChangesView{} // by run
+	touched := map[model.ID]bool{}                  // runs with a site shown
 	previous := map[model.ID]model.Scan{}
-	for _, s := range scans { // oldest first: the scan before each one is the previous of its site
+	complete := map[model.ID]model.Scan{} // the latest complete scan of each site so far
+	for _, s := range scans {             // oldest first: the scan before each one is the previous of its site
 		before, had := previous[s.SiteID]
 		previous[s.SiteID] = s
+		last, hadComplete := complete[s.SiteID]
+		if s.Outcome == model.ScanCompleted {
+			complete[s.SiteID] = s
+		}
 		if s.Started.Before(since) || !shown(s.SiteID) {
 			continue
 		}
 		found := changesOf(tree, before, had, s)
+		var site []SiteChangesView
+		if hadComplete {
+			if c := model.Changes(last, s, ops); len(c) > 0 {
+				name := ""
+				if st, ok := tree.Site(s.SiteID); ok {
+					name = st.Name
+				}
+				site = []SiteChangesView{{SiteID: s.SiteID.String(), Name: name, Changes: changeViews(c, s)}}
+			}
+		}
 		if s.RunID == model.NoID {
 			e := siteEntry(tree, "scan", s.SiteID, s.Started, s.Finished, string(s.Outcome))
 			e.Changes = found
+			e.SiteChanges = append(e.SiteChanges, site...)
 			entries = append(entries, e)
 			continue
 		}
+		siteChanges[s.RunID] = append(siteChanges[s.RunID], site...)
 		touched[s.RunID] = true
 		for _, c := range found {
 			if !slices.Contains(changes[s.RunID], c) {
@@ -137,7 +165,10 @@ func (a *Activity) Journal(ctx context.Context, days int, nodeID string) (Journa
 		}
 		e := ActivityEntry{
 			Kind: "run", At: rfc3339(r.Started), Ended: rfc3339(r.Finished), By: string(r.By), Path: r.Path,
-			Sites: r.Sites, Outcome: string(r.Outcome), Changes: changes[r.ID], Notices: []NoticeView{},
+			Sites: r.Sites, Outcome: string(r.Outcome), Changes: changes[r.ID], SiteChanges: siteChanges[r.ID], Notices: []NoticeView{},
+		}
+		if e.SiteChanges == nil {
+			e.SiteChanges = []SiteChangesView{}
 		}
 		if e.Changes == nil {
 			e.Changes = []Change{}
@@ -150,7 +181,7 @@ func (a *Activity) Journal(ctx context.Context, days int, nodeID string) (Journa
 		entries = append(entries, e)
 	}
 	for _, op := range ops {
-		if shown(op.SiteID) {
+		if !op.Started.Before(since) && shown(op.SiteID) {
 			e := siteEntry(tree, string(op.Kind), op.SiteID, op.Started, op.Finished, string(op.Outcome))
 			e.Summary = op.Summary
 			entries = append(entries, e)
@@ -174,7 +205,7 @@ func siteEntry(tree *model.Tree, kind string, site model.ID, started, finished t
 	return ActivityEntry{
 		Kind: kind, At: rfc3339(started), Ended: rfc3339(finished), SiteID: site.String(),
 		Path: tree.PathOf(model.Node{Kind: model.KindSite, ID: site}), Outcome: outcome,
-		Changes: []Change{}, Notices: []NoticeView{},
+		Changes: []Change{}, SiteChanges: []SiteChangesView{}, Notices: []NoticeView{},
 	}
 }
 

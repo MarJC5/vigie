@@ -169,3 +169,34 @@ func TestEveryScanOfASite(t *testing.T) {
 		t.Errorf("Scans() = %+v, want the oldest first with their items and findings", got)
 	}
 }
+
+// The journal compares a scan with the one just before it for the status, and with the complete
+// one before it for the changes (ADR-0027): both are read, with their items.
+func TestScanStatusesReadTheCompleteScanBefore(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	site := siteOnHost(t, db, "a.example.test")
+	start := time.Date(2026, 10, 30, 9, 0, 0, 0, time.UTC)
+	complete := scanOf(site, start, "7.1.3")
+	failed := model.Scan{ID: model.NewID(), SiteID: site.ID, Started: start.Add(time.Hour), Finished: start.Add(time.Hour + time.Second),
+		Outcome: model.ScanFailed, Failure: "refused"}
+	recent := scanOf(site, start.Add(3*time.Hour), "7.1.4")
+	for _, s := range []model.Scan{complete, failed, recent} {
+		must(t, db.SaveScan(ctx, s))
+	}
+	got, err := db.ScanStatuses(ctx, start.Add(2*time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 3 || got[0].ID != complete.ID || got[1].ID != failed.ID || got[2].ID != recent.ID || len(got[2].Items) != len(recent.Items) {
+		t.Fatalf("ScanStatuses() = %d scans %+v; want the complete one, the failed one, the recent one, with their items", len(got), got)
+	}
+
+	before, ok, err := db.CompleteScanBefore(ctx, site.ID, recent.ID)
+	if err != nil || !ok || before.ID != complete.ID || len(before.Items) != len(complete.Items) {
+		t.Fatalf("CompleteScanBefore() = %+v, %v, %v; want the complete scan, the failed one skipped", before, ok, err)
+	}
+	if _, ok, err := db.CompleteScanBefore(ctx, site.ID, complete.ID); ok || err != nil {
+		t.Errorf("CompleteScanBefore(the first scan) = %v, %v; want none", ok, err)
+	}
+}

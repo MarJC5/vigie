@@ -51,6 +51,12 @@ export interface ActivityEntry {
      */
     "summary": string;
     "changes": Change[] | null;
+
+    /**
+     * SiteChanges are what changed on each site since its previous complete scan (ADR-0027): a
+     * run's, or a scan's without a run.
+     */
+    "siteChanges": SiteChangesView[] | null;
     "notices": NoticeView[] | null;
 }
 
@@ -145,6 +151,51 @@ export interface Change {
      */
     "nodeId": string;
     "name": string;
+}
+
+/**
+ * ChangeView is one thing that changed on a site since its previous complete scan (ADR-0027).
+ */
+export interface ChangeView {
+    /**
+     * model.ChangeKind
+     */
+    "kind": string;
+
+    /**
+     * core, plugin:<slug>, theme:<slug>, user:<login>, or a finding's
+     */
+    "subject": string;
+
+    /**
+     * the plugin's or theme's title, else its slug; an administrator's login; "" for WordPress
+     */
+    "name": string;
+
+    /**
+     * a version, or the theme active before
+     */
+    "from": string;
+
+    /**
+     * a version, or the theme active now
+     */
+    "to": string;
+
+    /**
+     * a version changed by an update or rollback of Vigie
+     */
+    "byVigie": boolean;
+
+    /**
+     * an administrator added is a super administrator
+     */
+    "super": boolean;
+
+    /**
+     * the files or the new finding; nil otherwise
+     */
+    "finding": FindingView | null;
 }
 
 /**
@@ -940,6 +991,15 @@ export interface SettingView {
 }
 
 /**
+ * SiteChangesView is what changed on one site with a scan of a run.
+ */
+export interface SiteChangesView {
+    "siteId": string;
+    "name": string;
+    "changes": ChangeView[] | null;
+}
+
+/**
  * SiteLeftOut is a site whose plugins are not known.
  */
 export interface SiteLeftOut {
@@ -1062,6 +1122,13 @@ export interface SiteView {
      * ComputedAdminURL is the WordPress address (else the site's) followed by /wp-admin/.
      */
     "computedAdminUrl": string;
+
+    /**
+     * Changes are what its latest complete scan found changed since the complete scan before
+     * (ADR-0027), made at ChangesSince (RFC 3339); empty, and "", when there is none to compare.
+     */
+    "changes": ChangeView[] | null;
+    "changesSince": string;
 }
 
 /**

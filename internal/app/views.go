@@ -33,6 +33,10 @@ type SiteView struct {
 	OwnAdminURL string `json:"ownAdminUrl"`
 	// ComputedAdminURL is the WordPress address (else the site's) followed by /wp-admin/.
 	ComputedAdminURL string `json:"computedAdminUrl"`
+	// Changes are what its latest complete scan found changed since the complete scan before
+	// (ADR-0027), made at ChangesSince (RFC 3339); empty, and "", when there is none to compare.
+	Changes      []ChangeView `json:"changes"`
+	ChangesSince string       `json:"changesSince"`
 }
 
 // ScanView is a scan as the interface shows it.
@@ -328,7 +332,7 @@ func (s *SiteManager) SiteDetail(ctx context.Context, siteID string) (SiteView, 
 	if err != nil {
 		return SiteView{}, err
 	}
-	view := SiteView{ID: siteID, Name: site.Name, Path: site.Path, URL: site.URL, Multisite: site.Multisite}
+	view := SiteView{ID: siteID, Name: site.Name, Path: site.Path, URL: site.URL, Multisite: site.Multisite, Changes: []ChangeView{}}
 	if host, ok := tree.Host(site.HostID); ok {
 		target := sshx.TargetFor(host)
 		dir, err := wpcli.ServerPath(site.Path)
@@ -341,6 +345,9 @@ func (s *SiteManager) SiteDetail(ctx context.Context, siteID string) (SiteView, 
 	base := site.URL
 	if scan, ok := latest[id]; ok {
 		view.Scan = scanView(scan)
+		if err := s.changes(ctx, &view, scan); err != nil {
+			return SiteView{}, err
+		}
 		if scan.SiteURL != "" {
 			base = scan.SiteURL
 		}
@@ -421,4 +428,23 @@ func (s *SiteManager) HostDetail(ctx context.Context, hostID string) (HostView, 
 		ID: hostID, Name: h.Name, Alias: h.Alias, Hostname: h.Hostname, Port: h.EffectivePort(), User: h.User,
 		WPCLI: wp, Sites: sites,
 	}, nil
+}
+
+// changes adds to a site's view what its latest complete scan changed since the complete scan
+// before, with Vigie's operations on the site.
+func (s *SiteManager) changes(ctx context.Context, view *SiteView, scan model.Scan) error {
+	if scan.Outcome != model.ScanCompleted {
+		return nil
+	}
+	before, ok, err := s.repo.CompleteScanBefore(ctx, scan.SiteID, scan.ID)
+	if err != nil || !ok {
+		return err
+	}
+	ops, err := s.repo.Operations(ctx, scan.SiteID)
+	if err != nil {
+		return err
+	}
+	view.Changes = changeViews(model.Changes(before, scan, ops), scan)
+	view.ChangesSince = rfc3339(before.Finished)
+	return nil
 }

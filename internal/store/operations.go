@@ -159,11 +159,11 @@ func (db *DB) Operations(ctx context.Context, siteID model.ID) ([]model.Operatio
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	return ops, db.loadOperationSteps(ctx, siteID, ops, index)
+	return ops, db.loadOperationSteps(ctx, "o.site_id = ?", ops, index, siteID.String())
 }
 
 // OperationsSince returns the operations started since a time, of every site, the oldest first,
-// without their steps.
+// with their steps.
 func (db *DB) OperationsSince(ctx context.Context, since time.Time) ([]model.Operation, error) {
 	rows, err := db.sql.QueryContext(ctx, `SELECT id, site_id, kind, started_at, finished_at, outcome, summary, backup_dir, pid
 		FROM operations WHERE started_at >= ? ORDER BY started_at, id`, timeText(since))
@@ -172,6 +172,7 @@ func (db *DB) OperationsSince(ctx context.Context, since time.Time) ([]model.Ope
 	}
 	defer rows.Close()
 	var ops []model.Operation
+	index := map[string]int{}
 	for rows.Next() {
 		var op model.Operation
 		var id, site, started, finished string
@@ -190,16 +191,21 @@ func (db *DB) OperationsSince(ctx context.Context, since time.Time) ([]model.Ope
 		if op.Finished, err = parseOptionalTime(finished); err != nil {
 			return nil, err
 		}
+		index[id] = len(ops)
 		ops = append(ops, op)
 	}
-	return ops, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return ops, db.loadOperationSteps(ctx, "o.started_at >= ?", ops, index, timeText(since))
 }
 
-func (db *DB) loadOperationSteps(ctx context.Context, siteID model.ID, ops []model.Operation, index map[string]int) error {
+// loadOperationSteps adds their steps to operations read with the same condition on operations o.
+func (db *DB) loadOperationSteps(ctx context.Context, where string, ops []model.Operation, index map[string]int, args ...any) error {
 	rows, err := db.sql.QueryContext(ctx, `SELECT s.operation_id, s.position, s.step, s.item_kind, s.slug, s.version_before,
 			s.version_after, s.started_at, s.finished_at, s.outcome, s.message
 		FROM operation_steps s JOIN operations o ON o.id = s.operation_id
-		WHERE o.site_id = ? ORDER BY s.operation_id, s.position`, siteID.String())
+		WHERE `+where+` ORDER BY s.operation_id, s.position`, args...)
 	if err != nil {
 		return err
 	}
@@ -217,8 +223,9 @@ func (db *DB) loadOperationSteps(ctx context.Context, siteID model.ID, ops []mod
 		if st.Finished, err = parseOptionalTime(finished); err != nil {
 			return err
 		}
-		i := index[opID]
-		ops[i].Steps = append(ops[i].Steps, st)
+		if i, ok := index[opID]; ok {
+			ops[i].Steps = append(ops[i].Steps, st)
+		}
 	}
 	return rows.Err()
 }

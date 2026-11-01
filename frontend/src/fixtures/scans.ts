@@ -36,6 +36,8 @@ export const outdatedSite: SiteView = {
   adminUrl: "https://boulangerie-exemple.ch/wp-admin/",
   ownAdminUrl: "",
   computedAdminUrl: "https://boulangerie-exemple.ch/wp-admin/",
+  changes: [],
+  changesSince: "",
   scan: scan({
     status: "warn",
     home: "https://boulangerie-exemple.ch",
@@ -63,6 +65,8 @@ export const upToDateSite: SiteView = {
   adminUrl: "https://atelier-exemple.ch/wp-admin/",
   ownAdminUrl: "",
   computedAdminUrl: "https://atelier-exemple.ch/wp-admin/",
+  changes: [],
+  changesSince: "",
   scan: scan({}),
 };
 
@@ -77,6 +81,8 @@ export const offlineSite: SiteView = {
   adminUrl: "https://cabinet-exemple.ch/wp-admin/",
   ownAdminUrl: "",
   computedAdminUrl: "https://cabinet-exemple.ch/wp-admin/",
+  changes: [],
+  changesSince: "",
   scan: scan({ status: "warn", checked: { core: false, plugins: false, themes: false, languages: false } }),
 };
 
@@ -91,6 +97,8 @@ export const failedSite: SiteView = {
   adminUrl: "",
   ownAdminUrl: "",
   computedAdminUrl: "",
+  changes: [],
+  changesSince: "",
   scan: scan({
     outcome: "failed",
     status: "unknown",
@@ -104,7 +112,7 @@ export const failedSite: SiteView = {
   }),
 };
 
-export const newSite: SiteView = { id: "new", name: "nouveau.example.test", path: "~/sites/nouveau", url: "", multisite: false, scan: null, sshCommand: `ssh -t u12ab@ssh.example-host.ch "cd 'sites/nouveau' && exec \\$SHELL -l"`, sshUrl: "ssh://u12ab@ssh.example-host.ch:22", adminUrl: "", ownAdminUrl: "", computedAdminUrl: "" };
+export const newSite: SiteView = { id: "new", name: "nouveau.example.test", path: "~/sites/nouveau", url: "", multisite: false, scan: null, sshCommand: `ssh -t u12ab@ssh.example-host.ch "cd 'sites/nouveau' && exec \\$SHELL -l"`, sshUrl: "ssh://u12ab@ssh.example-host.ch:22", adminUrl: "", ownAdminUrl: "", computedAdminUrl: "", changes: [], changesSince: "" };
 
 export const hostRows: SiteRow[] = [
   { id: "atelier", name: "atelier-exemple.ch", path: "Clients/Shared hosting/atelier-exemple.ch", status: "ok", wordpress: "7.1.3", phpCli: "8.4.27", pending: 0, worst: null },

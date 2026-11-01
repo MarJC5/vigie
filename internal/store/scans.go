@@ -16,6 +16,7 @@ type ScanRepository interface {
 	SaveScan(ctx context.Context, s model.Scan) error
 	LatestScans(ctx context.Context) (map[model.ID]model.Scan, error)
 	ScanCount(ctx context.Context, siteID model.ID) (int, error)
+	CompleteScanBefore(ctx context.Context, siteID, scanID model.ID) (model.Scan, bool, error)
 	SaveSubsites(ctx context.Context, siteID model.ID, subsites []model.Subsite) error
 }
 
@@ -232,21 +233,18 @@ func (db *DB) loadFindings(ctx context.Context, where string, scans []model.Scan
 }
 
 // ScanStatuses returns, for the Activity page, the scans started since a time and, for each of
-// their sites, the scan just before, oldest first: with their findings and the site's ignores, so
-// each tells its status; without their items.
+// their sites, the scan just before and the complete scan before, oldest first: with their items,
+// their findings and the site's ignores, so each tells its status and what changed (ADR-0027).
 func (db *DB) ScanStatuses(ctx context.Context, since time.Time) ([]model.Scan, error) {
-	where := `s.started_at >= ? OR s.id = (SELECT max(p.id) FROM scans p WHERE p.site_id = s.site_id AND p.started_at < ?
-		AND EXISTS (SELECT 1 FROM scans n WHERE n.site_id = s.site_id AND n.started_at >= ?))`
+	where := `s.started_at >= ?1 OR (EXISTS (SELECT 1 FROM scans n WHERE n.site_id = s.site_id AND n.started_at >= ?1) AND (
+		s.id = (SELECT max(p.id) FROM scans p WHERE p.site_id = s.site_id AND p.started_at < ?1) OR
+		s.id = (SELECT max(p.id) FROM scans p WHERE p.site_id = s.site_id AND p.started_at < ?1 AND p.outcome = 'completed')))`
 	at := timeText(since)
-	scans, err := db.readScans(ctx, where, at, at, at)
+	scans, err := db.readScans(ctx, where, at)
 	if err != nil {
 		return nil, err
 	}
-	index := map[string]int{}
-	for i, s := range scans {
-		index[s.ID.String()] = i
-	}
-	if err := db.loadFindings(ctx, where, scans, index, at, at, at); err != nil {
+	if err := db.loadScanParts(ctx, where, scans, at); err != nil {
 		return nil, err
 	}
 	ignores, err := db.ignores(ctx, "")
@@ -257,6 +255,25 @@ func (db *DB) ScanStatuses(ctx context.Context, since time.Time) ([]model.Scan, 
 		scans[i].ApplyIgnores(ignores[scans[i].SiteID])
 	}
 	return scans, nil
+}
+
+// CompleteScanBefore returns the complete scan of a site made before the scan given, with its items,
+// findings and the site's ignores; ok is false when there is none (ADR-0027).
+func (db *DB) CompleteScanBefore(ctx context.Context, siteID, scanID model.ID) (scan model.Scan, ok bool, err error) {
+	where := `s.id = (SELECT max(p.id) FROM scans p WHERE p.site_id = ?1 AND p.id < ?2 AND p.outcome = 'completed')`
+	scans, err := db.readScans(ctx, where, siteID.String(), scanID.String())
+	if err != nil || len(scans) == 0 {
+		return model.Scan{}, false, err
+	}
+	if err := db.loadScanParts(ctx, where, scans, siteID.String(), scanID.String()); err != nil {
+		return model.Scan{}, false, err
+	}
+	ignores, err := db.ignores(ctx, "")
+	if err != nil {
+		return model.Scan{}, false, err
+	}
+	scans[0].ApplyIgnores(ignores[siteID])
+	return scans[0], true, nil
 }
 
 // ScanCount returns how many scans of a site are kept.
