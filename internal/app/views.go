@@ -37,6 +37,8 @@ type SiteView struct {
 	// (ADR-0027), made at ChangesSince (RFC 3339); empty, and "", when there is none to compare.
 	Changes      []ChangeView `json:"changes"`
 	ChangesSince string       `json:"changesSince"`
+	// Subsites are a network's (ADR-0029); empty for a single site.
+	Subsites []SubsiteView `json:"subsites"`
 }
 
 // PHPWebView is the PHP serving the pages, as the dashboard noted it (ADR-0028).
@@ -153,6 +155,9 @@ type ExtensionView struct {
 	OnWordPressOrg bool         `json:"onWordPressOrg"`
 	Worst          *FindingView `json:"worst"`  // the worst finding about it not set aside; nil when none
 	Ignore         *IgnoreView  `json:"ignore"` // its update offered, ignored (ADR-0026); nil when it counts
+	// Subsites are, on a network, the IDs of the subsites it is active on (ADR-0029); nil on a
+	// single site or when the scan did not read them.
+	Subsites []int `json:"subsites"`
 }
 
 // UpdateView is one update to look at.
@@ -261,6 +266,7 @@ func scanView(s model.Scan) *ScanView {
 		}
 	}
 	v.Extensions = extensionViews(s.Items, v.Findings)
+	activeOn(v.Extensions, s.Network)
 	return v
 }
 
@@ -359,7 +365,8 @@ func (s *SiteManager) SiteDetail(ctx context.Context, siteID string) (SiteView, 
 	if err != nil {
 		return SiteView{}, err
 	}
-	view := SiteView{ID: siteID, Name: site.Name, Path: site.Path, URL: site.URL, Multisite: site.Multisite, Changes: []ChangeView{}}
+	view := SiteView{ID: siteID, Name: site.Name, Path: site.Path, URL: site.URL, Multisite: site.Multisite, Changes: []ChangeView{},
+		Subsites: subsiteViews(site, nil)}
 	if host, ok := tree.Host(site.HostID); ok {
 		target := sshx.TargetFor(host)
 		dir, err := wpcli.ServerPath(site.Path)
@@ -371,6 +378,7 @@ func (s *SiteManager) SiteDetail(ctx context.Context, siteID string) (SiteView, 
 	}
 	base := site.URL
 	if scan, ok := latest[id]; ok {
+		view.Subsites = subsiteViews(site, &scan)
 		view.Scan = scanView(scan)
 		if err := s.changes(ctx, &view, scan); err != nil {
 			return SiteView{}, err

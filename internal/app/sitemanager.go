@@ -22,7 +22,9 @@ type Node struct {
 	Tags      []string `json:"tags"`     // a site's, in its order; read by the search too
 	Multisite bool     `json:"multisite"`
 	Subsites  int      `json:"subsites"`
-	Status    string   `json:"status"` // sites: ok, warn or unknown from the latest scan; empty when never scanned
+	// SubsiteList are a network's subsites, to unfold under it (ADR-0029); empty otherwise.
+	SubsiteList []TreeSubsite `json:"subsiteList"`
+	Status      string        `json:"status"` // sites: ok, warn or unknown from the latest scan; empty when never scanned
 	// Updates pending from the latest scan: a site's, or the sum of a host's sites.
 	Updates int `json:"updates"`
 }
@@ -83,7 +85,7 @@ func (s *SiteManager) Tree(ctx context.Context) (Tree, error) {
 			site, _ := tree.Site(n.ID)
 			node.Name, node.Color, node.OwnColor, node.Notes = site.Name, tree.EffectiveSiteColor(site.ID).String(), site.Color.String(), site.Notes
 			node.ParentID = site.HostID.String()
-			node.Multisite, node.Subsites = site.Multisite, len(site.Subsites)
+			node.Multisite, node.Subsites, node.SubsiteList = site.Multisite, len(site.Subsites), treeSubsites(site)
 			node.Tags = append(node.Tags, site.Tags...)
 			if scan, ok := latest[site.ID]; ok {
 				node.Status = string(scan.Status())

@@ -57,7 +57,8 @@ func TestTreeListsNodesParentsFirstWithEffectiveColors(t *testing.T) {
 		{ID: host.ID.String(), ParentID: clients.ID.String(), Kind: "host", Name: "Shared hosting", Color: "blue", OwnColor: "none",
 			Path: "Clients/Shared hosting", Tags: []string{}},
 		{ID: site.ID.String(), ParentID: host.ID.String(), Kind: "site", Name: "atelier-exemple.ch", Color: "blue", OwnColor: "none",
-			Path: "Clients/Shared hosting/atelier-exemple.ch", Multisite: true, Subsites: 2, Tags: []string{}},
+			Path: "Clients/Shared hosting/atelier-exemple.ch", Multisite: true, Subsites: 2, Tags: []string{},
+			SubsiteList: []app.TreeSubsite{{BlogID: 1, Label: "/", State: "hidden"}, {BlogID: 2, Label: "/b", State: "hidden"}}},
 	}
 	if len(tree.Nodes) != len(want) {
 		t.Fatalf("Tree() has %d nodes, want %d: %+v", len(tree.Nodes), len(want), tree.Nodes)

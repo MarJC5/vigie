@@ -221,7 +221,7 @@ export function AppShell({
       (tags ?? []).map(
         (tag): Node => ({
           id: tagId(tag.name), parentId: "", kind: "tag", name: tag.name, color: "none", ownColor: "none", path: `#${tag.name}`,
-          notes: "", tags: [], multisite: false, subsites: 0, status: "", updates: 0,
+          notes: "", tags: [], multisite: false, subsites: 0, subsiteList: [], status: "", updates: 0,
         }),
       ),
     [tags],

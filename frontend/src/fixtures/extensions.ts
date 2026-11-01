@@ -10,6 +10,7 @@ const extension = (e: Partial<ExtensionView> & Pick<ExtensionView, "kind" | "slu
   onWordPressOrg: true,
   worst: null,
   ignore: null,
+  subsites: null,
   ...e,
 });
 

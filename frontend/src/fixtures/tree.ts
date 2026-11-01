@@ -10,6 +10,7 @@ const node = (n: Partial<Node> & Pick<Node, "id" | "kind" | "name">): Node => ({
   tags: [],
   multisite: false,
   subsites: 0,
+  subsiteList: [],
   status: "",
   updates: 0,
   ...n,

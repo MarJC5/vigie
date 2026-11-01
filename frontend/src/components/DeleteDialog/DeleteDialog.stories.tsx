@@ -49,7 +49,7 @@ export const AFolderNotEmpty: Story = {
 export const ATag: Story = {
   args: {
     node: { id: "tag:Client Dupont", parentId: "", kind: "tag", name: "Client Dupont", color: "none", ownColor: "none", path: "#Client Dupont",
-      notes: "", tags: [], multisite: false, subsites: 0, status: "", updates: 0 },
+      notes: "", tags: [], multisite: false, subsites: 0, subsiteList: [], status: "", updates: 0 },
   },
   play: async ({ canvas, args }) => {
     const dialog = canvas.getAllByRole("dialog", { name: "Remove “Client Dupont” from every site?" }).find((d) => d.contains(document.activeElement))!;

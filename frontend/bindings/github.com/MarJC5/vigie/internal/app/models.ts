@@ -400,6 +400,12 @@ export interface ExtensionView {
      * its update offered, ignored (ADR-0026); nil when it counts
      */
     "ignore": IgnoreView | null;
+
+    /**
+     * Subsites are, on a network, the IDs of the subsites it is active on (ADR-0029); nil on a
+     * single site or when the scan did not read them.
+     */
+    "subsites": number[] | null;
 }
 
 /**
@@ -804,6 +810,11 @@ export interface Node {
     "subsites": number;
 
     /**
+     * SubsiteList are a network's subsites, to unfold under it (ADR-0029); empty otherwise.
+     */
+    "subsiteList": TreeSubsite[] | null;
+
+    /**
      * sites: ok, warn or unknown from the latest scan; empty when never scanned
      */
     "status": string;
@@ -1179,6 +1190,11 @@ export interface SiteView {
      */
     "changes": ChangeView[] | null;
     "changesSince": string;
+
+    /**
+     * Subsites are a network's (ADR-0029); empty for a single site.
+     */
+    "subsites": SubsiteView[] | null;
 }
 
 /**
@@ -1206,6 +1222,45 @@ export interface StepView {
 }
 
 /**
+ * SubsiteView is one subsite of a network (ADR-0029): its place and state, from the list a scan
+ * read, and what the latest scan read of it.
+ */
+export interface SubsiteView {
+    "blogId": number;
+    "url": string;
+
+    /**
+     * its path on the network ("/", "/alpha"), or its host when it has a domain of its own
+     */
+    "label": string;
+
+    /**
+     * public, hidden (from search engines), archived, spam, deleted
+     */
+    "state": string;
+    "adminUrl": string;
+
+    /**
+     * Read is whether the latest scan read what it has: never an archived, spam or deleted one.
+     */
+    "read": boolean;
+    "theme": string;
+    "themeName": string;
+    "themeVersion": string;
+    "adminEmail": string;
+
+    /**
+     * slugs active on it, besides those active network-wide
+     */
+    "plugins": string[] | null;
+
+    /**
+     * logins; their administrator findings tell their two-factor
+     */
+    "admins": string[] | null;
+}
+
+/**
  * TagView is a tag in use, by name without case or accents, with how many sites have it.
  */
 export interface TagView {
@@ -1229,6 +1284,15 @@ export interface TestResult {
 export interface Tree {
     "nodes": Node[] | null;
     "tags": TagView[] | null;
+}
+
+/**
+ * TreeSubsite is a subsite as the site list shows it under its network.
+ */
+export interface TreeSubsite {
+    "blogId": number;
+    "label": string;
+    "state": string;
 }
 
 /**

@@ -35,17 +35,43 @@ func saveScan(ctx context.Context, tx *sql.Tx, s model.Scan) error {
 	if !ok {
 		return fmt.Errorf("site %s: %w", s.SiteID, model.ErrNotFound)
 	}
+	// The plugins active network-wide, or NULL when the scan read no subsites.
+	var networkPlugins any
+	if s.Network != nil {
+		if networkPlugins, err = jsonList(s.Network.Plugins); err != nil {
+			return err
+		}
+	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO scans (id, site_id, started_at, finished_at, outcome, failure, error,
 			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
 			files_checked_at, run_id, site_url, php_web, php_web_seen_at, php_web_unknown, admin_email, admin_email_pending,
-			debug_log_path, debug_log_size, debug_log_written)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			debug_log_path, debug_log_size, debug_log_written, network_plugins)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		s.ID.String(), s.SiteID.String(), timeText(s.Started), timeText(s.Finished), string(s.Outcome), s.Failure, s.Error,
 		s.WordPress, s.PHPCLI, s.WPCLI, s.Home, s.CoreChecked, s.PluginsChecked, s.ThemesChecked, s.LanguagesChecked,
 		optionalTime(s.FilesChecked), optionalID(s.RunID), s.SiteURL, s.PHPWeb.Version, optionalTime(s.PHPWeb.Seen),
-		string(s.PHPWeb.Unknown), s.AdminEmail, s.AdminEmailPending, s.DebugLog.Path, s.DebugLog.Size, s.DebugLog.Written)
+		string(s.PHPWeb.Unknown), s.AdminEmail, s.AdminEmailPending, s.DebugLog.Path, s.DebugLog.Size, s.DebugLog.Written,
+		networkPlugins)
 	if err != nil {
 		return err
+	}
+	if s.Network != nil {
+		for _, sub := range s.Network.Sites {
+			plugins, err := jsonList(sub.Plugins)
+			if err != nil {
+				return err
+			}
+			admins, err := jsonList(sub.Admins)
+			if err != nil {
+				return err
+			}
+			_, err = tx.ExecContext(ctx, `INSERT INTO scan_subsites (scan_id, blog_id, theme, theme_name, theme_version,
+					admin_email, plugins, admins) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+				s.ID.String(), sub.BlogID, sub.Theme, sub.ThemeName, sub.ThemeVersion, sub.AdminEmail, plugins, admins)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	for i, item := range s.Items {
 		_, err := tx.ExecContext(ctx, `INSERT INTO scan_items (scan_id, position, kind, slug, title, status, version,
@@ -130,7 +156,7 @@ func (db *DB) readScans(ctx context.Context, where string, args ...any) ([]model
 	rows, err := db.sql.QueryContext(ctx, `SELECT id, site_id, started_at, finished_at, outcome, failure, error,
 			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
 			files_checked_at, run_id, site_url, php_web, php_web_seen_at, php_web_unknown, admin_email, admin_email_pending,
-			debug_log_path, debug_log_size, debug_log_written
+			debug_log_path, debug_log_size, debug_log_written, network_plugins
 		FROM scans s WHERE `+where+` ORDER BY id`, args...)
 	if err != nil {
 		return nil, err
@@ -140,12 +166,19 @@ func (db *DB) readScans(ctx context.Context, where string, args ...any) ([]model
 	for rows.Next() {
 		var s model.Scan
 		var id, site, started, finished, outcome, filesChecked, run, webSeen, webUnknown string
+		var networkPlugins sql.NullString
 		if err := rows.Scan(&id, &site, &started, &finished, &outcome, &s.Failure, &s.Error,
 			&s.WordPress, &s.PHPCLI, &s.WPCLI, &s.Home,
 			&s.CoreChecked, &s.PluginsChecked, &s.ThemesChecked, &s.LanguagesChecked, &filesChecked, &run, &s.SiteURL,
 			&s.PHPWeb.Version, &webSeen, &webUnknown, &s.AdminEmail, &s.AdminEmailPending,
-			&s.DebugLog.Path, &s.DebugLog.Size, &s.DebugLog.Written); err != nil {
+			&s.DebugLog.Path, &s.DebugLog.Size, &s.DebugLog.Written, &networkPlugins); err != nil {
 			return nil, err
+		}
+		if networkPlugins.Valid {
+			s.Network = &model.NetworkRead{Sites: []model.SubsiteRead{}}
+			if err := json.Unmarshal([]byte(networkPlugins.String), &s.Network.Plugins); err != nil {
+				return nil, err
+			}
 		}
 		s.PHPWeb.Unknown = model.PHPWebUnknown(webUnknown)
 		if s.PHPWeb.Seen, err = parseOptionalTime(webSeen); err != nil {
@@ -208,7 +241,50 @@ func (db *DB) loadScanParts(ctx context.Context, where string, scans []model.Sca
 	if err := rows.Err(); err != nil {
 		return err
 	}
+	if err := db.loadSubsiteReads(ctx, where, scans, index, args...); err != nil {
+		return err
+	}
 	return db.loadFindings(ctx, where, scans, index, args...)
+}
+
+// loadSubsiteReads adds to the networks' scans what each subsite had (ADR-0029).
+func (db *DB) loadSubsiteReads(ctx context.Context, where string, scans []model.Scan, index map[string]int, args ...any) error {
+	rows, err := db.sql.QueryContext(ctx, `SELECT u.scan_id, u.blog_id, u.theme, u.theme_name, u.theme_version,
+			u.admin_email, u.plugins, u.admins
+		FROM scan_subsites u JOIN scans s ON s.id = u.scan_id
+		WHERE `+where+`
+		ORDER BY u.scan_id, u.blog_id`, args...)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var scanID, plugins, admins string
+		var sub model.SubsiteRead
+		if err := rows.Scan(&scanID, &sub.BlogID, &sub.Theme, &sub.ThemeName, &sub.ThemeVersion, &sub.AdminEmail,
+			&plugins, &admins); err != nil {
+			return err
+		}
+		if err := json.Unmarshal([]byte(plugins), &sub.Plugins); err != nil {
+			return err
+		}
+		if err := json.Unmarshal([]byte(admins), &sub.Admins); err != nil {
+			return err
+		}
+		if i, ok := index[scanID]; ok && scans[i].Network != nil {
+			scans[i].Network.Sites = append(scans[i].Network.Sites, sub)
+		}
+	}
+	return rows.Err()
+}
+
+// jsonList stores a list of strings as JSON, an empty one as [].
+func jsonList(list []string) (string, error) {
+	if list == nil {
+		list = []string{}
+	}
+	data, err := json.Marshal(list)
+	return string(data), err
 }
 
 // loadFindings adds their findings to scans read by readScans with the same condition; index maps

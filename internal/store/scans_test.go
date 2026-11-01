@@ -68,6 +68,35 @@ func TestScansAreKeptAndTheLatestIsRead(t *testing.T) {
 	}
 }
 
+// A network's scan keeps what each subsite had active and who administered it (ADR-0029).
+func TestANetworksSubsitesAreKeptWithItsScan(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	site := siteOnHost(t, db, "reseau.example.test")
+	scan := scanOf(site, time.Date(2026, 10, 29, 9, 0, 0, 0, time.UTC), "7.1.3")
+	scan.Network = &model.NetworkRead{Plugins: []string{"akismet"}, Sites: []model.SubsiteRead{
+		{BlogID: 1, Plugins: []string{}, Theme: "twentytwentyfive", ThemeName: "Twenty Twenty-Five", ThemeVersion: "1.5",
+			AdminEmail: "admin@reseau.example.test", Admins: []string{"admin"}},
+		{BlogID: 2, Plugins: []string{"hello", "contact-form-7"}, Theme: "astra", ThemeName: "Astra", ThemeVersion: "4.8.1",
+			AdminEmail: "direction@alpha.example.test", Admins: []string{"admin", "marie"}},
+	}}
+	must(t, db.SaveScan(ctx, scan))
+	latest, err := db.LatestScans(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := latest[site.ID]; !reflect.DeepEqual(got.Network, scan.Network) {
+		t.Fatalf("network = %+v\nwant %+v", got.Network, scan.Network)
+	}
+
+	// A single site's scan has none.
+	single := siteOnHost(t, db, "single.example.test")
+	must(t, db.SaveScan(ctx, scanOf(single, time.Now(), "7.1.3")))
+	if latest, err = db.LatestScans(ctx); err != nil || latest[single.ID].Network != nil {
+		t.Fatalf("single site's network = %+v, %v; want nil", latest[single.ID].Network, err)
+	}
+}
+
 func TestScanOfUnknownSiteIsRefused(t *testing.T) {
 	db := migrated(t)
 	s := scanOf(model.Site{ID: model.NewID(), Name: "ghost"}, time.Now(), "7.1.3")
