@@ -17,6 +17,7 @@ const scan = (s: Partial<ScanView>): ScanView => ({
   themes: 2,
   updates: [],
   sourceUnknown: [],
+  extensions: [],
   filesChecked: "2026-10-29T08:57:00Z",
   findings: [],
   counts: { urgent: 0, attention: 0, notChecked: 0, ignored: 0 },

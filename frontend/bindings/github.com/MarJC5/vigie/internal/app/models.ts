@@ -259,6 +259,98 @@ export interface ExportSummary {
 }
 
 /**
+ * ExtensionAcross is a plugin or theme with the sites that run it.
+ */
+export interface ExtensionAcross {
+    /**
+     * plugin, theme
+     */
+    "kind": string;
+    "slug": string;
+    "title": string;
+    "onWordPressOrg": boolean;
+
+    /**
+     * sites with an update offered
+     */
+    "updates": number;
+
+    /**
+     * the worst on any of its sites, as on a site
+     */
+    "worst": FindingView | null;
+
+    /**
+     * the oldest version first
+     */
+    "sites": ExtensionOnSite[] | null;
+}
+
+/**
+ * ExtensionOnSite is a plugin or theme as one site runs it.
+ */
+export interface ExtensionOnSite {
+    "id": string;
+    "name": string;
+    "version": string;
+    "status": string;
+    "update": string;
+    "updateVersion": string;
+    "worst": FindingView | null;
+}
+
+/**
+ * ExtensionView is a plugin or theme of a site, from its scan.
+ */
+export interface ExtensionView {
+    /**
+     * plugin, theme
+     */
+    "kind": string;
+    "slug": string;
+    "title": string;
+
+    /**
+     * plugins: active, active-network, inactive, must-use, dropin; themes: active, parent, inactive
+     */
+    "status": string;
+    "version": string;
+
+    /**
+     * none, available, unavailable, unknown
+     */
+    "update": string;
+    "updateVersion": string;
+    "autoUpdate": boolean;
+    "onWordPressOrg": boolean;
+
+    /**
+     * the worst finding about it not set aside; nil when none
+     */
+    "worst": FindingView | null;
+}
+
+/**
+ * ExtensionsAcross are the plugins and themes of the sites under a host or folder (ADR-0024).
+ */
+export interface ExtensionsAcross {
+    /**
+     * sites whose latest complete scan was read
+     */
+    "sites": number;
+
+    /**
+     * sites without one
+     */
+    "leftOut": SiteLeftOut[] | null;
+
+    /**
+     * by title
+     */
+    "items": ExtensionAcross[] | null;
+}
+
+/**
  * FileChoice is the answer of ChooseFile.
  */
 export interface FileChoice {
@@ -770,6 +862,11 @@ export interface ScanView {
     "sourceUnknown": string[] | null;
 
     /**
+     * Extensions are the plugins, then the themes, as the scan read them (ADR-0024).
+     */
+    "extensions": ExtensionView[] | null;
+
+    /**
      * FilesChecked is when the files were last compared with wordpress.org's; "" never.
      */
     "filesChecked": string;
@@ -817,6 +914,19 @@ export interface SettingView {
     "default": string;
     "required": boolean;
     "choices": ChoiceView[] | null;
+}
+
+/**
+ * SiteLeftOut is a site whose plugins are not known.
+ */
+export interface SiteLeftOut {
+    "id": string;
+    "name": string;
+
+    /**
+     * never (scanned), failed (its latest scan did not complete)
+     */
+    "reason": string;
 }
 
 /**

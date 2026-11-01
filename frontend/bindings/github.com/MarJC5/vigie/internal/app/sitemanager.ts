@@ -23,6 +23,14 @@ export function CanOpenSSH(): $CancellablePromise<boolean> {
 }
 
 /**
+ * Extensions lists the plugins and themes of the sites under a host or folder ("" for every
+ * site), from the latest complete scan of each: nothing is read on the servers.
+ */
+export function Extensions(nodeID: string): $CancellablePromise<$models.ExtensionsAcross> {
+    return $Call.ByID(362962759, nodeID);
+}
+
+/**
  * HostDetail returns a host with its connection and its sites.
  */
 export function HostDetail(hostID: string): $CancellablePromise<$models.HostView> {
