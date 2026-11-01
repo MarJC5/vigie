@@ -1,0 +1,78 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-3);
+  min-width: 0;
+}
+
+/* The heading on the left, "Edit" at the right edge, as the page's other actions. */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vg-space-3);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--vg-text-heading);
+  font-weight: var(--vg-weight-strong);
+}
+
+.empty {
+  margin: 0;
+  color: var(--vg-text-muted);
+}
+
+.edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-2);
+}
+
+/* The Markdown source, in the system's monospace, across the page. */
+.text {
+  min-height: 300px;
+  box-sizing: border-box;
+  padding: var(--vg-space-3) var(--vg-space-4);
+  border: 0;
+  border-radius: var(--vg-radius-control);
+  background: var(--vg-field);
+  color: var(--vg-text);
+  font: 13px / 1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
+  resize: vertical;
+}
+
+.text:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 1px;
+}
+
+.text[aria-invalid="true"] {
+  box-shadow: inset 0 0 0 1px var(--vg-status-danger);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: var(--vg-space-2);
+}
+
+.hint {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--vg-text-caption);
+  color: var(--vg-text-muted);
+}
+
+.count {
+  font-size: var(--vg-text-caption);
+  color: var(--vg-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Over the limit: in the text's color, strong; the danger red is under 4.5:1 at this size. */
+.count[data-over] {
+  color: var(--vg-text);
+  font-weight: var(--vg-weight-strong);
+}

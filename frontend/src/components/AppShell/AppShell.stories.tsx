@@ -242,6 +242,7 @@ function fakeEdit(): EditApi {
     SetColor: fn(async () => null),
     Delete: fn(async () => null),
     SetAdminURL: fn(async () => null),
+    SetNotes: fn(async () => null),
     Host: fn(async () => ({ name: "Managed VPS", alias: "", hostname: "vps.example.test", port: 2222, user: "deploy", keyPath: "", wpCli: "wp", folderId: "personal", maxConcurrent: 0 })),
     EditHost: fn(async () => ({ keyCleared: false, problem: null })),
     HostKeys: fn(async () => ({ name: "", keys: [], problem: null })),

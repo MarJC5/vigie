@@ -62,6 +62,7 @@ const editApi: EditApi = {
   SetColor: Editor.SetColor,
   Delete: Editor.Delete,
   SetAdminURL: Editor.SetAdminURL,
+  SetNotes: Editor.SetNotes,
   Host: Editor.Host,
   EditHost: Editor.EditHost,
   HostKeys: HostWizard.HostKeys,

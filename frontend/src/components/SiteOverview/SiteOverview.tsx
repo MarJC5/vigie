@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { FindingView, OperationView, ScanView, SiteView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { FindingView, OperationView, Problem, ScanView, SiteView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { clock, day } from "../../lib/findings";
 import { since } from "../../lib/time";
 import { choicesOf, namesOf, offeredKeys } from "../../lib/updates";
@@ -9,6 +9,7 @@ import { Button } from "../Button/Button";
 import { DetailHeader } from "../DetailHeader/DetailHeader";
 import { Dialog } from "../Dialog/Dialog";
 import { InfoList, InfoRow } from "../InfoList/InfoList";
+import { NotesPanel } from "../NotesPanel/NotesPanel";
 import { Notice } from "../Notice/Notice";
 import { type QuickLink, QuickLinks } from "../QuickLinks/QuickLinks";
 import { SecurityPanel } from "../SecurityPanel/SecurityPanel";
@@ -48,6 +49,10 @@ export interface SiteOverviewProps {
   onCopy?: (text: string) => Promise<unknown> | void;
   /** The system opens ssh:// addresses in a terminal: "SSH terminal" is offered. */
   terminal?: boolean;
+  /** The site's Markdown notes; without them, no Notes tab. */
+  notes?: string;
+  /** Saves the notes; without it, they are only read. */
+  onSaveNotes?: (notes: string) => Promise<Problem | null>;
 }
 
 /** A site with its latest scan: an overview, the updates waiting, and the history of its updates. */
@@ -69,6 +74,8 @@ export function SiteOverview({
   onOpen,
   onCopy,
   terminal = false,
+  notes,
+  onSaveNotes,
 }: SiteOverviewProps) {
   const { t, i18n } = useTranslation();
   const [tab, setTab] = useState("overview");
@@ -132,6 +139,7 @@ export function SiteOverview({
           { id: "overview", label: t("tabs.overview") },
           { id: "updates", label: t("tabs.updates"), count: pending > 0 ? pending : undefined },
           { id: "security", label: t("tabs.security"), count: toLookAt > 0 ? toLookAt : undefined },
+          ...(notes !== undefined ? [{ id: "notes", label: t("tabs.notes") }] : []),
           ...(history ? [{ id: "history", label: t("tabs.history") }] : []),
         ]}
         value={tab}
@@ -182,6 +190,9 @@ export function SiteOverview({
               </InfoList>
             )
           ))}
+        {tab === "notes" && notes !== undefined && (
+          <NotesPanel notes={notes} name={site.name} onSave={onSaveNotes} onOpen={onOpen} />
+        )}
         {tab === "history" && history && (
           <UpdateHistory operations={history} names={names} onRollback={(id) => onRollback?.(id)} busy={updating} />
         )}

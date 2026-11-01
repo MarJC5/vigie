@@ -1,11 +1,12 @@
 import { useTranslation } from "react-i18next";
 
 import { findingText } from "../../lib/findings";
-import type { SiteResultView, SiteRow } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { Problem, SiteResultView, SiteRow } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { BulkSummary } from "../BulkSummary/BulkSummary";
 import { Button } from "../Button/Button";
 import { Counts } from "../Counts/Counts";
 import { DetailHeader } from "../DetailHeader/DetailHeader";
+import { NotesPanel } from "../NotesPanel/NotesPanel";
 import { SiteTable } from "../SiteTable/SiteTable";
 import styles from "./SitesOverview.module.css";
 
@@ -30,6 +31,12 @@ export interface SitesOverviewProps {
   /** How the last update of every site here ended, shown in place of the table until dismissed. */
   bulk?: SiteResultView[];
   onDismissBulk?: () => void;
+  /** The host's or folder's Markdown notes, under its table; without them, no notes. */
+  notes?: string;
+  /** Saves the notes; without it, they are only read. */
+  onSaveNotes?: (notes: string) => Promise<Problem | null>;
+  /** Opens a web address of the notes in the browser. */
+  onOpen?: (href: string) => void;
 }
 
 /** A host or a folder: counts over its sites, then the table of their latest scans, or how their
@@ -49,6 +56,9 @@ export function SitesOverview({
   updating = false,
   bulk,
   onDismissBulk,
+  notes,
+  onSaveNotes,
+  onOpen,
 }: SitesOverviewProps) {
   const { t, i18n } = useTranslation();
   const pending = rows.reduce((n, r) => n + r.pending, 0);
@@ -137,6 +147,7 @@ export function SitesOverview({
           onMenu={onSiteMenu}
         />
       )}
+      {notes !== undefined && <NotesPanel notes={notes} name={title} title={t("notes.title")} onSave={onSaveNotes} onOpen={onOpen} />}
     </>
   );
 }

@@ -85,6 +85,18 @@ export const Filtered: Story = {
   },
 };
 
+// The search reads the notes too: a site found by its notes says so (ADR-0023).
+export const FoundInTheNotes: Story = {
+  args: { filter: "contrat" },
+  play: async ({ canvas }) => {
+    const [tree] = canvas.getAllByRole("tree");
+    const rows = within(tree!).getAllByRole("treeitem");
+    await expect(rows).toHaveLength(3);
+    await expect(rows[2]).toHaveTextContent("boulangerie-exemple.ch");
+    await expect(rows[2]).toHaveTextContent("in the notes");
+  },
+};
+
 // The row being renamed is a field: Enter keeps the name, Escape cancels.
 export const RenameInPlace: Story = {
   args: { editingId: "personal", onRename: fn(), onCancelEdit: fn() },

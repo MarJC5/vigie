@@ -97,10 +97,12 @@ export function SiteTree({
       // Matches and their parents, all unfolded.
       const shown = new Set<string>();
       for (const n of nodes) {
-        if (!fold(n.name).includes(query)) continue;
+        if (!fold(n.name).includes(query) && !fold(n.notes).includes(query)) continue;
         for (let p: Node | undefined = n; p; p = byId.get(p.parentId)) shown.add(p.id);
       }
-      return nodes.filter((n) => shown.has(n.id)).map((n) => ({ node: n, depth: depthOf(n) }));
+      // Found by its notes only: the row says so.
+      const inNotes = (n: Node) => !fold(n.name).includes(query) && fold(n.notes).includes(query);
+      return nodes.filter((n) => shown.has(n.id)).map((n) => ({ node: n, depth: depthOf(n), inNotes: inNotes(n) }));
     }
     // The item being named shows, even in a folded folder.
     const unfolded = new Set<string>();
@@ -109,7 +111,7 @@ export function SiteTree({
       for (let p = byId.get(n.parentId); p; p = byId.get(p.parentId)) if (collapsed.has(p.id) && !unfolded.has(p.id)) return true;
       return false;
     };
-    return nodes.filter((n) => !hidden(n)).map((n) => ({ node: n, depth: depthOf(n) }));
+    return nodes.filter((n) => !hidden(n)).map((n) => ({ node: n, depth: depthOf(n), inNotes: false }));
   }, [nodes, collapsed, filter, editingId]);
 
   const toggle = (id: string) =>
@@ -156,7 +158,7 @@ export function SiteTree({
       onDragOver={(event) => over(event, "")}
       onDrop={(event) => drop(event, "")}
     >
-      {visible.map(({ node, depth }, index) => (
+      {visible.map(({ node, depth, inNotes }, index) => (
         <TreeNode
           key={node.id}
           kind={node.kind as "folder" | "host" | "site"}
@@ -167,7 +169,7 @@ export function SiteTree({
           tabbable={hasSelection ? undefined : index === 0}
           status={node.kind === "site" ? siteStatus(node.status) : undefined}
           color={node.color === "none" ? undefined : (node.color as SiteColor)}
-          meta={node.multisite && node.subsites > 0 ? t("manager.subsites", { count: node.subsites }) : undefined}
+          meta={inNotes ? t("manager.inNotes") : node.multisite && node.subsites > 0 ? t("manager.subsites", { count: node.subsites }) : undefined}
           updates={node.kind === "host" ? node.updates : undefined}
           onSelect={() => onSelect(node.id)}
           onToggle={() => toggle(node.id)}

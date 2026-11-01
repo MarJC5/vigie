@@ -28,7 +28,8 @@
     "nameOf": "Nom de {{name}}",
     "updating_one": "{{count}} site en mise à jour",
     "updating_many": "{{count}} sites en mise à jour",
-    "updating_other": "{{count}} sites en mise à jour"
+    "updating_other": "{{count}} sites en mise à jour",
+    "inNotes": "dans les notes"
   },
   "empty": {
     "title": "Ajoutez votre premier hébergement",
@@ -1301,5 +1302,15 @@
     "reset": "Revenir à l'adresse calculée",
     "save": "Enregistrer",
     "menu": "Adresse d'administration…"
+  },
+  "notes": {
+    "title": "Notes",
+    "edit": "Modifier",
+    "add": "Ajouter des notes",
+    "empty": "Pas encore de notes.",
+    "label": "Notes de {{name}}",
+    "hint": "Markdown : **gras**, listes, [liens](https://…)",
+    "count": "{{count}} / {{max}}",
+    "save": "Enregistrer"
   }
 }

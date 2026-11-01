@@ -61,6 +61,7 @@ export interface EditApi extends HostEditApi, FindSitesApi {
   SetColor(id: string, color: string): Promise<Problem | null>;
   Delete(id: string): Promise<Problem | null>;
   SetAdminURL(id: string, address: string): Promise<Problem | null>;
+  SetNotes(id: string, notes: string): Promise<Problem | null>;
 }
 
 export interface AppShellProps {
@@ -490,6 +491,14 @@ export function AppShell({
                 onOpen={onOpen}
                 onCopy={onCopy}
                 terminal={canOpenSSH}
+                onSaveNotes={
+                  edit &&
+                  (async (notes: string) => {
+                    const refused = await edit.SetNotes(selected.id, notes);
+                    if (!refused) await onChanged?.();
+                    return refused;
+                  })
+                }
                 {...(updatesApi && {
                   onUpdate: (site: SiteView, keys: Set<string>) =>
                     setFlow({ site: { id: site.id, name: site.name }, keys, names: namesOf(site.scan?.updates ?? []), follow: false }),
@@ -699,6 +708,7 @@ function Loaded({
   onOpen,
   onCopy,
   terminal,
+  onSaveNotes,
 }: {
   node: Node;
   data: ShellData;
@@ -722,6 +732,8 @@ function Loaded({
   onOpen?: (href: string) => void;
   onCopy?: (text: string) => Promise<unknown> | void;
   terminal?: boolean;
+  /** Saves the notes of the node shown; without it, they are only read. */
+  onSaveNotes?: (notes: string) => Promise<Problem | null>;
 }) {
   const { t } = useTranslation();
   const [view, setView] = useState<{ id: string; view: View }>();
@@ -771,10 +783,12 @@ function Loaded({
         onOpen={onOpen}
         onCopy={onCopy}
         terminal={terminal}
+        notes={node.notes}
+        onSaveNotes={onSaveNotes}
       />
     );
   }
-  const bulkProps = { onUpdateAll, updating, bulk, onDismissBulk, onSiteMenu };
+  const bulkProps = { onUpdateAll, updating, bulk, onDismissBulk, onSiteMenu, notes: node.notes, onSaveNotes, onOpen };
   if (v.kind === "host") {
     const h = v.host;
     const subtitle = h.alias

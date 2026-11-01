@@ -24,7 +24,8 @@
     "pending_other": "{{count}} pending updates",
     "nameOf": "Name of {{name}}",
     "updating_one": "{{count}} site updating",
-    "updating_other": "{{count}} sites updating"
+    "updating_other": "{{count}} sites updating",
+    "inNotes": "in the notes"
   },
   "empty": {
     "title": "Add your first host",
@@ -1247,5 +1248,15 @@
     "reset": "Back to the computed address",
     "save": "Save",
     "menu": "Admin address…"
+  },
+  "notes": {
+    "title": "Notes",
+    "edit": "Edit",
+    "add": "Add notes",
+    "empty": "No notes yet.",
+    "label": "Notes of {{name}}",
+    "hint": "Markdown: **bold**, lists, [links](https://…)",
+    "count": "{{count}} / {{max}}",
+    "save": "Save"
   }
 }
