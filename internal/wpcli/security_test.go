@@ -1,12 +1,16 @@
 package wpcli_test
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"errors"
 	"reflect"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/wpcli"
 )
@@ -30,6 +34,8 @@ func TestSecurityCommandLines(t *testing.T) {
 		{wpcli.OptionSizes(true), "'wp' 'option' 'list' '--fields=option_name,autoload,size_bytes' '--format=json' '--transients' '--path=site' '--skip-plugins' '--skip-themes'"},
 		{wpcli.CronEvents(), "'wp' 'cron' 'event' 'list' '--fields=hook,next_run_gmt' '--format=json' '--path=site' '--skip-plugins' '--skip-themes'"},
 		{wpcli.DatabaseVersion(), "'wp' 'db' 'query' 'SELECT VERSION()' '--skip-column-names' '--path=site' '--skip-plugins' '--skip-themes'"},
+		// The keys and expiries only: the values are wordpress.org's answers.
+		{wpcli.PHPChecks(), "'wp' 'transient' 'list' '--network' '--search=php_check_*' '--fields=name,expiration' '--format=json' '--path=site' '--skip-plugins' '--skip-themes'"},
 	} {
 		if got, err := tt.cmd.Remote("wp", "~/site"); err != nil || got != tt.want {
 			t.Errorf("got %s, %v\nwant %s", got, err, tt.want)
@@ -262,5 +268,70 @@ func TestParseDatabaseVersion(t *testing.T) {
 	noClient := sshx.Result{ExitCode: 1, Stderr: []byte("/usr/bin/env: 'mysql': No such file or directory\n")}
 	if _, err := wpcli.ParseDatabaseVersion(noClient); !errors.Is(err, wpcli.ErrNotVerified) {
 		t.Errorf("ParseDatabaseVersion() without mysql = %v, want ErrNotVerified", err)
+	}
+}
+
+func TestParsePHPChecks(t *testing.T) {
+	out := `[{"name":"php_check_1f3870be274f6c49b3e31a0c6728957f","expiration":"1793600000"},{"name":"php_check_abc","expiration":"false"}]`
+	got, cached, err := wpcli.ParsePHPChecks(sshx.Result{Stdout: []byte(out)})
+	want := []wpcli.PHPCheck{
+		{Hash: "1f3870be274f6c49b3e31a0c6728957f", Expires: time.Unix(1793600000, 0).UTC()},
+		{Hash: "abc"},
+	}
+	if err != nil || cached || !reflect.DeepEqual(got, want) {
+		t.Errorf("ParsePHPChecks() = %+v, %v, %v\nwant %+v", got, cached, err, want)
+	}
+
+	// With an external object cache, WP-CLI lists the database only, and says so.
+	warned := sshx.Result{Stdout: []byte("[]"), Stderr: []byte("Warning: Transients are stored in an external object cache, and this command only shows those stored in the database.\n")}
+	if got, cached, err := wpcli.ParsePHPChecks(warned); err != nil || !cached || len(got) != 0 {
+		t.Errorf("ParsePHPChecks() with an object cache = %+v, %v, %v", got, cached, err)
+	}
+	if _, _, err := wpcli.ParsePHPChecks(sshx.Result{ExitCode: 1, Stderr: []byte("Error: boom")}); err == nil {
+		t.Error("ParsePHPChecks() of a failed command: no error")
+	}
+	if _, _, err := wpcli.ParsePHPChecks(sshx.Result{Stdout: []byte(`[{"name":"other","expiration":"12"}]`)}); !errors.Is(err, wpcli.ErrUnexpectedOutput) {
+		t.Errorf("ParsePHPChecks() of another transient = %v, want ErrUnexpectedOutput", err)
+	}
+}
+
+func hashOf(version string) string {
+	sum := md5.Sum([]byte(version))
+	return hex.EncodeToString(sum[:])
+}
+
+func TestWebPHP(t *testing.T) {
+	now := time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC)
+	week := 7 * 24 * time.Hour
+	check := func(version string, noted time.Time) wpcli.PHPCheck {
+		return wpcli.PHPCheck{Hash: hashOf(version), Expires: noted.Add(week)}
+	}
+	for _, tt := range []struct {
+		name   string
+		checks []wpcli.PHPCheck
+		cached bool
+		want   model.PHPWeb
+	}{
+		{"the command line's", []wpcli.PHPCheck{check("8.4.27", now.Add(-time.Hour))}, false,
+			model.PHPWeb{Version: "8.4.27", Seen: now.Add(-time.Hour)}},
+		{"another release", []wpcli.PHPCheck{check("8.2.29", now.Add(-48*time.Hour))}, false,
+			model.PHPWeb{Version: "8.2.29", Seen: now.Add(-48 * time.Hour)}},
+		{"a distribution's build of the command line", []wpcli.PHPCheck{check("8.1.2-1ubuntu2.20", now.Add(-time.Hour))}, false,
+			model.PHPWeb{Unknown: model.PHPWebUnmatched}},
+		{"the newest of several", []wpcli.PHPCheck{check("8.1.31", now.Add(-6*24*time.Hour)), check("8.3.14", now.Add(-time.Hour))}, false,
+			model.PHPWeb{Version: "8.3.14", Seen: now.Add(-time.Hour)}},
+		{"an expired one left", []wpcli.PHPCheck{check("7.4.33", now.Add(-8*24*time.Hour))}, false,
+			model.PHPWeb{Unknown: model.PHPWebNotNoted}},
+		{"none", nil, false, model.PHPWeb{Unknown: model.PHPWebNotNoted}},
+		{"in an object cache", nil, true, model.PHPWeb{Unknown: model.PHPWebObjectCache}},
+		{"one kept forever", []wpcli.PHPCheck{{Hash: hashOf("8.4.0")}}, false, model.PHPWeb{Version: "8.4.0"}},
+	} {
+		cli := "8.4.27"
+		if strings.Contains(tt.name, "distribution") {
+			cli = "8.1.2-1ubuntu2.19"
+		}
+		if got := wpcli.WebPHP(tt.checks, tt.cached, cli, now); got != tt.want {
+			t.Errorf("%s: WebPHP() = %+v, want %+v", tt.name, got, tt.want)
+		}
 	}
 }

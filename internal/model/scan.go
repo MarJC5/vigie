@@ -2,6 +2,24 @@ package model
 
 import "time"
 
+// PHPWeb is the PHP version serving a site's pages, as its dashboard last noted it: WordPress keeps
+// its check of that version a week (ADR-0028).
+type PHPWeb struct {
+	Version string    // empty when not read
+	Seen    time.Time // when the dashboard noted it, a week before its note expires; zero when unknown
+	Unknown PHPWebUnknown
+}
+
+// PHPWebUnknown is why the PHP serving the pages was not read.
+type PHPWebUnknown string
+
+const (
+	PHPWebRead        PHPWebUnknown = ""
+	PHPWebNotNoted    PHPWebUnknown = "not-noted"    // no note this week: nobody opened the dashboard, or it could not reach wordpress.org
+	PHPWebObjectCache PHPWebUnknown = "object-cache" // the notes are in an external object cache, which WP-CLI does not list
+	PHPWebUnmatched   PHPWebUnknown = "unmatched"    // a note of a version Vigie cannot name: not the command line's
+)
+
 // ScanOutcome is how a scan of a site ended.
 type ScanOutcome string
 
@@ -72,6 +90,7 @@ type Scan struct {
 
 	WordPress string // installed version
 	PHPCLI    string // PHP on the command line
+	PHPWeb    PHPWeb // PHP serving the pages, as the dashboard noted it
 	WPCLI     string // WP-CLI version
 	Home      string // the site's address
 	SiteURL   string // the WordPress address (siteurl), where wp-admin lives

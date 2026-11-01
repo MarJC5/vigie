@@ -1,14 +1,18 @@
 package wpcli
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/sshx"
 )
 
@@ -444,4 +448,122 @@ func ParseDatabaseVersion(res sshx.Result) (string, error) {
 		return "", fmt.Errorf("database version %q: %w", v, ErrUnexpectedOutput)
 	}
 	return v, nil
+}
+
+// PHPChecks lists the dashboard's checks of the PHP version serving it, which WordPress keeps a
+// week as the site transient php_check_<md5 of PHP_VERSION> (wp_check_php_version, ADR-0028): the
+// keys and their expiries, not the answers. The database only: WP-CLI cannot list an external
+// object cache, and says so.
+func PHPChecks() Command {
+	return Command{args: []string{"transient", "list", "--network", "--search=php_check_*", "--fields=name,expiration", "--format=json"},
+		skipPlugins: true, skipThemes: true}
+}
+
+// PHPCheck is one of the dashboard's checks: the md5 of the PHP version it was made with, and
+// when WordPress lets it expire (zero when it never does).
+type PHPCheck struct {
+	Hash    string
+	Expires time.Time // UTC
+}
+
+// ParsePHPChecks reads PHPChecks' result, and whether the transients are in an external object
+// cache, where WP-CLI does not list them.
+func ParsePHPChecks(res sshx.Result) ([]PHPCheck, bool, error) {
+	if err := Check(res); err != nil {
+		return nil, false, err
+	}
+	cached := strings.Contains(string(res.Stderr), "external object cache")
+	var list []struct {
+		Name       string `json:"name"`
+		Expiration string `json:"expiration"`
+	}
+	if err := decode(res.Stdout, &list); err != nil {
+		return nil, false, fmt.Errorf("transient list: %w", err)
+	}
+	checks := []PHPCheck{}
+	for _, e := range list {
+		hash, ok := strings.CutPrefix(e.Name, "php_check_")
+		if !ok {
+			return nil, false, fmt.Errorf("transient %q: %w", e.Name, ErrUnexpectedOutput)
+		}
+		c := PHPCheck{Hash: hash}
+		if e.Expiration != "false" {
+			at, err := strconv.ParseInt(e.Expiration, 10, 64)
+			if err != nil {
+				return nil, false, fmt.Errorf("transient %s expires %q: %w", e.Name, e.Expiration, ErrUnexpectedOutput)
+			}
+			c.Expires = time.Unix(at, 0).UTC()
+		}
+		checks = append(checks, c)
+	}
+	return checks, cached, nil
+}
+
+// releases are the PHP versions a dashboard's check can be named by, by the md5 WordPress keys it
+// with: every x.y.z of PHP 5.6, 7 and 8, beyond the releases so far.
+var releases = sync.OnceValue(func() map[string]string {
+	m := map[string]string{}
+	add := func(major, minor int) {
+		for patch := range 100 {
+			v := fmt.Sprintf("%d.%d.%d", major, minor, patch)
+			m[md5Hex(v)] = v
+		}
+	}
+	add(5, 6)
+	for minor := range 5 {
+		add(7, minor)
+	}
+	for minor := range 10 {
+		add(8, minor)
+	}
+	return m
+})
+
+func md5Hex(s string) string {
+	sum := md5.Sum([]byte(s))
+	return hex.EncodeToString(sum[:])
+}
+
+// week is how long WordPress keeps a check of the PHP version.
+const week = 7 * 24 * time.Hour
+
+// WebPHP names the PHP version of the dashboard's newest check still kept: the command line's
+// exact version string, or a release x.y.z (ADR-0028). A check of a version that is neither (a
+// distribution's build that is not the command line's) says the web differs, unnamed.
+func WebPHP(checks []PHPCheck, cached bool, cli string, now time.Time) model.PHPWeb {
+	// A dated check is newer than one kept forever, which a cache plugin may leave.
+	newer := func(a, b PHPCheck) bool {
+		if a.Expires.IsZero() || b.Expires.IsZero() {
+			return b.Expires.IsZero() && !a.Expires.IsZero()
+		}
+		return a.Expires.After(b.Expires)
+	}
+	var newest *PHPCheck
+	for i, c := range checks {
+		if !c.Expires.IsZero() && !c.Expires.After(now) {
+			continue // expired: left until WordPress deletes it
+		}
+		if newest == nil || newer(c, *newest) {
+			newest = &checks[i]
+		}
+	}
+	switch {
+	case newest == nil && cached:
+		return model.PHPWeb{Unknown: model.PHPWebObjectCache}
+	case newest == nil:
+		return model.PHPWeb{Unknown: model.PHPWebNotNoted}
+	}
+	web := model.PHPWeb{}
+	if !newest.Expires.IsZero() {
+		web.Seen = newest.Expires.Add(-week)
+	}
+	switch {
+	case cli != "" && newest.Hash == md5Hex(cli):
+		web.Version = cli
+	case releases()[newest.Hash] != "":
+		web.Version = releases()[newest.Hash]
+	default:
+		return model.PHPWeb{Unknown: model.PHPWebUnmatched}
+	}
+	return web
 }
