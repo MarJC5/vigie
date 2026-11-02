@@ -5,7 +5,7 @@ WAILS := go run $(WAILS_MODULE)
 WAILS_BIN := $(CURDIR)/.task/bin
 
 # Container tests (Docker needed): make test-integration; make record refreshes the WP-CLI outputs.
-.PHONY: test-integration record test vet fmt-check vuln go-check frontend-install frontend-browsers frontend-lint frontend-test frontend-build frontend-e2e bindings bindings-check library app wails check
+.PHONY: test-integration record test vet fmt-check vuln go-check frontend-install frontend-browsers frontend-lint frontend-test frontend-build frontend-e2e bindings bindings-check library app wails release check
 
 # The module shared with add-ons (./addon) is a module of its own: ./... does not reach it.
 test:
@@ -77,6 +77,11 @@ app: wails
 
 wails:
 	GOBIN="$(WAILS_BIN)" go install $(WAILS_MODULE)
+
+# A release, on the owner's Mac once the tag vx.y.z is pushed (docs/releasing.md):
+# make release VERSION=x.y.z KEY=<private key>
+release: wails
+	WAILS_BIN="$(WAILS_BIN)" VERSION="$(VERSION)" KEY="$(KEY)" build/release.sh
 
 # The interface is built first: the Go binary embeds frontend/dist.
 check: frontend-build go-check bindings-check frontend-lint frontend-test frontend-e2e
