@@ -5,7 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
+	"sync"
 
 	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/update"
@@ -45,7 +47,13 @@ func updateTarget(ctx context.Context, env Env, ws *workspace.Workspace, on targ
 	if err != nil {
 		return env.fail(on.explain(env, err))
 	}
-	previews, err := ws.PreviewNode(ctx, node)
+	// What each site will change, read on the servers: the progress line counts them (ADR-0037).
+	total := len(tree.SitesUnder(node))
+	p := startProgress(env, asJSON, env.t("cli.progress.preview", map[string]any{"done": 0, "count": total}))
+	previews, err := ws.PreviewNodesFollowed(ctx, []model.Node{node}, func(done, total int) {
+		p.set(env.t("cli.progress.preview", map[string]any{"done": done, "count": total}))
+	})
+	p.end()
 	if err != nil {
 		return env.fail(on.explain(env, err))
 	}
@@ -92,11 +100,46 @@ func updateTarget(ctx context.Context, env Env, ws *workspace.Workspace, on targ
 		return exitAttention
 	}
 
-	done := ws.UpdateSites(ctx, planned, workspace.Follow{OnSite: func(r workspace.SiteUpdate) {
-		if !asJSON {
-			fmt.Fprintf(env.Out, "%s  %s\n", r.Path, outcomeText(env, r))
+	// A line per site being updated with its step (ADR-0037, 2b); each site's outcome printed above
+	// the block as it ends.
+	p = startProgress(env, asJSON, env.t("cli.progress.update", map[string]any{"done": 0, "count": len(planned), "running": 0}))
+	names := map[model.ID]string{}
+	for _, pl := range planned {
+		names[pl.Site.ID] = pl.Site.Name
+	}
+	var mu sync.Mutex
+	steps := map[model.ID]string{}
+	var running []model.ID
+	ended := 0
+	show := func() {
+		var items []item
+		for _, id := range running {
+			items = append(items, item{text: names[id] + " · " + steps[id]})
 		}
-	}})
+		p.set(env.t("cli.progress.update", map[string]any{"done": ended, "count": len(planned), "running": len(running)}), items...)
+	}
+	done := ws.UpdateSites(ctx, planned, workspace.Follow{
+		OnSite: func(r workspace.SiteUpdate) {
+			mu.Lock()
+			running = slices.DeleteFunc(running, func(id model.ID) bool { return id == r.Site.ID })
+			ended++
+			show()
+			mu.Unlock()
+			if !asJSON {
+				p.above(func() { fmt.Fprintf(env.Out, "%s  %s\n", r.Path, outcomeText(env, r)) })
+			}
+		},
+		OnStep: func(op model.Operation, st model.OperationStep) {
+			mu.Lock()
+			defer mu.Unlock()
+			if !slices.Contains(running, op.SiteID) {
+				running = append(running, op.SiteID)
+			}
+			steps[op.SiteID] = stepText(env, st)
+			show()
+		},
+	})
+	p.end()
 	for _, r := range done {
 		if r.Outcome == workspace.SiteNotStarted && !asJSON {
 			fmt.Fprintf(env.Out, "%s  %s\n", r.Path, outcomeText(env, r))
@@ -234,4 +277,25 @@ func updatesJSON(previews []workspace.SitePreview, results map[model.ID]workspac
 
 func itemJSON(p workspace.SitePreview, it update.Item) updateItemJSON {
 	return updateItemJSON{Kind: string(it.Kind), Slug: it.Slug, Language: it.Language, From: it.From, To: it.To, Ignored: p.IsIgnored(it)}
+}
+
+// stepText is a step of an update as the window says it: "akismet 5.3 → 5.7.2", "Database backup".
+func stepText(env Env, st model.OperationStep) string {
+	item := st.Slug
+	if st.ItemKind == model.ItemCore {
+		item = "WordPress"
+	}
+	switch {
+	case st.Step == model.StepUpdate && st.ItemKind == model.ItemLanguage:
+		return env.t("update.step.languages", nil)
+	case st.Step == model.StepUpdate:
+		return env.t("update.step.update", map[string]any{"item": item, "from": st.VersionBefore, "to": st.VersionAfter})
+	case st.Step == model.StepBackupFiles && st.ItemKind == model.ItemCore:
+		return env.t("update.step.backup-core", nil)
+	case st.Step == model.StepBackupFiles:
+		return env.t("update.step.backup-files", map[string]any{"item": item})
+	case st.Step == model.StepRestoreFiles:
+		return env.t("update.step.restore-files", map[string]any{"item": item, "version": st.VersionBefore})
+	}
+	return env.t("update.step."+string(st.Step), nil)
 }

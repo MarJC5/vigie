@@ -70,6 +70,8 @@ type Env struct {
 	Texts    *i18n.Catalogs
 	// Open opens the user's data; only the commands that need it call it.
 	Open func(ctx context.Context) (*workspace.Workspace, error)
+	// Terminal: where the command runs; its progress shows only in an interactive one (ADR-0037).
+	Terminal Terminal
 }
 
 func (e Env) t(key string, vars map[string]any) string {

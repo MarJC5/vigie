@@ -1,6 +1,7 @@
 package cli_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"path/filepath"
@@ -344,5 +345,28 @@ func TestScanSaysWhatChanged(t *testing.T) {
 	// Compared with the scan just before, made by this test: nothing changed since.
 	if len(results) != 1 || len(results[0].Changes) != 0 {
 		t.Errorf("--json changes = %+v, want none against an identical scan", results)
+	}
+}
+
+// In a terminal, a scan draws its progress block on stderr and erases it; what stdout prints is
+// the same as without one (ADR-0037).
+func TestScanProgressInATerminal(t *testing.T) {
+	opts, err := cli.Parse([]string{"scan", "Clients/Bench/outdated.example.test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out, errOut bytes.Buffer
+	cli.Run(context.Background(), opts, cli.Env{
+		Out: &out, Err: &errOut, Lang: "en", Texts: texts(t),
+		Open:     func(context.Context) (*workspace.Workspace, error) { return benchWorkspace(t), nil },
+		Terminal: cli.Terminal{Interactive: true, Width: func() int { return 120 }},
+	})
+	progress := errOut.String()
+	if !strings.Contains(progress, "Scanning 1 site") || !strings.HasSuffix(progress, "\r\x1b[J") {
+		t.Fatalf("stderr = %q, want the progress block, erased", progress)
+	}
+	_, plain, _ := run(t, "en", "scan", "Clients/Bench/outdated.example.test")
+	if out.String() != plain {
+		t.Errorf("stdout in a terminal:\n%s\nwithout one:\n%s", out.String(), plain)
 	}
 }

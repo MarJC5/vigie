@@ -6,6 +6,7 @@ import (
 	"os"
 	"slices"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/MarJC5/vigie/internal/httpcheck"
@@ -105,6 +106,12 @@ func (w *Workspace) PreviewNode(ctx context.Context, node model.Node) ([]SitePre
 
 // PreviewNodes reads the previews of the sites the nodes hold, each once, in tree order (ADR-0034).
 func (w *Workspace) PreviewNodes(ctx context.Context, nodes []model.Node) ([]SitePreview, error) {
+	return w.PreviewNodesFollowed(ctx, nodes, nil)
+}
+
+// PreviewNodesFollowed is PreviewNodes telling, when progress is set, how many sites are read out
+// of how many, as each one is (the command line's progress, ADR-0037).
+func (w *Workspace) PreviewNodesFollowed(ctx context.Context, nodes []model.Node, progress func(done, total int)) ([]SitePreview, error) {
 	tree, err := w.db.LoadTree(ctx)
 	if err != nil {
 		return nil, err
@@ -115,6 +122,7 @@ func (w *Workspace) PreviewNodes(ctx context.Context, nodes []model.Node) ([]Sit
 		return nil, err
 	}
 	previews := make([]SitePreview, len(sites))
+	var read atomic.Int64
 	u := w.updater(nil)
 	slots := make(chan struct{}, parallelSites)
 	var wg sync.WaitGroup
@@ -134,6 +142,9 @@ func (w *Workspace) PreviewNodes(ctx context.Context, nodes []model.Node) ([]Sit
 			defer func() { <-slots }()
 			previews[i].Preview, previews[i].Err = u.Preview(ctx, previews[i].Job)
 			previews[i].Ignored = ignoredIn(previews[i].Preview, ignores)
+			if progress != nil {
+				progress(int(read.Add(1)), len(sites))
+			}
 		})
 	}
 	wg.Wait()

@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
+	"sync"
 	"text/tabwriter"
 	"time"
 
@@ -266,7 +268,11 @@ func scanTarget(ctx context.Context, env Env, ws *workspace.Workspace, on target
 	if err != nil {
 		return env.fail(on.explain(env, err))
 	}
-	results, err := ws.ScanNode(ctx, node, opts, nil)
+	// The progress line ends with the scan, however it ends, before anything prints.
+	total := len(tree.SitesUnder(node))
+	p := startProgress(env, asJSON, env.t("cli.progress.scanStart", map[string]any{"count": total}))
+	results, err := ws.ScanNode(ctx, node, opts, scanProgress(env, p, tree, total))
+	p.end()
 	if err != nil {
 		return env.fail(on.explain(env, err))
 	}
@@ -402,7 +408,9 @@ type foundJSON struct {
 
 // discoverHost lists the WordPress installs of a host's account; it adds nothing.
 func discoverHost(ctx context.Context, env Env, ws *workspace.Workspace, path string, asJSON bool) int {
-	found, truncated, err := ws.Discover(ctx, path)
+	p := startProgress(env, asJSON, env.t("cli.progress.discover", map[string]any{"host": path}))
+	found, truncated, err := ws.Discover(ctx, path, nil)
+	p.end()
 	if err != nil {
 		return env.fail(explain(env, path, err))
 	}
@@ -434,4 +442,52 @@ func writeJSON(out io.Writer, v any) {
 	enc := json.NewEncoder(out)
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(v)
+}
+
+// scanProgress follows a scan on the progress block (ADR-0037, 2b): a line per site being scanned
+// with the bar of its steps, the last three sites done, the total; nil without a block.
+func scanProgress(env Env, p *progress, tree *model.Tree, total int) func(scan.Progress) {
+	if p == nil {
+		return nil
+	}
+	type site struct {
+		name        string
+		done, steps int
+	}
+	var mu sync.Mutex
+	sites := map[model.ID]*site{}
+	var running, finished []model.ID
+	return func(pr scan.Progress) {
+		mu.Lock()
+		defer mu.Unlock()
+		s, seen := sites[pr.SiteID]
+		if !seen {
+			s = &site{}
+			if st, ok := tree.Site(pr.SiteID); ok {
+				s.name = st.Name
+			}
+			sites[pr.SiteID] = s
+			running = append(running, pr.SiteID)
+		}
+		s.done, s.steps = pr.Done, pr.Total
+		if pr.Done >= pr.Total && slices.Contains(running, pr.SiteID) {
+			running = slices.DeleteFunc(running, func(id model.ID) bool { return id == pr.SiteID })
+			finished = append(finished, pr.SiteID)
+		}
+		// The names in one column, as wide as the longest shown.
+		shown := append(slices.Clone(running), finished[max(0, len(finished)-3):]...)
+		width := 0
+		for _, id := range shown {
+			width = max(width, len([]rune(sites[id].name)))
+		}
+		var items []item
+		for _, id := range running {
+			s := sites[id]
+			items = append(items, item{text: fmt.Sprintf("%-*s  %s", width, s.name, bar(s.done, s.steps))})
+		}
+		for _, id := range finished[max(0, len(finished)-3):] {
+			items = append(items, item{text: fmt.Sprintf("%-*s  %s", width, sites[id].name, env.t("cli.progress.siteDone", nil)), done: true})
+		}
+		p.set(env.t("cli.progress.scan", map[string]any{"done": len(finished), "count": total, "running": len(running)}), items...)
+	}
 }

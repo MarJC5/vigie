@@ -339,7 +339,7 @@ func (w *Workspace) EverythingScanned(ctx context.Context) (time.Time, bool, err
 }
 
 // Discover searches the account of the host at path for WordPress installs; it adds nothing.
-func (w *Workspace) Discover(ctx context.Context, path string) ([]discover.Found, bool, error) {
+func (w *Workspace) Discover(ctx context.Context, path string, progress func(checked, total int)) ([]discover.Found, bool, error) {
 	tree, err := w.db.LoadTree(ctx)
 	if err != nil {
 		return nil, false, err
@@ -352,7 +352,7 @@ func (w *Workspace) Discover(ctx context.Context, path string) ([]discover.Found
 		return nil, false, fmt.Errorf("%q: %w", path, ErrNotAHost)
 	}
 	host, _ := tree.Host(node.ID)
-	return w.discoverAccount(ctx, host, tree.SitesUnder(node), nil)
+	return w.discoverAccount(ctx, host, tree.SitesUnder(node), progress)
 }
 
 // discoverAccount searches the account of a host, stored or not; existing are its sites in Vigie.

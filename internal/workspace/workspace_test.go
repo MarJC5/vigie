@@ -299,10 +299,10 @@ func TestScanUnknownPath(t *testing.T) {
 
 func TestDiscoverAHost(t *testing.T) {
 	ws, _ := benchWithSearch(t)
-	if _, _, err := ws.Discover(context.Background(), "Clients"); !errors.Is(err, workspace.ErrNotAHost) {
+	if _, _, err := ws.Discover(context.Background(), "Clients", nil); !errors.Is(err, workspace.ErrNotAHost) {
 		t.Fatalf("Discover(folder) = %v, want ErrNotAHost", err)
 	}
-	found, _, err := ws.Discover(context.Background(), "Clients/Bench")
+	found, _, err := ws.Discover(context.Background(), "Clients/Bench", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
