@@ -38,6 +38,7 @@ type keeper struct {
 	notify  *notifications.NotificationService
 	record  func(model.Notice) error // keeps a notification sent, for the Activity page
 	label   func(key string, vars map[string]any) string
+	emit    func(name string, data any) // to the window: the page a notification opens
 
 	notifyStart sync.Once
 	notifyErr   error // why notifications cannot be sent here (no bundle, the server build)
@@ -112,13 +113,15 @@ func (k *keeper) start(ctx context.Context) {
 			k.refreshes.run(func() { k.refresh(ctx) })
 		}
 	})
-	k.scanner.OnScanned = func(_ app.RunEnd, tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan, changes map[model.ID][]model.Change) {
+	k.scanner.OnScanned = func(end app.RunEnd, tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan, changes map[model.ID][]model.Change) {
 		if b, err := k.prefs.Background(ctx); err == nil && b.Notify {
-			run := model.NoID
-			if len(after) > 0 {
-				run = after[0].RunID
+			alerts := append(app.Alerts(tree, before, after), app.ChangeAlerts(tree, changes)...)
+			// A long run notifies its end once, its alerts in it (ADR-0035).
+			if endFirst(end, k.inFront()) {
+				k.ended(end, alerts)
+			} else {
+				k.alert(alerts, end.RunID)
 			}
-			k.alert(append(app.Alerts(tree, before, after), app.ChangeAlerts(tree, changes)...), run)
 		}
 	}
 
@@ -191,9 +194,66 @@ func (k *keeper) notifications() bool {
 		k.notifyErr = k.notify.ServiceStartup(context.Background(), application.ServiceOptions{})
 		if k.notifyErr != nil {
 			k.wails.Logger.Error("notifications", "error", k.notifyErr)
+			return
 		}
+		k.notify.OnNotificationResponse(k.clicked)
 	})
 	return k.notifyErr == nil
+}
+
+// updated notifies the end of a long update while the window is not in front (ADR-0035).
+func (k *keeper) updated(end app.RunEnd) {
+	if b, err := k.prefs.Background(context.Background()); err == nil && b.Notify && endFirst(end, k.inFront()) {
+		k.ended(end, nil)
+	}
+}
+
+// endFirst tells whether a run's end is notified: a long run the user started, while the window
+// is not in front (hidden, minimized, another app in front); otherwise the window shows it.
+func endFirst(end app.RunEnd, inFront bool) bool {
+	return end.Notifies() && !inFront
+}
+
+// inFront tells whether Vigie's window is the one in front.
+func (k *keeper) inFront() bool {
+	return k.window.IsVisible() && !k.window.IsMinimised() && k.window.IsFocused()
+}
+
+// ended sends the notification of a run's end with the run's alerts, and keeps it, its line shown
+// under the run in the journal; a click opens what the run covered.
+func (k *keeper) ended(end app.RunEnd, alerts []app.Alert) {
+	if !k.notifications() {
+		return
+	}
+	text := app.EndNotice(end, alerts, k.label)
+	err := k.notify.SendNotification(notifications.NotificationOptions{
+		ID: fmt.Sprintf("vigie-ended-%d", time.Now().UnixNano()), Title: text.Title, Body: text.Body,
+		Data: map[string]any{"nodes": strings.Join(end.NodeIDs, ",")},
+	})
+	if err != nil {
+		k.wails.Logger.Error("notifications", "error", err)
+		return
+	}
+	var names []string
+	for _, a := range alerts {
+		names = append(names, a.Name)
+	}
+	notice := model.Notice{ID: model.NewID(), RunID: end.RunID, Kind: model.NoticeEnded, Names: names, Text: text.Line, Sent: time.Now().UTC()}
+	if err := k.record(notice); err != nil {
+		k.wails.Logger.Error("notifications", "error", err)
+	}
+}
+
+// clicked opens the window on a notification's click, on the page of what the run covered.
+func (k *keeper) clicked(result notifications.NotificationResult) {
+	if result.Error != nil {
+		k.wails.Logger.Error("notifications", "error", result.Error)
+		return
+	}
+	k.open()
+	if nodes, ok := result.Response.UserInfo["nodes"].(string); ok {
+		k.emit(app.MenuEvent, app.MenuCommand{Action: app.ActionOpen, Nodes: strings.Split(nodes, ",")})
+	}
 }
 
 // alert sends a notification per kind of alert: the sites turned urgent, the hosts unreachable.
@@ -201,7 +261,7 @@ func (k *keeper) alert(alerts []app.Alert, run model.ID) {
 	if len(alerts) == 0 || !k.notifications() {
 		return
 	}
-	for _, kind := range []string{app.AlertUrgent, app.AlertUnreachable, app.AlertAdmin, app.AlertInstalled} {
+	for _, kind := range app.AlertKinds {
 		var names []string
 		for _, a := range alerts {
 			if a.Kind == kind {

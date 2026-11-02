@@ -202,7 +202,7 @@ func openWindow(opts cli.Options) error {
 	// The background mode: the eye in the menu bar, the window hidden instead of closed.
 	keep := &keeper{
 		wails: wails, window: window, dock: docked, prefs: preferences, login: login, atLogin: opts.AtLogin,
-		watch: watch, scanner: scanner, notify: notifier,
+		watch: watch, scanner: scanner, notify: notifier, emit: emit,
 		record: func(n model.Notice) error { return db.SaveNotice(context.Background(), n) },
 		label: func(key string, vars map[string]any) string {
 			all := map[string]any{"app": "Vigie"}
@@ -212,6 +212,7 @@ func openWindow(opts cli.Options) error {
 			return texts.T(lang, key, all)
 		},
 	}
+	updates.OnEnded = keep.updated
 	keep.start(watching)
 	return wails.Run()
 }

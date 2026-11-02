@@ -205,15 +205,15 @@ export const StatusDotsInTheTree: Story = {
 
 // The menu bar's commands, as the Go side sends them.
 function commands() {
-  let handler: ((action: string) => void) | undefined;
+  let handler: ((action: string, nodes?: string[]) => void) | undefined;
   return {
-    subscribe: (h: (action: string) => void) => {
+    subscribe: (h: (action: string, nodes?: string[]) => void) => {
       handler = h;
       return () => {
         handler = undefined;
       };
     },
-    send: (action: string) => handler?.(action),
+    send: (action: string, nodes?: string[]) => handler?.(action, nodes),
     subscribed: () => handler !== undefined,
   };
 }
@@ -231,6 +231,25 @@ export const MenuCommands: Story = {
     await waitFor(() => expect(fields.at(-1)).toHaveFocus());
     menu.send("scan");
     await expect(args.onScan).toHaveBeenCalledWith("shared");
+  },
+};
+
+const notified = commands();
+
+// A notification of a run's end clicked (ADR-0035): the window opens on what the run covered,
+// one item or several.
+export const OpenedFromANotification: Story = {
+  args: { data, initialSelectedId: "shared", commands: notified.subscribe, onSection: fn() },
+  play: async ({ canvas, args }) => {
+    await waitFor(() => expect(notified.subscribed()).toBe(true));
+    // The last subscriber is the second render, the light theme's window.
+    const shell = within(canvas.getAllByRole("tree", { name: "Site manager" }).at(-1)!);
+    notified.send("open", ["vps"]);
+    await waitFor(() => expect(shell.getByRole("treeitem", { name: /Managed VPS/ })).toHaveAttribute("aria-selected", "true"));
+    await expect(args.onSection).toHaveBeenCalledWith("sites");
+    notified.send("open", ["shared", "vps"]);
+    await waitFor(() => expect(shell.getByRole("treeitem", { name: /Shared hosting/ })).toHaveAttribute("aria-selected", "true"));
+    await expect(shell.getByRole("treeitem", { name: /Managed VPS/ })).toHaveAttribute("aria-selected", "true");
   },
 };
 

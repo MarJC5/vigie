@@ -110,7 +110,8 @@ const openURL = (href: string) => void Browser.OpenURL(href);
 const copyText = (text: string) => Clipboard.SetText(text);
 
 // The commands of the native menu bar.
-const menuCommands = (handler: (action: string) => void) => Events.On(VigieMenu, (event) => handler(event.data.action));
+const menuCommands = (handler: (action: string, nodes?: string[]) => void) =>
+  Events.On(VigieMenu, (event) => handler(event.data.action, event.data.nodes ?? undefined));
 
 // The theme chosen goes on the root element, which the tokens follow over the system's.
 const applyTheme = (theme: Theme) => {

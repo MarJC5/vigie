@@ -834,6 +834,11 @@ export interface LookupsView {
  */
 export interface MenuCommand {
     "action": string;
+
+    /**
+     * ActionOpen: the nodes to open, "" for everything
+     */
+    "nodes"?: string[] | null;
 }
 
 /**

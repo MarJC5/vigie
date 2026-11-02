@@ -12,11 +12,14 @@ const (
 	ActionScanAll   = "scan-all"   // scans every site
 	ActionSettings  = "settings"   // opens the settings
 	ActionHelp      = "help"       // opens the help page
+	// ActionOpen opens the page of what a notified run covered (ADR-0035): Nodes, one or several.
+	ActionOpen = "open"
 )
 
 // MenuCommand is what the window receives with MenuEvent.
 type MenuCommand struct {
-	Action string `json:"action"`
+	Action string   `json:"action"`
+	Nodes  []string `json:"nodes,omitempty"` // ActionOpen: the nodes to open, "" for everything
 }
 
 // MenuEntry is one item of a menu: a separator, a standard item (Role, relabelled in the interface

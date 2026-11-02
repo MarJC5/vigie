@@ -55,9 +55,16 @@ func (e RunEnd) Notifies() bool {
 	return e.By == model.RunByUser && !e.Cancelled && e.Finished.Sub(e.Started) >= LongRun
 }
 
+// EndText is what the notification of a run's end says: its title and body, and the line the
+// journal keeps under the run, which names what the run covered already.
+type EndText struct {
+	Title, Body, Line string
+}
+
 // EndNotice is the notification of a run's end: its title says what ended, its body how, and the
 // alerts of the same run follow, so that one notification says it all.
-func EndNotice(e RunEnd, alerts []Alert, label func(key string, vars map[string]any) string) (title, body string) {
+func EndNotice(e RunEnd, alerts []Alert, label func(key string, vars map[string]any) string) EndText {
+	var title string
 	n := func(key string, count int) string { return label("notify.end."+key, map[string]any{"count": count}) }
 	var details []string
 	switch {
@@ -102,11 +109,13 @@ func EndNotice(e RunEnd, alerts []Alert, label func(key string, vars map[string]
 	case len(e.NodeIDs) == 1 && e.NodeIDs[0] == "":
 		what = label("notify.end.everything", nil)
 	}
-	sentences := []string{label("notify.end.line", map[string]any{"what": what, "details": strings.Join(details, ", ")})}
+	var after []string
 	for _, a := range groupAlerts(alerts) {
-		sentences = append(sentences, label("notify."+a.kind, map[string]any{"count": len(a.names), "name": a.names[0], "names": strings.Join(a.names, ", ")})+".")
+		after = append(after, label("notify."+a.kind, map[string]any{"count": len(a.names), "name": a.names[0], "names": strings.Join(a.names, ", ")})+".")
 	}
-	return title, strings.Join(sentences, " ")
+	body := append([]string{label("notify.end.line", map[string]any{"what": what, "details": strings.Join(details, ", ")})}, after...)
+	line := append([]string{title + ", " + strings.Join(details, ", ") + "."}, after...)
+	return EndText{Title: title, Body: strings.Join(body, " "), Line: strings.Join(line, " ")}
 }
 
 // AlertKinds are the kinds of alerts, in the order they are told.

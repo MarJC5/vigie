@@ -101,9 +101,15 @@ func TestEndNoticeTexts(t *testing.T) {
 	}
 	for _, c := range cases {
 		label := func(key string, vars map[string]any) string { return texts.T(c.lang, key, vars) }
-		title, body := app.EndNotice(c.end, c.alerts, label)
-		if title != c.title || body != c.body {
-			t.Errorf("%s (%s): got %q / %q, want %q / %q", c.name, c.lang, title, body, c.title, c.body)
+		got := app.EndNotice(c.end, c.alerts, label)
+		if got.Title != c.title || got.Body != c.body {
+			t.Errorf("%s (%s): got %q / %q, want %q / %q", c.name, c.lang, got.Title, got.Body, c.title, c.body)
 		}
+	}
+	// The journal's line: the title, then how, without what the entry names already.
+	label := func(key string, vars map[string]any) string { return texts.T("fr", key, vars) }
+	got := app.EndNotice(app.RunEnd{Kind: app.EndScan, NodeIDs: []string{""}, Sites: 12, Urgent: 1}, urgent, label)
+	if want := "Relevé terminé, 12 sites relevés, 1 urgent. boulangerie-exemple.ch est devenu urgent."; got.Line != want {
+		t.Errorf("Line = %q, want %q", got.Line, want)
 	}
 }

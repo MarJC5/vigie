@@ -117,7 +117,7 @@ export interface AppShellProps {
   onScanMany?: (nodeIds: string[]) => void;
   onStopAll?: () => void;
   /** Subscribes to the commands of the menu bar ("search", "scan"...); returns the unsubscribe. */
-  commands?: (handler: (action: string) => void) => () => void;
+  commands?: (handler: (action: string, nodes?: string[]) => void) => () => void;
   /** Without it, the tree is read only. */
   edit?: EditApi;
   /** Reads the tree again after an edit. */
@@ -352,9 +352,9 @@ export function AppShell({
   };
 
   // The menu bar's commands; the latest handler sees the latest selection.
-  const onCommand = useRef<(action: string) => void>(() => {});
+  const onCommand = useRef<(action: string, nodes?: string[]) => void>(() => {});
   useEffect(() => {
-    onCommand.current = (action) => {
+    onCommand.current = (action, nodes) => {
       if (action === "search") openSearch();
       if (action === "scan" && several) scanMany(chosen);
       else if (action === "scan" && selectedId) scan(selectedId);
@@ -363,9 +363,17 @@ export function AppShell({
       if (action === "new-folder") void createFolder(folderOf(selectedId));
       if (action === "settings") onSection?.("settings");
       if (action === "help") onSection?.("help");
+      // A notification clicked (ADR-0035): the page of what its run covered; everything keeps the
+      // selection.
+      if (action === "open") {
+        onSection?.("sites");
+        const known = (nodes ?? []).filter((id) => byId.has(id));
+        if (known.length === 1) select(known[0]!);
+        else if (known.length > 1) setSelection(known);
+      }
     };
   });
-  useEffect(() => commands?.((action) => onCommand.current(action)), [commands]);
+  useEffect(() => commands?.((action, nodes) => onCommand.current(action, nodes)), [commands]);
   const selected = selectedId ? byId.get(selectedId) : undefined;
   const running = scans.running ?? [];
   const left = running.reduce((n, r) => n + r.sites - r.done, 0);
