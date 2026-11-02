@@ -105,8 +105,9 @@ func TestTheEndOfAScanIsToldWithWhatCameBefore(t *testing.T) {
 	s := app.NewScanner(ws, ev.emit)
 	var before map[model.ID]model.Scan
 	var after []model.Scan
-	s.OnScanned = func(_ *model.Tree, b map[model.ID]model.Scan, a []model.Scan, _ map[model.ID][]model.Change) {
-		before, after = b, a
+	var end app.RunEnd
+	s.OnScanned = func(e app.RunEnd, _ *model.Tree, b map[model.ID]model.Scan, a []model.Scan, _ map[model.ID][]model.Change) {
+		end, before, after = e, b, a
 	}
 	if p := s.Scan(host.ID.String()); p != nil {
 		t.Fatal(p)
@@ -114,6 +115,31 @@ func TestTheEndOfAScanIsToldWithWhatCameBefore(t *testing.T) {
 	ev.idle(t)
 	if before == nil || len(before) != 0 || len(after) != 2 {
 		t.Fatalf("told %d scans before and %d after, want none before and the two made", len(before), len(after))
+	}
+	// Its end as the notifications read it (ADR-0035): by the user, what it covered, its sites.
+	if end.Kind != app.EndScan || end.By != model.RunByUser || end.Name != "Bench" || !slices.Equal(end.NodeIDs, []string{host.ID.String()}) ||
+		end.Sites != 2 || end.RunID != after[0].RunID || end.Cancelled || end.Finished.Before(end.Started) {
+		t.Fatalf("end = %+v", end)
+	}
+}
+
+// A scan stopped by the user ends stopped: its end is not notified.
+func TestAScanStoppedEndsCancelled(t *testing.T) {
+	runner := sshxtest.NewFake()
+	ws, _, host := benchSites(t, runner)
+	ev := newEvents()
+	s := app.NewScanner(ws, ev.emit)
+	ended := make(chan app.RunEnd, 1)
+	s.OnScanned = func(e app.RunEnd, _ *model.Tree, _ map[model.ID]model.Scan, _ []model.Scan, _ map[model.ID][]model.Change) {
+		ended <- e
+	}
+	if p := s.Scan(host.ID.String()); p != nil {
+		t.Fatal(p)
+	}
+	s.CancelAll()
+	ev.idle(t)
+	if e := <-ended; !e.Cancelled {
+		t.Fatalf("end = %+v, want cancelled", e)
 	}
 }
 

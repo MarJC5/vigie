@@ -113,6 +113,8 @@ type UpdatesState struct {
 type Updates struct {
 	ws   *workspace.Workspace
 	emit func(name string, data any)
+	// OnEnded, when set, hears how each update run ended (ADR-0035), before the window is told.
+	OnEnded func(RunEnd)
 
 	mu        sync.Mutex
 	previews  map[model.ID]workspace.SitePreview // the last preview read of each site
@@ -228,7 +230,7 @@ func (u *Updates) Update(siteID string, sel SelectionView) *Problem {
 	planned := []workspace.Planned{{SitePreview: p, Selection: update.Selection{
 		Core: sel.Core, Plugins: sel.Plugins, Themes: sel.Themes, Languages: sel.Languages,
 	}}}
-	return u.start(planned, false)
+	return u.start(planned, RunEnd{NodeIDs: []string{siteID}, Name: p.Site.Name})
 }
 
 // UpdateAll starts updating every site previewed under a host or folder with all its items, and
@@ -267,12 +269,19 @@ func (u *Updates) UpdateMany(nodeIDs []string) *Problem {
 	if len(previews) == 0 {
 		return ProblemOf(errPreviewFirst)
 	}
-	return u.start(workspace.Everything(previews), true)
+	end := RunEnd{NodeIDs: nodeIDs, Several: true}
+	if len(nodes) == 1 {
+		end.Name = nodeName(tree, nodes[0])
+	}
+	return u.start(workspace.Everything(previews), end)
 }
 
 // start runs the planned updates in the background. A site already in a run refuses the update of
-// one site; in a bulk run, it is refused when its turn comes.
-func (u *Updates) start(planned []workspace.Planned, bulk bool) *Problem {
+// one site; in a bulk run (end.Several), it is refused when its turn comes. end says what the run
+// covers; its end is told to OnEnded.
+func (u *Updates) start(planned []workspace.Planned, end RunEnd) *Problem {
+	bulk := end.Several
+	end.Kind, end.By, end.Started = EndUpdate, model.RunByUser, time.Now()
 	ctx, cancel := context.WithCancel(context.Background())
 	u.mu.Lock()
 	if !bulk && u.busy[planned[0].Site.ID] {
@@ -306,6 +315,10 @@ func (u *Updates) start(planned []workspace.Planned, bulk bool) *Problem {
 			u.mu.Unlock()
 			u.ended(r)
 		}})
+		end.Finished, end.Cancelled = time.Now(), ctx.Err() != nil
+		if u.OnEnded != nil {
+			u.OnEnded(u.updatedEnd(end, planned, results))
+		}
 		u.mu.Lock()
 		for id := range mine {
 			release(id)
@@ -321,6 +334,84 @@ func (u *Updates) start(planned []workspace.Planned, bulk bool) *Problem {
 		u.send()
 	}()
 	return nil
+}
+
+// updatedEnd completes an update's end with its results: the sites updated and failed, or for one
+// site, its items updated, the one that failed and those not started.
+func (u *Updates) updatedEnd(end RunEnd, planned []workspace.Planned, results []workspace.SiteUpdate) RunEnd {
+	var last time.Time
+	for _, r := range results {
+		if r.Operation.ID != model.NoID && !r.Operation.Finished.Before(last) {
+			end.RunID, last = r.Operation.ID, r.Operation.Finished
+		}
+		switch r.Outcome {
+		case workspace.SiteUpdated:
+			end.Updated++
+		case workspace.SiteFailed:
+			end.Failed++
+		}
+	}
+	if end.Several || len(results) != 1 {
+		return end
+	}
+	op := results[0].Operation
+	type item struct {
+		kind model.ItemKind
+		slug string
+	}
+	var failed *item
+	for _, st := range op.Steps {
+		if st.Outcome == model.StepFailed {
+			failed = &item{st.ItemKind, st.Slug}
+			end.FailedKind, end.FailedItem = st.ItemKind, st.Slug
+			break
+		}
+	}
+	done := map[item]bool{}
+	for _, st := range op.Steps {
+		it := item{st.ItemKind, st.Slug}
+		if st.Step == model.StepUpdate && st.Outcome == model.StepDone && st.ItemKind != "" && (failed == nil || it != *failed) {
+			done[it] = true
+		}
+	}
+	end.Items = len(done)
+	if failed != nil {
+		end.NotStarted = max(0, plannedItems(planned[0])-end.Items-1)
+		if failed.kind == model.ItemCore || failed.kind == model.ItemLanguage {
+			end.FailedItem = ""
+		} else if title := u.itemTitle(op.SiteID, failed.kind, failed.slug); title != "" {
+			end.FailedItem = title
+		}
+	} else if end.Failed > 0 {
+		end.NotStarted = max(0, plannedItems(planned[0])-end.Items)
+	}
+	return end
+}
+
+// plannedItems counts the items an update of a site was to change.
+func plannedItems(p workspace.Planned) int {
+	n := len(p.Selection.Plugins) + len(p.Selection.Themes)
+	if p.Selection.Core && p.Preview.Core != nil {
+		n++
+	}
+	if p.Selection.Languages {
+		n += len(p.Preview.Languages)
+	}
+	return n
+}
+
+// itemTitle is a plugin's or theme's title in the site's latest scan; empty when unknown.
+func (u *Updates) itemTitle(site model.ID, kind model.ItemKind, slug string) string {
+	latest, err := u.ws.DB().LatestScans(context.Background())
+	if err != nil {
+		return ""
+	}
+	for _, it := range latest[site].Items {
+		if it.Kind == kind && it.Slug == slug {
+			return it.Title
+		}
+	}
+	return ""
 }
 
 // Rollback starts undoing the item that failed in an operation of a site, and returns at once.

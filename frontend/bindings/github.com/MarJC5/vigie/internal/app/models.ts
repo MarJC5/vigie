@@ -902,6 +902,11 @@ export interface Node {
 export interface NoticeView {
     "kind": string;
     "names": string[] | null;
+
+    /**
+     * Text is what the notification of a long run's end said (Kind "ended", ADR-0035).
+     */
+    "text": string;
 }
 
 /**

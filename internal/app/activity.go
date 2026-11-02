@@ -23,6 +23,8 @@ type Change struct {
 type NoticeView struct {
 	Kind  string   `json:"kind"`
 	Names []string `json:"names"`
+	// Text is what the notification of a long run's end said (Kind "ended", ADR-0035).
+	Text string `json:"text"`
 }
 
 // ActivityEntry is a line of the journal: a run with what it changed and what Vigie notified, a
@@ -196,7 +198,7 @@ func (a *Activity) Journal(ctx context.Context, days int, nodeID string) (Journa
 		}
 		for _, n := range notices {
 			if n.RunID == r.ID {
-				e.Notices = append(e.Notices, NoticeView{Kind: n.Kind, Names: n.Names})
+				e.Notices = append(e.Notices, NoticeView{Kind: n.Kind, Names: n.Names, Text: n.Text})
 			}
 		}
 		entries = append(entries, e)
@@ -205,6 +207,12 @@ func (a *Activity) Journal(ctx context.Context, days int, nodeID string) (Journa
 		if !op.Started.Before(since) && shown(op.SiteID) {
 			e := siteEntry(tree, string(op.Kind), op.SiteID, op.Started, op.Finished, string(op.Outcome))
 			e.Summary = op.Summary
+			// The end of an update is told under its last operation (ADR-0035).
+			for _, n := range notices {
+				if n.RunID == op.ID {
+					e.Notices = append(e.Notices, NoticeView{Kind: n.Kind, Names: n.Names, Text: n.Text})
+				}
+			}
 			entries = append(entries, e)
 		}
 	}

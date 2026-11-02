@@ -167,6 +167,8 @@ func TestUpdateASite(t *testing.T) {
 	if _, err := u.Preview(context.Background(), ids["a1"]); err != nil {
 		t.Fatal(err)
 	}
+	ended := make(chan app.RunEnd, 1)
+	u.OnEnded = func(e app.RunEnd) { ended <- e }
 	if p := u.Update(ids["a1"], app.SelectionView{Plugins: []string{"akismet"}}); p != nil {
 		t.Fatal(p)
 	}
@@ -191,6 +193,31 @@ func TestUpdateASite(t *testing.T) {
 	if err != nil || len(history) != 1 || history[0].Outcome != "completed" || len(history[0].Steps) != 2 || history[0].Rollback != nil {
 		t.Fatalf("History() = %+v, %v", history, err)
 	}
+	// Its end as the notifications read it (ADR-0035): the site, its item updated, its operation.
+	end := <-ended
+	if end.Kind != app.EndUpdate || end.By != model.RunByUser || end.Several || end.Name != "a1" || end.Items != 1 || end.Failed != 0 ||
+		end.RunID.String() != history[0].ID || end.Cancelled || end.Finished.Before(end.Started) {
+		t.Fatalf("end = %+v", end)
+	}
+}
+
+// A site's update that failed ends stopped at its item, the items after it not started.
+func TestTheEndOfAFailedUpdate(t *testing.T) {
+	u, ev, ids := updatesService(t, map[string]bool{"a1": true}, nil)
+	if _, err := u.Preview(context.Background(), ids["a1"]); err != nil {
+		t.Fatal(err)
+	}
+	ended := make(chan app.RunEnd, 1)
+	u.OnEnded = func(e app.RunEnd) { ended <- e }
+	if p := u.Update(ids["a1"], app.SelectionView{Plugins: []string{"akismet"}}); p != nil {
+		t.Fatal(p)
+	}
+	ev.done(t, 1)
+	end := <-ended
+	// Named by its title in the site's latest scan.
+	if end.Failed != 1 || end.FailedKind != model.ItemPlugin || end.FailedItem != "Akismet Anti-spam: Spam Protection" || end.Items != 0 || end.NotStarted != 0 {
+		t.Fatalf("end = %+v", end)
+	}
 }
 
 // Updating a host keeps the result of each site for the summary; a failed one offers its rollback.
@@ -199,10 +226,16 @@ func TestUpdateAHostAndRollBack(t *testing.T) {
 	if _, err := u.Preview(context.Background(), ids["host"]); err != nil {
 		t.Fatal(err)
 	}
+	ended := make(chan app.RunEnd, 1)
+	u.OnEnded = func(e app.RunEnd) { ended <- e }
 	if p := u.UpdateAll(ids["host"]); p != nil {
 		t.Fatal(p)
 	}
 	state := ev.done(t, 1)
+	// The end of a run over several sites counts them; the host stopped at a1.
+	if end := <-ended; !end.Several || end.Name != "A" || end.Updated != 0 || end.Failed != 1 || end.RunID == model.NoID {
+		t.Fatalf("end = %+v", end)
+	}
 	outcomes := map[string]string{}
 	for _, r := range state.Bulk {
 		outcomes[r.Path] = r.Outcome

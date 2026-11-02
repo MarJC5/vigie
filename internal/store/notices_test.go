@@ -28,3 +28,18 @@ func TestANoticeIsKeptWithItsRun(t *testing.T) {
 		t.Errorf("Notices()[0] = %+v, want %+v", got, notice)
 	}
 }
+
+// The end of a long run keeps what its notification said (ADR-0035), the journal showing it as it
+// was sent.
+func TestTheEndOfARunKeepsItsText(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	sent := time.Date(2026, 11, 2, 14, 32, 0, 0, time.UTC)
+	notice := model.Notice{ID: model.NewID(), RunID: model.NewID(), Kind: model.NoticeEnded, Names: []string{"boulangerie-exemple.ch"},
+		Text: "Relevé terminé, 12 sites relevés, 1 urgent. boulangerie-exemple.ch est devenu urgent.", Sent: sent}
+	must(t, db.SaveNotice(ctx, notice))
+	notices, err := db.Notices(ctx, sent.Add(-time.Hour))
+	if err != nil || len(notices) != 1 || notices[0].Text != notice.Text || notices[0].Kind != model.NoticeEnded {
+		t.Fatalf("Notices() = %+v, %v; want the text kept", notices, err)
+	}
+}

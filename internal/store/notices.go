@@ -16,14 +16,14 @@ func (db *DB) SaveNotice(ctx context.Context, n model.Notice) error {
 	if err != nil {
 		return err
 	}
-	_, err = db.sql.ExecContext(ctx, "INSERT INTO notices (id, run_id, kind, names, sent_at) VALUES (?, ?, ?, ?, ?)",
-		n.ID.String(), optionalID(n.RunID), n.Kind, string(names), timeText(n.Sent))
+	_, err = db.sql.ExecContext(ctx, "INSERT INTO notices (id, run_id, kind, names, text, sent_at) VALUES (?, ?, ?, ?, ?, ?)",
+		n.ID.String(), optionalID(n.RunID), n.Kind, string(names), n.Text, timeText(n.Sent))
 	return err
 }
 
 // Notices returns the notifications sent since a time, oldest first.
 func (db *DB) Notices(ctx context.Context, since time.Time) ([]model.Notice, error) {
-	rows, err := db.sql.QueryContext(ctx, "SELECT id, run_id, kind, names, sent_at FROM notices WHERE sent_at >= ? ORDER BY sent_at, id",
+	rows, err := db.sql.QueryContext(ctx, "SELECT id, run_id, kind, names, text, sent_at FROM notices WHERE sent_at >= ? ORDER BY sent_at, id",
 		timeText(since))
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func (db *DB) Notices(ctx context.Context, since time.Time) ([]model.Notice, err
 	for rows.Next() {
 		var n model.Notice
 		var id, run, names, sent string
-		if err := rows.Scan(&id, &run, &n.Kind, &names, &sent); err != nil {
+		if err := rows.Scan(&id, &run, &n.Kind, &names, &n.Text, &sent); err != nil {
 			return nil, err
 		}
 		if n.ID, err = uuid.Parse(id); err != nil {

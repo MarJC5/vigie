@@ -41,6 +41,8 @@ func TestTheJournalTellsWhatChanged(t *testing.T) {
 	}
 	day := 24 * time.Hour
 	run := model.Run{ID: model.NewID(), By: model.RunBySchedule, Started: now.Add(-2 * day), Outcome: model.RunRunning, Sites: 2}
+	op := model.Operation{ID: model.NewID(), SiteID: shop.ID, Kind: model.OperationUpdate, Started: now.Add(-day)}
+	ended := "Update done, shop.example.test: 1 item updated."
 	steps := []error{
 		db.SaveScan(ctx, ok(shop, now.Add(-8*day), model.NoID)), // before the span: compared with
 		db.SaveScan(ctx, unreachable(blog, now.Add(-8*day))),
@@ -50,7 +52,9 @@ func TestTheJournalTellsWhatChanged(t *testing.T) {
 		db.SaveScan(ctx, ok(blog, now.Add(-2*day), run.ID)),
 		db.EndRun(ctx, run.ID, now.Add(-2*day+time.Minute), model.RunCompleted),
 		db.SaveNotice(ctx, model.Notice{ID: model.NewID(), RunID: run.ID, Kind: app.AlertUrgent, Names: []string{shop.Name}, Sent: now.Add(-2*day + time.Minute)}),
-		db.StartOperation(ctx, model.Operation{ID: model.NewID(), SiteID: shop.ID, Kind: model.OperationUpdate, Started: now.Add(-day)}),
+		db.StartOperation(ctx, op),
+		// The end of the update notified (ADR-0035): shown under its operation.
+		db.SaveNotice(ctx, model.Notice{ID: model.NewID(), RunID: op.ID, Kind: model.NoticeEnded, Text: ended, Sent: now.Add(-day + time.Minute)}),
 	}
 	for _, err := range steps {
 		if err != nil {
@@ -70,6 +74,9 @@ func TestTheJournalTellsWhatChanged(t *testing.T) {
 	}
 	if len(kinds) != 3 || kinds[0] != "update" || kinds[1] != "run" || kinds[2] != "scan" {
 		t.Fatalf("entries %q, want the update, the run, the scan without a run, newest first", kinds)
+	}
+	if u := journal.Entries[0]; len(u.Notices) != 1 || u.Notices[0].Kind != model.NoticeEnded || u.Notices[0].Text != ended {
+		t.Errorf("update entry = %+v, want its end notified", u)
 	}
 	r := journal.Entries[1]
 	if r.By != "schedule" || r.Outcome != "completed" || r.Sites != 2 || len(r.Notices) != 1 || r.Notices[0].Names[0] != shop.Name {

@@ -112,7 +112,7 @@ func (k *keeper) start(ctx context.Context) {
 			k.refreshes.run(func() { k.refresh(ctx) })
 		}
 	})
-	k.scanner.OnScanned = func(tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan, changes map[model.ID][]model.Change) {
+	k.scanner.OnScanned = func(_ app.RunEnd, tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan, changes map[model.ID][]model.Change) {
 		if b, err := k.prefs.Background(ctx); err == nil && b.Notify {
 			run := model.NoID
 			if len(after) > 0 {

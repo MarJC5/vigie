@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 	"uuid"
 
 	"github.com/MarJC5/vigie/internal/model"
@@ -35,9 +36,10 @@ type ScansState struct {
 type Scanner struct {
 	ws   *workspace.Workspace
 	emit func(name string, data any)
-	// OnScanned, when set, hears the end of each scan: the latest scans before it, the ones it made,
-	// and what changed on each site (ADR-0027), before the window is told the scan ended.
-	OnScanned func(tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan, changes map[model.ID][]model.Change)
+	// OnScanned, when set, hears the end of each scan: how it ended (ADR-0035), the latest scans
+	// before it, the ones it made, and what changed on each site (ADR-0027), before the window is
+	// told the scan ended.
+	OnScanned func(end RunEnd, tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan, changes map[model.ID][]model.Change)
 
 	mu        sync.Mutex
 	order     []string // node IDs, in the order they started
@@ -130,9 +132,17 @@ func (s *Scanner) startMany(nodeIDs []string, opts workspace.ScanOptions) *Probl
 	if err != nil {
 		before = nil // unread: this scan alerts on nothing
 	}
+	end := RunEnd{Kind: EndScan, By: opts.By, NodeIDs: nodeIDs, Started: time.Now()}
+	if end.By == "" {
+		end.By = model.RunByUser
+	}
+	if len(nodes) == 1 {
+		end.Name = nodeName(tree, nodes[0])
+	}
 	go func() {
 		defer cancel()
 		results, _ := s.ws.ScanNodes(ctx, nodes, opts, func(p scan.Progress) { s.progress(nodeID, p) })
+		end.Finished, end.Cancelled = time.Now(), ctx.Err() != nil
 		if s.OnScanned != nil && before != nil {
 			after := make([]model.Scan, len(results))
 			changes := map[model.ID][]model.Change{}
@@ -140,7 +150,7 @@ func (s *Scanner) startMany(nodeIDs []string, opts workspace.ScanOptions) *Probl
 				after[i] = r.Scan
 				changes[r.Scan.SiteID] = r.Changes
 			}
-			s.OnScanned(tree, before, after, changes)
+			s.OnScanned(scannedEnd(end, tree, after), tree, before, after, changes)
 		}
 		// The history kept in check before the end is told (ADR-0031): what the window reads next is
 		// pruned already. A failure is left for the next run.
@@ -216,6 +226,45 @@ func (s *Scanner) send() {
 const TagPrefix = "tag:"
 
 // nodeByID finds a folder, host or site by its ID, or a tag by TagPrefix; "" is the whole tree.
+// scannedEnd completes a scan's end with its scans: how many, urgent, and the hosts unreachable.
+func scannedEnd(end RunEnd, tree *model.Tree, after []model.Scan) RunEnd {
+	hosts := map[model.ID]bool{}
+	for _, sc := range after {
+		end.Sites++
+		if end.RunID == model.NoID {
+			end.RunID = sc.RunID
+		}
+		switch {
+		case sc.Status() == model.StatusUrgent:
+			end.Urgent++
+		case unreachable(sc):
+			if site, ok := tree.Site(sc.SiteID); ok {
+				hosts[site.HostID] = true
+			}
+		}
+	}
+	end.Unreachable = len(hosts)
+	return end
+}
+
+// nodeName is the name of a folder, host, site or tag; empty for everything.
+func nodeName(tree *model.Tree, n model.Node) string {
+	switch n.Kind {
+	case model.KindFolder:
+		f, _ := tree.Folder(n.ID)
+		return f.Name
+	case model.KindHost:
+		h, _ := tree.Host(n.ID)
+		return h.Name
+	case model.KindSite:
+		site, _ := tree.Site(n.ID)
+		return site.Name
+	case model.KindTag:
+		return n.Tag
+	}
+	return ""
+}
+
 func nodeByID(tree *model.Tree, id string) (model.Node, error) {
 	if id == "" {
 		return model.Root, nil

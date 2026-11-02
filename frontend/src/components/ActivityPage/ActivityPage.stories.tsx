@@ -22,9 +22,9 @@ const journal: Journal = {
       ],
       siteChanges: [{ siteId: "boulangerie", name: "boulangerie-exemple.ch", changes: siteChanges.slice(0, 5) }],
       notices: [
-        { kind: "urgent", names: ["boulangerie-exemple.ch"] },
-        { kind: "admin", names: ["boulangerie-exemple.ch"] },
-        { kind: "installed", names: ["boulangerie-exemple.ch"] },
+        { kind: "urgent", names: ["boulangerie-exemple.ch"], text: "" },
+        { kind: "admin", names: ["boulangerie-exemple.ch"], text: "" },
+        { kind: "installed", names: ["boulangerie-exemple.ch"], text: "" },
       ],
     },
     { kind: "update", at: at(30, 16, 40), ended: at(30, 16, 42), by: "", path: "Clients/Shared hosting/boulangerie-exemple.ch", siteId: "boulangerie", sites: 0, outcome: "completed", summary: "Akismet 5.3 → 5.7.2", changes: [], siteChanges: [], notices: [] },
