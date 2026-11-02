@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -42,6 +43,18 @@ func main() {
 	}
 	if !opts.OpensWindow() {
 		os.Exit(runCommand(opts))
+	}
+	// vigie alone, typed in a terminal: LaunchServices opens the app, and the terminal is free.
+	if exe, err := os.Executable(); err == nil {
+		if real, err := filepath.EvalSymlinks(exe); err == nil {
+			if bundle := bundleOf(real); handsOver(runtime.GOOS, inTerminal(), bundle) {
+				if err := openBundle(bundle, os.Args[1:]); err != nil {
+					fmt.Fprintln(os.Stderr, "vigie:", err)
+					os.Exit(1)
+				}
+				return
+			}
+		}
 	}
 	if err := openWindow(opts); err != nil {
 		fmt.Fprintln(os.Stderr, "vigie:", err)
@@ -154,8 +167,15 @@ func openWindow(opts cli.Options) error {
 	docked := newDock()
 	notifier := notifications.New()
 
+	// The keeper, once made: a second launch brings its window forward.
+	var keep *keeper
 	wails = application.New(application.Options{
 		Name: "Vigie",
+		SingleInstance: singleInstance(func() {
+			if keep != nil {
+				keep.open()
+			}
+		}),
 		Services: []application.Service{
 			application.NewService(sites),
 			application.NewService(watch),
@@ -201,7 +221,7 @@ func openWindow(opts cli.Options) error {
 		Mac: application.MacWindow{TitleBar: application.MacTitleBarHidden, Appearance: appearance(theme)},
 	})
 	// The background mode: the eye in the menu bar, the window hidden instead of closed.
-	keep := &keeper{
+	keep = &keeper{
 		wails: wails, window: window, dock: docked, prefs: preferences, login: login, atLogin: opts.AtLogin,
 		watch: watch, scanner: scanner, notify: notifier, emit: emit,
 		record: func(n model.Notice) error { return db.SaveNotice(context.Background(), n) },
