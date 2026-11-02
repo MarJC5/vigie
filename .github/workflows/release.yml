@@ -1,0 +1,73 @@
+name: Release
+
+# A tag v* builds the Linux packages and the AppImage, without any secret (ADR-0038). make release,
+# on the owner's Mac, then fetches them, adds the macOS app, signs every artifact and drafts the
+# GitHub release. Run by hand, it checks that the packages build, under the version given.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version written in the packages, without v
+        default: 0.0.0
+
+permissions:
+  contents: read
+
+jobs:
+  # Tests, vet, vulnerabilities and the container tests pass first (ADR-0012).
+  checks:
+    uses: ./.github/workflows/ci.yml
+
+  linux:
+    name: Linux packages (${{ matrix.arch }})
+    needs: checks
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x86_64
+            deb: amd64
+          - runner: ubuntu-24.04-arm
+            arch: aarch64
+            deb: arm64
+    # Pinned like the CI: ubuntu-latest moves to a new Ubuntu release from time to time.
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      VERSION: ${{ github.event_name == 'push' && github.ref_name || inputs.version }}
+      # linuxdeploy is itself an AppImage: run it unpacked, the runners have no FUSE.
+      APPIMAGE_EXTRACT_AND_RUN: 1
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install GTK4 and WebKitGTK 6.0 (the window, built with cgo)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev libwayland-dev build-essential pkg-config file
+      - run: make frontend-install
+      - name: Build the AppImage, deb, rpm and Arch packages
+        run: make app VERSION="${VERSION#v}"
+      - name: Name them after the version and the architecture
+        run: |
+          v="${VERSION#v}"
+          mkdir dist
+          mv "bin/Vigie-${{ matrix.arch }}.AppImage" "dist/Vigie-$v-${{ matrix.arch }}.AppImage"
+          mv bin/Vigie.deb "dist/Vigie-$v-${{ matrix.deb }}.deb"
+          mv bin/Vigie.rpm "dist/Vigie-$v-${{ matrix.arch }}.rpm"
+          mv bin/Vigie.pkg.tar.zst "dist/Vigie-$v-${{ matrix.arch }}.pkg.tar.zst"
+          ls -l dist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: linux-${{ matrix.arch }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7

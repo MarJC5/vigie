@@ -1,8 +1,11 @@
 name: CI
 
 on:
+  # Branches only: a tag runs these jobs through the Release workflow, before its builds.
   push:
+    branches: ["**"]
   pull_request:
+  workflow_call:
 
 permissions:
   contents: read
