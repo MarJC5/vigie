@@ -24,6 +24,8 @@ jobs:
     name: Linux packages (${{ matrix.arch }})
     needs: checks
     strategy:
+      # Each architecture reports on its own: one failing does not stop the other.
+      fail-fast: false
       matrix:
         include:
           - runner: ubuntu-24.04
@@ -60,7 +62,11 @@ jobs:
         run: |
           v="${VERSION#v}"
           mkdir dist
-          mv "bin/Vigie-${{ matrix.arch }}.AppImage" "dist/Vigie-$v-${{ matrix.arch }}.AppImage"
+          # Wails names the AppImage after the binary, in lowercase (vigie-x86_64.AppImage).
+          shopt -s nocaseglob
+          images=(bin/vigie-${{ matrix.arch }}.AppImage)
+          [ -f "${images[0]}" ] || { ls -l bin; exit 1; }
+          mv "${images[0]}" "dist/Vigie-$v-${{ matrix.arch }}.AppImage"
           mv bin/Vigie.deb "dist/Vigie-$v-${{ matrix.deb }}.deb"
           mv bin/Vigie.rpm "dist/Vigie-$v-${{ matrix.arch }}.rpm"
           mv bin/Vigie.pkg.tar.zst "dist/Vigie-$v-${{ matrix.arch }}.pkg.tar.zst"
