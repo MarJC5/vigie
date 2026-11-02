@@ -94,7 +94,7 @@ export const SiteWithItsScan: Story = {
   args: { data, initialSelectedId: "boulangerie", onScan: fn() },
   play: async ({ canvas, args }) => {
     await expect((await canvas.findAllByRole("heading", { level: 1, name: "boulangerie-exemple.ch" }))[0]).toBeInTheDocument();
-    await expect(canvas.getAllByRole("tabpanel")[0]).toHaveTextContent("7.1.3 · 7.1.4 available");
+    await expect(canvas.getAllByRole("tabpanel")[0]).toHaveTextContent("7.1.3, 7.1.4 available");
     await userEvent.click(canvas.getAllByRole("button", { name: "Scan now" })[0]!);
     await expect(args.onScan).toHaveBeenCalledWith("boulangerie");
   },

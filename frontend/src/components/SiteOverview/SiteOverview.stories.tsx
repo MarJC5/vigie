@@ -67,8 +67,8 @@ export const NeedsAttention: Story = {
     await expect(canvas.getAllByRole("heading", { level: 1, name: "boulangerie-exemple.ch" })).toHaveLength(2);
     await expect(canvas.getAllByText("Last scan: 3 minutes ago")).toHaveLength(2);
     const [list] = canvas.getAllByRole("tabpanel");
-    await expect(list).toHaveTextContent("7.1.3 · 7.1.4 available");
-    await expect(list).toHaveTextContent("12 · 2 updates");
+    await expect(list).toHaveTextContent("7.1.3, 7.1.4 available");
+    await expect(list).toHaveTextContent("12 installed, 2 to update");
     // The plugins whose updates cannot be seen: a count, the names on demand.
     await expect(list).toHaveTextContent("1 plugin");
     await expect(list).not.toHaveTextContent("Theme Builder Pro");
@@ -99,7 +99,7 @@ export const LatestScanCancelled: Story = {
     const [list] = canvas.getAllByRole("tabpanel");
     await expect(list).toHaveTextContent("The latest scan did not complete");
     await expect(list).toHaveTextContent("Scan cancelled. These results are from the scan of 29.10.2026");
-    await expect(list).toHaveTextContent("7.1.3 · 7.1.4 available");
+    await expect(list).toHaveTextContent("7.1.3, 7.1.4 available");
   },
 };
 

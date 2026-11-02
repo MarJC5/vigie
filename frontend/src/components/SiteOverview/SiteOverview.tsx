@@ -296,7 +296,7 @@ function Overview({ site, onExtensions }: { site: SiteView; onExtensions: () => 
               !scan.checked.core ? unchecked : newestCore(scan) && t("overview.coreUpdate", { version: newestCore(scan) }),
             ]
               .filter(Boolean)
-              .join(" · ")}
+              .join(", ")}
           </InfoRow>
           <InfoRow label={t("overview.phpCli")}>{scan.phpCli}</InfoRow>
           <PHPWebRow scan={scan} />
@@ -313,7 +313,7 @@ function Overview({ site, onExtensions }: { site: SiteView; onExtensions: () => 
           <InfoRow label={t("overview.plugins")}>
             <StatusDot status={scan.pending.plugins > 0 || !scan.checked.plugins ? "warn" : "ok"} />
             <span className={styles.unknownLine}>
-              {installed(t, scan.plugins, scan.pending.plugins, scan.checked.plugins)}
+              {installed(t, "plugins", scan.plugins, scan.pending.plugins, scan.checked.plugins)}
               <Button variant="text" label={t("overview.showPlugins")} onClick={onExtensions}>
                 {t("overview.show")}
               </Button>
@@ -322,7 +322,7 @@ function Overview({ site, onExtensions }: { site: SiteView; onExtensions: () => 
           <InfoRow label={t("overview.themes")}>
             <StatusDot status={scan.pending.themes > 0 || !scan.checked.themes ? "warn" : "ok"} />
             <span className={styles.unknownLine}>
-              {installed(t, scan.themes, scan.pending.themes, scan.checked.themes)}
+              {installed(t, "themes", scan.themes, scan.pending.themes, scan.checked.themes)}
               <Button variant="text" label={t("overview.showThemes")} onClick={onExtensions}>
                 {t("overview.show")}
               </Button>
@@ -460,10 +460,15 @@ function SourceUnknown({ names }: { names: string[] }) {
 
 type T = (key: string, vars?: Record<string, unknown>) => string;
 
-function installed(t: T, count: number, updates: number, checked: boolean): string {
-  if (!checked) return `${count} · ${t("overview.unchecked")}`;
-  if (updates > 0) return t("overview.installedUpdates", { installed: count, count: updates });
-  return t("overview.installedUpToDate", { installed: count });
+// "17 installed, all up to date", "17 installed, 3 to update": how many, then their updates, in
+// words agreed with the kind (plugins and themes differ in French).
+function installed(t: T, kind: "plugins" | "themes", count: number, updates: number, checked: boolean): string {
+  const state = !checked
+    ? t(`overview.${kind}Unchecked`, { count })
+    : updates > 0
+      ? t("overview.toUpdate", { count: updates })
+      : t(`overview.${kind}UpToDate`, { count });
+  return `${t(`overview.${kind}Installed`, { count })}, ${state}`;
 }
 
 // The highest WordPress release offered, if any.
