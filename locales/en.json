@@ -34,6 +34,74 @@
     "dragItems_one": "{{count}} item",
     "dragItems_other": "{{count}} items"
   },
+  "selection": {
+    "title_one": "{{count}} item selected",
+    "title_other": "{{count}} items selected",
+    "folders_one": "{{count}} folder",
+    "folders_other": "{{count}} folders",
+    "hosts_one": "{{count}} host",
+    "hosts_other": "{{count}} hosts",
+    "sites_one": "{{count}} site",
+    "sites_other": "{{count}} sites",
+    "inAll_one": "{{count}} site in all",
+    "inAll_other": "{{count}} sites in all",
+    "footer_one": "{{count}} selected · {{sites}}",
+    "footer_other": "{{count}} selected · {{sites}}",
+    "scan_one": "Scan the site",
+    "scan_other": "Scan the {{count}} sites",
+    "table": "Sites of the selection",
+    "empty": "No site in these items.",
+    "hint": "⌘-click adds or removes an item, ⇧-click selects a range, ⌘A all, Escape goes back to one.",
+    "action": {
+      "tags": "Tags…",
+      "delete": "Delete…"
+    },
+    "menu": {
+      "update": "Update all…",
+      "moveHosts_one": "Move the host…",
+      "moveHosts_other": "Move the {{count}} hosts…",
+      "moveFolders_one": "Move the folder…",
+      "moveFolders_other": "Move the {{count}} folders…",
+      "moveItems_one": "Move the item…",
+      "moveItems_other": "Move the {{count}} items…",
+      "tags_one": "Tags of the site…",
+      "tags_other": "Tags of the {{count}} sites…",
+      "delete_one": "Delete the item…",
+      "delete_other": "Delete the {{count}} items…"
+    },
+    "delete": {
+      "title_one": "Delete {{count}} item?",
+      "title_other": "Delete {{count}} items?",
+      "lead": "The sites, their scans and their update history are removed from Vigie.",
+      "quoted": "“{{name}}”",
+      "stays_one": "{{names}} stays: only an empty folder can be deleted.",
+      "stays_other": "{{names}} stay: only an empty folder can be deleted.",
+      "confirm_one": "Delete the item",
+      "confirm_other": "Delete the {{count}} items",
+      "empty": "empty"
+    },
+    "move": {
+      "title": "Move {{what}}",
+      "leadHosts": "Choose the folder that will hold them. Their sites follow them.",
+      "leadItems": "Choose the folder that will hold them. What they hold follows them.",
+      "sitesStay_one": "{{names}}, selected too, stays under its host.",
+      "sitesStay_other": "{{names}}, selected too, stay under their hosts."
+    },
+    "tags": {
+      "title_one": "Tags of the site",
+      "title_other": "Tags of {{count}} sites",
+      "lead": "Add a tag to all these sites, or remove one from those that have it.",
+      "field": "New tag",
+      "add": "Add",
+      "done": "Done",
+      "remove": "Remove",
+      "removeLabel": "Remove {{tag}} from these sites",
+      "onSome": "on {{n}} of the {{total}} sites",
+      "onAll_one": "on the site",
+      "onAll_other": "on the {{count}} sites",
+      "none": "These sites have no tag yet."
+    }
+  },
   "empty": {
     "title": "Add your first host",
     "text": "Vigie connects to your servers over SSH with the keys you already use, and runs WP-CLI there. Nothing is installed on your sites."
@@ -841,6 +909,7 @@
     "follow": "Follow the update",
     "bulkDialog": {
       "title": "Update everything in {{name}}",
+      "titleMany": "Update everything in the {{count}} items selected",
       "lead": "The sites of a host go one after another, each backed up and checked as on its own; a host stops at its first broken site.",
       "loading": "Vigie reads on the server what each site will change.",
       "items_one": "{{count}} item",
@@ -1609,6 +1678,8 @@
     "left": {
       "titleSite": "“{{name}}” is deleted from Vigie",
       "titleHost": "“{{name}}” is deleted from Vigie",
+      "titleMany_one": "{{count}} item is deleted from Vigie",
+      "titleMany_other": "{{count}} items are deleted from Vigie",
       "lead": "The server did not answer: the backups stay on it. To remove them, run on that account:",
       "close": "Close"
     },

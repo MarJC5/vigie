@@ -10,6 +10,8 @@ import styles from "./BulkDialog.module.css";
 export interface BulkDialogProps {
   /** The host or folder. */
   name: string;
+  /** Several items selected (ADR-0034): how many, said in place of a name. */
+  count?: number;
   /** The previews of its sites; null while Vigie reads them. */
   previews: SitePreviewView[] | null;
   onConfirm: () => void;
@@ -17,13 +19,13 @@ export interface BulkDialogProps {
 }
 
 /** Asks before updating every site of a host or folder: what each would change, or why it cannot. */
-export function BulkDialog({ name, previews, onConfirm, onClose }: BulkDialogProps) {
+export function BulkDialog({ name, count, previews, onConfirm, onClose }: BulkDialogProps) {
   const { t } = useTranslation();
   const ready = (previews ?? []).filter((p) => !p.problem && p.dumpTool && pendingOf(p) > 0).length;
 
   return (
     <Dialog
-      title={t("update.bulkDialog.title", { name })}
+      title={count !== undefined ? t("update.bulkDialog.titleMany", { count }) : t("update.bulkDialog.title", { name })}
       lead={t("update.bulkDialog.lead")}
       onClose={onClose}
       wide

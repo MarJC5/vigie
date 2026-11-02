@@ -1,0 +1,23 @@
+/* The field and its button on one line, the button level with the field. */
+.add {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--vg-space-2);
+}
+
+.add > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.none {
+  margin: 0;
+  color: var(--vg-text-muted);
+}
+
+/* As a field's error. */
+.problem {
+  margin: 0;
+  font-size: var(--vg-text-caption);
+  color: var(--vg-text);
+}

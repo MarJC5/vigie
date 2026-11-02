@@ -53,6 +53,8 @@ const updatesApi: UpdatesApi = {
   Preview: Updates.Preview,
   Update: Updates.Update,
   UpdateAll: Updates.UpdateAll,
+  PreviewMany: Updates.PreviewMany,
+  UpdateMany: Updates.UpdateMany,
   Rollback: Updates.Rollback,
   CancelAll: Updates.CancelAll,
   History: Updates.History,
@@ -64,6 +66,8 @@ const editApi: EditApi = {
   Rename: Editor.Rename,
   Move: Editor.Move,
   MoveMany: Editor.MoveMany,
+  SetColorMany: Editor.SetColorMany,
+  TagMany: Editor.TagMany,
   SetColor: Editor.SetColor,
   Delete: Editor.Delete,
   Backups: Editor.Backups,
@@ -126,6 +130,8 @@ interface Loaded {
 /** A scan asked for before the user answered the consent screen. */
 interface Waiting {
   nodeId: string;
+  /** Several items selected, scanned in one run (ADR-0034). */
+  nodeIds?: string[];
   checkFiles: boolean;
 }
 
@@ -249,10 +255,11 @@ export function App() {
   };
 
   // A scan starts at once, unless the user never answered the consent screen: it asks first.
-  const start = (w: Waiting) => void (w.checkFiles ? Scanner.CheckFiles(w.nodeId) : Scanner.Scan(w.nodeId));
-  const scan = (nodeId: string, checkFiles = false) => {
-    if (lookups && !lookups.agreed && !lookups.asked) return setWaiting({ nodeId, checkFiles });
-    start({ nodeId, checkFiles });
+  const start = (w: Waiting) =>
+    void (w.nodeIds ? Scanner.ScanMany(w.nodeIds) : w.checkFiles ? Scanner.CheckFiles(w.nodeId) : Scanner.Scan(w.nodeId));
+  const scan = (nodeId: string, checkFiles = false, nodeIds?: string[]) => {
+    if (lookups && !lookups.agreed && !lookups.asked) return setWaiting({ nodeId, nodeIds, checkFiles });
+    start({ nodeId, nodeIds, checkFiles });
   };
   const answered = async (answer: () => Promise<unknown>) => {
     await answer();
@@ -325,6 +332,7 @@ export function App() {
           data={shellData}
           scans={scans}
           onScan={(nodeId) => scan(nodeId)}
+          onScanMany={(nodeIds) => scan("", false, nodeIds)}
           onCheckFiles={(nodeId) => scan(nodeId, true)}
           security={securityApi}
           onOpen={openURL}

@@ -25,6 +25,7 @@ import type {
 } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { clock, day } from "../../lib/findings";
 import { openKey, subsiteId, subsiteOf, withSubsites } from "../../lib/subsites";
+import { carriedKey, deletion, kindsOf, sitesOf } from "../../lib/selection";
 import { hasTag, spread, tagId, tagOf, tagsGroupId } from "../../lib/tags";
 import { fold } from "../../lib/text";
 import { type Choice, knownOf, namesOf } from "../../lib/updates";
@@ -32,7 +33,7 @@ import { AdminAddressDialog } from "../AdminAddressDialog/AdminAddressDialog";
 import { BackupsLeftDialog } from "../BackupsLeftDialog/BackupsLeftDialog";
 import { BulkDialog } from "../BulkDialog/BulkDialog";
 import { Button } from "../Button/Button";
-import { DeleteDialog } from "../DeleteDialog/DeleteDialog";
+import { DeleteDialog, DeleteManyDialog } from "../DeleteDialog/DeleteDialog";
 import { RemoveBackupsDialog } from "../RemoveBackupsDialog/RemoveBackupsDialog";
 import { EmptyState } from "../EmptyState/EmptyState";
 import { Icon, type IconName } from "../Icon/Icon";
@@ -48,9 +49,11 @@ import { RenameTagDialog } from "../RenameTagDialog/RenameTagDialog";
 import { SearchField } from "../SearchField/SearchField";
 import { SiteOverview } from "../SiteOverview/SiteOverview";
 import { SitesOverview } from "../SitesOverview/SitesOverview";
-import { carriedKey, type Drag, SiteTree } from "../SiteTree/SiteTree";
+import { SelectionPage, type SelectionPageProps } from "../SelectionPage/SelectionPage";
+import { type Drag, SiteTree } from "../SiteTree/SiteTree";
 import { StatusDot } from "../StatusDot/StatusDot";
 import { SubsitePage } from "../SubsitePage/SubsitePage";
+import { TagManyDialog } from "../TagManyDialog/TagManyDialog";
 import { UpdateFlow, type UpdatesApi } from "../UpdateFlow/UpdateFlow";
 import styles from "./AppShell.module.css";
 
@@ -83,6 +86,8 @@ export interface EditApi extends HostEditApi, FindSitesApi {
   /** The folders and hosts among ids into a folder, all or none (ADR-0034). */
   MoveMany(ids: string[], folderId: string): Promise<Problem | null>;
   SetColor(id: string, color: string): Promise<Problem | null>;
+  /** Every item among ids its own color, all or none. */
+  SetColorMany(ids: string[], color: string): Promise<Problem | null>;
   /** One item or several, all or none; withBackups: the sites' backups on their server are removed
    first (ADR-0033). */
   Delete(ids: string[], withBackups: boolean): Promise<DeleteResult>;
@@ -91,6 +96,8 @@ export interface EditApi extends HostEditApi, FindSitesApi {
   SetAdminURL(id: string, address: string): Promise<Problem | null>;
   SetNotes(id: string, notes: string): Promise<Problem | null>;
   SetTags(id: string, tags: string[]): Promise<Problem | null>;
+  /** A tag added to every site the items hold (add), or taken off those that have it. */
+  TagMany(ids: string[], tag: string, add: boolean): Promise<Problem | null>;
   RenameTag(from: string, to: string): Promise<Problem | null>;
   RemoveTag(tag: string): Promise<Problem | null>;
 }
@@ -106,6 +113,8 @@ export interface AppShellProps {
   data?: ShellData;
   scans?: ScansState;
   onScan?: (nodeId: string) => void;
+  /** Scans several items selected in one run (ADR-0034). */
+  onScanMany?: (nodeIds: string[]) => void;
   onStopAll?: () => void;
   /** Subscribes to the commands of the menu bar ("search", "scan"...); returns the unsubscribe. */
   commands?: (handler: (action: string) => void) => () => void;
@@ -170,6 +179,7 @@ export function AppShell({
   data,
   scans = idle,
   onScan,
+  onScanMany,
   onStopAll,
   commands,
   edit,
@@ -217,7 +227,13 @@ export function AppShell({
   const [query, setQuery] = useState("");
   const searchField = useRef<HTMLInputElement>(null);
   const shell = useRef<HTMLDivElement>(null);
-  const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  // several: the menu of a row of the selection, acting on all of it; colors: only the colors, from
+  // the selection's page.
+  const [menu, setMenu] = useState<{ id: string; x: number; y: number; several?: boolean; colors?: boolean } | null>(null);
+  // A dialog on the selection (ADR-0034), with the items it was opened on.
+  const [many, setMany] = useState<{ kind: "move" | "delete" | "tags"; ids: string[] } | null>(null);
+  // What the sites of the selection to delete keep on their server.
+  const [manyBackups, setManyBackups] = useState<{ ids: string[]; sites: SiteBackupsView[] }>();
   const [editingId, setEditingId] = useState<string>();
   const [dialog, setDialog] = useState<{ kind: DialogKind; id: string } | null>(null);
   // Tags changed: a tag's page reads its sites again.
@@ -229,10 +245,11 @@ export function AppShell({
   // What the sites of the node in the delete dialog keep on their server.
   const [deleteBackups, setDeleteBackups] = useState<{ id: string; sites: SiteBackupsView[] }>();
   // A node deleted while its server could not be reached: the command that removes its backups.
-  const [leftBackups, setLeftBackups] = useState<{ name: string; kind: "site" | "host"; command: string } | null>(null);
+  const [leftBackups, setLeftBackups] = useState<{ name: string; kind: "site" | "host" | "items"; count?: number; command: string } | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [flow, setFlow] = useState<Flow | null>(null);
-  const [bulkDialog, setBulkDialog] = useState<{ id: string; name: string; previews: SitePreviewView[] | null } | null>(null);
+  // ids: several items selected, updated in one run (ADR-0034); id is then their key.
+  const [bulkDialog, setBulkDialog] = useState<{ id: string; name: string; ids?: string[]; previews: SitePreviewView[] | null } | null>(null);
   // The host or folder whose last update of every site shows, until dismissed.
   const [bulkFor, setBulkFor] = useState<string>();
   // The finding being set aside, and why the last attempt was refused.
@@ -260,6 +277,10 @@ export function AppShell({
   const listed = useMemo(() => withSubsites(nodes), [nodes]);
   const byId = new Map([...listed, ...tagNodes].map((n) => [n.id, n]));
   const say = (p: Problem) => t(p.code, { message: p.detail });
+  // Several items selected (ADR-0034): those still in the tree, and the key of their page.
+  const chosen = selection.filter((id) => byId.has(id));
+  const several = chosen.length > 1;
+  const chosenKey = chosen.join(",");
 
   const openSearch = () => {
     if (!paneOpen) leave(true, folded);
@@ -284,6 +305,20 @@ export function AppShell({
       current = false;
     };
   }, [edit, deleting]);
+
+  // The same for the sites and hosts a delete of several removes.
+  useEffect(() => {
+    if (!edit || many?.kind !== "delete") return;
+    const going = deletion(many.ids, nodes).going.filter((n) => n.kind === "site" || n.kind === "host").map((n) => n.id);
+    if (going.length === 0) return;
+    let current = true;
+    void edit.Backups(going).then((sites) => {
+      if (current) setManyBackups({ ids: many.ids, sites: sites ?? [] });
+    });
+    return () => {
+      current = false;
+    };
+  }, [edit, many, nodes]);
 
   // Runs an edit on the Go side, then reads the tree again; a refusal shows in the pane's footer.
   const run = async (action: () => Promise<Problem | null>) => {
@@ -321,7 +356,8 @@ export function AppShell({
   useEffect(() => {
     onCommand.current = (action) => {
       if (action === "search") openSearch();
-      if (action === "scan" && selectedId) scan(selectedId);
+      if (action === "scan" && several) scanMany(chosen);
+      else if (action === "scan" && selectedId) scan(selectedId);
       if (action === "scan-all") scan("");
       if (action === "new-host") onAddHost?.();
       if (action === "new-folder") void createFolder(folderOf(selectedId));
@@ -367,6 +403,20 @@ export function AppShell({
     if (id ? node && !updating(node) : busySites.size === 0) onScan?.(id);
   };
 
+  // A scan of the selection: one run over the sites it holds, none while one of them updates.
+  const scanMany = (ids: string[]) => {
+    if (sitesOf(ids, nodes).some((n) => busySites.has(n.id))) return;
+    onScanMany?.(ids);
+  };
+  const updateMany = (ids: string[]) => {
+    if (!updatesApi) return;
+    const key = ids.join(",");
+    setBulkDialog({ id: key, name: "", ids, previews: null });
+    void updatesApi.PreviewMany(ids).then((previews) => {
+      setBulkDialog((d) => (d && d.id === key ? { ...d, previews: previews ?? [] } : d));
+    });
+  };
+
   const updateAll = (node: Node) => {
     if (!updatesApi) return;
     setBulkDialog({ id: node.id, name: node.name, previews: null });
@@ -376,20 +426,30 @@ export function AppShell({
   };
   const confirmBulk = async () => {
     if (!updatesApi || !bulkDialog) return;
-    const id = bulkDialog.id;
+    const { id, ids } = bulkDialog;
     setBulkDialog(null);
     setProblem(null);
-    const refused = await updatesApi.UpdateAll(id);
+    const refused = await (ids ? updatesApi.UpdateMany(ids) : updatesApi.UpdateAll(id));
     if (refused) return setProblem(refused);
     setBulkFor(id);
   };
 
   // Opens the menu of a node at a point of the window; "" is the site list itself (its empty space).
   // A row of a table keeps the page shown; the tree selects what it opens the menu of.
+  // A row of the selection keeps it: its menu acts on all of it (ADR-0034).
   const openMenu = (id: string, point: { x: number; y: number }, select = true) => {
     const rect = shell.current?.getBoundingClientRect();
-    if (select && id) setSelectedId(id);
-    setMenu({ id, x: point.x - (rect?.left ?? 0), y: point.y - (rect?.top ?? 0) });
+    const ofSelection = select && several && chosen.includes(id);
+    if (select && id && !ofSelection) setSelectedId(id);
+    setMenu({ id, x: point.x - (rect?.left ?? 0), y: point.y - (rect?.top ?? 0), several: ofSelection });
+  };
+
+  // An action of the selection's menu or page.
+  const chooseMany = (action: string) => {
+    setMenu(null);
+    if (action === "scan") scanMany(chosen);
+    if (action === "updateAll") updateMany(chosen);
+    if (action === "move" || action === "delete" || action === "tags") setMany({ kind: action, ids: chosen });
   };
 
   const choose = (id: string, action: string) => {
@@ -407,7 +467,7 @@ export function AppShell({
     if (action === "admin") void data?.site(id).then((site) => setAdmin({ id, own: site.ownAdminUrl, computed: site.computedAdminUrl }));
   };
 
-  const menuNode = menu ? byId.get(menu.id) : undefined;
+  const menuNode = menu && !menu.several && !menu.colors ? byId.get(menu.id) : undefined;
   const dialogNode = dialog ? byId.get(dialog.id) : undefined;
 
   // What the pane's footer says: a refusal first, then a drag, a rename, the scans, the selection.
@@ -456,16 +516,21 @@ export function AppShell({
         </>
       );
     }
-    if (!nextScan) return selected && <Summary node={selected} nodes={nodes} />;
+    const summary = several ? (
+      <span>{t("selection.footer", { count: chosen.length, sites: t("selection.sites", { count: sitesOf(chosen, nodes).length }) })}</span>
+    ) : (
+      selected && <Summary node={selected} nodes={nodes} />
+    );
+    if (!nextScan) return summary;
     return (
       <span className={styles.lines}>
-        {selected && <Summary node={selected} nodes={nodes} />}
+        {summary}
         <NextScan at={nextScan} />
       </span>
     );
   };
 
-  const inert = (dialog !== null || bulkDialog !== null || ignoring !== null || admin !== null || hostTest !== null) || undefined;
+  const inert = (dialog !== null || many !== null || bulkDialog !== null || ignoring !== null || admin !== null || hostTest !== null) || undefined;
 
   const ignore = async (untilVersion: string, reason: string) => {
     if (!security || !ignoring) return;
@@ -568,7 +633,8 @@ export function AppShell({
                     void run(() => edit.Rename(id, name));
                   },
                   onCancelEdit: () => setEditingId(undefined),
-                  onDelete: (id: string) => setDialog({ kind: "delete", id }),
+                  // ⌘⌫ on a row of the selection deletes all of it.
+                  onDelete: (id: string) => (several && chosen.includes(id) ? setMany({ kind: "delete", ids: chosen }) : setDialog({ kind: "delete", id })),
                   onMenu: openMenu,
                   onMove: (ids: string[], folderId: string) =>
                     void run(() => (ids.length === 1 && ids[0] ? edit.Move(ids[0], folderId) : edit.MoveMany(ids, folderId))),
@@ -593,6 +659,34 @@ export function AppShell({
               {t("action.addHost")}
             </Button>
           </EmptyState>
+        ) : several && data ? (
+          <section className={styles.detail}>
+            <Selected
+              ids={chosen}
+              nodes={nodes}
+              data={data}
+              revision={scans.completed + updates.completed + tagEdits}
+              scanning={chosen.some((id) => byId.get(id) && scanning(byId.get(id)!))}
+              updating={chosen.some((id) => byId.get(id) && updating(byId.get(id)!))}
+              onScan={() => scanMany(chosen)}
+              onSelect={select}
+              onSiteMenu={edit && ((id, point) => openMenu(id, point, false))}
+              {...(edit && {
+                onMove: chosen.some((id) => byId.get(id)?.kind === "folder" || byId.get(id)?.kind === "host") ? () => chooseMany("move") : undefined,
+                onColor: (point: { x: number; y: number }) => {
+                  const rect = shell.current?.getBoundingClientRect();
+                  setMenu({ id: "", x: point.x - (rect?.left ?? 0), y: point.y - (rect?.top ?? 0), colors: true });
+                },
+                onTags: () => chooseMany("tags"),
+                onDelete: () => chooseMany("delete"),
+              })}
+              {...(updatesApi && {
+                onUpdateAll: () => updateMany(chosen),
+                bulk: bulkFor === chosenKey ? (updates.bulk ?? []) : undefined,
+                onDismissBulk: () => setBulkFor(undefined),
+              })}
+            />
+          </section>
         ) : selected ? (
           data ? (
             <section className={styles.detail}>
@@ -672,6 +766,20 @@ export function AppShell({
           onClose={() => setMenu(null)}
         />
       )}
+      {edit && menu && (menu.several || menu.colors) && (
+        <Menu
+          label={t("selection.title", { count: chosen.length })}
+          entries={menu.colors ? [colorsEntry(t, chosen.map((id) => byId.get(id)?.ownColor))] : selectionEntries(chosen, nodes, t)}
+          x={menu.x}
+          y={menu.y}
+          onSelect={chooseMany}
+          onColor={(color: ColorChoice) => {
+            setMenu(null);
+            void run(() => edit.SetColorMany(chosen, color));
+          }}
+          onClose={() => setMenu(null)}
+        />
+      )}
       {menu && menuNode && (
         <Menu
           label={t("edit.menu.label", { name: menuNode.name })}
@@ -700,6 +808,7 @@ export function AppShell({
       {bulkDialog && (
         <BulkDialog
           name={bulkDialog.name}
+          count={bulkDialog.ids?.length}
           previews={bulkDialog.previews}
           onConfirm={() => void confirmBulk()}
           onClose={() => setBulkDialog(null)}
@@ -707,7 +816,7 @@ export function AppShell({
       )}
       {edit && dialog && dialogNode && dialog.kind === "move" && (
         <MoveDialog
-          node={dialogNode}
+          items={[dialogNode]}
           nodes={nodes}
           onMove={(folderId) => {
             setDialog(null);
@@ -741,8 +850,59 @@ export function AppShell({
           onClose={() => setDialog(null)}
         />
       )}
+      {edit && many?.kind === "move" && (
+        <MoveDialog
+          items={nodes.filter((n) => many.ids.includes(n.id) && (n.kind === "folder" || n.kind === "host"))}
+          staying={nodes.filter((n) => many.ids.includes(n.id) && n.kind === "site")}
+          nodes={nodes}
+          onMove={(folderId) => {
+            const ids = many.ids;
+            setMany(null);
+            void run(() => edit.MoveMany(ids, folderId));
+          }}
+          onClose={() => setMany(null)}
+        />
+      )}
+      {edit && many?.kind === "delete" && (
+        <DeleteManyDialog
+          ids={many.ids}
+          nodes={nodes}
+          backups={manyBackups?.ids === many.ids ? manyBackups.sites : undefined}
+          onDelete={(going, withBackups) => {
+            setMany(null);
+            setSelection([]);
+            void run(async () => {
+              const result = await edit.Delete(going, withBackups);
+              if (result.command) setLeftBackups({ name: "", kind: "items", count: going.length, command: result.command });
+              return result.problem;
+            });
+          }}
+          onClose={() => setMany(null)}
+        />
+      )}
+      {edit && many?.kind === "tags" && (
+        <TagManyDialog
+          sites={sitesOf(many.ids, nodes)}
+          onTag={async (tag, add) => {
+            const refused = await edit.TagMany(many.ids, tag, add);
+            if (!refused) {
+              setTagEdits((n) => n + 1);
+              await onChanged?.();
+            }
+            return refused;
+          }}
+          onClose={() => setMany(null)}
+        />
+      )}
       {leftBackups && (
-        <BackupsLeftDialog name={leftBackups.name} kind={leftBackups.kind} command={leftBackups.command} onCopy={onCopy} onClose={() => setLeftBackups(null)} />
+        <BackupsLeftDialog
+          name={leftBackups.name}
+          kind={leftBackups.kind}
+          count={leftBackups.count}
+          command={leftBackups.command}
+          onCopy={onCopy}
+          onClose={() => setLeftBackups(null)}
+        />
       )}
       {removing && data?.removeOldBackups && (
         <RemoveBackupsDialog
@@ -849,17 +1009,41 @@ function rootEntries(t: T, canAddHost: boolean, hasSites: boolean): MenuEntry[] 
   return entries;
 }
 
-// The actions on a node, as the menu lists them.
-function menuEntries(node: Node, nodes: Node[], t: T, canExport: boolean): MenuEntry[] {
-  const item = (id: string, label: string, icon: IconName, extra: Partial<Item> = {}): Item => ({ kind: "item", id, label, icon, ...extra });
-  const colors: MenuEntry = {
+// The colors of the menu, the one of the items checked when they share it.
+function colorsEntry(t: T, own: (string | undefined)[]): MenuEntry {
+  return {
     kind: "colors",
     label: t("edit.menu.color"),
-    value: node.ownColor as ColorChoice,
+    value: own.every((c) => c === own[0]) ? (own[0] as ColorChoice) : undefined,
     names: Object.fromEntries(
       (["none", "red", "green", "blue", "yellow", "cyan", "magenta", "orange"] as const).map((c) => [c, t(`edit.menu.colors.${c}`)]),
     ) as Record<ColorChoice, string>,
   };
+}
+
+// The actions on several items selected (ADR-0034), each saying what it covers.
+function selectionEntries(ids: string[], nodes: Node[], t: T): MenuEntry[] {
+  const sites = sitesOf(ids, nodes).length;
+  const moved = nodes.filter((n) => ids.includes(n.id) && (n.kind === "folder" || n.kind === "host"));
+  const moveKey = carriedKey(moved.map((n) => n.kind)).replace("manager.drag", "selection.menu.move");
+  const item = (id: string, label: string, icon: IconName, extra: Partial<Item> = {}): Item => ({ kind: "item", id, label, icon, ...extra });
+  return [
+    { kind: "heading", label: t("selection.title", { count: ids.length }) },
+    item("scan", t("selection.scan", { count: sites }), "refresh", { shortcut: "⌘R", keyshortcuts: "Meta+R", disabled: sites === 0 }),
+    item("updateAll", t("selection.menu.update"), "update", { disabled: sites === 0 }),
+    { kind: "separator" },
+    item("move", t(moveKey, { count: moved.length || ids.length }), "move", { disabled: moved.length === 0 }),
+    colorsEntry(t, nodes.filter((n) => ids.includes(n.id)).map((n) => n.ownColor)),
+    item("tags", t("selection.menu.tags", { count: sites }), "tag", { disabled: sites === 0 }),
+    { kind: "separator" },
+    item("delete", t("selection.menu.delete", { count: ids.length }), "trash", { danger: true, shortcut: "⌘⌫", keyshortcuts: "Meta+Backspace" }),
+  ];
+}
+
+// The actions on a node, as the menu lists them.
+function menuEntries(node: Node, nodes: Node[], t: T, canExport: boolean): MenuEntry[] {
+  const item = (id: string, label: string, icon: IconName, extra: Partial<Item> = {}): Item => ({ kind: "item", id, label, icon, ...extra });
+  const colors = colorsEntry(t, [node.ownColor]);
   const separator: MenuEntry = { kind: "separator" };
   const rename = item("rename", t("edit.menu.rename"), "rename", { shortcut: "↩", keyshortcuts: "Enter" });
   const move = item("move", t("edit.menu.move"), "move");
@@ -1094,6 +1278,57 @@ function Loaded({
       onSelect={onSelect}
       onMore={onMore}
       {...bulkProps}
+    />
+  );
+}
+
+/** Several items selected (ADR-0034): their sites, each once, read from the Go side again whenever
+ a scan or an update completes. */
+function Selected({
+  ids,
+  nodes,
+  data,
+  revision,
+  ...page
+}: {
+  ids: string[];
+  nodes: Node[];
+  data: ShellData;
+  revision: number;
+} & Omit<SelectionPageProps, "title" | "subtitle" | "rows" | "scanLabel">) {
+  const { t } = useTranslation();
+  const key = ids.join(",");
+  const [rows, setRows] = useState<{ key: string; rows: SiteRow[] }>();
+  useEffect(() => {
+    let current = true;
+    void Promise.all(key.split(",").map((id) => data.sites(id))).then((lists) => {
+      // Each site once, in the tree's order.
+      const seen = new Set<string>();
+      const merged = lists.flat().filter((r) => !seen.has(r.id) && seen.add(r.id));
+      if (current) setRows({ key, rows: merged });
+    });
+    return () => {
+      current = false;
+    };
+    // The tree too: a move or a rename shows at once.
+  }, [key, data, revision, nodes]);
+
+  if (!rows || rows.key !== key) return null;
+  const order = new Map(nodes.map((n, i) => [n.id, i]));
+  const sorted = [...rows.rows].sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  const kinds = kindsOf(ids, nodes);
+  const held = [
+    ...(kinds.folders > 0 ? [t("selection.folders", { count: kinds.folders })] : []),
+    ...(kinds.hosts > 0 ? [t("selection.hosts", { count: kinds.hosts })] : []),
+    ...(kinds.sites > 0 ? [t("selection.sites", { count: kinds.sites })] : []),
+  ].join(", ");
+  return (
+    <SelectionPage
+      title={t("selection.title", { count: ids.length })}
+      subtitle={`${held} · ${t("selection.inAll", { count: sorted.length })}`}
+      rows={sorted}
+      scanLabel={t("selection.scan", { count: sorted.length })}
+      {...page}
     />
   );
 }

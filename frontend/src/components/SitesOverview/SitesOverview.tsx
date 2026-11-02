@@ -68,12 +68,8 @@ export function SitesOverview({
   onOpen,
   extensions,
 }: SitesOverviewProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const pending = rows.reduce((n, r) => n + r.pending, 0);
-  const count = (status: string) => rows.filter((r) => r.status === status).length;
-  // A status chosen in the counts shows only its sites (ADR-0023, point 5).
-  const [filter, setFilter] = useState<string>();
-  const shown = filter === undefined ? rows : rows.filter((r) => r.status === filter);
   const [tab, setTab] = useState<"sites" | "extensions">("sites");
   const panel = useId();
   // The list across the sites, read when its tab opens.
@@ -155,54 +151,88 @@ export function SitesOverview({
           across && <ExtensionsOverview across={across} onSelect={onSelect} onOpen={onOpen} />
         ) : (
           <>
-            <Counts
-              label={t("host.summary")}
-              items={[
-                { label: t("host.sites"), value: rows.length },
-                { label: t("host.urgent"), value: count("danger"), tone: "danger", filter: "danger" },
-                { label: t("host.attention"), value: count("warn"), tone: "warn", filter: "warn" },
-                { label: t("host.partial"), value: count("partial"), filter: "partial" },
-                { label: t("host.ok"), value: count("ok"), filter: "ok" },
-                ...(count("") > 0 ? [{ label: t("host.notScanned"), value: count(""), filter: "" }] : []),
-              ]}
-              selected={filter}
-              onSelect={rows.length > 1 ? setFilter : undefined}
-            >
-              {filter !== undefined && (
-                <Button variant="text" onClick={() => setFilter(undefined)}>
-                  {t("host.showAll")}
-                </Button>
-              )}
-            </Counts>
-            {rows.length === 0 ? (
-              <p className={styles.empty}>{t(icon === "host" ? "edit.emptyHost" : "edit.emptyFolder")}</p>
-            ) : (
-              <SiteTable
-                label={t("host.table", { name: title })}
-                columns={{
-                  site: t("host.col.site"),
-                  where: icon === "tag" ? t("tags.page.where") : undefined,
-                  status: t("host.col.status"),
-                  worst: t("host.col.worst"),
-                  updates: t("host.col.updates"),
-                }}
-                notScanned={t("detail.notScanned")}
-                rows={shown.map((r) => ({
-                  id: r.id,
-                  name: r.name,
-                  status: r.status,
-                  worst: r.worst ? findingText(r.worst, t, i18n.language).title : "",
-                  pending: r.pending,
-                  where: whereOf(r.path),
-                }))}
-                onSelect={onSelect}
-                onMenu={onSiteMenu}
-              />
-            )}
+            <SitesList
+              label={t("host.table", { name: title })}
+              rows={rows}
+              where={icon === "tag"}
+              empty={t(icon === "host" ? "edit.emptyHost" : "edit.emptyFolder")}
+              onSelect={onSelect}
+              onSiteMenu={onSiteMenu}
+            />
             {notes !== undefined && <NotesPanel notes={notes} name={title} title={t("notes.title")} onSave={onSaveNotes} onOpen={onOpen} />}
           </>
         )}
       </div>
     </div>
+  );
+}
+
+export interface SitesListProps {
+  /** The table's name. */
+  label: string;
+  rows: SiteRow[];
+  /** Sites from several hosts: the table says where each is. */
+  where?: boolean;
+  /** Said when there is no site. */
+  empty: string;
+  onSelect: (siteId: string) => void;
+  onSiteMenu?: (siteId: string, point: { x: number; y: number }) => void;
+}
+
+/** Counts over sites, a status chosen in them showing only its sites, then the table of their
+ latest scans. */
+export function SitesList({ label, rows, where = false, empty, onSelect, onSiteMenu }: SitesListProps) {
+  const { t, i18n } = useTranslation();
+  const count = (status: string) => rows.filter((r) => r.status === status).length;
+  // A status chosen in the counts shows only its sites (ADR-0023, point 5).
+  const [filter, setFilter] = useState<string>();
+  const shown = filter === undefined ? rows : rows.filter((r) => r.status === filter);
+  return (
+    <>
+      <Counts
+        label={t("host.summary")}
+        items={[
+          { label: t("host.sites"), value: rows.length },
+          { label: t("host.urgent"), value: count("danger"), tone: "danger", filter: "danger" },
+          { label: t("host.attention"), value: count("warn"), tone: "warn", filter: "warn" },
+          { label: t("host.partial"), value: count("partial"), filter: "partial" },
+          { label: t("host.ok"), value: count("ok"), filter: "ok" },
+          ...(count("") > 0 ? [{ label: t("host.notScanned"), value: count(""), filter: "" }] : []),
+        ]}
+        selected={filter}
+        onSelect={rows.length > 1 ? setFilter : undefined}
+      >
+        {filter !== undefined && (
+          <Button variant="text" onClick={() => setFilter(undefined)}>
+            {t("host.showAll")}
+          </Button>
+        )}
+      </Counts>
+      {rows.length === 0 ? (
+        <p className={styles.empty}>{empty}</p>
+      ) : (
+        <SiteTable
+          label={label}
+          columns={{
+            site: t("host.col.site"),
+            where: where ? t("tags.page.where") : undefined,
+            status: t("host.col.status"),
+            worst: t("host.col.worst"),
+            updates: t("host.col.updates"),
+          }}
+          notScanned={t("detail.notScanned")}
+          rows={shown.map((r) => ({
+            id: r.id,
+            name: r.name,
+            status: r.status,
+            worst: r.worst ? findingText(r.worst, t, i18n.language).title : "",
+            pending: r.pending,
+            where: whereOf(r.path),
+          }))}
+          onSelect={onSelect}
+          onMenu={onSiteMenu}
+        />
+      )}
+    </>
   );
 }

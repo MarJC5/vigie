@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fn, userEvent, waitFor, within } from "storybook/test";
+import { expect, fireEvent, fn, userEvent, waitFor, within } from "storybook/test";
 
 import { findings, xss } from "../../fixtures/findings";
 import { hostRows, outdatedSite, sharedHost } from "../../fixtures/scans";
 import { sampleTree } from "../../fixtures/tree";
 import { completed, preview, running } from "../../fixtures/updates";
 import type { UpdatesApi } from "../UpdateFlow/UpdateFlow";
+import type { SiteRow } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { AppShell, type EditApi } from "./AppShell";
 
 // Each story renders once per theme, so the window landmarks repeat by construction;
@@ -124,6 +125,8 @@ const updatesApi = (): UpdatesApi => ({
   Preview: fn(async () => [preview]),
   Update: fn(async () => null),
   UpdateAll: fn(async () => null),
+  PreviewMany: fn(async () => [preview]),
+  UpdateMany: fn(async () => null),
   Rollback: fn(async () => null),
   CancelAll: fn(async () => {}),
   History: fn(async () => [completed]),
@@ -240,6 +243,8 @@ function fakeEdit(): EditApi {
     ),
     Move: fn(async () => null),
     MoveMany: fn(async () => null),
+    SetColorMany: fn(async () => null),
+    TagMany: fn(async () => null),
     SetColor: fn(async () => null),
     Delete: fn(async () => ({ problem: null, left: [], command: "" })),
     Backups: fn(async () => []),
@@ -435,5 +440,101 @@ export const Settings: Story = {
     const [sites] = canvas.getAllByRole("link", { name: "Sites" });
     await userEvent.click(sites!);
     await expect(args.onSection).toHaveBeenCalledWith("sites");
+  },
+};
+
+// Several items selected (ADR-0034): the sites each item holds, as SiteManager.Sites gives them.
+const rowOf = (id: string): SiteRow => {
+  const n = sampleTree.find((x) => x.id === id)!;
+  return { id, name: n.name, path: n.path, status: n.status, wordpress: "7.1.4", phpCli: "8.4.27", pending: n.updates, worst: null };
+};
+const selectionData = {
+  ...data,
+  sites: async (id: string) => (id === "shared" ? ["atelier", "boulangerie", "ecoles"] : id === "boulangerie" ? ["boulangerie"] : []).map(rowOf),
+};
+
+// ⌘-click adds a row: the page of the selection, its counts and actions, the footer's count.
+export const SeveralSelected: Story = {
+  args: { data: selectionData, edit: fakeEdit(), updatesApi: updatesApi(), onScanMany: fn(), onChanged: fn() },
+  play: async ({ canvas, args }) => {
+    const shell = within(firstWindow(canvas));
+    fireEvent.click(shell.getByRole("treeitem", { name: /Managed VPS/ }), { metaKey: true });
+    await expect(await shell.findByRole("heading", { level: 1, name: "2 items selected" })).toBeInTheDocument();
+    await expect(shell.getByText("2 hosts · 3 sites in all")).toBeInTheDocument();
+    await expect(shell.getByText("2 selected · 3 sites")).toBeInTheDocument();
+    await expect(shell.getByRole("table", { name: "Sites of the selection" })).toHaveTextContent("Clients / Shared hosting");
+    await userEvent.click(shell.getByRole("button", { name: "Scan the 3 sites" }));
+    await expect(args.onScanMany).toHaveBeenCalledWith(["shared", "vps"]);
+    await userEvent.click(shell.getByRole("button", { name: "Update all" }));
+    await expect(args.updatesApi!.PreviewMany).toHaveBeenCalledWith(["shared", "vps"]);
+    await userEvent.click(await shell.findByRole("button", { name: "Update 1 site" }));
+    await waitFor(() => expect(args.updatesApi!.UpdateMany).toHaveBeenCalledWith(["shared", "vps"]));
+  },
+};
+
+// The menu of a selected row acts on the whole selection, each action saying what it covers.
+export const MenuOfASelection: Story = {
+  args: { data: selectionData, edit: fakeEdit(), onChanged: fn() },
+  play: async ({ canvas, args }) => {
+    const shell = within(firstWindow(canvas));
+    fireEvent.click(shell.getByRole("treeitem", { name: /Managed VPS/ }), { metaKey: true });
+    await userEvent.pointer({ keys: "[MouseRight]", target: shell.getByRole("treeitem", { name: /Shared hosting/ }) });
+    const menu = shell.getByRole("menu", { name: "2 items selected" });
+    await expect(within(menu).getAllByRole("menuitem").map((i) => i.textContent)).toEqual([
+      "Scan the 3 sites⌘R", "Update all…", "Move the 2 hosts…", "Tags of the 3 sites…", "Delete the 2 items…⌘⌫",
+    ]);
+    // The selection stays.
+    await expect(shell.getByRole("treeitem", { name: /Managed VPS/ })).toHaveAttribute("aria-selected", "true");
+    await userEvent.click(within(menu).getByRole("menuitem", { name: "Move the 2 hosts…" }));
+    const dialog = shell.getByRole("dialog", { name: "Move 2 hosts" });
+    await userEvent.click(within(dialog).getByRole("radio", { name: /Top level/ }));
+    await userEvent.click(within(dialog).getByRole("button", { name: "Move" }));
+    await waitFor(() => expect(args.edit!.MoveMany).toHaveBeenCalledWith(["shared", "vps"], ""));
+  },
+};
+
+// ⌘⌫ on a row of the selection: one dialog for all of it; a site under a host deleted too goes
+// with it.
+export const DeleteSeveral: Story = {
+  args: { data: selectionData, edit: fakeEdit(), onChanged: fn() },
+  play: async ({ canvas, args }) => {
+    const shell = within(firstWindow(canvas));
+    fireEvent.click(shell.getByRole("treeitem", { name: /boulangerie-exemple.ch/ }), { metaKey: true });
+    await shell.findByRole("heading", { level: 1, name: "2 items selected" });
+    fireEvent.click(shell.getByRole("treeitem", { name: /Managed VPS/ }), { metaKey: true });
+    shell.getByRole("treeitem", { name: /Managed VPS/ }).focus();
+    await userEvent.keyboard("{Meta>}{Backspace}{/Meta}");
+    const dialog = await shell.findByRole("dialog", { name: "Delete 2 items?" });
+    await expect(within(dialog).getAllByRole("listitem").map((i) => i.textContent)).toEqual(["Shared hosting3 sites", "Managed VPS0 sites"]);
+    await userEvent.click(within(dialog).getByRole("button", { name: "Delete the 2 items" }));
+    await waitFor(() => expect(args.edit!.Delete).toHaveBeenCalledWith(["shared", "boulangerie", "vps"], true));
+    await expect(shell.getByRole("treeitem", { name: /Managed VPS/ })).toHaveAttribute("aria-selected", "false");
+  },
+};
+
+// A tag added to every site of the selection, from its page.
+export const TagsOfSeveral: Story = {
+  args: { data: selectionData, edit: fakeEdit(), onChanged: fn() },
+  play: async ({ canvas, args }) => {
+    const shell = within(firstWindow(canvas));
+    fireEvent.click(shell.getByRole("treeitem", { name: /Managed VPS/ }), { metaKey: true });
+    await userEvent.click(await shell.findByRole("button", { name: "Tags…" }));
+    const dialog = shell.getByRole("dialog", { name: "Tags of 3 sites" });
+    await userEvent.type(within(dialog).getByRole("textbox", { name: "New tag" }), "Contrat{Enter}");
+    await waitFor(() => expect(args.edit!.TagMany).toHaveBeenCalledWith(["shared", "vps"], "Contrat", true));
+  },
+};
+
+// What the menu of a selection looks like, left open.
+export const SelectionMenu: Story = {
+  args: { data: selectionData, edit: fakeEdit() },
+  play: async ({ canvas }) => {
+    const shell = within(firstWindow(canvas));
+    fireEvent.click(shell.getByRole("treeitem", { name: /boulangerie-exemple.ch/ }), { metaKey: true });
+    await shell.findByRole("heading", { level: 1, name: "2 items selected" });
+    fireEvent.click(shell.getByRole("treeitem", { name: /Managed VPS/ }), { metaKey: true });
+    await shell.findByRole("heading", { level: 1, name: "3 items selected" });
+    await userEvent.pointer({ keys: "[MouseRight]", target: shell.getByRole("treeitem", { name: /Managed VPS/ }) });
+    await expect(shell.getByRole("menu", { name: "3 items selected" })).toBeInTheDocument();
   },
 };

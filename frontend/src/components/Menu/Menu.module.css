@@ -114,3 +114,11 @@
   outline: 2px solid var(--vg-focus);
   outline-offset: 3px;
 }
+
+/* What the menu acts on, above its items. */
+.heading {
+  padding: var(--vg-space-1) var(--vg-space-3) var(--vg-space-2);
+  font-size: var(--vg-text-caption);
+  font-weight: var(--vg-weight-strong);
+  color: var(--vg-text-muted);
+}

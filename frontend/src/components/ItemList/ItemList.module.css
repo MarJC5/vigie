@@ -34,3 +34,11 @@
   font-size: var(--vg-text-caption);
   color: var(--vg-text-muted);
 }
+
+.action {
+  margin-left: auto;
+}
+
+.note + .action {
+  margin-left: 0;
+}

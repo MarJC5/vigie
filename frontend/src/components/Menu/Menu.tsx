@@ -22,7 +22,10 @@ export type MenuEntry =
       disabled?: boolean;
     }
   | { kind: "separator" }
-  | { kind: "colors"; label: string; value: ColorChoice; names: Record<ColorChoice, string> };
+  /** A line that says what the menu acts on, for example "3 items selected". */
+  | { kind: "heading"; label: string }
+  /** value: the color of what the menu acts on; none checked when they differ. */
+  | { kind: "colors"; label: string; value?: ColorChoice; names: Record<ColorChoice, string> };
 
 export interface MenuProps {
   label: string;
@@ -101,6 +104,13 @@ export function Menu({ label, entries, x, y, onSelect, onColor, onClose }: MenuP
     >
       {entries.map((entry, i) => {
         if (entry.kind === "separator") return <div key={i} role="separator" className={styles.separator} />;
+        if (entry.kind === "heading") {
+          return (
+            <div key={i} role="presentation" className={styles.heading}>
+              {entry.label}
+            </div>
+          );
+        }
         if (entry.kind === "colors") {
           return (
             <div key={i} role="group" aria-label={entry.label} className={styles.colors}>

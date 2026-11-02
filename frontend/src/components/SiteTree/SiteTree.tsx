@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { Node, TagView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { openKey } from "../../lib/subsites";
 import { tagId, tagsGroupId } from "../../lib/tags";
+import { carriedKey } from "../../lib/selection";
 import { fold } from "../../lib/text";
 import { Icon } from "../Icon/Icon";
 import type { Status } from "../StatusDot/StatusDot";
@@ -47,13 +48,6 @@ export interface SiteTreeProps {
 
 /** What a row was found by, when it is not its name. */
 type Found = "tags" | "notes" | undefined;
-
-/** The text of folders and hosts dragged together, with their count: hosts, folders or items. */
-export function carriedKey(kinds: (string | undefined)[]): string {
-  const set = new Set(kinds);
-  if (set.size > 1) return "manager.dragItems";
-  return set.has("host") ? "manager.dragHosts" : "manager.dragFolders";
-}
 
 export interface Drag {
   /** The row grabbed. */

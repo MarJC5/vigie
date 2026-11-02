@@ -1,0 +1,21 @@
+/* min-width: the table scrolls in its place rather than widen the page. */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-5);
+  min-width: 0;
+}
+
+/* Every action on the selection, in one row that wraps. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--vg-space-2);
+}
+
+.hint {
+  margin: 0;
+  max-width: 70ch;
+  color: var(--vg-text-muted);
+  font-size: var(--vg-text-small);
+}

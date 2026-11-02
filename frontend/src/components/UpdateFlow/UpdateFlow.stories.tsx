@@ -35,6 +35,8 @@ function Flow({ refused, follow, calls }: { refused?: boolean; follow?: boolean;
         return null;
       },
       UpdateAll: async () => null,
+      PreviewMany: async () => [preview],
+      UpdateMany: async () => null,
       Rollback: async (siteId, opId) => {
         calls("Rollback", siteId, opId);
         play({ ...rolledBack, outcome: "running", finished: "", steps: rolledBack.steps!.slice(0, 1) }, rolledBack);

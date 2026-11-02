@@ -3,7 +3,7 @@ import { expect, fn, userEvent, within } from "storybook/test";
 
 import { hostBackups } from "../../fixtures/backups";
 import { sampleTree } from "../../fixtures/tree";
-import { DeleteDialog } from "./DeleteDialog";
+import { DeleteDialog, DeleteManyDialog } from "./DeleteDialog";
 
 const node = (id: string) => sampleTree.find((n) => n.id === id)!;
 
@@ -90,5 +90,37 @@ export const ATag: Story = {
     await expect(within(dialog).getByText("The sites themselves do not change, in Vigie or on the servers.")).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole("button", { name: "Remove the tag" }));
     await expect(args.onDelete).toHaveBeenCalled();
+  },
+};
+
+// Several items (ADR-0034): what goes is listed once, a host with its sites; a folder that keeps
+// something not selected stays, and the dialog says so.
+const withArchives = [...sampleTree, { ...node("personal"), id: "archives", name: "Archives", path: "Archives" }];
+
+export const SeveralItems: Story = {
+  render: (args) => (
+    <DeleteManyDialog ids={["clients", "boulangerie", "vps", "archives"]} nodes={withArchives} backups={hostBackups} onDelete={args.onDelete} onClose={args.onClose} />
+  ),
+  play: async ({ canvas, args }) => {
+    const dialog = canvas.getAllByRole("dialog", { name: "Delete 3 items?" })[0]!;
+    await expect(within(dialog).getAllByRole("listitem").map((i) => i.textContent)).toEqual([
+      "boulangerie-exemple.chClients / Shared hosting",
+      "Managed VPS0 sites",
+      "Archivesempty",
+    ]);
+    await expect(within(dialog).getByRole("note")).toHaveTextContent("“Clients” stays: only an empty folder can be deleted.");
+    await expect(within(dialog).getByRole("checkbox", { name: /Also remove their backups on the server/ })).toBeChecked();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Delete the 3 items" }));
+    await expect(args.onDelete).toHaveBeenCalledWith(["boulangerie", "vps", "archives"], true);
+  },
+};
+
+// Only folders that hold something else: nothing can go.
+export const NothingCanGo: Story = {
+  render: (args) => <DeleteManyDialog ids={["clients", "personal"]} nodes={sampleTree} onDelete={args.onDelete} onClose={args.onClose} />,
+  play: async ({ canvas }) => {
+    const dialog = canvas.getAllByRole("dialog")[0]!;
+    await expect(dialog).toHaveAccessibleDescription("Only an empty folder can be deleted: move or delete what it holds first.");
+    await expect(within(dialog).queryByRole("button", { name: /Delete/ })).not.toBeInTheDocument();
   },
 };

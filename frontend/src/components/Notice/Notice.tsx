@@ -3,7 +3,8 @@ import { Icon, type IconName } from "../Icon/Icon";
 import styles from "./Notice.module.css";
 
 export interface NoticeProps {
-  title: string;
+  /** Without it, the text alone. */
+  title?: string;
   text: string;
   /** The raw message (for example ssh's), smaller, for the curious or for support. */
   detail?: string;
@@ -25,7 +26,7 @@ export function Notice({ title, text, detail, action, tone = "danger", role = "a
         <Icon name={tone === "neutral" ? icon : tone === "warn" ? "warning" : "failed"} size={16} />
       </span>
       <span className={styles.body}>
-        <span className={styles.title}>{title}</span>
+        {title && <span className={styles.title}>{title}</span>}
         <span>{text}</span>
         {detail && (
           <span className={styles.detail} data-selectable>

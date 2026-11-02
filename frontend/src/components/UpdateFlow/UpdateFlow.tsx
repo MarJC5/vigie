@@ -15,6 +15,9 @@ export interface UpdatesApi {
   Preview(nodeId: string): Promise<SitePreviewView[] | null>;
   Update(siteId: string, sel: SelectionView): Promise<Problem | null>;
   UpdateAll(nodeId: string): Promise<Problem | null>;
+  /** One run over every site the items hold, each once (ADR-0034). */
+  PreviewMany(nodeIds: string[]): Promise<SitePreviewView[] | null>;
+  UpdateMany(nodeIds: string[]): Promise<Problem | null>;
   Rollback(siteId: string, operationId: string): Promise<Problem | null>;
   CancelAll(): Promise<void>;
   History(siteId: string): Promise<OperationView[] | null>;
