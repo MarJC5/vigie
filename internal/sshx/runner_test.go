@@ -3,6 +3,7 @@ package sshx_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -182,5 +183,87 @@ func TestLimiterRespectsCancellation(t *testing.T) {
 	defer cancel()
 	if err := limiter.Do(ctx, "h", 1, func() error { return nil }); !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("waiting with a cancelled context: %v", err)
+	}
+}
+
+// peakOf runs fn for each key at once, each command 30 ms, and returns the most that ran together.
+func peakOf(t *testing.T, limiter *sshx.Limiter, keys []string) int32 {
+	t.Helper()
+	var running, peak atomic.Int32
+	var wg sync.WaitGroup
+	for _, key := range keys {
+		wg.Go(func() {
+			err := limiter.Do(context.Background(), key, 2, func() error {
+				n := running.Add(1)
+				for p := peak.Load(); n > p && !peak.CompareAndSwap(p, n); p = peak.Load() {
+				}
+				time.Sleep(30 * time.Millisecond)
+				running.Add(-1)
+				return nil
+			})
+			if err != nil {
+				t.Error(err)
+			}
+		})
+	}
+	wg.Wait()
+	return peak.Load()
+}
+
+// An SSH daemon drops connections beyond 10 still opening, and several accounts can be on one
+// server: at most sshx.Openings connections open at once, whatever the hosts (ADR-0032).
+func TestLimiterOpensFewConnectionsAtOnce(t *testing.T) {
+	keys := make([]string, 20)
+	for i := range keys {
+		keys[i] = fmt.Sprintf("host-%d", i)
+	}
+	if peak := peakOf(t, sshx.NewLimiter().KeepOpen(time.Minute), keys); peak != sshx.Openings {
+		t.Fatalf("connections opening at once = %d, want %d", peak, sshx.Openings)
+	}
+}
+
+// A host whose connection is open runs its commands without waiting for an opening; once the
+// connection has closed for lack of use, the next command opens it again.
+func TestLimiterOpenConnectionsWaitForNoOpening(t *testing.T) {
+	limiter := sshx.NewLimiter().KeepOpen(200 * time.Millisecond)
+	ctx := context.Background()
+	if err := limiter.Do(ctx, "open", 1, func() error { return nil }); err != nil {
+		t.Fatal(err)
+	}
+	// Every opening taken by other hosts.
+	release := make(chan struct{})
+	for i := range sshx.Openings {
+		go limiter.Do(ctx, fmt.Sprintf("busy-%d", i), 1, func() error { <-release; return nil })
+	}
+	defer close(release)
+	time.Sleep(20 * time.Millisecond)
+	if err := limiter.Do(ctx, "open", 1, func() error { return nil }); err != nil {
+		t.Fatalf("a command on an open connection waited for an opening: %v", err)
+	}
+	time.Sleep(250 * time.Millisecond)
+	waiting, cancel := context.WithTimeout(ctx, 50*time.Millisecond)
+	defer cancel()
+	if err := limiter.Do(waiting, "open", 1, func() error { return nil }); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("a connection closed for lack of use: %v, want to wait for an opening", err)
+	}
+}
+
+// A command that failed leaves the connection taken as closed: the next one opens it again.
+func TestLimiterFailedCommandLeavesTheConnectionClosed(t *testing.T) {
+	limiter := sshx.NewLimiter().KeepOpen(time.Minute)
+	ctx := context.Background()
+	if err := limiter.Do(ctx, "h", 1, func() error { return errors.New("connection refused") }); err == nil {
+		t.Fatal("the failure was not returned")
+	}
+	release := make(chan struct{})
+	for i := range sshx.Openings {
+		go limiter.Do(ctx, fmt.Sprintf("busy-%d", i), 1, func() error { <-release; return nil })
+	}
+	defer close(release)
+	time.Sleep(20 * time.Millisecond)
+	waiting, cancel := context.WithTimeout(ctx, 50*time.Millisecond)
+	defer cancel()
+	if err := limiter.Do(waiting, "h", 1, func() error { return nil }); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("after a failure: %v, want to wait for an opening", err)
 	}
 }

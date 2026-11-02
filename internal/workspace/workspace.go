@@ -23,8 +23,8 @@ import (
 var ErrNotAHost = errors.New("not a host")
 
 // parallelSites caps the sites scanned at the same time across hosts; each host keeps its own
-// limit of commands at a time.
-const parallelSites = 8
+// limit of commands at a time, and at most sshx.Openings connections open at once (ADR-0032).
+const parallelSites = 16
 
 // SSH settings shared by every command.
 var sshOptions = sshx.Options{
@@ -33,7 +33,8 @@ var sshOptions = sshx.Options{
 	ControlPersist:      60 * time.Second,
 }
 
-// commandTimeout bounds one WP-CLI command; a plugin list asks wordpress.org about each plugin.
+// commandTimeout bounds one WP-CLI command; a comparison of the plugins' files asks wordpress.org
+// about each plugin.
 const commandTimeout = 2 * time.Minute
 
 // KeyScanner asks a server for its host keys (sshx.KeyScanner).
@@ -123,7 +124,7 @@ func sshSettings(dataDir string) (sshx.Options, error) {
 
 // New returns a workspace over an open database.
 func New(db *store.DB, deps Deps) *Workspace {
-	return &Workspace{db: db, deps: deps, limiter: sshx.NewLimiter()}
+	return &Workspace{db: db, deps: deps, limiter: sshx.NewLimiter().KeepOpen(sshOptions.ControlPersist)}
 }
 
 // DB is the workspace's database.

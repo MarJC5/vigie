@@ -68,9 +68,10 @@ func commandName(remote string) string {
 }
 
 // TestScanThroughput measures what a scan costs on the bench's account: first each command of a
-// scan of a plain site, then SITES copies of it (20) scanned as the app does (8 sites at a time),
-// with 1, 2 and 4 commands at a time on the account, and as if they were on 4 accounts. The bench
-// runs on this computer: a shared host's own load is not in these numbers.
+// scan of a plain site and of a site with 22 plugins, then SITES copies of the plain one (20)
+// scanned as the app does (16 sites at a time), with 1, 2 and 4 commands at a time on the account,
+// and as if they were on 4 accounts (CASES chooses others). The bench runs on this computer: a
+// shared host's own load is not in these numbers.
 func TestScanThroughput(t *testing.T) {
 	if !*throughput {
 		t.Skip("run with -throughput: it copies a site many times and scans them")
@@ -168,11 +169,15 @@ done`, sites)
 
 	// As the workspace scans a node: 8 sites at a time, the host's limit on its commands.
 	scanAll := func(max, accounts, parallel int) (time.Duration, int) {
-		// Each account its own shared connection, as different hosts have: sshd takes 10 sessions
-		// on one connection by default (MaxSessions).
+		// Each account its own shared connection, as different hosts have (sshd takes 10 sessions
+		// on one connection by default, MaxSessions), kept 60 seconds as the app does; one limiter
+		// for all, which paces the connections opening (ADR-0032).
+		limiter := sshx.NewLimiter().KeepOpen(time.Minute)
 		scanners := make([]scan.Scanner, accounts)
 		for i := range scanners {
-			scanners[i] = scanner(a.runner(t, known))
+			r := a.runner(t, known)
+			r.Options.ControlPersist = time.Minute
+			scanners[i] = scan.Scanner{Runner: r, Limiter: limiter, Now: timeNow}
 		}
 		slots := make(chan struct{}, parallel)
 		var wg sync.WaitGroup
@@ -212,7 +217,7 @@ func runCases(list string) []runCase {
 		return nil
 	}
 	if list == "" {
-		return []runCase{{1, 1, 8}, {2, 1, 8}, {4, 1, 8}, {2, 4, 8}}
+		return []runCase{{1, 1, 16}, {2, 1, 16}, {4, 1, 16}, {2, 4, 16}}
 	}
 	var cases []runCase
 	for _, c := range strings.Split(list, ",") {

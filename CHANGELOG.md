@@ -151,6 +151,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and the plugins wordpress.org knows come from the update check WordPress makes anyway, as its
   Updates screen shows them. A site with 22 plugins is scanned in about 6 s instead of 33 (the
   daily comparison of the files aside).
+- A run scans up to 16 sites at a time instead of 8, each host keeping its own limit of commands
+  at a time, and opens at most 8 SSH connections at once, whatever the servers: an SSH server
+  turns away connections opened too many at once, and several hosts can share one server.
 - The window stays quick while many sites are scanned: the eye in the menu bar reads the sites'
   state once scans are stored, not as each site ends, and not at all when it is not shown.
 - The Activity journal reads what each scan noted of itself when it was made (its status and its
