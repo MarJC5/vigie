@@ -216,3 +216,55 @@ export const InFrench: Story = {
     await expect(canvas.getAllByText(/^Reçoit\s: slugs des extensions · réponse gardée 1 jour$/)).toHaveLength(2);
   },
 };
+
+// The vigie command not linked yet (ADR-0036): the one command that links it, to copy, and a check
+// once it ran.
+export const CommandNotLinked: Story = {
+  args: {
+    tab: "general",
+    command: {
+      linked: false, appImage: false, path: "/usr/local/bin/vigie",
+      command: "sudo ln -sf '/Applications/Vigie.app/Contents/MacOS/Vigie' '/usr/local/bin/vigie'",
+    },
+    onCheckCommand: fn(),
+    onCopy: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByRole("heading", { level: 2, name: "Command line" })).toBeInTheDocument();
+    await expect(page.getByText("To scan, update or export from Terminal, run this command there once. It asks for your password.")).toBeInTheDocument();
+    await userEvent.click(page.getByRole("button", { name: "Copy" }));
+    await expect(args.onCopy).toHaveBeenCalledWith("sudo ln -sf '/Applications/Vigie.app/Contents/MacOS/Vigie' '/usr/local/bin/vigie'");
+    await userEvent.click(page.getByRole("button", { name: "Check again" }));
+    await expect(args.onCheckCommand).toHaveBeenCalled();
+  },
+};
+
+// Linked: where from, nothing to run.
+export const CommandLinked: Story = {
+  args: { tab: "general", command: { linked: true, appImage: false, path: "/usr/local/bin/vigie", command: "" } },
+  globals: { lang: "fr" },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByText(/Liée depuis \/usr\/local\/bin\/vigie\./)).toBeInTheDocument();
+    await expect(page.getByText("Installée")).toBeInTheDocument();
+    await expect(page.queryByRole("button", { name: "Copier" })).toBeNull();
+  },
+};
+
+// An AppImage links into ~/.local/bin, without a password.
+export const CommandAppImage: Story = {
+  args: {
+    tab: "general",
+    command: {
+      linked: false, appImage: true, path: "/home/marie/.local/bin/vigie",
+      command: "mkdir -p '/home/marie/.local/bin' && ln -sf '/home/marie/Applications/Vigie-x86_64.AppImage' '/home/marie/.local/bin/vigie'",
+    },
+    onCopy: fn(),
+  },
+  globals: { lang: "fr" },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByText(/~\/\.local\/bin doit être dans votre PATH\./)).toBeInTheDocument();
+  },
+};

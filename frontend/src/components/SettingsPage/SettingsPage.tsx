@@ -1,10 +1,12 @@
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { BackgroundSettings, DatabaseView, LoginItemState, LookupsView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { BackgroundSettings, CommandView, DatabaseView, LoginItemState, LookupsView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { sizeText } from "../../lib/data";
 import { clock, day, keyOf } from "../../lib/findings";
 import { Button } from "../Button/Button";
+import { CommandLine } from "../CommandLine/CommandLine";
+import { Icon } from "../Icon/Icon";
 import { SelectField } from "../SelectField/SelectField";
 import { Switch } from "../Switch/Switch";
 import { TabBar } from "../TabBar/TabBar";
@@ -55,6 +57,13 @@ export interface SettingsPageProps {
   /** Start at login: the system's state; not offered where the system has none. */
   loginItem: LoginItemState;
   onLoginItem: (on: boolean) => void;
+  /** The vigie command (ADR-0036): linked to this app, or the command that links it; not shown
+   before it is read. */
+  command?: CommandView;
+  /** Reads the command's state again, after the user ran the command. */
+  onCheckCommand?: () => void;
+  /** Puts the command on the clipboard. */
+  onCopy?: (text: string) => Promise<unknown> | void;
 }
 
 // The intervals of automatic scans, in hours; 0 is never (app.AutoScanHours).
@@ -90,6 +99,9 @@ export function SettingsPage({
   onBackground,
   loginItem,
   onLoginItem,
+  command,
+  onCheckCommand,
+  onCopy,
 }: SettingsPageProps) {
   const { t, i18n } = useTranslation();
   const panel = useId();
@@ -157,6 +169,34 @@ export function SettingsPage({
             </Row>
             <Row title={t("settings.background.notifyTitle")} desc={t("settings.background.notifyDesc")}>
               <Switch label={t("settings.background.notifyTitle")} on={background.notify} onChange={(notify) => onBackground({ ...background, notify })} />
+            </Row>
+          </Section>
+        )}
+        {tab === "general" && command && (command.linked || command.command) && (
+          <Section title={t("settings.cli.section")}>
+            <Row
+              title={t("settings.cli.title")}
+              desc={
+                command.linked
+                  ? t("settings.cli.linkedDesc", { path: command.path })
+                  : t(command.appImage ? "settings.cli.appImageDesc" : "settings.cli.notLinkedDesc")
+              }
+              below={!command.linked && <CommandLine command={command.command} onCopy={onCopy} />}
+            >
+              {command.linked ? (
+                <span className={styles.installed}>
+                  <span className={styles.installedIcon}>
+                    <Icon name="check" size={14} />
+                  </span>
+                  {t("settings.cli.installed")}
+                </span>
+              ) : (
+                onCheckCommand && (
+                  <Button variant="text" onClick={onCheckCommand}>
+                    {t("settings.cli.checkAgain")}
+                  </Button>
+                )
+              )}
             </Row>
           </Section>
         )}
@@ -290,7 +330,22 @@ function Section({ title, children }: { title?: string; children: ReactNode }) {
   );
 }
 
-function Row({ title, desc, meta, note, children }: { title: string; desc: string; meta?: string; note?: string; children?: ReactNode }) {
+function Row({
+  title,
+  desc,
+  meta,
+  note,
+  below,
+  children,
+}: {
+  title: string;
+  desc: string;
+  meta?: string;
+  note?: string;
+  /** Under the text and the control, the row's full width: a command to copy, for example. */
+  below?: ReactNode;
+  children?: ReactNode;
+}) {
   return (
     <div className={styles.row}>
       <span className={styles.text}>
@@ -300,6 +355,7 @@ function Row({ title, desc, meta, note, children }: { title: string; desc: strin
         {note && <span className={styles.note}>{note}</span>}
       </span>
       <span className={styles.control}>{children}</span>
+      {below && <div className={styles.below}>{below}</div>}
     </div>
   );
 }

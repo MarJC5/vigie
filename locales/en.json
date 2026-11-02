@@ -1250,6 +1250,15 @@
       "notifyTitle": "Notifications",
       "notifyDesc": "Tells you when a scan makes a site urgent or a host unreachable, and when a long scan or update you started ends while Vigie is not in front."
     },
+    "cli": {
+      "section": "Command line",
+      "title": "vigie command",
+      "linkedDesc": "In Terminal: vigie scan, vigie update, vigie export… vigie alone opens Vigie. Linked from {{path}}.",
+      "notLinkedDesc": "To scan, update or export from Terminal, run this command there once. It asks for your password.",
+      "appImageDesc": "To scan, update or export from a terminal, run this command there once. ~/.local/bin must be on your PATH.",
+      "installed": "Installed",
+      "checkAgain": "Check again"
+    },
     "title": "Settings",
     "tabs": {
       "general": "General",

@@ -96,3 +96,22 @@
 
 
 
+
+/* Under a row's text and control, its full width (a command to copy). */
+.below {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.installed {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--vg-text-small);
+  color: var(--vg-text-muted);
+}
+
+.installedIcon {
+  display: inline-flex;
+  color: var(--vg-status-ok);
+}

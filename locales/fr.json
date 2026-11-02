@@ -1337,6 +1337,15 @@
       "notifyTitle": "Notifications",
       "notifyDesc": "Vous prévient quand un relevé rend un site urgent ou un hébergement injoignable, et quand un long relevé ou une mise à jour que vous avez lancé se termine pendant que Vigie n'est pas devant."
     },
+    "cli": {
+      "section": "Ligne de commande",
+      "title": "Commande vigie",
+      "linkedDesc": "Dans le Terminal : vigie scan, vigie update, vigie export… vigie seul ouvre Vigie. Liée depuis {{path}}.",
+      "notLinkedDesc": "Pour relever, mettre à jour ou exporter depuis le Terminal, lancez-y une fois cette commande. Votre mot de passe vous sera demandé.",
+      "appImageDesc": "Pour relever, mettre à jour ou exporter depuis le terminal, lancez-y une fois cette commande. ~/.local/bin doit être dans votre PATH.",
+      "installed": "Installée",
+      "checkAgain": "Vérifier à nouveau"
+    },
     "title": "Réglages",
     "tabs": {
       "general": "Général",

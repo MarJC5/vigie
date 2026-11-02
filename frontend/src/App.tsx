@@ -5,6 +5,7 @@ import { I18nextProvider } from "react-i18next";
 import { VigieDiscovery, VigieMenu, VigieScans, VigieUpdates } from "../bindings/events";
 import {
   Addons,
+  CommandLink,
   Data,
   Editor,
   HostWizard,
@@ -17,7 +18,7 @@ import {
   Updates,
   Watch,
 } from "../bindings/github.com/MarJC5/vigie/internal/app";
-import type { BackgroundSettings, DatabaseView, Journal, LoginItemState, LookupsView, Node, ScansState, TagView, TreeView, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { BackgroundSettings, CommandView, DatabaseView, Journal, LoginItemState, LookupsView, Node, ScansState, TagView, TreeView, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { ActivityPage } from "./components/ActivityPage/ActivityPage";
 import { AddHostWizard, type WizardApi } from "./components/AddHostWizard/AddHostWizard";
 import { type AddonsApi, AddonsFlow } from "./components/AddonsFlow/AddonsFlow";
@@ -158,6 +159,11 @@ export function App() {
   const [dataWindow, setDataWindow] = useState(false);
   const [background, setBackground] = useState<BackgroundSettings>({ on: false, autoScan: 0, notify: false });
   const [loginItem, setLoginItem] = useState<LoginItemState>({ supported: false, on: false });
+  // The vigie command (ADR-0036), read again each time the settings open.
+  const [command, setCommand] = useState<CommandView>();
+  useEffect(() => {
+    if (section === "settings") void CommandLink.State().then(setCommand);
+  }, [section]);
   const [nextScan, setNextScan] = useState("");
   const [canOpenSSH, setCanOpenSSH] = useState(false);
   // The Activity page: its days, its filter, the journal read.
@@ -369,6 +375,9 @@ export function App() {
                 onBackground={changeBackground}
                 loginItem={loginItem}
                 onLoginItem={(on) => void changeLoginItem(on)}
+                command={command}
+                onCheckCommand={() => void CommandLink.State().then(setCommand)}
+                onCopy={copyText}
               />
             )
           }
