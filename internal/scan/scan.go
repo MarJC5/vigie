@@ -47,15 +47,15 @@ type Scanner struct {
 // checksums, the PHP files in its uploads.
 const filesSteps = 3
 
-// steps is the number of commands of a scan known before it starts, for the progress: 27; a
+// steps is the number of commands of a scan known before it starts, for the progress: 24; a
 // network reads its subsites' list too, and its administrators in one go (ADR-0029). The comparison
 // of the files, each administrator of a single site, each constant read and Wordfence add theirs
-// once known. A theme in a plugin's folder takes two more, read again with the plugins.
+// once known. A theme in a plugin's folder takes one more, the themes read again with the plugins.
 func (j Job) steps() int {
 	if j.Site.Multisite {
-		return 28
+		return 25
 	}
-	return 27
+	return 24
 }
 
 // Site scans one site. The scan is always returned, also when it failed or was cancelled; for a
@@ -109,6 +109,8 @@ type run struct {
 	// plugins.
 	themesInPlugins bool
 	root            string // the site's real folder, once read
+	// languageUpdates are the translation updates read with the update checks.
+	languageUpdates []model.ScanItem
 }
 
 // exec runs one WP-CLI command within the host's limit and reports the progress.
@@ -231,9 +233,7 @@ func (r *run) scan(ctx context.Context, result *model.Scan) ([]model.Subsite, er
 	if err := r.extensions(ctx, result); err != nil {
 		return nil, err
 	}
-	if err := r.languages(ctx, result); err != nil {
-		return nil, err
-	}
+	r.languages(result)
 	// Before the outside lookups, which check the PHP serving the pages when it is known.
 	if err := r.phpWeb(ctx, result); err != nil {
 		return nil, err
@@ -324,6 +324,9 @@ func (r *run) core(ctx context.Context, result *model.Scan) error {
 		return err
 	}
 	result.CoreChecked = wpcli.CoreCheckProven(out, result.WordPress)
+	if err := r.translations(out); err != nil {
+		return err
+	}
 	if len(offers) == 0 {
 		result.Items = append(result.Items, model.ScanItem{Kind: model.ItemCore, Version: result.WordPress, Update: model.UpdateNone})
 	}
@@ -356,11 +359,18 @@ func (r *run) extensions(ctx context.Context, result *model.Scan) error {
 			return err
 		}
 		*kind.checked = complete && wpcli.ExtensionsCheckProven(out)
+		if err := r.translations(out); err != nil {
+			return err
+		}
+		known := map[string]bool{}
+		if kind.item == model.ItemPlugin {
+			known = wpcli.PluginsKnown(out)
+		}
 		for _, e := range list {
 			result.Items = append(result.Items, model.ScanItem{
 				Kind: kind.item, Slug: e.Name, Title: e.Title, Status: e.Status, Version: e.Version,
 				Update: updateState(e.Update), UpdateVersion: e.UpdateVersion,
-				AutoUpdate: e.AutoUpdate, OnWordPressOrg: kind.item == model.ItemPlugin && e.OnWordPressOrg,
+				AutoUpdate: e.AutoUpdate, OnWordPressOrg: known[e.Name],
 			})
 		}
 	}
@@ -411,34 +421,25 @@ func (r *run) themes(ctx context.Context) ([]wpcli.Extension, bool, error) {
 	return list, true, err
 }
 
-// languages reads the translation updates; WP-CLI fails when wordpress.org cannot be reached,
-// which leaves the check unproven rather than stopping the scan.
-func (r *run) languages(ctx context.Context, result *model.Scan) error {
-	result.LanguagesChecked = true
-	for _, of := range []wpcli.Languages{wpcli.LanguagesOfCore, wpcli.LanguagesOfPlugins, wpcli.LanguagesOfThemes} {
-		cmd := wpcli.LanguageUpdates(of)
-		if of == wpcli.LanguagesOfThemes && r.themesInPlugins {
-			cmd = cmd.WithPlugins()
-		}
-		out, err := r.read(ctx, cmd)
-		if errors.Is(err, wpcli.ErrCannotLoad) {
-			result.LanguagesChecked = false
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		updates, err := wpcli.ParseLanguageUpdates(out)
-		if err != nil {
-			return err
-		}
-		for _, u := range updates {
-			result.Items = append(result.Items, model.ScanItem{
-				Kind: model.ItemLanguage, Slug: u.Item, Language: u.Language, Update: model.UpdateAvailable,
-			})
-		}
+// translations keeps the translation updates of an update check's data, for languages.
+func (r *run) translations(data []byte) error {
+	updates, err := wpcli.ParseUpdateTranslations(data)
+	if err != nil {
+		return err
+	}
+	for _, u := range updates {
+		r.languageUpdates = append(r.languageUpdates, model.ScanItem{
+			Kind: model.ItemLanguage, Slug: u.Item, Language: u.Language, Update: model.UpdateAvailable,
+		})
 	}
 	return nil
+}
+
+// languages adds the translation updates WordPress stored with its checks of WordPress, the
+// plugins and the themes (ADR-0032): proven when the three checks are.
+func (r *run) languages(result *model.Scan) {
+	result.Items = append(result.Items, r.languageUpdates...)
+	result.LanguagesChecked = result.CoreChecked && result.PluginsChecked && result.ThemesChecked
 }
 
 func updateState(s wpcli.UpdateState) model.UpdateState {

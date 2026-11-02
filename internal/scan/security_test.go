@@ -374,9 +374,9 @@ func TestAFailedSecurityReadIsNotChecked(t *testing.T) {
 	}
 }
 
-// Whether wordpress.org knows a plugin comes from wordpress.org itself, asked from the machine:
-// the server's own reading says "closed" when it cannot reach it (Hello Dolly here). Without an
-// answer, the server's reading stays.
+// Whether wordpress.org knows a plugin: the server reads it in its update check's answer
+// (ADR-0032); wordpress.org's own answer, asked from the machine, replaces it. Without an answer,
+// the server's reading stays.
 func TestWordPressOrgAnswersForItsPlugins(t *testing.T) {
 	onWordPressOrg := func(s model.Scan, slug string) bool {
 		got, ok := item(s, model.ItemPlugin, slug)
@@ -386,18 +386,18 @@ func TestWordPressOrgAnswersForItsPlugins(t *testing.T) {
 		return got.OnWordPressOrg
 	}
 	server, _ := scanner(replay(t, "outdated")).Site(context.Background(), job("outdated"), nil)
-	if onWordPressOrg(server, "hello") || !onWordPressOrg(server, "akismet") {
+	if !onWordPressOrg(server, "hello") || !onWordPressOrg(server, "akismet") || onWordPressOrg(server, "fixture-premium") {
 		t.Fatal("without lookups, the server's reading is not kept")
 	}
 
 	s := scanner(replay(t, "outdated"))
 	s.Lookups = &lookups{info: map[string]lookup.PluginInfo{
 		"akismet": {OnWordPressOrg: true},
-		"hello":   {OnWordPressOrg: true},
+		"hello":   {OnWordPressOrg: false},
 		// fixture-premium: wordpress.org does not know it.
 	}}
 	got, _ := s.Site(context.Background(), job("outdated"), nil)
-	if !onWordPressOrg(got, "hello") || !onWordPressOrg(got, "akismet") || onWordPressOrg(got, "fixture-premium") {
+	if onWordPressOrg(got, "hello") || !onWordPressOrg(got, "akismet") || onWordPressOrg(got, "fixture-premium") {
 		t.Errorf("hello %v, akismet %v, fixture-premium %v; want wordpress.org's answers",
 			onWordPressOrg(got, "hello"), onWordPressOrg(got, "akismet"), onWordPressOrg(got, "fixture-premium"))
 	}

@@ -147,6 +147,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The site list, a site's page and the Activity journal stay fast with a long history: the latest
   scans and the journal's days are found by index, not by going through every scan kept.
+- A scan no longer asks wordpress.org once per plugin from the server: the translation updates
+  and the plugins wordpress.org knows come from the update check WordPress makes anyway, as its
+  Updates screen shows them. A site with 22 plugins is scanned in about 6 s instead of 33 (the
+  daily comparison of the files aside).
 - The window stays quick while many sites are scanned: the eye in the menu bar reads the sites'
   state once scans are stored, not as each site ends, and not at all when it is not shown.
 - The Activity journal reads what each scan noted of itself when it was made (its status and its

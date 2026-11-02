@@ -161,11 +161,11 @@ func TestParsePlugins(t *testing.T) {
 		byName[p.Name] = p
 	}
 	akismet, premium := byName["akismet"], byName["fixture-premium"]
-	if akismet.Update != wpcli.UpdateAvailable || akismet.Version != "5.3" || akismet.UpdateVersion == "" || !akismet.OnWordPressOrg {
+	if akismet.Update != wpcli.UpdateAvailable || akismet.Version != "5.3" || akismet.UpdateVersion == "" {
 		t.Errorf("akismet = %+v, want an update from wordpress.org", akismet)
 	}
-	if premium.Update != wpcli.UpdateNone || premium.OnWordPressOrg || premium.Status != "active" || premium.Title != "Fixture Premium" {
-		t.Errorf("fixture-premium = %+v, want an active plugin not on wordpress.org", premium)
+	if premium.Update != wpcli.UpdateNone || premium.Status != "active" || premium.Title != "Fixture Premium" {
+		t.Errorf("fixture-premium = %+v, want an active plugin without an update", premium)
 	}
 }
 
@@ -337,8 +337,8 @@ func TestParsePluginsWithMustUseAndDropins(t *testing.T) {
 	}
 	for name, status := range map[string]string{"fixture-must-use": "must-use", "advanced-cache.php": "dropin"} {
 		p := byName[name]
-		if p.Status != status || p.Update != wpcli.UpdateNone || p.OnWordPressOrg {
-			t.Errorf("%s = %+v, want %s with no update and not on wordpress.org", name, p, status)
+		if p.Status != status || p.Update != wpcli.UpdateNone {
+			t.Errorf("%s = %+v, want %s with no update", name, p, status)
 		}
 	}
 	// The shape of WP-CLI's source, before its formatter: null and false.

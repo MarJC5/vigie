@@ -1,8 +1,10 @@
 package wpcli
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // Updates is what a stored update check is about.
@@ -44,4 +46,64 @@ func ExtensionsCheckProven(out []byte) bool {
 		Checked json.RawMessage `json:"checked"`
 	}
 	return json.Unmarshal(out, &data) == nil && len(data.Checked) > 0 && string(data.Checked) != "null"
+}
+
+// ParseUpdateTranslations reads the translation updates in UpdateData's output: those WordPress
+// stored with the check, as its Updates screen lists them (wp_get_translation_updates). WordPress
+// itself is the item "". No stored data, which prints nothing, has none.
+func ParseUpdateTranslations(out []byte) ([]LanguageUpdate, error) {
+	list := []LanguageUpdate{}
+	if len(bytes.TrimSpace(out)) == 0 {
+		return list, nil
+	}
+	var data struct {
+		Translations []struct {
+			Type     string `json:"type"`
+			Slug     string `json:"slug"`
+			Language string `json:"language"`
+		} `json:"translations"`
+	}
+	if err := json.Unmarshal(out, &data); err != nil {
+		return nil, fmt.Errorf("update data: %w", ErrUnexpectedOutput)
+	}
+	for _, t := range data.Translations {
+		if t.Language == "" {
+			return nil, fmt.Errorf("update data: translation without language: %w", ErrUnexpectedOutput)
+		}
+		item := t.Slug
+		if t.Type == "core" {
+			item = ""
+		}
+		list = append(list, LanguageUpdate{Item: item, Language: t.Language})
+	}
+	return list, nil
+}
+
+// PluginsKnown reads, in the plugin UpdateData's output, the plugins wordpress.org answered for,
+// with an update ("response") or without ("no_update"), by their WP-CLI name: the plugin's folder,
+// or its file without ".php". A closed or unknown plugin is in neither.
+func PluginsKnown(out []byte) map[string]bool {
+	var data struct {
+		Response json.RawMessage `json:"response"`
+		NoUpdate json.RawMessage `json:"no_update"`
+	}
+	known := map[string]bool{}
+	if json.Unmarshal(out, &data) != nil {
+		return known
+	}
+	for _, raw := range []json.RawMessage{data.Response, data.NoUpdate} {
+		// PHP writes an empty array as [], a filled one as an object.
+		var files map[string]json.RawMessage
+		if json.Unmarshal(raw, &files) != nil {
+			continue
+		}
+		for file := range files {
+			name, _, inFolder := strings.Cut(file, "/")
+			if !inFolder {
+				name = strings.TrimSuffix(file, ".php")
+			}
+			known[name] = true
+		}
+	}
+	return known
 }

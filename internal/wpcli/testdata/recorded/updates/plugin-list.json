@@ -5,9 +5,9 @@
     "--format=json",
     "--skip-plugins",
     "--skip-themes",
-    "--fields=name,title,status,version,update,update_version,auto_update,wporg_status"
+    "--fields=name,title,status,version,update,update_version,auto_update"
   ],
   "exit": 0,
-  "stdout": "[{\"name\":\"akismet\",\"title\":\"Akismet Anti-spam: Spam Protection\",\"status\":\"active\",\"version\":\"5.3\",\"update\":\"available\",\"update_version\":\"5.7.2\",\"auto_update\":\"off\",\"wporg_status\":\"active\"},{\"name\":\"fixture-breaks\",\"title\":\"Fixture Breaks\",\"status\":\"active\",\"version\":\"1.0.0\",\"update\":\"none\",\"update_version\":\"\",\"auto_update\":\"off\",\"wporg_status\":\"closed\"},{\"name\":\"fixture-missing\",\"title\":\"Fixture Missing\",\"status\":\"active\",\"version\":\"1.0.0\",\"update\":\"none\",\"update_version\":\"\",\"auto_update\":\"off\",\"wporg_status\":\"closed\"},{\"name\":\"fixture-pro\",\"title\":\"Fixture Pro\",\"status\":\"active\",\"version\":\"1.0.0\",\"update\":\"none\",\"update_version\":\"\",\"auto_update\":\"off\",\"wporg_status\":\"closed\"},{\"name\":\"hello\",\"title\":\"Hello Dolly\",\"status\":\"inactive\",\"version\":\"1.7.2\",\"update\":\"none\",\"update_version\":\"\",\"auto_update\":\"off\",\"wporg_status\":\"closed\"}]",
+  "stdout": "[{\"name\":\"akismet\",\"title\":\"Akismet Anti-spam: Spam Protection\",\"status\":\"active\",\"version\":\"5.3\",\"update\":\"available\",\"update_version\":\"5.7.2\",\"auto_update\":\"off\"},{\"name\":\"fixture-breaks\",\"title\":\"Fixture Breaks\",\"status\":\"active\",\"version\":\"1.0.0\",\"update\":\"none\",\"update_version\":\"\",\"auto_update\":\"off\"},{\"name\":\"fixture-missing\",\"title\":\"Fixture Missing\",\"status\":\"active\",\"version\":\"1.0.0\",\"update\":\"none\",\"update_version\":\"\",\"auto_update\":\"off\"},{\"name\":\"fixture-pro\",\"title\":\"Fixture Pro\",\"status\":\"active\",\"version\":\"1.0.0\",\"update\":\"none\",\"update_version\":\"\",\"auto_update\":\"off\"},{\"name\":\"hello\",\"title\":\"Hello Dolly\",\"status\":\"inactive\",\"version\":\"1.7.2\",\"update\":\"none\",\"update_version\":\"\",\"auto_update\":\"off\"}]",
   "stderr": ""
 }

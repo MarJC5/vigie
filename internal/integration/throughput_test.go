@@ -132,10 +132,14 @@ rm -rf "$P"; cp -R ~/sites/plain "$P"; rm -rf "$P/node_modules"
 wp config set table_prefix many_ --path="$P" --quiet
 wp core install --path="$P" --url=https://many.example.test --title=Many --admin_user=admin \
 	--admin_password=fixture-only --admin_email=admin@example.test --skip-email --quiet
-wp plugin install contact-form-7 wordpress-seo classic-editor wpforms-lite really-simple-ssl litespeed-cache \
+# Three tries each: a download from wordpress.org fails now and then.
+for p in contact-form-7 wordpress-seo classic-editor wpforms-lite really-simple-ssl litespeed-cache \
 	wp-mail-smtp duplicate-post redirection updraftplus all-in-one-wp-migration limit-login-attempts-reloaded \
 	regenerate-thumbnails tinymce-advanced health-check query-monitor cookie-notice wp-super-cache autoptimize \
-	loco-translate --path="$P" --quiet
+	loco-translate; do
+	wp plugin install "$p" --path="$P" --quiet || wp plugin install "$p" --path="$P" --quiet ||
+		wp plugin install "$p" --path="$P" --quiet
+done
 wp language core install fr_FR --activate --path="$P" --quiet
 wp language plugin install --all fr_FR --path="$P" --quiet || true
 wp language theme install --all fr_FR --path="$P" --quiet || true`

@@ -47,8 +47,8 @@ var recordings = []struct {
 	{"option-stylesheet", []string{"option", "get", "stylesheet", "--skip-plugins", "--skip-themes"}},
 	{"core-check-update", []string{"core", "check-update", "--format=json", "--skip-plugins", "--skip-themes"}},
 	{"plugin-list", []string{"plugin", "list", "--format=json", "--skip-plugins", "--skip-themes",
-		// Not wporg_last_updated: WP-CLI reads it from Trac, one request per plugin.
-		"--fields=name,title,status,version,update,update_version,auto_update,wporg_status"}},
+		// Neither wporg_status nor wporg_last_updated: WP-CLI asks for them once per plugin.
+		"--fields=name,title,status,version,update,update_version,auto_update"}},
 	{"theme-list", []string{"theme", "list", "--format=json", "--skip-plugins", "--skip-themes",
 		"--fields=name,title,status,version,update,update_version,auto_update"}},
 	{"language-core", []string{"language", "core", "list", "--update=available", "--format=json", "--skip-plugins", "--skip-themes"}},

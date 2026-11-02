@@ -1,6 +1,7 @@
 package wpcli_test
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/MarJC5/vigie/internal/wpcli"
@@ -71,4 +72,44 @@ func FuzzUpdateChecks(f *testing.F) {
 		wpcli.CoreCheckProven(out, "7.1.3")
 		wpcli.ExtensionsCheckProven(out)
 	})
+}
+
+// The translation updates are those WordPress stored with its update checks, as its Updates
+// screen lists them (ADR-0032): the same as the language commands found on the bench.
+func TestParseUpdateTranslations(t *testing.T) {
+	for _, c := range []struct {
+		data string
+		want []wpcli.LanguageUpdate
+	}{
+		{"update-core-data", []wpcli.LanguageUpdate{{Item: "", Language: "fr_FR"}}},
+		{"update-plugins-data", []wpcli.LanguageUpdate{{Item: "akismet", Language: "fr_FR"}}},
+		{"update-themes-data", []wpcli.LanguageUpdate{}},
+	} {
+		got, err := wpcli.ParseUpdateTranslations([]byte(load(t, "outdated", c.data).Stdout))
+		if err != nil || !slices.Equal(got, c.want) {
+			t.Errorf("%s: ParseUpdateTranslations() = %+v, %v; want %+v", c.data, got, err, c.want)
+		}
+	}
+	// No stored data prints nothing.
+	if got, err := wpcli.ParseUpdateTranslations(nil); err != nil || len(got) != 0 {
+		t.Errorf("ParseUpdateTranslations(nothing) = %+v, %v; want none", got, err)
+	}
+}
+
+// wordpress.org knows a plugin it answered for, with an update or without; a closed or unknown
+// plugin is in neither (ADR-0032).
+func TestPluginsKnown(t *testing.T) {
+	known := wpcli.PluginsKnown([]byte(load(t, "outdated", "update-plugins-data").Stdout))
+	for name, want := range map[string]bool{"akismet": true, "hello": true, "fixture-premium": false, "fixture-must-use": false} {
+		if known[name] != want {
+			t.Errorf("%s known = %v, want %v", name, known[name], want)
+		}
+	}
+	// PHP writes an empty list for no plugin at all.
+	if known := wpcli.PluginsKnown([]byte(`{"response":[],"no_update":{"seo/seo.php":{}}}`)); !known["seo"] || len(known) != 1 {
+		t.Errorf("PluginsKnown() = %v, want seo only", known)
+	}
+	if known := wpcli.PluginsKnown([]byte(load(t, "offline", "update-plugins-data").Stdout)); len(known) != 0 {
+		t.Errorf("offline: PluginsKnown() = %v, want none: the check never reached wordpress.org", known)
+	}
 }

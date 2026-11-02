@@ -94,6 +94,32 @@ func TestScanOfAnOutdatedSite(t *testing.T) {
 	}
 }
 
+// A scan asks wordpress.org nothing per plugin from the server: the translation updates and the
+// plugins it knows come from the update checks' data (ADR-0032).
+func TestScanAsksNothingPerPlugin(t *testing.T) {
+	fake := replay(t, "outdated")
+	got, _ := scanner(fake).Site(context.Background(), job("outdated"), nil)
+	for _, call := range fake.Calls() {
+		if strings.Contains(call, "'language'") || strings.Contains(call, " language ") || strings.Contains(call, "wporg_status") {
+			t.Errorf("ran %s", call)
+		}
+	}
+	langs := map[string]bool{}
+	for _, i := range got.Items {
+		if i.Kind == model.ItemLanguage {
+			langs[i.Slug+"|"+i.Language] = true
+		}
+	}
+	if len(langs) != 2 || !langs["|fr_FR"] || !langs["akismet|fr_FR"] || !got.LanguagesChecked {
+		t.Errorf("translation updates = %v, checked %v; want WordPress and Akismet in French", langs, got.LanguagesChecked)
+	}
+	for slug, want := range map[string]bool{"akismet": true, "hello": true, "fixture-premium": false} {
+		if p, _ := item(got, model.ItemPlugin, slug); p.OnWordPressOrg != want {
+			t.Errorf("%s on wordpress.org = %v, want %v", slug, p.OnWordPressOrg, want)
+		}
+	}
+}
+
 func TestScanWithoutOutboundHTTPNeverSaysUpToDate(t *testing.T) {
 	got, _ := scanner(replay(t, "offline")).Site(context.Background(), job("offline"), nil)
 	if got.Outcome != model.ScanCompleted {
@@ -188,12 +214,12 @@ func TestProgressCountsTheSteps(t *testing.T) {
 		t.Fatal("no progress reported")
 	}
 	last := steps[len(steps)-1]
-	// 15 commands for the versions, the addresses and the updates, and the dashboard's checks of
+	// 12 commands for the versions, the addresses and the updates, and the dashboard's checks of
 	// PHP; for security, 4 to compare the files, then the administrators and the one's two-factor,
 	// the constants' names and WP_DEBUG, the admin email and the one waiting, debug.log, the search
-	// engines, WP-Cron, the options and transients, the database version: 32, then the end.
-	if last.Total != 32 || len(steps) != 33 {
-		t.Errorf("progress = %d reports, total %d; want 32 commands and the end", len(steps), last.Total)
+	// engines, WP-Cron, the options and transients, the database version: 29, then the end.
+	if last.Total != 29 || len(steps) != 30 {
+		t.Errorf("progress = %d reports, total %d; want 29 commands and the end", len(steps), last.Total)
 	}
 	if last.Done != last.Total || !slices.IsSortedFunc(steps, func(a, b scan.Progress) int { return a.Done - b.Done }) {
 		t.Fatalf("progress = %+v, want increasing up to the total", steps)

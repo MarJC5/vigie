@@ -59,11 +59,12 @@ func CoreCheckUpdate() Command {
 	return Command{args: []string{"core", "check-update", "--format=json"}, skipPlugins: true, skipThemes: true}
 }
 
-// PluginList lists the installed plugins with their update state and whether wordpress.org knows
-// them. Not wporg_last_updated: WP-CLI reads it from Trac, one request per plugin.
+// PluginList lists the installed plugins with their update state. Neither wporg_status nor
+// wporg_last_updated: WP-CLI asks wordpress.org, and Trac, once per plugin for them; the plugins
+// wordpress.org knows are in the update data (PluginsKnown).
 func PluginList() Command {
 	return Command{args: []string{"plugin", "list", "--format=json",
-		"--fields=name,title,status,version,update,update_version,auto_update,wporg_status"}, skipPlugins: true, skipThemes: true}
+		"--fields=name,title,status,version,update,update_version,auto_update"}, skipPlugins: true, skipThemes: true}
 }
 
 // ThemeList lists the installed themes with their update state.
@@ -180,14 +181,13 @@ const (
 
 // Extension is an installed plugin or theme.
 type Extension struct {
-	Name           string // slug
-	Title          string
-	Status         string // plugins: active, active-network, inactive, must-use, dropin; themes: active, parent, inactive
-	Version        string
-	Update         UpdateState
-	UpdateVersion  string
-	AutoUpdate     bool
-	OnWordPressOrg bool // plugins only: wordpress.org knows the plugin (wporg_status "active")
+	Name          string // slug
+	Title         string
+	Status        string // plugins: active, active-network, inactive, must-use, dropin; themes: active, parent, inactive
+	Version       string
+	Update        UpdateState
+	UpdateVersion string
+	AutoUpdate    bool
 }
 
 type rawExtension struct {
@@ -198,7 +198,6 @@ type rawExtension struct {
 	Update        loose  `json:"update"`
 	UpdateVersion loose  `json:"update_version"`
 	AutoUpdate    loose  `json:"auto_update"`
-	WPOrgStatus   loose  `json:"wporg_status"`
 }
 
 // loose reads a field WP-CLI writes as a string for ordinary plugins, and as false or null for
@@ -245,7 +244,7 @@ func parseExtensions(what string, out []byte) ([]Extension, error) {
 		list = append(list, Extension{
 			Name: r.Name, Title: string(r.Title), Status: r.Status, Version: string(r.Version),
 			Update: state, UpdateVersion: string(r.UpdateVersion),
-			AutoUpdate: r.AutoUpdate == "on", OnWordPressOrg: r.WPOrgStatus == "active",
+			AutoUpdate: r.AutoUpdate == "on",
 		})
 	}
 	return list, nil
