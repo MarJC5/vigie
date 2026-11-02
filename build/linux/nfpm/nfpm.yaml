@@ -17,11 +17,13 @@ license: "MIT"
 release: "1"
 
 contents:
+  # The vigie command (ADR-0036): lowercase, in /usr/bin, nothing in /usr/local (Debian Policy 9.1.2).
   - src: "./bin/Vigie"
-    dst: "/usr/local/bin/Vigie"
+    dst: "/usr/bin/vigie"
   - src: "./build/appicon.png"
     dst: "/usr/share/icons/hicolor/128x128/apps/Vigie.png"
-  - src: "./build/linux/Vigie.desktop"
+  # Its own desktop file, which starts /usr/bin/vigie; the generated one is the AppImage's.
+  - src: "./build/linux/nfpm/vigie.desktop"
     dst: "/usr/share/applications/Vigie.desktop"
 
 # Default dependencies for the GTK4 + WebKitGTK 6.0 stack (Ubuntu 24.04+ / Debian 13+)
