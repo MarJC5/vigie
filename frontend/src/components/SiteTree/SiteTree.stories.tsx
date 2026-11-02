@@ -170,6 +170,9 @@ export const EditFromTheKeyboard: Story = {
     await expect(args.onEdit).toHaveBeenCalledWith("atelier");
     await userEvent.keyboard("{Meta>}{Backspace}{/Meta}");
     await expect(args.onDelete).toHaveBeenCalledWith("atelier");
+    // Control-Backspace on Linux, as Control stands for Command in the rest of the tree.
+    await userEvent.keyboard("{Control>}{Backspace}{/Control}");
+    await expect(args.onDelete).toHaveBeenCalledTimes(2);
     await userEvent.keyboard("{Shift>}{F10}{/Shift}");
     await expect(args.onMenu).toHaveBeenCalledWith("atelier", expect.anything());
   },

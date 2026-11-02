@@ -30,7 +30,7 @@ export interface SiteTreeProps {
   onEdit?: (id: string) => void;
   onRename?: (id: string, name: string) => void;
   onCancelEdit?: () => void;
-  /** Command-Backspace or Delete on an item. */
+  /** Command-Backspace (Control-Backspace on Linux) or Delete on an item. */
   onDelete?: (id: string) => void;
   /** Right click, the Menu key or Shift-F10; the point is in the window's coordinates. */
   onMenu?: (id: string, point: { x: number; y: number }) => void;
@@ -212,7 +212,7 @@ export function SiteTree({
     // The Tags group itself has no actions.
     // The Tags group, and a subsite (read-only, ADR-0029), have none either.
     const id = row?.dataset.id === tagsGroupId || row?.dataset.id?.startsWith("subsite:") ? undefined : row?.dataset.id;
-    if (id && ((event.metaKey && event.key === "Backspace") || event.key === "Delete")) {
+    if (id && (((event.metaKey || event.ctrlKey) && event.key === "Backspace") || event.key === "Delete")) {
       event.preventDefault();
       onDelete?.(id);
       return;
