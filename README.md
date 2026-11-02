@@ -36,13 +36,15 @@ to protect. Vigie takes another route:
 - A `vigie` command line with JSON output, for scripts and scheduled scans.
 - Vigie in the background: in the menu bar once its window is closed, automatic scans at the
   interval you choose, notifications when a site turns urgent or gets a new administrator.
+- Vigie updates itself when you ask, from releases signed with a key built into the app.
 
 ## Privacy
 
 Vigie keeps your data on your computer: no account, no hosted service, no telemetry. A security
 scan asks a few outside services what the server cannot tell (known vulnerabilities, closed
-plugins, domain expiry), from your computer and only after you agreed: each one is listed with
-exactly what it receives, and each one can be turned off in the settings. Your sites' addresses
+plugins, domain expiry), and GitHub whether a new version of Vigie is out, from your computer and
+only after you agreed: each one is listed with exactly what it receives, and each one can be turned
+off in the settings. Your sites' addresses
 are never sent to a third party. See [docs/security.md](docs/security.md).
 
 ## The `vigie` command
@@ -56,6 +58,22 @@ or brings its window forward.
   `sudo ln -sf … /usr/local/bin/vigie`, to copy and run once in Terminal.
 - Linux packages (deb, rpm, Arch) install it as `/usr/bin/vigie`; for the AppImage, the same
   settings row gives the command that links it into `~/.local/bin`.
+
+## Installing and updating
+
+No release is published yet. Once there is one:
+
+- **macOS**: the DMG, from the [releases](https://github.com/MarJC5/vigie/releases). Vigie is not
+  notarized by Apple: open it once, then **System Settings**, **Privacy & Security**, **Open
+  Anyway**; afterwards it opens normally. Or with Homebrew:
+  `brew install --cask MarJC5/tap/vigie`.
+- **Linux**: the AppImage, or the deb, rpm or Arch package, from the releases.
+
+Updates: **Settings**, **About** says when a new version is out, with its notes, and installs it
+when you click **Install and restart**; nothing is downloaded before. Each update is signed, and
+checked against the key built into Vigie. Installed with Homebrew, `brew upgrade --cask vigie`;
+from a Linux package, your package manager. How a release is made:
+[docs/releasing.md](docs/releasing.md).
 
 ## Requirements
 

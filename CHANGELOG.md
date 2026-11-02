@@ -155,6 +155,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `docker pull` does: a line per site being scanned with the bar of its steps (per site being
   updated, with its step), the last sites done and a total with the time spent, erased before the
   results. Nothing changes with `--json`, nor when the output goes to a file or another program.
+- Vigie updates itself: Settings, About says when a new version is out, at most once a day or when
+  you ask, with its notes, and installs it with "Install and restart"; the eye's menu says so too.
+  Nothing is downloaded before you ask, nor while a scan or an update runs. Each release is signed,
+  and checked against the key built into the app. The check is one of the lookups outside
+  (github.com: the version of Vigie, the system and the architecture), under the same agreement and
+  its own switch. Installed with Homebrew or from a Linux package, About says to update it there.
+- Releases: the macOS app (universal, in a DMG and a zip), the AppImage, deb, rpm and Arch packages
+  for x86_64 and aarch64, with their `SHA256SUMS` ([docs/releasing.md](docs/releasing.md)).
 
 ### Changed
 

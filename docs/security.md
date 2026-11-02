@@ -90,6 +90,7 @@ checked", never "up to date".
 | data.iana.org | nothing about your sites (the list of domain registries) | when the kept list expires | until it expires |
 | the registry of the domain's TLD (RDAP) | the registered domain name; nothing for .ch, .li and .de, whose registries publish no expiry date | at each scan | a week per domain |
 | the site itself | its host name (a TLS connection on port 443, for the certificate) and one request for the first byte of `/wp-content/debug.log` | at each scan | nothing |
+| github.com | the version of Vigie, the system and the architecture, to learn of a new version of Vigie (not for a Homebrew or Linux package install) | at most once a day, and when you ask in **Settings, About** | nothing |
 
 **Never sent**: your sites' addresses to a third party, the versions of your plugins and themes
 (they are compared on your computer), your SSH details, anything read from your databases.

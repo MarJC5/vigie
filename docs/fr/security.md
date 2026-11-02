@@ -101,6 +101,7 @@ ses vérifications sont alors « Non vérifié », jamais « À jour ».
 | data.iana.org | rien sur vos sites (la liste des registres de domaines) | quand la liste gardée expire | jusqu'à son expiration |
 | le registre du domaine de premier niveau (RDAP) | le nom de domaine enregistré, rien pour .ch, .li et .de, dont les registres ne publient pas de date d'expiration | à chaque relevé | une semaine par domaine |
 | le site lui-même | son nom d'hôte (une connexion TLS sur le port 443, pour le certificat) et une requête du premier octet de `/wp-content/debug.log` | à chaque relevé | rien |
+| github.com | la version de Vigie, le système et l'architecture, pour apprendre une nouvelle version de Vigie (pas pour une installation par Homebrew ou un paquet Linux) | une fois par jour au plus, et quand vous le demandez dans **Réglages, À propos** | rien |
 
 **Jamais envoyé** : les adresses de vos sites à un tiers, les versions de vos extensions et thèmes
 (elles sont comparées sur votre ordinateur), vos accès SSH, rien de ce qui est lu dans vos bases de
