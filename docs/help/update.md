@@ -26,7 +26,8 @@ comments) is lost.
 
 ## The backups
 
-Vigie keeps the ones of the last 3 updates of each site on the server, in `~/.vigie/backups/`.
-They hold the whole database: if that folder can be reached from the web, remove them.
+Vigie keeps them on the server, in `~/.vigie/backups/`: 30 days (**Settings, Data**), and at most
+those of the last 3 updates of each site. A site's **History** tab lists them. They hold the whole
+database: deleting a site from Vigie removes them too.
 
 Learn more: [what Vigie writes on a server](../updates.md).

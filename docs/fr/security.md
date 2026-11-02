@@ -60,6 +60,9 @@ commandes shell (le vrai dossier du site, un `find` dans ses téléversements, e
   ordinateur.
 - **WP-Cron** : les tâches planifiées et leur échéance (pas `wp cron test`, qui les exécuterait).
 - **Version du serveur de base de données**, quand le client `mysql` est sur le serveur.
+- **Les sauvegardes de Vigie**, faites avant chaque mise à jour : la date et la taille de celles de
+  chaque mise à jour, dans `~/.vigie/backups/<identifiant du site>` (`du`), pour l'onglet Historique
+  du site (voir [updates.md](updates.md)).
 
 ## Combien de temps prend un relevé, et ce qu'il demande au serveur
 

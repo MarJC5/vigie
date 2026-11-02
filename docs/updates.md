@@ -64,9 +64,18 @@ file while it runs.
 
 ## How long backups are kept
 
-Vigie keeps the backups of the **last 3 updates of each site**. At the end of each update, even a
-stopped one, the older folders of that site are removed. The history of the updates stays in
-Vigie's own database, on your computer.
+Vigie keeps a site's backups for **30 days**, and at most those of its **last 3 updates**. The time
+is set in **Settings, Data**: 7, 30 or 90 days, or no limit (then the last 3 updates only). The
+backups hold the data of the site's visitors and customers: they are not kept longer than needed.
+
+At the end of each update, even a stopped one, Vigie removes the folders past these limits, for
+every site of this Vigie on the same host, not only the one updated: one listing and the removals,
+in its own folder only. A folder named after a site this Vigie does not know is left alone: it can
+belong to Vigie on another computer.
+
+Each scan reads a site's backups, the date and size of each update's, and only reads. The site's
+**History** tab lists them; those past the limits can be removed at once with **Remove…**, after a
+confirmation. The history of the updates stays in Vigie's own database, on your computer.
 
 ## Rolling back
 
@@ -82,7 +91,11 @@ Only the item that failed is put back: the items updated before it keep their ne
 
 ## Removing the backups
 
-The backups are ordinary files: remove them over SSH when you no longer need them.
+Deleting a site or a host from Vigie offers, checked, to remove its sites' backups on the server
+too. If the server cannot be reached, the site is deleted from Vigie all the same, and Vigie gives
+the command to run there.
+
+The backups are ordinary files: you can also remove them over SSH.
 
 ```sh
 rm -rf ~/.vigie/backups/<site ID>   # the backups of one site

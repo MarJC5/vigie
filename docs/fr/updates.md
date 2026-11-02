@@ -71,9 +71,20 @@ mise à jour de WordPress, le fichier `.maintenance` pendant qu'elle a lieu.
 
 ## Combien de temps les sauvegardes sont gardées
 
-Vigie garde les sauvegardes des **3 dernières mises à jour de chaque site**. À la fin de chaque
-mise à jour, même arrêtée, les dossiers plus anciens de ce site sont supprimés. L'historique des
-mises à jour reste dans la base de Vigie, sur votre ordinateur.
+Vigie garde les sauvegardes d'un site **30 jours**, et au plus celles de ses **3 dernières mises à
+jour**. La durée se règle dans **Réglages, Données** : 7, 30 ou 90 jours, ou sans limite (seulement
+les 3 dernières mises à jour alors). Les sauvegardes contiennent les données des visiteurs et des
+clients du site : elles ne sont pas gardées plus longtemps que nécessaire.
+
+À la fin de chaque mise à jour, même arrêtée, Vigie supprime les dossiers au-delà de ces limites,
+pour tous les sites de ce Vigie sur le même hébergement, pas seulement celui mis à jour : une liste
+et les suppressions, dans son propre dossier seulement. Un dossier au nom d'un site que ce Vigie ne
+connaît pas reste tel quel : il peut appartenir au Vigie d'un autre ordinateur.
+
+Chaque relevé lit les sauvegardes d'un site, la date et la taille de celles de chaque mise à jour,
+et ne fait que lire. L'onglet **Historique** du site les liste, et celles au-delà des limites se
+suppriment d'un coup avec **Supprimer…**, après une confirmation. L'historique des mises à jour
+reste dans la base de Vigie, sur votre ordinateur.
 
 ## Revenir en arrière
 
@@ -90,8 +101,11 @@ version.
 
 ## Supprimer les sauvegardes
 
-Les sauvegardes sont des fichiers ordinaires : supprimez-les par SSH quand vous n'en avez plus
-besoin.
+La suppression d'un site ou d'un hébergement dans Vigie propose, cochée, de supprimer aussi les
+sauvegardes de ses sites sur le serveur. Si le serveur ne répond pas, le site est quand même
+supprimé de Vigie, et Vigie donne la commande à lancer sur le serveur.
+
+Les sauvegardes sont des fichiers ordinaires : vous pouvez aussi les supprimer par SSH.
 
 ```sh
 rm -rf ~/.vigie/backups/<identifiant du site>   # les sauvegardes d'un site

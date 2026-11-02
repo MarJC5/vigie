@@ -53,6 +53,8 @@ site's real folder, a `find` in its uploads, and the end of `debug.log`):
   300 characters; it can hold a path of the server, and stays on your computer.
 - **WP-Cron**: the scheduled events and when each is due (not `wp cron test`, which would run them).
 - **Database server version**, when the `mysql` client is on the server.
+- **Vigie's own backups**, made before each update: the date and size of each update's, in
+  `~/.vigie/backups/<site ID>` (`du`), for the site's History tab (see [updates.md](updates.md)).
 
 ## How long a scan takes, and how hard it works a server
 

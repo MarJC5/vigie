@@ -140,6 +140,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The backups Vigie makes on a server before an update are kept 30 days by default (7, 30 or 90
+  days, or no limit, in Settings, Data), and at most those of a site's last 3 updates: after each
+  update, the limits apply to every site of the host. Each scan reads them; a site's History tab
+  lists them and removes those past the limits; deleting a site or host from Vigie offers to remove
+  its backups too, and gives the command to run when the server cannot be reached.
 - The history of scans is kept for as long as the pages need it, so the database stops growing:
   each site's latest scans always, every scan in detail for 90 days, then for a year only the scans
   that changed something, without their details; runs and notifications a year. Vigie lets the

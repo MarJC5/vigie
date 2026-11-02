@@ -26,8 +26,8 @@ entre-temps (commandes, commentaires) est perdu.
 
 ## Les sauvegardes
 
-Vigie garde sur le serveur celles des 3 dernières mises à jour de chaque site, dans
-`~/.vigie/backups/`. Elles contiennent toute la base de données : si ce dossier est accessible
-depuis le web, supprimez-les.
+Vigie les garde sur le serveur, dans `~/.vigie/backups/` : 30 jours (**Réglages, Données**), et au
+plus celles des 3 dernières mises à jour de chaque site. L'onglet **Historique** d'un site les
+liste. Elles contiennent toute la base de données : supprimer un site de Vigie les supprime aussi.
 
 Pour aller plus loin : [ce que Vigie écrit sur un serveur](../updates.md).
