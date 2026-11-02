@@ -155,24 +155,30 @@ tasks:
     cmds:
       - wails3 tool package -name "{{.APP_NAME}}" -format deb -config ./build/linux/nfpm/nfpm.yaml -out {{.ROOT_DIR}}/bin
     env:
-      # nfpm.yaml reads it: a release's version, 0.0.0 otherwise.
+      # nfpm.yaml reads them: a release's version, 0.0.0 otherwise, and the architecture built, which
+      # nfpm would otherwise take as amd64.
       VERSION: '{{.VERSION | default "0.0.0"}}'
+      GOARCH: '{{.ARCH | default ARCH}}'
 
   generate:rpm:
     summary: Creates a rpm package
     cmds:
       - wails3 tool package -name "{{.APP_NAME}}" -format rpm -config ./build/linux/nfpm/nfpm.yaml -out {{.ROOT_DIR}}/bin
     env:
-      # nfpm.yaml reads it: a release's version, 0.0.0 otherwise.
+      # nfpm.yaml reads them: a release's version, 0.0.0 otherwise, and the architecture built, which
+      # nfpm would otherwise take as amd64.
       VERSION: '{{.VERSION | default "0.0.0"}}'
+      GOARCH: '{{.ARCH | default ARCH}}'
 
   generate:aur:
     summary: Creates a arch linux packager package
     cmds:
       - wails3 tool package -name "{{.APP_NAME}}" -format archlinux -config ./build/linux/nfpm/nfpm.yaml -out {{.ROOT_DIR}}/bin
     env:
-      # nfpm.yaml reads it: a release's version, 0.0.0 otherwise.
+      # nfpm.yaml reads them: a release's version, 0.0.0 otherwise, and the architecture built, which
+      # nfpm would otherwise take as amd64.
       VERSION: '{{.VERSION | default "0.0.0"}}'
+      GOARCH: '{{.ARCH | default ARCH}}'
 
   generate:dotdesktop:
     summary: Generates a `.desktop` file
