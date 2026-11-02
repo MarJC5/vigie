@@ -73,7 +73,7 @@ func TestEditTheTree(t *testing.T) {
 	if s, _ := tree.Site(uuid.MustParse(ids["site"])); s.Notes != "**Client**: Plain" || s.AdminURL != "https://plain.example.test/connexion" {
 		t.Errorf("site notes = %q, admin address %q", s.Notes, s.AdminURL)
 	}
-	if p := e.Delete(ctx, ids["clients"]); p != nil {
+	if p := e.Delete(ctx, ids["clients"], false).Problem; p != nil {
 		t.Fatal(p)
 	}
 }
@@ -86,7 +86,7 @@ func TestEditProblems(t *testing.T) {
 		got  *app.Problem
 		want string
 	}{
-		"folder holding a host":   {e.Delete(ctx, ids["clients"]), "problem.folderNotEmpty"},
+		"folder holding a host":   {e.Delete(ctx, ids["clients"], false).Problem, "problem.folderNotEmpty"},
 		"folder into its child":   {e.Move(ctx, ids["clients"], inner.ID), "problem.moveIntoItself"},
 		"site into a folder":      {e.Move(ctx, ids["site"], inner.ID), "problem.siteMoved"},
 		"unknown color":           {e.SetColor(ctx, ids["host"], "purple"), "problem.unknownColor"},
@@ -97,7 +97,7 @@ func TestEditProblems(t *testing.T) {
 		"name taken":              {e.Rename(ctx, inner.ID, "bench"), "problem.duplicateName"},
 		"empty name":              {e.CreateFolder(ctx, "", " ").Problem, "problem.emptyName"},
 		"missing node":            {e.Rename(ctx, model.NewID().String(), "x"), "problem.notFound"},
-		"not an id":               {e.Delete(ctx, "nope"), "problem.notFound"},
+		"not an id":               {e.Delete(ctx, "nope", false).Problem, "problem.notFound"},
 		"into a missing folder":   {e.Move(ctx, ids["host"], model.NewID().String()), "problem.folderNotFound"},
 		"folder under a site":     {e.CreateFolder(ctx, ids["site"], "x").Problem, "problem.folderNotFound"},
 	} {

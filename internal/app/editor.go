@@ -107,15 +107,6 @@ func (e *Editor) SetAdminURL(ctx context.Context, id, address string) *Problem {
 	return ProblemOf(e.ws.SetAdminURL(ctx, n, address))
 }
 
-// Delete removes a site, a host with its sites, or an empty folder from Vigie.
-func (e *Editor) Delete(ctx context.Context, id string) *Problem {
-	n, err := e.node(ctx, id)
-	if err != nil {
-		return ProblemOf(err)
-	}
-	return ProblemOf(e.ws.Delete(ctx, n))
-}
-
 // Host returns the details of a stored host, for its form.
 func (e *Editor) Host(ctx context.Context, id string) (HostDetails, error) {
 	n, err := e.node(ctx, id)

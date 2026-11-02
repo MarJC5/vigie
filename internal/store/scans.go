@@ -578,3 +578,18 @@ func statusesWhere(since time.Time, sites []model.ID) (string, []any) {
 	}
 	return where, args
 }
+
+// SetLatestBackups replaces the backups the site's latest scan read, after some were removed on the
+// server (ADR-0033).
+func (db *DB) SetLatestBackups(ctx context.Context, siteID model.ID, backups []model.Backup) error {
+	if backups == nil {
+		backups = []model.Backup{}
+	}
+	data, err := json.Marshal(backups)
+	if err != nil {
+		return err
+	}
+	_, err = db.sql.ExecContext(ctx, "UPDATE scans SET backups = ? WHERE id = (SELECT max(id) FROM scans WHERE site_id = ?)",
+		string(data), siteID.String())
+	return err
+}

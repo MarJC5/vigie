@@ -16,6 +16,14 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 import * as $models from "./models.js";
 
 /**
+ * Backups returns what the sites of a site or host keep on their server, as their latest scans
+ * read them; none for a folder, which is only deleted empty.
+ */
+export function Backups(id: string): $CancellablePromise<$models.SiteBackupsView[] | null> {
+    return $Call.ByID(4188964941, id);
+}
+
+/**
  * CreateFolder adds a folder under parentID, or at the root when it is empty.
  */
 export function CreateFolder(parentID: string, name: string): $CancellablePromise<$models.CreateResult> {
@@ -23,10 +31,11 @@ export function CreateFolder(parentID: string, name: string): $CancellablePromis
 }
 
 /**
- * Delete removes a site, a host with its sites, or an empty folder from Vigie.
+ * Delete removes a site, a host with its sites, or an empty folder from Vigie; with backups, the
+ * sites' backups on their server first (ADR-0033).
  */
-export function Delete(id: string): $CancellablePromise<$models.Problem | null> {
-    return $Call.ByID(836639749, id);
+export function Delete(id: string, backups: boolean): $CancellablePromise<$models.DeleteResult> {
+    return $Call.ByID(836639749, id, backups);
 }
 
 /**

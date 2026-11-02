@@ -58,6 +58,8 @@ func TestRemoteCommands(t *testing.T) {
 			`f='/home/u/sites/a/wp-content/debug.log'; [ -f "$f" ] || exit 0; wc -c < "$f"; tail -c 1048576 "$f" | grep -E 'PHP (Fatal|Parse) error' | tail -n 50`},
 		{"backups", func() (string, error) { return remote.ListBackups(site) }, `ls -1 '.vigie/backups/01a18704-356b-77be-ab41-b92a0d67a6bc'`},
 		{"remove a backup", func() (string, error) { return remote.RemoveBackup(dir) }, `rm -rf '` + dir + `'`},
+		{"backups of sites leaving", func() (string, error) { return remote.RemoveSiteBackups(site, site) },
+			`rm -rf '.vigie/backups/01a18704-356b-77be-ab41-b92a0d67a6bc' '.vigie/backups/01a18704-356b-77be-ab41-b92a0d67a6bc'`},
 		{"backups of a scan", func() (string, error) { return remote.BackupSizes(site) },
 			`cd '.vigie/backups/01a18704-356b-77be-ab41-b92a0d67a6bc' 2>/dev/null && du -sk -- */ 2>/dev/null; true`},
 	}

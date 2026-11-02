@@ -331,6 +331,19 @@ func ListBackups(site uuid.UUID) (string, error) {
 	return quotedLine("ls -1", ".vigie/backups/"+site.String())
 }
 
+// RemoveSiteBackups removes every backup of the sites given: their folders under ~/.vigie/backups,
+// when a site leaves Vigie (ADR-0033).
+func RemoveSiteBackups(sites ...uuid.UUID) (string, error) {
+	if len(sites) == 0 {
+		return "", fmt.Errorf("no site: %w", ErrBadPath)
+	}
+	dirs := make([]string, len(sites))
+	for i, site := range sites {
+		dirs[i] = ".vigie/backups/" + site.String()
+	}
+	return quotedLine("rm -rf", dirs...)
+}
+
 // BackupSizes lists the runs of a site's backups with their sizes in kilobytes, for a scan: it only
 // reads, and answers nothing, without failing, when the site has none (ADR-0033).
 func BackupSizes(site uuid.UUID) (string, error) {

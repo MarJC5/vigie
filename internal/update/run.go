@@ -21,8 +21,8 @@ var ErrNotOffered = errors.New("not offered by the preview")
 // errOutside is returned for a folder WP-CLI gave outside the site's own.
 var errOutside = errors.New("folder outside the site")
 
-// keptBackups is how many runs keep their backups on the server, per site.
-const keptBackups = 3
+// KeptBackups is how many runs keep their backups on the server, per site, at most.
+const KeptBackups = 3
 
 // Store records the operations, step by step (store.DB).
 type Store interface {
@@ -416,7 +416,7 @@ func (r *run) fatalsSince(ctx context.Context, offset int64) []string {
 }
 
 // prune removes the backups of older runs, on the site and on the other sites of this Vigie on the
-// account: beyond the last keptBackups runs of a site, and older than the job's limit (ADR-0033).
+// account: beyond the last KeptBackups runs of a site, and older than the job's limit (ADR-0033).
 // The run's own backups stay; a failure is ignored, left for the next update.
 func (r *run) prune(ctx context.Context) {
 	for _, site := range append([]model.ID{r.s.job.Site.ID}, r.s.job.Siblings...) {
@@ -445,18 +445,29 @@ func (r *run) prune(ctx context.Context) {
 	}
 }
 
-// expired returns the runs to remove among a site's, oldest first: beyond the last keptBackups,
-// and older than the job's limit.
+// expired returns the runs to remove among a site's, oldest first (Expired).
 func (r *run) expired(runs []string) []string {
-	var old []string
+	times := make([]time.Time, len(runs))
 	for i, run := range runs {
-		at, err := time.Parse(remote.BackupTimeLayout, run)
-		past := r.s.job.KeepFor > 0 && err == nil && r.s.u.Now().Sub(at) > r.s.job.KeepFor
-		if i < len(runs)-keptBackups || past {
-			old = append(old, run)
+		times[i], _ = time.Parse(remote.BackupTimeLayout, run) // a name that is not a time is kept by age
+	}
+	var old []string
+	for i, past := range Expired(times, r.s.u.Now(), r.s.job.KeepFor) {
+		if past {
+			old = append(old, runs[i])
 		}
 	}
 	return old
+}
+
+// Expired tells, for each run of a site's backups (oldest first), whether the limits remove it:
+// beyond the last KeptBackups runs, or older than keepFor, 0 for no limit (ADR-0033).
+func Expired(runs []time.Time, now time.Time, keepFor time.Duration) []bool {
+	past := make([]bool, len(runs))
+	for i, at := range runs {
+		past[i] = i < len(runs)-KeptBackups || keepFor > 0 && !at.IsZero() && now.Sub(at) > keepFor
+	}
+	return past
 }
 
 // step records a step before and after it runs; false when it failed. A step that cannot be

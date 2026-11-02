@@ -137,6 +137,49 @@ export interface BackgroundSettings {
 }
 
 /**
+ * BackupView is the backups of one update on the server, as the latest scan read them.
+ */
+export interface BackupView {
+    /**
+     * RFC 3339, the update's time
+     */
+    "at": string;
+    "bytes": number;
+
+    /**
+     * Expired: the limits remove it at the next update (ADR-0033); ByAge when it is older than the
+     * days kept, else it is beyond the last updates kept.
+     */
+    "expired": boolean;
+    "byAge": boolean;
+}
+
+/**
+ * BackupsView is what a site keeps on its server, for its History tab.
+ */
+export interface BackupsView {
+    /**
+     * the latest scan read them
+     */
+    "read": boolean;
+
+    /**
+     * the days kept, 0 for no limit
+     */
+    "days": number;
+
+    /**
+     * the updates of a site kept at most
+     */
+    "kept": number;
+
+    /**
+     * oldest first
+     */
+    "items": BackupView[] | null;
+}
+
+/**
  * Change is what a scan changed for a site: turned urgent, its host turned unreachable (as
  * notifications tell them, Alerts), or back.
  */
@@ -266,6 +309,16 @@ export interface DebugLogView {
      */
     "size": number;
     "written": boolean;
+}
+
+/**
+ * DeleteResult is what a delete did: the sites whose backups stayed on a server that could not be
+ * reached, and the command that removes them there.
+ */
+export interface DeleteResult {
+    "problem": Problem | null;
+    "left": string[] | null;
+    "command": string;
 }
 
 /**
@@ -1067,6 +1120,20 @@ export interface SettingView {
     "default": string;
     "required": boolean;
     "choices": ChoiceView[] | null;
+}
+
+/**
+ * SiteBackupsView is what one site keeps on its server, for the delete dialog.
+ */
+export interface SiteBackupsView {
+    "siteId": string;
+
+    /**
+     * its latest scan read them
+     */
+    "read": boolean;
+    "count": number;
+    "bytes": number;
 }
 
 /**

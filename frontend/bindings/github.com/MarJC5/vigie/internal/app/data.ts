@@ -24,6 +24,13 @@ export function ApplyImport(trustHostIDs: string[] | null): $CancellablePromise<
 }
 
 /**
+ * BackupDays returns the days the backups of an update stay on the server, 0 for no limit.
+ */
+export function BackupDays(): $CancellablePromise<number> {
+    return $Call.ByID(261331228);
+}
+
+/**
  * CancelImport forgets the import being previewed.
  */
 export function CancelImport(): $CancellablePromise<void> {
@@ -87,4 +94,12 @@ export function PreviewImport(intoID: string): $CancellablePromise<$models.Impor
  */
 export function SSHConfig(): $CancellablePromise<$models.SSHConfigView> {
     return $Call.ByID(2573305487);
+}
+
+/**
+ * SetBackupDays sets the days the backups of an update stay on the server: 7, 30 or 90, 0 for no
+ * limit.
+ */
+export function SetBackupDays(days: number): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(3192570666, days);
 }

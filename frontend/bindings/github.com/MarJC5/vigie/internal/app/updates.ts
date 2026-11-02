@@ -16,6 +16,13 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 import * as $models from "./models.js";
 
 /**
+ * Backups returns a site's backups on the server, as its latest scan read them.
+ */
+export function Backups(siteID: string): $CancellablePromise<$models.BackupsView> {
+    return $Call.ByID(3252756008, siteID);
+}
+
+/**
  * CancelAll stops every update after its current item; a rollback is never left halfway.
  */
 export function CancelAll(): $CancellablePromise<void> {
@@ -35,6 +42,14 @@ export function History(siteID: string): $CancellablePromise<$models.OperationVi
  */
 export function Preview(nodeID: string): $CancellablePromise<$models.SitePreviewView[] | null> {
     return $Call.ByID(3945919187, nodeID);
+}
+
+/**
+ * RemoveOldBackups removes a site's backups past the limits, on its server; refused while the
+ * site is updated or scanned.
+ */
+export function RemoveOldBackups(siteID: string): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(2547195565, siteID);
 }
 
 /**

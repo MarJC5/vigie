@@ -62,7 +62,8 @@ const editApi: EditApi = {
   Rename: Editor.Rename,
   Move: Editor.Move,
   SetColor: Editor.SetColor,
-  Delete: Editor.Delete,
+  // Without the backups until the delete dialog offers them.
+  Delete: (id: string) => Editor.Delete(id, false).then((r) => r.problem),
   SetAdminURL: Editor.SetAdminURL,
   SetNotes: Editor.SetNotes,
   SetTags: Editor.SetTags,

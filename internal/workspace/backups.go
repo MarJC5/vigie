@@ -3,11 +3,16 @@ package workspace
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/MarJC5/vigie/internal/model"
+	"github.com/MarJC5/vigie/internal/remote"
+	"github.com/MarJC5/vigie/internal/sshx"
+	"github.com/MarJC5/vigie/internal/update"
 )
 
 // ErrBackupDays refuses a time to keep the backups that the settings do not offer.
@@ -60,4 +65,107 @@ func (w *Workspace) backupLimits(ctx context.Context, tree *model.Tree) (time.Du
 		return ids
 	}
 	return time.Duration(days) * 24 * time.Hour, siblings, nil
+}
+
+// runOn runs a command line on a host, within its limit of commands at a time.
+func (w *Workspace) runOn(ctx context.Context, host model.Host, line string) (sshx.Result, error) {
+	var res sshx.Result
+	err := w.limiter.Do(ctx, host.ID.String(), maxConcurrent(host), func() error {
+		var err error
+		res, err = w.deps.Runner.Run(ctx, sshx.TargetFor(host), line)
+		return err
+	})
+	return res, err
+}
+
+// RemoveOldBackups removes, on its server, a site's backups past the limits (ADR-0033), then reads
+// what is left into the site's latest scan.
+func (w *Workspace) RemoveOldBackups(ctx context.Context, siteID model.ID) error {
+	tree, err := w.db.LoadTree(ctx)
+	if err != nil {
+		return err
+	}
+	site, ok := tree.Site(siteID)
+	if !ok {
+		return fmt.Errorf("site %s: %w", siteID, model.ErrNotFound)
+	}
+	host, _ := tree.Host(site.HostID)
+	keep, _, err := w.backupLimits(ctx, tree)
+	if err != nil {
+		return err
+	}
+	line, err := remote.ListBackups(site.ID)
+	if err != nil {
+		return err
+	}
+	res, err := w.runOn(ctx, host, line)
+	if err != nil {
+		return err
+	}
+	if res.ExitCode == 0 {
+		runs := remote.ParseBackups(res.Stdout)
+		times := make([]time.Time, len(runs))
+		for i, run := range runs {
+			times[i], _ = time.Parse(remote.BackupTimeLayout, run)
+		}
+		for i, past := range update.Expired(times, w.deps.Now(), keep) {
+			if !past {
+				continue
+			}
+			line, err := remote.RemoveBackup(".vigie/backups/" + site.ID.String() + "/" + runs[i])
+			if err != nil {
+				return err
+			}
+			if res, err := w.runOn(ctx, host, line); err != nil {
+				return err
+			} else if res.ExitCode != 0 {
+				return fmt.Errorf("%w: %s", ErrRemoveRefused, strings.TrimSpace(string(res.Stderr)))
+			}
+		}
+	}
+	line, err = remote.BackupSizes(site.ID)
+	if err != nil {
+		return err
+	}
+	if res, err = w.runOn(ctx, host, line); err != nil {
+		return err
+	}
+	backups := []model.Backup{}
+	for _, b := range remote.ParseBackupSizes(res.Stdout) {
+		if at, err := time.Parse(remote.BackupTimeLayout, b.Run); err == nil {
+			backups = append(backups, model.Backup{At: at, Bytes: b.Bytes})
+		}
+	}
+	return w.db.SetLatestBackups(ctx, site.ID, backups)
+}
+
+// ErrRemoveRefused is a removal of backups the server refused; its message follows.
+var ErrRemoveRefused = errors.New("the server did not remove the backups")
+
+// DeleteWithBackups removes the backups of a site, or of a host's sites, on their server, then
+// deletes it from Vigie (ADR-0033). A server that cannot be reached leaves its sites' backups:
+// left names those sites, and the node is deleted anyway.
+func (w *Workspace) DeleteWithBackups(ctx context.Context, n model.Node) (left []model.ID, err error) {
+	tree, err := w.db.LoadTree(ctx)
+	if err != nil {
+		return nil, err
+	}
+	sites := tree.SitesUnder(n)
+	if n.Kind == model.KindSite || n.Kind == model.KindHost {
+		var ids []model.ID
+		for _, s := range sites {
+			ids = append(ids, s.ID)
+		}
+		if len(ids) > 0 {
+			host, _ := tree.Host(sites[0].HostID)
+			line, err := remote.RemoveSiteBackups(ids...)
+			if err != nil {
+				return nil, err
+			}
+			if res, err := w.runOn(ctx, host, line); err != nil || res.ExitCode != 0 {
+				left = ids
+			}
+		}
+	}
+	return left, w.Delete(ctx, n)
 }
