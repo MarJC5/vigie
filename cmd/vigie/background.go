@@ -244,16 +244,20 @@ func (k *keeper) ended(end app.RunEnd, alerts []app.Alert) {
 	}
 }
 
-// clicked opens the window on a notification's click, on the page of what the run covered.
+// clicked opens the window on a notification's click, on the page of what the run covered. The
+// click may come on the main thread, and opening waits for it (the Dock's dispatch_sync): it goes
+// on in a goroutine, or the app would stop there.
 func (k *keeper) clicked(result notifications.NotificationResult) {
 	if result.Error != nil {
 		k.wails.Logger.Error("notifications", "error", result.Error)
 		return
 	}
-	k.open()
-	if nodes, ok := result.Response.UserInfo["nodes"].(string); ok {
-		k.emit(app.MenuEvent, app.MenuCommand{Action: app.ActionOpen, Nodes: strings.Split(nodes, ",")})
-	}
+	go func() {
+		k.open()
+		if nodes, ok := result.Response.UserInfo["nodes"].(string); ok {
+			k.emit(app.MenuEvent, app.MenuCommand{Action: app.ActionOpen, Nodes: strings.Split(nodes, ",")})
+		}
+	}()
 }
 
 // alert sends a notification per kind of alert: the sites turned urgent, the hosts unreachable.
