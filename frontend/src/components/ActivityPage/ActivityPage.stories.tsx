@@ -87,3 +87,31 @@ export const Nothing: Story = {
     await expect(args.onFilter).toHaveBeenCalledWith("shared");
   },
 };
+
+// The end of a long run notified (ADR-0035): under the run, or under the last update of a run over
+// several sites, what its notification said.
+export const TheEndOfALongRun: Story = {
+  globals: { lang: "fr" },
+  args: {
+    journal: {
+      since: at(1, 14),
+      entries: [
+        {
+          kind: "run", at: at(31, 13, 0), ended: at(31, 13, 2), by: "user", path: "", siteId: "", sites: 12, outcome: "completed", summary: "",
+          changes: [{ kind: "urgent", nodeId: "boulangerie", name: "boulangerie-exemple.ch" }], siteChanges: [],
+          notices: [{ kind: "ended", names: ["boulangerie-exemple.ch"], text: "Relevé terminé, 12 sites relevés, 1 urgent. boulangerie-exemple.ch est devenu urgent." }],
+        },
+        {
+          kind: "update", at: at(31, 11, 5), ended: at(31, 11, 12), by: "", path: "Clients/Shared hosting/boulangerie-exemple.ch", siteId: "boulangerie", sites: 0,
+          outcome: "completed", summary: "Akismet 5.3 → 5.7.2", changes: [], siteChanges: [],
+          notices: [{ kind: "ended", names: [], text: "Mise à jour terminée, 5 sites mis à jour, 1 en échec." }],
+        },
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByText("Notifié : Relevé terminé, 12 sites relevés, 1 urgent. boulangerie-exemple.ch est devenu urgent.")).toBeInTheDocument();
+    await expect(page.getByText("Notifié : Mise à jour terminée, 5 sites mis à jour, 1 en échec.")).toBeInTheDocument();
+  },
+};

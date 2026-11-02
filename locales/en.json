@@ -629,6 +629,7 @@
     "unreachable": "{{name}} cannot be reached",
     "recovered": "{{name}} is back to normal",
     "notified": "Notified: {{names}}",
+    "notifiedText": "Notified: {{text}}",
     "noChange": "Nothing changed",
     "empty": "Nothing in the last {{days}} days.",
     "older": "Show older",
@@ -1247,7 +1248,7 @@
       "every_other": "Every {{count}} hours",
       "daily": "Every day",
       "notifyTitle": "Notifications",
-      "notifyDesc": "Tells you when a scan turns a site urgent or a host unreachable."
+      "notifyDesc": "Tells you when a scan makes a site urgent or a host unreachable, and when a long scan or update you started ends while Vigie is not in front."
     },
     "title": "Settings",
     "tabs": {

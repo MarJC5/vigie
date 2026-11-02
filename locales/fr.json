@@ -689,6 +689,7 @@
     "unreachable": "{{name}} est injoignable",
     "recovered": "{{name}} est revenu à la normale",
     "notified": "Notifié : {{names}}",
+    "notifiedText": "Notifié : {{text}}",
     "noChange": "Rien n'a changé",
     "empty": "Rien ces {{days}} derniers jours.",
     "older": "Afficher plus ancien",
@@ -1334,7 +1335,7 @@
       "every_other": "Toutes les {{count}} heures",
       "daily": "Chaque jour",
       "notifyTitle": "Notifications",
-      "notifyDesc": "Vous prévient quand un relevé rend un site urgent ou un hébergement injoignable."
+      "notifyDesc": "Vous prévient quand un relevé rend un site urgent ou un hébergement injoignable, et quand un long relevé ou une mise à jour que vous avez lancé se termine pendant que Vigie n'est pas devant."
     },
     "title": "Réglages",
     "tabs": {

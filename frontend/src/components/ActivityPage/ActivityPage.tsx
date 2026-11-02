@@ -137,14 +137,18 @@ function Entry({ entry: e, onOpen }: { entry: ActivityEntry; onOpen: (nodeId: st
 
 /**
  * The notifications a run sent, a line each: a site turned urgent or unreachable by its names; the
- * changes that notify (ADR-0027) by what they were, those of the same sites on one line.
+ * changes that notify (ADR-0027) by what they were, those of the same sites on one line; the end of
+ * a long run as its notification said it.
  */
 function noticeLines(notices: NoticeView[], t: TFunction): string[] {
   const lines: string[] = [];
   const changes = new Map<string, string[]>();
   for (const n of notices) {
     const names = (n.names ?? []).join(", ");
-    if (n.kind === "admin" || n.kind === "installed") {
+    // The end of a long run (ADR-0035): what its notification said.
+    if (n.kind === "ended") {
+      lines.push(t("activity.notifiedText", { text: n.text }));
+    } else if (n.kind === "admin" || n.kind === "installed") {
       changes.set(names, [...(changes.get(names) ?? []), t(`activity.noticeKind.${n.kind}`)]);
     } else {
       lines.push(t("activity.notified", { names }));
