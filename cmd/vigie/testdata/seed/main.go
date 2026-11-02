@@ -1,10 +1,11 @@
 // Command seed prepares a data directory for the end-to-end test of the window: the interface
 // language when -lang is given, and unless -empty a fictional site manager that mirrors the fixture of the interface
 // stories, with fictional scans of two of its sites and the history of updates of one; with
-// -network, instead, one host with a multisite network scanned (ADR-0029). Never real hosts or
+// -network, instead, one host with a multisite network scanned (ADR-0029); with -scale, instead,
+// that many sites scanned every day for -days days, to measure the window. Never real hosts or
 // sites.
 //
-// Usage: seed [-lang en|fr] [-empty | -network] <data-dir>
+// Usage: seed [-lang en|fr] [-empty | -network | -scale n [-days n]] <data-dir>
 package main
 
 import (
@@ -24,18 +25,20 @@ func main() {
 	lang := flag.String("lang", "", "interface language; the system language when empty")
 	empty := flag.Bool("empty", false, "no folders, hosts or sites")
 	network := flag.Bool("network", false, "one host with a multisite network scanned, instead of the site manager")
+	scale := flag.Int("scale", 0, "that many sites scanned every day, instead of the site manager")
+	days := flag.Int("days", 30, "with -scale, the days of scans")
 	flag.Parse()
 	if flag.NArg() != 1 {
-		fmt.Fprintln(os.Stderr, "usage: seed [-lang en|fr] [-empty | -network] <data-dir>")
+		fmt.Fprintln(os.Stderr, "usage: seed [-lang en|fr] [-empty | -network | -scale n [-days n]] <data-dir>")
 		os.Exit(2)
 	}
-	if err := seed(context.Background(), flag.Arg(0), *lang, *empty, *network); err != nil {
+	if err := seed(context.Background(), flag.Arg(0), *lang, *empty, *network, *scale, *days); err != nil {
 		fmt.Fprintln(os.Stderr, "seed:", err)
 		os.Exit(1)
 	}
 }
 
-func seed(ctx context.Context, dir, lang string, empty, network bool) error {
+func seed(ctx context.Context, dir, lang string, empty, network bool, scale, days int) error {
 	if err := store.EnsureDataDir(dir); err != nil {
 		return err
 	}
@@ -55,6 +58,9 @@ func seed(ctx context.Context, dir, lang string, empty, network bool) error {
 	}
 	if network {
 		return seedNetwork(ctx, db)
+	}
+	if scale > 0 {
+		return seedScale(ctx, db, scale, days)
 	}
 	if empty {
 		return nil
