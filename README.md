@@ -45,6 +45,18 @@ plugins, domain expiry), from your computer and only after you agreed: each one 
 exactly what it receives, and each one can be turned off in the settings. Your sites' addresses
 are never sent to a third party. See [docs/security.md](docs/security.md).
 
+## The `vigie` command
+
+`vigie scan`, `vigie update`, `vigie export` and the others run from a terminal, with JSON output
+and exit codes for scripts (see [docs/security.md](docs/security.md)); `vigie` alone opens the app,
+or brings its window forward.
+
+- Installed with Homebrew: the cask links `vigie`.
+- From the DMG: **Settings**, **General**, **Command line** shows the one command that links it,
+  `sudo ln -sf … /usr/local/bin/vigie`, to copy and run once in Terminal.
+- Linux packages (deb, rpm, Arch) install it as `/usr/bin/vigie`; for the AppImage, the same
+  settings row gives the command that links it into `~/.local/bin`.
+
 ## Requirements
 
 - macOS or Linux.

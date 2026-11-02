@@ -86,7 +86,7 @@ On Linux, a systemd user timer: `~/.config/systemd/user/vigie-scan.service`
 ```ini
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/vigie scan
+ExecStart=/usr/bin/vigie scan
 ```
 
 and `~/.config/systemd/user/vigie-scan.timer`

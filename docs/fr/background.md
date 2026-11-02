@@ -94,7 +94,7 @@ Sous Linux, un minuteur systemd de l'utilisateur : `~/.config/systemd/user/vigi
 ```ini
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/vigie scan
+ExecStart=/usr/bin/vigie scan
 ```
 
 et `~/.config/systemd/user/vigie-scan.timer`

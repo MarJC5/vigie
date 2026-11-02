@@ -147,6 +147,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   how it ended when Vigie's window is not in front, in one notification with what it made worse,
   never for the automatic scans nor for a run you stopped. A click opens the window on what the run
   covered; the notification is kept under its run in Activity.
+- The `vigie` command outside the app: the Homebrew cask links it; for the DMG, Settings, General,
+  Command line shows the one command that links it, to copy, and says when it is linked; the Linux
+  packages install `/usr/bin/vigie`. Typed alone in a terminal, `vigie` opens the app and frees
+  the terminal; one window at a time, a second launch bringing the open one forward.
 
 ### Changed
 
@@ -181,6 +185,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and the window says why nothing newer is.
 - Whether wordpress.org knows a plugin is asked from your computer when you agreed to it: a server
   without outbound access no longer shows every plugin as closed.
+- Linux packages install the binary as `/usr/bin/vigie`, no longer `/usr/local/bin/Vigie`, which
+  Debian does not allow to a package.
 
 ### Security
 
