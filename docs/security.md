@@ -54,6 +54,27 @@ site's real folder, a `find` in its uploads, and the end of `debug.log`):
 - **WP-Cron**: the scheduled events and when each is due (not `wp cron test`, which would run them).
 - **Database server version**, when the `mysql` client is on the server.
 
+## How long a scan takes, and how hard it works a server
+
+A scan runs about 24 commands on the server, one after the other. Most take a tenth of a second. The
+time goes to what the server asks wordpress.org: the update checks of WordPress, the plugins and the
+themes, a few seconds each, and once a day the comparison of the files, which downloads the
+checksums of every plugin. Nothing else is asked per plugin: the translation updates and the plugins
+wordpress.org knows come from the update checks, as WordPress's own Updates screen shows them. On
+Vigie's test bench, a site with 22 plugins is scanned in about 6 seconds, 25 seconds on the day its
+files are compared.
+
+- **Sites at a time**: a run scans up to 16 sites at a time, across hosts.
+- **Commands at a time on a host**: 2 by default, set in the host's connection (**Commands at a
+  time**). The sites of a host share them, so 20 sites on one shared hosting account take a minute
+  or two: keep 2 there, as hosts expect. On a server of your own you can raise it, up to 10, the
+  commands an SSH server lets run on one connection by default (`MaxSessions`). Two hosts in Vigie
+  with the same server, user and port share one connection, and their commands add up.
+- **Connections**: one shared connection per host, kept a minute after its last command
+  (`ControlPersist`). At most 8 open at once, whatever the servers: an SSH server turns away
+  connections opened too many at once (`MaxStartups`, 10 by default), and several hosts can be on
+  one server.
+
 ## What is asked from your computer
 
 Nothing below is sent before you agreed, on the screen shown before the first scan that needs it.

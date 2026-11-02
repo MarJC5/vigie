@@ -61,6 +61,30 @@ commandes shell (le vrai dossier du site, un `find` dans ses téléversements, e
 - **WP-Cron** : les tâches planifiées et leur échéance (pas `wp cron test`, qui les exécuterait).
 - **Version du serveur de base de données**, quand le client `mysql` est sur le serveur.
 
+## Combien de temps prend un relevé, et ce qu'il demande au serveur
+
+Un relevé lance environ 24 commandes sur le serveur, l'une après l'autre. La plupart prennent un
+dixième de seconde. Le temps part dans ce que le serveur demande à wordpress.org : les vérifications
+des mises à jour de WordPress, des extensions et des thèmes, quelques secondes chacune, et une fois
+par jour la comparaison des fichiers, qui télécharge les sommes de contrôle de chaque extension.
+Rien d'autre n'est demandé extension par extension : les traductions à mettre à jour et les
+extensions que wordpress.org connaît viennent des vérifications des mises à jour, comme l'écran
+Mises à jour de WordPress les montre. Sur le banc d'essai de Vigie, un site de 22 extensions est
+relevé en 6 secondes environ, 25 secondes le jour où ses fichiers sont comparés.
+
+- **Sites à la fois** : une série relève jusqu'à 16 sites à la fois, sur tous les hébergements.
+- **Commandes à la fois sur un hébergement** : 2 par défaut, réglé dans la connexion de
+  l'hébergement (**Commandes à la fois**). Les sites d'un hébergement se les partagent : 20 sites
+  sur un même compte mutualisé prennent donc une à deux minutes. Gardez 2 en mutualisé, comme les
+  hébergeurs s'y attendent. Sur votre propre serveur, vous pouvez monter jusqu'à 10, le nombre de
+  commandes qu'un serveur SSH laisse tourner par défaut sur une connexion (`MaxSessions`). Deux
+  hébergements de Vigie avec le même serveur, le même utilisateur et le même port partagent une
+  connexion, et leurs commandes s'additionnent.
+- **Connexions** : une connexion partagée par hébergement, gardée une minute après sa dernière
+  commande (`ControlPersist`). Au plus 8 s'ouvrent en même temps, quels que soient les serveurs : un
+  serveur SSH refuse des connexions ouvertes trop nombreuses à la fois (`MaxStartups`, 10 par
+  défaut), et plusieurs hébergements peuvent être sur un même serveur.
+
 ## Ce qui est demandé depuis votre ordinateur
 
 Rien de ce qui suit n'est envoyé avant votre accord, donné sur l'écran affiché avant le premier
