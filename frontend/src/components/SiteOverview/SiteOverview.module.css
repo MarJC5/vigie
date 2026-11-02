@@ -83,3 +83,16 @@
 .missing {
   color: var(--vg-text-muted);
 }
+
+/* The History tab: the backups on the server, then the updates. */
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-4);
+}
+
+.historyTitle {
+  margin: var(--vg-space-2) 0 0;
+  font-size: var(--vg-text-heading);
+  font-weight: var(--vg-weight-strong);
+}

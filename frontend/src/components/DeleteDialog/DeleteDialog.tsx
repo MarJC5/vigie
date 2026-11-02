@@ -1,24 +1,38 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { Node } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { Node, SiteBackupsView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { sizeText } from "../../lib/data";
 import { hasTag, whereOf } from "../../lib/tags";
 import { Button } from "../Button/Button";
+import { Checkbox } from "../Checkbox/Checkbox";
 import { Dialog } from "../Dialog/Dialog";
-import { Icon } from "../Icon/Icon";
+import { ItemList } from "../ItemList/ItemList";
 import styles from "./DeleteDialog.module.css";
 
 export interface DeleteDialogProps {
   node: Node;
   /** The whole tree, depth first: what goes with the node. */
   nodes: Node[];
-  onDelete: () => void;
+  /** What the sites of a site or host keep on their server (ADR-0033): offers to remove it too. */
+  backups?: SiteBackupsView[];
+  /** withBackups: the sites' backups on their server are removed first. */
+  onDelete: (withBackups: boolean) => void;
   onClose: () => void;
 }
 
 /** Asks before removing a site, a host with its sites, or an empty folder, or a tag from every
- site (ADR-0025); servers are not touched. */
-export function DeleteDialog({ node, nodes, onDelete, onClose }: DeleteDialogProps) {
-  const { t } = useTranslation();
+ site (ADR-0025); the backups Vigie made on the server go too when asked (ADR-0033), nothing else
+ there changes. */
+export function DeleteDialog({ node, nodes, backups, onDelete, onClose }: DeleteDialogProps) {
+  const { t, i18n } = useTranslation();
+  const [withBackups, setWithBackups] = useState(true);
+  const size = (bytes: number) => sizeText(bytes, i18n.language);
+  const bySite = new Map((backups ?? []).map((b) => [b.siteId, b]));
+  const offered = backups !== undefined && (node.kind === "site" || node.kind === "host");
+  const read = (backups ?? []).filter((b) => b.read);
+  const count = read.reduce((n, b) => n + b.count, 0);
+  const bytes = read.reduce((n, b) => n + b.bytes, 0);
   const tag = node.kind === "tag";
   const children = tag ? nodes.filter((n) => n.kind === "site" && hasTag(n.tags, node.name)) : nodes.filter((n) => n.parentId === node.id);
   const kind = tag ? "Tag" : node.kind === "host" ? "Host" : node.kind === "site" ? "Site" : "Folder";
@@ -41,7 +55,7 @@ export function DeleteDialog({ node, nodes, onDelete, onClose }: DeleteDialogPro
             {t("edit.cancel")}
           </Button>
           {!blocked && (
-            <Button variant="danger" onClick={onDelete}>
+            <Button variant="danger" onClick={() => onDelete(offered && withBackups)}>
               {t(`edit.delete.confirm${kind}`)}
             </Button>
           )}
@@ -49,21 +63,31 @@ export function DeleteDialog({ node, nodes, onDelete, onClose }: DeleteDialogPro
       }
     >
       {(node.kind === "host" || tag) && children.length > 0 && (
-        <ul className={styles.sites}>
-          {children.map((site) => (
-            <li key={site.id} className={styles.site}>
-              <Icon name="sites" size={14} />
-              <span className={styles.name}>{site.name}</span>
-              {tag ? (
-                <span className={styles.note}>{whereOf(site.path)}</span>
-              ) : (
-                site.multisite && site.subsites > 0 && <span className={styles.note}>{t("edit.delete.network", { count: site.subsites })}</span>
-              )}
-            </li>
-          ))}
-        </ul>
+        <ItemList
+          items={children.map((site) => {
+            const b = bySite.get(site.id);
+            const note = tag
+              ? whereOf(site.path)
+              : b?.read && b.count > 0
+                ? t("edit.delete.siteBackups", { count: b.count, size: size(b.bytes) })
+                : site.multisite && site.subsites > 0
+                  ? t("edit.delete.network", { count: site.subsites })
+                  : undefined;
+            return { key: site.id, icon: "sites", name: site.name, note };
+          })}
+        />
       )}
-      {!blocked && node.kind !== "folder" && <p className={styles.keep}>{t(tag ? "edit.delete.keepTag" : "edit.delete.keep")}</p>}
+      {offered && (
+        <Checkbox
+          label={t(node.kind === "host" ? "edit.delete.backupsHost" : "edit.delete.backupsSite")}
+          note={read.length === (backups ?? []).length && read.length > 0 ? t("edit.delete.backupsNote", { count, size: size(bytes) }) : t("edit.delete.backupsNoteUnread")}
+          checked={withBackups}
+          onChange={setWithBackups}
+        />
+      )}
+      {!blocked && node.kind !== "folder" && !(offered && withBackups) && (
+        <p className={styles.keep}>{t(tag ? "edit.delete.keepTag" : "edit.delete.keep")}</p>
+      )}
     </Dialog>
   );
 }

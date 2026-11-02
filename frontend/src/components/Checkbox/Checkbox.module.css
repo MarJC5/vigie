@@ -17,3 +17,29 @@
   outline: 2px solid var(--vg-focus);
   outline-offset: 2px;
 }
+
+/* With a note: the box at the label's line, the note under it. */
+.withNote {
+  align-items: flex-start;
+  align-self: stretch;
+}
+
+.withNote .box {
+  margin-top: 1px;
+  flex: none;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.label {
+  font-weight: var(--vg-weight-strong);
+}
+
+.note {
+  font-size: var(--vg-text-small);
+  color: var(--vg-text-muted);
+}

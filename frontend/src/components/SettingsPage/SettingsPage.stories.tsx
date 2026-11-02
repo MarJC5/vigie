@@ -33,6 +33,7 @@ const meta = {
     onImport: fn(),
     database: { bytes: 287_400_000, free: 112_300_000, problem: null },
     onCompact: fn(),
+    onBackupDays: fn(),
     background: { on: false, autoScan: 0, notify: false },
     onBackground: fn(),
     loginItem: { supported: true, on: false },
@@ -143,6 +144,18 @@ export const Database: Story = {
     await expect(page.getByText("Size: 287.4 MB, 112.3 MB of it free")).toBeInTheDocument();
     await userEvent.click(page.getByRole("button", { name: "Compact" }));
     await expect(args.onCompact).toHaveBeenCalled();
+  },
+};
+
+// How long the backups of an update stay on the servers (ADR-0033): 30 days by default.
+export const BackupsKept: Story = {
+  args: { tab: "data" },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    const select = page.getByRole("combobox", { name: "Backups before updates" });
+    await expect(select).toHaveValue("30");
+    await userEvent.selectOptions(select, "No limit");
+    await expect(args.onBackupDays).toHaveBeenCalledWith(0);
   },
 };
 

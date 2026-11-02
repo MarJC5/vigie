@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { FindingView, OperationView, Problem, ScanView, SiteView, TagView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { BackupsView, FindingView, OperationView, Problem, ScanView, SiteView, TagView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { sizeText } from "../../lib/data";
 import { clock, day } from "../../lib/findings";
 import { since } from "../../lib/time";
@@ -20,6 +20,7 @@ import { StatusDot } from "../StatusDot/StatusDot";
 import { TabBar } from "../TabBar/TabBar";
 import { TagRow } from "../TagRow/TagRow";
 import { UpdateChoices } from "../UpdateChoices/UpdateChoices";
+import { BackupList } from "../BackupList/BackupList";
 import { UpdateHistory } from "../UpdateHistory/UpdateHistory";
 import styles from "./SiteOverview.module.css";
 
@@ -40,6 +41,10 @@ export interface SiteOverviewProps {
   /** The updates and rollbacks of the site, the newest first; without it, no History tab. */
   history?: OperationView[];
   onRollback?: (operationID: string) => void;
+  /** The site's backups on its server (ADR-0033), shown above its updates in the History tab. */
+  backups?: BackupsView;
+  /** Asks to remove the backups past the limits. */
+  onRemoveBackups?: () => void;
   /** Asks to remove the site from Vigie, offered when its folder holds no WordPress any more. */
   onRemove?: () => void;
   /** Scans again, comparing the files even when it was done less than a day ago. */
@@ -83,6 +88,8 @@ export function SiteOverview({
   onUpdate,
   onFollow,
   history,
+  backups,
+  onRemoveBackups,
   onRollback,
   onRemove,
   onCheckFiles,
@@ -260,7 +267,11 @@ export function SiteOverview({
           <NotesPanel notes={notes} name={site.name} onSave={onSaveNotes} onOpen={onOpen} />
         )}
         {tab === "history" && history && (
-          <UpdateHistory operations={history} names={names} onRollback={(id) => onRollback?.(id)} busy={updating} />
+          <div className={styles.history}>
+            {backups && <BackupList backups={backups} operations={history} names={names} onRemove={onRemoveBackups} busy={updating} />}
+            {backups && <h2 className={styles.historyTitle}>{t("backups.updatesTitle")}</h2>}
+            <UpdateHistory operations={history} names={names} onRollback={(id) => onRollback?.(id)} busy={updating} />
+          </div>
         )}
       </div>
     </div>

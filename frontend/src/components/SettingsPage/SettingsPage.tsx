@@ -46,6 +46,9 @@ export interface SettingsPageProps {
   /** Scans or updates are running: the database is compacted after them. */
   busy?: boolean;
   onCompact: () => void;
+  /** The days the backups of an update stay on the server, 0 for no limit (ADR-0033). */
+  backupDays?: number;
+  onBackupDays?: (days: number) => void;
   /** Vigie in the background: kept running, automatic scans, notifications. */
   background: BackgroundSettings;
   onBackground: (b: BackgroundSettings) => void;
@@ -81,6 +84,8 @@ export function SettingsPage({
   compacting = false,
   busy = false,
   onCompact,
+  backupDays = 30,
+  onBackupDays,
   background,
   onBackground,
   loginItem,
@@ -163,6 +168,17 @@ export function SettingsPage({
                 <Button variant="primary" onClick={onExport}>
                   {t("data.exportAction")}
                 </Button>
+              </Row>
+            </Section>
+            <Section title={t("data.servers")}>
+              <Row title={t("data.keepTitle")} desc={t("data.keepDesc")}>
+                <SelectField
+                  label={t("data.keepTitle")}
+                  hideLabel
+                  value={String(backupDays)}
+                  options={["7", "30", "90", "0"].map((d) => ({ value: d, label: t(`data.keep.${d}`) }))}
+                  onChange={(d) => onBackupDays?.(Number(d))}
+                />
               </Row>
             </Section>
             <Section title={t("data.base")}>

@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { OperationView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
-import { backupPath, durationText, itemName, itemsOf, restoredStep, rowText, type RowState, seconds } from "../../lib/updates";
+import { backupPath, durationText, operationSummary, rowText, type RowState, seconds } from "../../lib/updates";
 import { Button } from "../Button/Button";
 import { Icon, type IconName } from "../Icon/Icon";
 import { type Status, StatusDot } from "../StatusDot/StatusDot";
@@ -57,7 +57,7 @@ export function UpdateHistory({ operations, names, onRollback, busy = false }: U
                 <Icon name={expanded ? "caretDown" : "caretRight"} size={14} />
               </span>
               <span className={styles.when}>{when.format(new Date(op.started))}</span>
-              <span className={styles.summary}>{summary(t, op, names)}</span>
+              <span className={styles.summary}>{operationSummary(t, op, names)}</span>
               <span className={styles.outcome}>
                 <StatusDot status={statuses[op.outcome] ?? "unknown"} withLabel label={t(`update.history.outcome.${op.outcome}`)} />
               </span>
@@ -102,14 +102,4 @@ export function UpdateHistory({ operations, names, onRollback, busy = false }: U
       })}
     </ul>
   );
-}
-
-type T = (key: string, vars?: Record<string, unknown>) => string;
-
-function summary(t: T, op: OperationView, names: Map<string, string>): string {
-  if (op.kind === "rollback") {
-    const st = restoredStep(op);
-    if (st) return t("update.history.rollback", { item: itemName(t, st.itemKind, st.slug, names), version: st.versionAfter });
-  }
-  return t("update.history.update", { count: itemsOf(op) });
 }

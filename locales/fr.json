@@ -626,7 +626,16 @@
       "leadTag_other": "L'étiquette disparaît de ces {{count}} sites, puis de la liste.",
       "leadTag_many": "L'étiquette disparaît de ces {{count}} sites, puis de la liste.",
       "keepTag": "Les sites eux-mêmes ne changent pas, ni dans Vigie ni sur les serveurs.",
-      "confirmTag": "Retirer l'étiquette"
+      "confirmTag": "Retirer l'étiquette",
+      "backupsSite": "Supprimer aussi ses sauvegardes sur le serveur",
+      "backupsHost": "Supprimer aussi leurs sauvegardes sur le serveur",
+      "backupsNoteUnread": "Dans ~/.vigie/backups. Les sites eux-mêmes restent sur le serveur.",
+      "siteBackups_one": "{{count}} sauvegarde, {{size}}",
+      "siteBackups_many": "{{count}} sauvegardes, {{size}}",
+      "siteBackups_other": "{{count}} sauvegardes, {{size}}",
+      "backupsNote_one": "{{count}} sauvegarde, {{size}}, dans ~/.vigie/backups. Les sites eux-mêmes restent sur le serveur.",
+      "backupsNote_many": "{{count}} sauvegardes, {{size}}, dans ~/.vigie/backups. Les sites eux-mêmes restent sur le serveur.",
+      "backupsNote_other": "{{count}} sauvegardes, {{size}}, dans ~/.vigie/backups. Les sites eux-mêmes restent sur le serveur."
     },
     "host": {
       "title": "Modifier la connexion",
@@ -1231,6 +1240,15 @@
     "sshDesc": "Les hôtes de ~/.ssh/config que vous choisissez deviennent des hébergements dans Vigie. Vigie ne modifie jamais votre configuration SSH.",
     "csvTitle": "Un fichier CSV",
     "csvDesc": "Une ligne par site : folder, host, port, user, path, url (ou alias à la place de host, port et user).",
+    "servers": "Sur les serveurs",
+    "keepTitle": "Sauvegardes avant mise à jour",
+    "keepDesc": "Avant chaque mise à jour, Vigie sauvegarde sur le serveur la base du site et ce qui va changer. Ces copies contiennent les données des visiteurs et des clients : Vigie les supprime après ce délai, et au-delà des 3 dernières mises à jour d'un site.",
+    "keep": {
+      "7": "7 jours",
+      "30": "30 jours",
+      "90": "90 jours",
+      "0": "Sans limite"
+    },
     "base": "Base de données",
     "keptTitle": "Historique conservé",
     "keptDesc": "Le détail de chaque relevé pendant 90 jours, puis seulement ce qui a changé, pendant un an. Le dernier relevé de chaque site est toujours gardé, quel que soit son âge.",
@@ -1638,5 +1656,40 @@
     "noPlugins": "Aucune, en dehors de celles de tout le réseau.",
     "noAdmins": "Aucun.",
     "stateRow": "État"
+  },
+  "backups": {
+    "title": "Sauvegardes sur le serveur",
+    "caption": "Lues au dernier relevé · gardées {{days}} jours, {{kept}} mises à jour au plus",
+    "captionNoLimit": "Lues au dernier relevé · gardées sans limite de durée, {{kept}} mises à jour au plus",
+    "notRead": "Pas encore lues : le prochain relevé les lira.",
+    "none": "Aucune sauvegarde sur le serveur.",
+    "update": "Mise à jour",
+    "pastDays": "Plus de {{days}} jours",
+    "beyond": "Au-delà des {{kept}} dernières",
+    "removeAction": "Supprimer…",
+    "updatesTitle": "Mises à jour",
+    "copy": "Copier",
+    "copied": "Copié",
+    "remove": {
+      "lead": "Vigie les supprime sur le serveur, dans ~/.vigie/backups. Les relevés et l'historique des mises à jour du site restent.",
+      "title_one": "Supprimer {{count}} sauvegarde de {{name}} ?",
+      "title_many": "Supprimer {{count}} sauvegardes de {{name}} ?",
+      "title_other": "Supprimer {{count}} sauvegardes de {{name}} ?",
+      "confirm_one": "Supprimer la sauvegarde",
+      "confirm_many": "Supprimer les sauvegardes",
+      "confirm_other": "Supprimer les sauvegardes"
+    },
+    "left": {
+      "titleSite": "« {{name}} » est supprimé de Vigie",
+      "titleHost": "« {{name}} » est supprimé de Vigie",
+      "lead": "Le serveur n'a pas répondu : les sauvegardes y restent. Pour les supprimer, lancez sur ce compte :",
+      "close": "Fermer"
+    },
+    "oldByAge_one": "{{count}} sauvegarde de plus de {{days}} jours, {{size}}",
+    "oldByAge_many": "{{count}} sauvegardes de plus de {{days}} jours, {{size}}",
+    "oldByAge_other": "{{count}} sauvegardes de plus de {{days}} jours, {{size}}",
+    "old_one": "{{count}} sauvegarde au-delà des limites, {{size}}",
+    "old_many": "{{count}} sauvegardes au-delà des limites, {{size}}",
+    "old_other": "{{count}} sauvegardes au-delà des limites, {{size}}"
   }
 }

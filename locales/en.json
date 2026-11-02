@@ -598,7 +598,14 @@
       "leadTag_one": "The tag goes from its site, then from the list.",
       "leadTag_other": "The tag goes from these {{count}} sites, then from the list.",
       "keepTag": "The sites themselves do not change, in Vigie or on the servers.",
-      "confirmTag": "Remove the tag"
+      "confirmTag": "Remove the tag",
+      "backupsSite": "Also remove its backups on the server",
+      "backupsHost": "Also remove their backups on the server",
+      "backupsNoteUnread": "In ~/.vigie/backups. The sites themselves stay on the server.",
+      "siteBackups_one": "{{count}} backup, {{size}}",
+      "siteBackups_other": "{{count}} backups, {{size}}",
+      "backupsNote_one": "{{count}} backup, {{size}}, in ~/.vigie/backups. The sites themselves stay on the server.",
+      "backupsNote_other": "{{count}} backups, {{size}}, in ~/.vigie/backups. The sites themselves stay on the server."
     },
     "host": {
       "title": "Edit the connection",
@@ -1181,6 +1188,15 @@
     "sshDesc": "Hosts of ~/.ssh/config, the ones you choose, become hosts in Vigie. Vigie never writes your SSH configuration.",
     "csvTitle": "A CSV file",
     "csvDesc": "One line per site: folder, host, port, user, path, url (or alias instead of host, port and user).",
+    "servers": "On the servers",
+    "keepTitle": "Backups before updates",
+    "keepDesc": "Before each update, Vigie backs up the site's database and what will change, on its server. These copies hold the data of its visitors and customers: Vigie removes them after this time, and beyond the last 3 updates of a site.",
+    "keep": {
+      "7": "7 days",
+      "30": "30 days",
+      "90": "90 days",
+      "0": "No limit"
+    },
     "base": "Database",
     "keptTitle": "History kept",
     "keptDesc": "Each scan in detail for 90 days, then only what changed, for a year. Each site's latest scan is always kept, whatever its age.",
@@ -1562,5 +1578,36 @@
     "noPlugins": "None but those across the network.",
     "noAdmins": "None.",
     "stateRow": "State"
+  },
+  "backups": {
+    "title": "Backups on the server",
+    "caption": "Read at the last scan · kept {{days}} days, {{kept}} updates at most",
+    "captionNoLimit": "Read at the last scan · kept with no time limit, {{kept}} updates at most",
+    "notRead": "Not read yet: the next scan reads them.",
+    "none": "No backups on the server.",
+    "update": "Update",
+    "pastDays": "Over {{days}} days",
+    "beyond": "Beyond the last {{kept}}",
+    "removeAction": "Remove…",
+    "updatesTitle": "Updates",
+    "copy": "Copy",
+    "copied": "Copied",
+    "remove": {
+      "lead": "Vigie removes them on the server, in ~/.vigie/backups. The site's scans and update history stay.",
+      "title_one": "Remove {{count}} backup of {{name}}?",
+      "title_other": "Remove {{count}} backups of {{name}}?",
+      "confirm_one": "Remove the backup",
+      "confirm_other": "Remove the backups"
+    },
+    "left": {
+      "titleSite": "“{{name}}” is deleted from Vigie",
+      "titleHost": "“{{name}}” is deleted from Vigie",
+      "lead": "The server did not answer: the backups stay on it. To remove them, run on that account:",
+      "close": "Close"
+    },
+    "oldByAge_one": "{{count}} backup over {{days}} days old, {{size}}",
+    "oldByAge_other": "{{count}} backups over {{days}} days old, {{size}}",
+    "old_one": "{{count}} backup past the limits, {{size}}",
+    "old_other": "{{count}} backups past the limits, {{size}}"
   }
 }

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 
+import { hostBackups } from "../../fixtures/backups";
 import { sampleTree } from "../../fixtures/tree";
 import { DeleteDialog } from "./DeleteDialog";
 
@@ -24,6 +25,36 @@ export const AHost: Story = {
     await expect(within(dialog).getByText("network, 14 subsites")).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole("button", { name: "Delete the host" }));
     await expect(args.onDelete).toHaveBeenCalled();
+  },
+};
+
+// With what its sites keep on the server (ADR-0033): their backups go too unless unticked, and
+// then nothing on the server changes.
+export const AHostWithItsBackups: Story = {
+  args: { backups: hostBackups },
+  play: async ({ canvas, args }) => {
+    const dialog = canvas.getAllByRole("dialog", { name: 'Delete "Shared hosting"?' }).find((d) => d.contains(document.activeElement))!;
+    await expect(within(dialog).getByText("3 backups, 141.2 MB")).toBeInTheDocument();
+    const box = within(dialog).getByRole("checkbox", { name: /Also remove their backups on the server/ });
+    await expect(box).toBeChecked();
+    await expect(within(dialog).getByText("5 backups, 211 MB, in ~/.vigie/backups. The sites themselves stay on the server.")).toBeInTheDocument();
+    await expect(within(dialog).queryByText(/Nothing changes on the server/)).toBeNull();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Delete the host" }));
+    await expect(args.onDelete).toHaveBeenLastCalledWith(true);
+    await userEvent.click(box);
+    await expect(within(dialog).getByText(/Nothing changes on the server/)).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Delete the host" }));
+    await expect(args.onDelete).toHaveBeenLastCalledWith(false);
+  },
+};
+
+// Backups not read yet: offered all the same, without their count.
+export const ASiteWithBackupsNotRead: Story = {
+  args: { node: node("atelier"), backups: [{ siteId: "atelier", read: false, count: 0, bytes: 0 }] },
+  play: async ({ canvas }) => {
+    const [dialog] = canvas.getAllByRole("dialog", { name: 'Delete "atelier-exemple.ch"?' });
+    await expect(within(dialog!).getByRole("checkbox", { name: /Also remove its backups on the server/ })).toBeChecked();
+    await expect(within(dialog!).getByText("In ~/.vigie/backups. The sites themselves stay on the server.")).toBeInTheDocument();
   },
 };
 

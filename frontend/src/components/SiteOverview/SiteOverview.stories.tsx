@@ -7,6 +7,7 @@ import { debugFatal, fileEditing, findings, phpWeb, xss } from "../../fixtures/f
 import { networkSite } from "../../fixtures/subsites";
 import { failedSite, newSite, offlineSite, outdatedSite, upToDateSite } from "../../fixtures/scans";
 import { sampleTags } from "../../fixtures/tree";
+import { backups } from "../../fixtures/backups";
 import { historyToRollBack } from "../../fixtures/updates";
 import { SiteOverview } from "./SiteOverview";
 
@@ -153,11 +154,15 @@ export const UpdatesTab: Story = {
 };
 
 export const History: Story = {
-  args: { history: historyToRollBack, onRollback: fn() },
+  args: { history: historyToRollBack, onRollback: fn(), backups, onRemoveBackups: fn() },
   play: async ({ canvas, args }) => {
     await userEvent.click(canvas.getAllByRole("tab", { name: "History" })[0]!);
     const [panel] = canvas.getAllByRole("tabpanel");
     await expect(panel).toHaveTextContent("Update of 2 items");
+    // The backups on the server first (ADR-0033), then the updates.
+    await expect(within(panel!).getByRole("heading", { name: "Backups on the server" })).toBeInTheDocument();
+    await userEvent.click(within(panel!).getByRole("button", { name: "Remove…" }));
+    await expect(args.onRemoveBackups).toHaveBeenCalled();
     await userEvent.click(within(panel!).getByRole("button", { name: "Roll back" }));
     await expect(args.onRollback).toHaveBeenCalledWith("op-failed");
   },

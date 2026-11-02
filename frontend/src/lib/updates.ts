@@ -340,3 +340,17 @@ export function durationText(t: T, secs: number): string {
 function unique(list: string[]): string[] {
   return [...new Set(list)];
 }
+
+/** What an update or a rollback did, in a few words: "Update of 2 items", "Rollback of Akismet to 5.3". */
+export function operationSummary(t: T, op: OperationView, names: Map<string, string>): string {
+  if (op.kind === "rollback") {
+    const st = restoredStep(op);
+    if (st) return t("update.history.rollback", { item: itemName(t, st.itemKind, st.slug, names), version: st.versionAfter });
+  }
+  return t("update.history.update", { count: itemsOf(op) });
+}
+
+/** The folder of an update's backups, named after its time in UTC: "20261029-131203". */
+export function backupRun(at: string): string {
+  return new Date(at).toISOString().replace(/[-:]/g, "").replace("T", "-").slice(0, 15);
+}

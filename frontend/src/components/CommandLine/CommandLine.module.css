@@ -1,0 +1,17 @@
+.command {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vg-space-3);
+  padding: 10px 12px;
+  border-radius: var(--vg-radius-control);
+  background: var(--vg-field);
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--vg-text-caption);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}

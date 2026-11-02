@@ -122,6 +122,7 @@ export const rolledBack = operation({
 /** An update of the whole site that went well, a week earlier. */
 export const completed = operation({
   id: "op-done",
+  backupDir: ".vigie/backups/7c1e4a52-0d55-4f0b-9a8e-3b8c1d2f6a10/20261022-090310",
   started: "2026-10-22T09:03:10Z",
   finished: "2026-10-22T09:04:41Z",
   outcome: "completed",
