@@ -43,6 +43,8 @@ const shellData: ShellData = {
   host: (id) => SiteManager.HostDetail(id),
   sites: (id) => SiteManager.Sites(id).then((rows) => rows ?? []),
   history: (id) => Updates.History(id).then((ops) => ops ?? []),
+  backups: (id) => Updates.Backups(id),
+  removeOldBackups: (id) => Updates.RemoveOldBackups(id),
   extensions: (id) => SiteManager.Extensions(id),
 };
 
@@ -62,8 +64,8 @@ const editApi: EditApi = {
   Rename: Editor.Rename,
   Move: Editor.Move,
   SetColor: Editor.SetColor,
-  // Without the backups until the delete dialog offers them.
-  Delete: (id: string) => Editor.Delete(id, false).then((r) => r.problem),
+  Delete: Editor.Delete,
+  Backups: Editor.Backups,
   SetAdminURL: Editor.SetAdminURL,
   SetNotes: Editor.SetNotes,
   SetTags: Editor.SetTags,
@@ -142,6 +144,7 @@ export function App() {
   const [dataTask, setDataTask] = useState<DataTask>();
   const [dataNote, setDataNote] = useState<DataNote>();
   const [database, setDatabase] = useState<DatabaseView>();
+  const [backupDays, setBackupDays] = useState(30);
   const [compacting, setCompacting] = useState(false);
   // The preview of an import takes the whole window, as the wizard does.
   const [dataWindow, setDataWindow] = useState(false);
@@ -205,6 +208,7 @@ export function App() {
   useEffect(() => {
     if (section !== "settings" || settingsTab !== "data") return;
     void Data.Database().then(setDatabase);
+    void Data.BackupDays().then(setBackupDays);
   }, [section, settingsTab, ended]);
 
   const compact = async () => {
@@ -349,6 +353,8 @@ export function App() {
                 compacting={compacting}
                 busy={(scans.running ?? []).length > 0 || updates.active > 0}
                 onCompact={() => void compact()}
+                backupDays={backupDays}
+                onBackupDays={(days) => void Data.SetBackupDays(days).then((p) => !p && setBackupDays(days))}
                 background={background}
                 onBackground={changeBackground}
                 loginItem={loginItem}

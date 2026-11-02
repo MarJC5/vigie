@@ -158,3 +158,41 @@ test("a tag across sites: its page, renamed onto another, removed", async () => 
   await expect(item(/^Dupont/)).toHaveCount(0);
   await expect(item(/^Tags/)).toHaveCount(0);
 });
+
+test("a site's backups: listed in its History tab, those past 30 days removed after a confirmation", async () => {
+  await item(/boulangerie-exemple\.ch/).click();
+  await page.getByRole("tab", { name: "History" }).click();
+  const panel = page.getByRole("tabpanel");
+  await expect(panel.getByRole("heading", { name: "Backups on the server" })).toBeVisible();
+  await expect(panel.getByText("1 backup over 30 days old, 45.1 MB")).toBeVisible();
+  await panel.getByRole("button", { name: "Remove…" }).click();
+  const dialog = page.getByRole("dialog", { name: "Remove 1 backup of boulangerie-exemple.ch?" });
+  await dialog.getByRole("button", { name: "Remove the backup" }).click();
+  // The seed's servers do not exist: the footer says the server could not be reached.
+  await expect(page.getByRole("complementary").getByRole("alert")).toBeVisible();
+});
+
+test("a site deleted with its backups, its server unreachable: the command that removes them", async () => {
+  await item(/boulangerie-exemple\.ch/).click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Delete the site…" }).click();
+  const dialog = page.getByRole("dialog", { name: 'Delete "boulangerie-exemple.ch"?' });
+  await expect(dialog.getByRole("checkbox", { name: /Also remove its backups on the server/ })).toBeChecked();
+  await expect(dialog.getByText(/^2 backups, 93 MB, in ~\/\.vigie\/backups\./)).toBeVisible();
+  await dialog.getByRole("button", { name: "Delete the site" }).click();
+  const left = page.getByRole("dialog", { name: "“boulangerie-exemple.ch” is deleted from Vigie" });
+  await expect(left.getByText(/^rm -rf ~\/\.vigie\/backups\/[0-9a-f-]{36}$/)).toBeVisible();
+  await left.getByRole("button", { name: "Close" }).click();
+  await expect(item(/boulangerie-exemple\.ch/)).toHaveCount(0);
+});
+
+test("how long backups stay on the servers is kept in the settings", async () => {
+  await page.getByRole("navigation", { name: "Navigation" }).getByRole("link", { name: "Settings" }).click();
+  await page.getByRole("tab", { name: "Data" }).click();
+  const keep = page.getByRole("combobox", { name: "Backups before updates" });
+  await expect(keep).toHaveValue("30");
+  await keep.selectOption({ label: "90 days" });
+  await page.reload();
+  await page.getByRole("navigation", { name: "Navigation" }).getByRole("link", { name: "Settings" }).click();
+  await page.getByRole("tab", { name: "Data" }).click();
+  await expect(page.getByRole("combobox", { name: "Backups before updates" })).toHaveValue("90");
+});

@@ -240,7 +240,8 @@ function fakeEdit(): EditApi {
     ),
     Move: fn(async () => null),
     SetColor: fn(async () => null),
-    Delete: fn(async () => null),
+    Delete: fn(async () => ({ problem: null, left: [], command: "" })),
+    Backups: fn(async () => []),
     SetAdminURL: fn(async () => null),
     SetNotes: fn(async () => null),
     SetTags: fn(async () => null),
@@ -323,7 +324,7 @@ export const DeleteFromTheTitleMenu: Story = {
     await userEvent.click(shell.getByRole("menuitem", { name: "Delete the host…" }));
     const dialog = shell.getByRole("dialog", { name: 'Delete "Shared hosting"?' });
     await userEvent.click(within(dialog).getByRole("button", { name: "Delete the host" }));
-    await waitFor(() => expect(args.edit!.Delete).toHaveBeenCalledWith("shared"));
+    await waitFor(() => expect(args.edit!.Delete).toHaveBeenCalledWith("shared", true));
   },
 };
 

@@ -180,6 +180,11 @@ func scans(upToDate, outdated model.ID) []model.Scan {
 	warn.PHPWeb = model.PHPWeb{Version: "8.2.29", Seen: finished.Add(-26 * time.Hour)}
 	warn.AdminEmail, warn.AdminEmailPending = "contact@boulangerie-exemple.ch", "marie@boulangerie-exemple.ch"
 	warn.DebugLog = model.DebugLog{Path: "wp-content/debug.log", Size: 38_200_000, Written: true}
+	// Its backups on the server (ADR-0033): one past 30 days, one of last week's update.
+	warn.Backups = []model.Backup{
+		{At: finished.Add(-45 * 24 * time.Hour).UTC().Truncate(time.Second), Bytes: 45_100_000},
+		{At: finished.Add(-7 * 24 * time.Hour).UTC().Truncate(time.Second), Bytes: 47_900_000},
+	}
 	// Nothing urgent: the site keeps needing attention for its updates. Hidden from search engines is
 	// ignored (see ignores).
 	warn.Findings = []model.Finding{

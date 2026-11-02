@@ -2,7 +2,10 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type {
+  BackupsView,
+  BackupView,
   CreateResult,
+  DeleteResult,
   ExtensionsAcross,
   FindingView,
   HostDetails,
@@ -12,6 +15,7 @@ import type {
   Problem,
   ScansState,
   SitePreviewView,
+  SiteBackupsView,
   SiteResultView,
   SiteRow,
   SiteView,
@@ -25,9 +29,11 @@ import { hasTag, spread, tagId, tagOf, tagsGroupId } from "../../lib/tags";
 import { fold } from "../../lib/text";
 import { type Choice, knownOf, namesOf } from "../../lib/updates";
 import { AdminAddressDialog } from "../AdminAddressDialog/AdminAddressDialog";
+import { BackupsLeftDialog } from "../BackupsLeftDialog/BackupsLeftDialog";
 import { BulkDialog } from "../BulkDialog/BulkDialog";
 import { Button } from "../Button/Button";
 import { DeleteDialog } from "../DeleteDialog/DeleteDialog";
+import { RemoveBackupsDialog } from "../RemoveBackupsDialog/RemoveBackupsDialog";
 import { EmptyState } from "../EmptyState/EmptyState";
 import { Icon, type IconName } from "../Icon/Icon";
 import { type FindSitesApi, FindSitesDialog } from "../FindSitesDialog/FindSitesDialog";
@@ -55,6 +61,10 @@ export interface ShellData {
   sites(nodeId: string): Promise<SiteRow[]>;
   /** The updates and rollbacks of a site, the newest first; without it, no History tab. */
   history?(siteId: string): Promise<OperationView[]>;
+  /** A site's backups on its server (ADR-0033), shown in its History tab. */
+  backups?(siteId: string): Promise<BackupsView>;
+  /** Removes a site's backups past the limits; without it, they are only listed. */
+  removeOldBackups?(siteId: string): Promise<Problem | null>;
   /** The plugins and themes across the sites of a host or folder; without it, no Plugins tab. */
   extensions?(nodeId: string): Promise<ExtensionsAcross>;
 }
@@ -71,7 +81,10 @@ export interface EditApi extends HostEditApi, FindSitesApi {
   Rename(id: string, name: string): Promise<Problem | null>;
   Move(id: string, folderId: string): Promise<Problem | null>;
   SetColor(id: string, color: string): Promise<Problem | null>;
-  Delete(id: string): Promise<Problem | null>;
+  /** withBackups: the sites' backups on their server are removed first (ADR-0033). */
+  Delete(id: string, withBackups: boolean): Promise<DeleteResult>;
+  /** What the sites of a site or host keep on their server, for the delete dialog. */
+  Backups(id: string): Promise<SiteBackupsView[] | null>;
   SetAdminURL(id: string, address: string): Promise<Problem | null>;
   SetNotes(id: string, notes: string): Promise<Problem | null>;
   SetTags(id: string, tags: string[]): Promise<Problem | null>;
@@ -203,6 +216,13 @@ export function AppShell({
   // Tags changed: a tag's page reads its sites again.
   const [tagEdits, setTagEdits] = useState(0);
   const [problem, setProblem] = useState<Problem | null>(null);
+  // The backups past the limits a site's History tab asks to remove, confirmed first (ADR-0033).
+  const [removing, setRemoving] = useState<{ site: SiteView; backups: BackupView[] } | null>(null);
+  const [backupEdits, setBackupEdits] = useState(0);
+  // What the sites of the node in the delete dialog keep on their server.
+  const [deleteBackups, setDeleteBackups] = useState<{ id: string; sites: SiteBackupsView[] }>();
+  // A node deleted while its server could not be reached: the command that removes its backups.
+  const [leftBackups, setLeftBackups] = useState<{ name: string; kind: "site" | "host"; command: string } | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [flow, setFlow] = useState<Flow | null>(null);
   const [bulkDialog, setBulkDialog] = useState<{ id: string; name: string; previews: SitePreviewView[] | null } | null>(null);
@@ -244,6 +264,19 @@ export function AppShell({
     setSearching(false);
     setQuery("");
   };
+
+  // The delete dialog of a site or host offers its sites' backups too (ADR-0033): read when it opens.
+  const deleting = dialog?.kind === "delete" ? byId.get(dialog.id) : undefined;
+  useEffect(() => {
+    if (!edit || !deleting || (deleting.kind !== "site" && deleting.kind !== "host")) return;
+    let current = true;
+    void edit.Backups(deleting.id).then((sites) => {
+      if (current) setDeleteBackups({ id: deleting.id, sites: sites ?? [] });
+    });
+    return () => {
+      current = false;
+    };
+  }, [edit, deleting]);
 
   // Runs an edit on the Go side, then reads the tree again; a refusal shows in the pane's footer.
   const run = async (action: () => Promise<Problem | null>) => {
@@ -552,13 +585,14 @@ export function AppShell({
               <Loaded
                 node={selected}
                 data={data}
-                revision={scans.completed + updates.completed + ignores + tagEdits}
+                revision={scans.completed + updates.completed + ignores + tagEdits + backupEdits}
                 scanning={scanning(selected)}
                 onScan={() => scan(selected.id)}
                 onSelect={select}
                 onMore={edit && selected.kind !== "subsite" ? (point) => openMenu(selected.id, point) : undefined}
                 onSiteMenu={edit && ((id, point) => openMenu(id, point, false))}
                 onRemove={edit && (() => setDialog({ kind: "delete", id: selected.id }))}
+                onRemoveBackups={data.removeOldBackups && ((site, backups) => setRemoving({ site, backups }))}
                 updating={updating(selected)}
                 onCheckFiles={onCheckFiles && (() => !updating(selected) && onCheckFiles(selected.id))}
                 onIgnore={security && ((site, finding) => setIgnoring({ site, finding, problem: null }))}
@@ -672,14 +706,40 @@ export function AppShell({
         <DeleteDialog
           node={dialogNode}
           nodes={nodes}
-          onDelete={() => {
+          backups={deleteBackups?.id === dialogNode.id ? deleteBackups.sites : undefined}
+          onDelete={(withBackups) => {
             setDialog(null);
             // The selection goes when it was the node or under it.
             for (let n = selected; n; n = byId.get(n.parentId)) if (n.id === dialogNode.id) setSelectedId(undefined);
-            if (dialogNode.kind === "tag") setTagEdits((n) => n + 1);
-            void run(() => (dialogNode.kind === "tag" ? edit.RemoveTag(dialogNode.name) : edit.Delete(dialogNode.id)));
+            if (dialogNode.kind === "tag") {
+              setTagEdits((n) => n + 1);
+              void run(() => edit.RemoveTag(dialogNode.name));
+              return;
+            }
+            void run(async () => {
+              const result = await edit.Delete(dialogNode.id, withBackups);
+              if (result.command && (dialogNode.kind === "site" || dialogNode.kind === "host")) {
+                setLeftBackups({ name: dialogNode.name, kind: dialogNode.kind, command: result.command });
+              }
+              return result.problem;
+            });
           }}
           onClose={() => setDialog(null)}
+        />
+      )}
+      {leftBackups && (
+        <BackupsLeftDialog name={leftBackups.name} kind={leftBackups.kind} command={leftBackups.command} onCopy={onCopy} onClose={() => setLeftBackups(null)} />
+      )}
+      {removing && data?.removeOldBackups && (
+        <RemoveBackupsDialog
+          name={removing.site.name}
+          backups={removing.backups}
+          onClose={() => setRemoving(null)}
+          onRemove={() => {
+            const site = removing.site;
+            setRemoving(null);
+            void run(() => data.removeOldBackups!(site.id)).then(() => setBackupEdits((n) => n + 1));
+          }}
         />
       )}
       {edit && dialog && dialogNode && dialog.kind === "renameTag" && (
@@ -830,6 +890,7 @@ function Loaded({
   onMore,
   onSiteMenu,
   onRemove,
+  onRemoveBackups,
   updating,
   onUpdate,
   onFollow,
@@ -859,6 +920,8 @@ function Loaded({
   onMore?: (point: { x: number; y: number }) => void;
   onSiteMenu?: (id: string, point: { x: number; y: number }) => void;
   onRemove?: () => void;
+  /** Asks to remove a site's backups past the limits. */
+  onRemoveBackups?: (site: SiteView, backups: BackupView[]) => void;
   updating: boolean;
   onUpdate?: (site: SiteView, keys: Set<string>) => void;
   onFollow?: (site: SiteView) => void;
@@ -896,8 +959,8 @@ function Loaded({
     const load = async (): Promise<View> => {
       switch (node.kind) {
         case "site": {
-          const [site, history] = await Promise.all([data.site(node.id), data.history?.(node.id)]);
-          return { kind: "site", site, history };
+          const [site, history, backups] = await Promise.all([data.site(node.id), data.history?.(node.id), data.backups?.(node.id)]);
+          return { kind: "site", site, history, backups };
         }
         case "host":
           return { kind: "host", host: await data.host(node.id) };
@@ -939,6 +1002,8 @@ function Loaded({
         onFollow={onFollow && (() => onFollow(site))}
         history={v.history}
         onRollback={onRollback && ((id) => onRollback(site, id))}
+        backups={v.backups}
+        onRemoveBackups={onRemoveBackups && v.backups && (() => onRemoveBackups(site, (v.backups!.items ?? []).filter((b) => b.expired)))}
         onRemove={onRemove}
         onCheckFiles={onCheckFiles}
         onIgnore={onIgnore && ((finding) => onIgnore(site, finding))}
@@ -1020,7 +1085,7 @@ function Loaded({
 }
 
 type View =
-  | { kind: "site"; site: SiteView; history?: OperationView[] }
+  | { kind: "site"; site: SiteView; history?: OperationView[]; backups?: BackupsView }
   | { kind: "host"; host: HostView }
   | { kind: "folder"; rows: SiteRow[] }
   | { kind: "tag"; rows: SiteRow[] }
