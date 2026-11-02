@@ -8,3 +8,11 @@ var version = "dev"
 func Version() string {
 	return version
 }
+
+// Repository is where Vigie lives: what a service asked by Vigie can read to learn what it is.
+const Repository = "https://github.com/MarJC5/vigie"
+
+// UserAgent is how every request of Vigie says what it is: "Vigie/<version> (+<repository>)".
+func UserAgent(version string) string {
+	return "Vigie/" + version + " (+" + Repository + ")"
+}

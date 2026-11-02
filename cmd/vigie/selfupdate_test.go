@@ -1,6 +1,9 @@
 package main
 
 import (
+	"context"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/wailsapp/wails/v3/pkg/updater"
@@ -51,5 +54,28 @@ func TestConfigureUpdates(t *testing.T) {
 	}
 	if got := u.CurrentVersion(); got != "0.6.0" {
 		t.Errorf("CurrentVersion() = %q", got)
+	}
+}
+
+// The check says what it is, as every other request of Vigie, and sends what Settings lists: the
+// version, the system and the architecture.
+func TestTheCheckSaysWhatItIs(t *testing.T) {
+	var agent, query string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		agent, query = r.UserAgent(), r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"schemaVersion":1,"version":"0.6.0","artifacts":[]}`))
+	}))
+	defer server.Close()
+	provider, err := updateProvider("v0.6.0", func(string) string { return server.URL + "/update.json" })
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = provider.Check(context.Background(), updater.CheckRequest{CurrentVersion: "0.6.0", Platform: "darwin", Arch: "arm64"})
+	if agent != "Vigie/0.6.0 (+https://github.com/MarJC5/vigie)" {
+		t.Errorf("User-Agent = %q", agent)
+	}
+	if query != "arch=arm64&platform=darwin&version=0.6.0" {
+		t.Errorf("sent %q, want the version, the system and the architecture only", query)
 	}
 }

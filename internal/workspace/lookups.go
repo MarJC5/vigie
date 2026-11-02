@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/MarJC5/vigie/internal/buildinfo"
 	"github.com/MarJC5/vigie/internal/lookup"
 	"github.com/MarJC5/vigie/internal/scan"
 	"github.com/MarJC5/vigie/internal/store"
@@ -97,9 +98,6 @@ func timeSetting(t time.Time) string {
 	return t.UTC().Format(time.RFC3339)
 }
 
-// repository is where a service asked by Vigie can learn what it is.
-const repository = "https://github.com/MarJC5/vigie"
-
 // lookupTimeout bounds one outside request.
 const lookupTimeout = 20 * time.Second
 
@@ -107,7 +105,7 @@ const lookupTimeout = 20 * time.Second
 // only the destinations allowed.
 func newLookups(db *store.DB, version string, now func() time.Time, allowed func(lookup.Destination) bool) lookup.Client {
 	return lookup.Client{
-		HTTP: &http.Client{Timeout: lookupTimeout}, UserAgent: "Vigie/" + version + " (+" + repository + ")",
+		HTTP: &http.Client{Timeout: lookupTimeout}, UserAgent: buildinfo.UserAgent(version),
 		Cache: db, Now: now, Allowed: allowed,
 	}
 }

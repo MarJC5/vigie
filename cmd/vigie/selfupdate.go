@@ -36,16 +36,23 @@ func configureUpdates(u *updater.Updater, version string, getenv func(string) st
 	if err != nil {
 		return err
 	}
-	url := buildinfo.UpdateManifest
-	if v := getenv("VIGIE_UPDATE_MANIFEST"); v != "" {
-		url = v
-	}
-	provider, err := endpoint.New(endpoint.Config{URL: url})
+	provider, err := updateProvider(version, getenv)
 	if err != nil {
 		return err
 	}
 	return u.Init(updater.Config{CurrentVersion: strings.TrimPrefix(version, "v"), Providers: []updater.Provider{provider},
 		PublicKey: key, Window: updater.WindowNone})
+}
+
+// updateProvider reads the signed manifest, at GitHub or where VIGIE_UPDATE_MANIFEST says, and says
+// what it is, as every other request of Vigie.
+func updateProvider(version string, getenv func(string) string) (*endpoint.Provider, error) {
+	url := buildinfo.UpdateManifest
+	if v := getenv("VIGIE_UPDATE_MANIFEST"); v != "" {
+		url = v
+	}
+	agent := buildinfo.UserAgent(strings.TrimPrefix(version, "v"))
+	return endpoint.New(endpoint.Config{URL: url, Headers: map[string]string{"User-Agent": agent}})
 }
 
 // appUpdater is the app's Wails updater, which exists once the app does.
