@@ -46,6 +46,14 @@ hébergements devenus injoignables. Vigie vous prévient aussi quand un relevé 
 administrateur sur un site, ou une extension ou un thème installé hors de Vigie (voir
 [security.md](security.md)).
 
+Un relevé ou une mise à jour que vous avez lancé, de 30 secondes ou plus, dit aussi quand il se
+termine, si la fenêtre de Vigie n'est pas devant (cachée, réduite, ou une autre app devant). Une
+seule notification par exécution, par exemple « Relevé terminé » avec « Tous les sites : 12 sites
+relevés, 1 urgent. », ce que l'exécution a aggravé dedans plutôt qu'à part. Jamais pour les
+relevés automatiques, ni pour une exécution que vous avez arrêtée. Un clic ouvre la fenêtre sur ce
+que l'exécution couvrait. Chaque notification est gardée sous son exécution dans **Activité**, la
+fin d'une mise à jour de plusieurs sites sous son dernier site.
+
 ## Relevés avec Vigie fermée
 
 Vigie n'installe rien dans le système. Pour relever avec Vigie fermée, demandez au planificateur de

@@ -143,6 +143,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   selected row scan them, update them, move the folders and hosts, color them, add or remove a tag
   on their sites, or delete them, each in one go (all done or none). Dragging a selected row
   carries every folder and host selected.
+- The end of a long scan or update notified: a run you started that lasted 30 seconds or more says
+  how it ended when Vigie's window is not in front, in one notification with what it made worse,
+  never for the automatic scans nor for a run you stopped. A click opens the window on what the run
+  covered; the notification is kept under its run in Activity.
 
 ### Changed
 

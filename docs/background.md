@@ -39,6 +39,13 @@ better: one notification for the sites turned urgent, one for the hosts turned u
 tells you when a scan finds a new administrator on a site, or a plugin or theme installed outside
 Vigie (see [security.md](security.md)).
 
+A scan or an update you started that lasted 30 seconds or more also says when it ends, if Vigie's
+window is not in front (hidden, minimized, or another app in front). One notification per run,
+for example "Scan done" with "All sites: 12 sites scanned, 1 urgent.", what the run made worse in
+it rather than apart. Never for the automatic scans, nor for a run you stopped. A click opens the
+window on what the run covered. Each notification is kept under its run in **Activity**; the end
+of an update of several sites under its last site.
+
 ## Scans with Vigie closed
 
 Vigie installs nothing in the system. To scan with Vigie closed, ask your system's scheduler to run

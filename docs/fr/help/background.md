@@ -22,7 +22,8 @@ ordinateur sorti de veille fait un seul relevé à son réveil.
 ## Notifications
 
 Vigie vous prévient quand un relevé rend un site urgent, ou ne peut plus joindre un hébergement.
-Jamais pour ce qui était déjà connu, jamais pour ce qui va mieux. Tout est aussi gardé dans
-**Activité**.
+Jamais pour ce qui était déjà connu, jamais pour ce qui va mieux. Un relevé ou une mise à jour que
+vous avez lancé, de 30 secondes ou plus, dit aussi quand il se termine, si la fenêtre de Vigie
+n'est pas devant. Un clic ouvre ce qu'il couvrait. Tout est aussi gardé dans **Activité**.
 
 Pour aller plus loin : [Vigie en arrière-plan, et les relevés avec Vigie fermée](../background.md).

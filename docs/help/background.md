@@ -20,6 +20,8 @@ scan when it wakes.
 ## Notifications
 
 Vigie tells you when a scan turns a site urgent, or cannot reach a host any more. Never for what
-was already known, never for what got better. Everything is also kept in **Activity**.
+was already known, never for what got better. A scan or an update you started that took 30 seconds
+or more also says when it ends, if Vigie's window is not in front; a click opens what it covered.
+Everything is also kept in **Activity**.
 
 Learn more: [Vigie in the background, and scans with Vigie closed](../background.md).
