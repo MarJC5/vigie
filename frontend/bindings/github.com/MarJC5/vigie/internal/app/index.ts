@@ -3,6 +3,7 @@
 
 import * as Activity from "./activity.js";
 import * as Addons from "./addons.js";
+import * as CommandLink from "./commandlink.js";
 import * as Data from "./data.js";
 import * as Editor from "./editor.js";
 import * as HostWizard from "./hostwizard.js";
@@ -16,6 +17,7 @@ import * as Watch from "./watch.js";
 export {
     Activity,
     Addons,
+    CommandLink,
     Data,
     Editor,
     HostWizard,
@@ -42,6 +44,7 @@ export type {
     ChecksView,
     Choice,
     ChoiceView,
+    CommandView,
     CompactResult,
     CreateResult,
     DatabaseView,

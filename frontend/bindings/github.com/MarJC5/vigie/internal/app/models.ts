@@ -270,6 +270,29 @@ export interface ChoiceView {
 }
 
 /**
+ * CommandView is the vigie command as the settings show it (ADR-0036): linked to this app, where,
+ * or the one command that links it.
+ */
+export interface CommandView {
+    "linked": boolean;
+
+    /**
+     * Path is the link found, or the one the command makes.
+     */
+    "path": string;
+
+    /**
+     * Command links it, to run once in a terminal; empty when linked.
+     */
+    "command": string;
+
+    /**
+     * AppImage: the link goes in the user's ~/.local/bin, which must be on the PATH.
+     */
+    "appImage": boolean;
+}
+
+/**
  * CompactResult is the size of the database before and after it was compacted.
  */
 export interface CompactResult {
