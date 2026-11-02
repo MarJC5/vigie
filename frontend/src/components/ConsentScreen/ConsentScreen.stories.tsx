@@ -10,22 +10,24 @@ const meta = {
   parameters: {
     a11y: { config: { rules: [{ id: "landmark-unique", enabled: false }, { id: "landmark-no-duplicate-main", enabled: false }] } },
   },
-  args: { destinations: ["wpvulnerability", "wordpress.org", "registry", "site"], onAgree: fn(), onNotNow: fn() },
+  args: { destinations: ["wpvulnerability", "wordpress.org", "registry", "site", "github"], onAgree: fn(), onNotNow: fn() },
   decorators: [(Story) => <div style={{ height: 720 }}><Story /></div>],
 } satisfies Meta<typeof ConsentScreen>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// Every service listed with what it receives; IANA comes with the registries, without a switch.
+// Every service listed with what it receives, github.com for Vigie's new versions too (ADR-0038);
+// IANA comes with the registries, without a switch.
 export const Agree: Story = {
   play: async ({ canvasElement, args }) => {
     const screen = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
-    await expect(screen.getAllByRole("switch")).toHaveLength(4);
+    await expect(screen.getAllByRole("switch")).toHaveLength(5);
+    await expect(screen.getByRole("switch", { name: "github.com" })).toBeInTheDocument();
     await expect(screen.getByRole("cell", { name: "IANA" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("switch", { name: "Domain registry (.com, .fr…)" }));
     await expect(screen.getByRole("switch", { name: "Domain registry (.com, .fr…)" })).toHaveAttribute("aria-checked", "false");
     await userEvent.click(screen.getByRole("button", { name: "Agree" }));
-    await expect(args.onAgree).toHaveBeenCalledWith(["wpvulnerability", "wordpress.org", "site"]);
+    await expect(args.onAgree).toHaveBeenCalledWith(["wpvulnerability", "wordpress.org", "site", "github"]);
   },
 };
 

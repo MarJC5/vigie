@@ -1,7 +1,7 @@
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { BackgroundSettings, CommandView, DatabaseView, LoginItemState, LookupsView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { BackgroundSettings, CommandView, DatabaseView, LoginItemState, LookupsView, SelfUpdateView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { sizeText } from "../../lib/data";
 import { clock, day, keyOf } from "../../lib/findings";
 import { Button } from "../Button/Button";
@@ -11,6 +11,8 @@ import { SelectField } from "../SelectField/SelectField";
 import { Switch } from "../Switch/Switch";
 import { TabBar } from "../TabBar/TabBar";
 import { ExternalLink } from "../ExternalLink/ExternalLink";
+import { Markdown } from "../Markdown/Markdown";
+import { Progress } from "../Progress/Progress";
 import styles from "./SettingsPage.module.css";
 
 export type SettingsTab = "general" | "lookups" | "data" | "about";
@@ -64,6 +66,10 @@ export interface SettingsPageProps {
   onCheckCommand?: () => void;
   /** Puts the command on the clipboard. */
   onCopy?: (text: string) => Promise<unknown> | void;
+  /** Vigie's own update (ADR-0038), shown in About; without it, the version alone. */
+  selfUpdate?: SelfUpdateView;
+  onCheckUpdate?: () => void;
+  onInstallUpdate?: () => void;
 }
 
 // The intervals of automatic scans, in hours; 0 is never (app.AutoScanHours).
@@ -102,6 +108,9 @@ export function SettingsPage({
   command,
   onCheckCommand,
   onCopy,
+  selfUpdate,
+  onCheckUpdate,
+  onInstallUpdate,
 }: SettingsPageProps) {
   const { t, i18n } = useTranslation();
   const panel = useId();
@@ -256,7 +265,7 @@ export function SettingsPage({
         )}
         {tab === "about" && (
           <Section>
-            <Row title={t("settings.version")} desc={t("settings.versionDesc", { version })} />
+            <VersionRow version={version} update={selfUpdate} onCheck={onCheckUpdate} onInstall={onInstallUpdate} onOpen={onOpen} onCopy={onCopy} />
             <Row title={t("settings.license")} desc={t("settings.licenseDesc")} />
             <Row title={t("settings.sourceTitle")} desc={t("settings.sourceDesc")}>
               <ExternalLink href={wpvulnerability.href} onOpen={onOpen}>
@@ -279,7 +288,9 @@ function Lookups({
 }: Pick<SettingsPageProps, "lookups" | "onAgree" | "onWithdraw" | "onDestination" | "onOpen">) {
   const { t } = useTranslation();
   const on = new Map((lookups.destinations ?? []).map((d) => [d.id, d.on]));
-  const rows = (lookups.destinations ?? []).flatMap((d) => (d.id === "registry" ? ["iana", d.id] : [d.id]));
+  // The services of a scan; github.com, Vigie's new versions, in a section of its own (ADR-0038).
+  const rows = (lookups.destinations ?? []).filter((d) => d.id !== "github").flatMap((d) => (d.id === "registry" ? ["iana", d.id] : [d.id]));
+  const github = (lookups.destinations ?? []).find((d) => d.id === "github");
   const agreed = lookups.agreed;
   return (
     <>
@@ -301,6 +312,13 @@ function Lookups({
           );
         })}
       </Section>
+      {github && (
+        <Section title={t("settings.update.section")}>
+          <Row title={t("lookups.destination.github.name")} desc={t("settings.update.githubDesc")} note={github.on ? undefined : t("lookups.off.github")}>
+            <Switch label={t("lookups.destination.github.name")} on={github.on} onChange={(next) => onDestination("github", next)} />
+          </Row>
+        </Section>
+      )}
       <Section title={t("lookups.neverTitle")}>
         <Row title={t("settings.neverRow")} desc={t("lookups.neverText")} />
       </Section>
@@ -357,5 +375,108 @@ function Row({
       <span className={styles.control}>{children}</span>
       {below && <div className={styles.below}>{below}</div>}
     </div>
+  );
+}
+
+const releases = "https://github.com/MarJC5/vigie/releases/tag/v";
+
+/** The version and Vigie's own update (ADR-0038): its state and the one action that fits. */
+function VersionRow({
+  version,
+  update,
+  onCheck,
+  onInstall,
+  onOpen,
+  onCopy,
+}: {
+  version: string;
+  update?: SelfUpdateView;
+  onCheck?: () => void;
+  onInstall?: () => void;
+  onOpen?: (href: string) => void;
+  onCopy?: (text: string) => Promise<unknown> | void;
+}) {
+  const { t, i18n } = useTranslation();
+  const title = t("settings.version");
+  if (!update) return <Row title={title} desc={t("settings.versionDesc", { version })} />;
+  const v = update.current || version;
+  switch (update.install) {
+    case "homebrew":
+      return <Row title={title} desc={t("settings.update.homebrew", { version: v })} below={<CommandLine command="brew upgrade --cask vigie" onCopy={onCopy} />} />;
+    case "package":
+      return <Row title={title} desc={t("settings.update.package", { version: v })} />;
+    case "dev":
+      return <Row title={title} desc={t("settings.update.dev")} />;
+  }
+  const size = (bytes: number) => sizeText(bytes, i18n.language);
+  const checked = (() => {
+    if (!update.checked) return t("settings.update.current", { version: v });
+    const today = day(update.checked) === day(new Date().toISOString());
+    return today
+      ? t("settings.update.checkedToday", { version: v, time: clock(update.checked) })
+      : t("settings.update.checkedOn", { version: v, date: day(update.checked), time: clock(update.checked) });
+  })();
+  switch (update.state) {
+    case "checking":
+      return (
+        <Row title={title} desc={t("settings.update.current", { version: v })}>
+          <Button disabled aria-busy>
+            {t("settings.update.checking")}
+          </Button>
+        </Row>
+      );
+    case "available":
+      return (
+        <Row
+          title={title}
+          desc={t("settings.update.available", { version: v, latest: update.latest, date: day(update.published) })}
+          below={
+            <div className={styles.notes}>
+              <span className={styles.notesTitle}>{t("settings.update.notesTitle", { latest: update.latest })}</span>
+              {update.notes && <Markdown text={update.notes} onLink={(href) => onOpen?.(href)} level={3} />}
+              <ExternalLink href={releases + update.latest} onOpen={onOpen}>
+                {t("settings.update.allNotes")}
+              </ExternalLink>
+            </div>
+          }
+        >
+          <Button variant="primary" icon="update" onClick={onInstall}>
+            {t("settings.update.install")}
+          </Button>
+        </Row>
+      );
+    case "downloading":
+      return (
+        <Row
+          title={title}
+          desc={t("settings.update.downloading", { latest: update.latest })}
+          below={
+            <Progress
+              label={update.total > 0 ? t("settings.update.downloaded", { written: size(update.written), total: size(update.total) }) : t("settings.update.downloadingButton")}
+              value={update.total > 0 ? update.written : undefined}
+              max={update.total > 0 ? update.total : undefined}
+            />
+          }
+        >
+          <Button variant="primary" disabled aria-busy>
+            {t("settings.update.downloadingButton")}
+          </Button>
+        </Row>
+      );
+    case "error":
+      return (
+        <Row
+          title={title}
+          desc={update.latest ? t("settings.update.notInstalled", { version: v, latest: update.latest }) : checked}
+          note={update.problem ? t(update.problem.code, { message: update.problem.detail }) : undefined}
+        >
+          <Button onClick={update.latest ? onInstall : onCheck}>{t("settings.update.retry")}</Button>
+        </Row>
+      );
+  }
+  return (
+    <Row title={title} desc={checked}>
+      <Button onClick={onCheck}>{t("settings.update.check")}</Button>
+    </Row>
   );
 }

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 
+import type { SelfUpdateView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { SettingsPage } from "./SettingsPage";
 
 const lookups = {
@@ -266,5 +267,94 @@ export const CommandAppImage: Story = {
   play: async ({ canvasElement }) => {
     const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
     await expect(page.getByText(/~\/\.local\/bin doit être dans votre PATH\./)).toBeInTheDocument();
+  },
+};
+
+// Vigie's own update (ADR-0038): a view as the Go side sends it.
+const selfUpdate = (over: Partial<SelfUpdateView>): SelfUpdateView => ({
+  install: "app", current: "0.5.0", state: "idle", latest: "", notes: "", published: "", checked: "", written: 0, total: 0, problem: null, ...over,
+});
+
+// A new version: its notes, the link to all of them, Install and restart.
+export const UpdateAvailable: Story = {
+  args: {
+    tab: "about", onInstallUpdate: fn(),
+    selfUpdate: selfUpdate({
+      state: "available", latest: "0.6.0", published: "2026-11-14T09:00:00Z",
+      notes: "- Several items selected in the site list\n- A notification when a long scan ends\n- The vigie command outside the app",
+    }),
+  },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByText("Vigie 0.5.0. Version 0.6.0 is available, published on 14.11.2026.")).toBeInTheDocument();
+    await expect(page.getByText("What is new in 0.6.0")).toBeInTheDocument();
+    await expect(page.getByText("A notification when a long scan ends")).toBeInTheDocument();
+    await userEvent.click(page.getByRole("link", { name: /All notes on GitHub/ }));
+    await expect(args.onOpen).toHaveBeenCalledWith("https://github.com/MarJC5/vigie/releases/tag/v0.6.0");
+    await userEvent.click(page.getByRole("button", { name: "Install and restart" }));
+    await expect(args.onInstallUpdate).toHaveBeenCalled();
+  },
+};
+
+// Downloading, the bar counting the bytes.
+export const UpdateDownloading: Story = {
+  args: { tab: "about", selfUpdate: selfUpdate({ state: "downloading", latest: "0.6.0", written: 11_200_000, total: 18_000_000 }) },
+  globals: { lang: "fr" },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "11200000");
+    await expect(page.getByRole("button", { name: "Téléchargement…" })).toBeDisabled();
+  },
+};
+
+// Up to date, checked; a check on demand.
+export const UpToDate: Story = {
+  args: { tab: "about", onCheckUpdate: fn(), selfUpdate: selfUpdate({ state: "up-to-date", checked: "2026-10-30T14:32:00Z" }) },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByText(/Vigie 0\.5\.0, checked on 30\.10\.2026 at/)).toBeInTheDocument();
+    await userEvent.click(page.getByRole("button", { name: "Check for updates" }));
+    await expect(args.onCheckUpdate).toHaveBeenCalled();
+  },
+};
+
+// A signature refused: the file is discarded, and the user can try again.
+export const UpdateRefused: Story = {
+  args: {
+    tab: "about", onInstallUpdate: fn(),
+    selfUpdate: selfUpdate({ state: "error", latest: "0.6.0", problem: { code: "problem.selfUpdateSignature", detail: "" } }),
+  },
+  globals: { lang: "fr" },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByText("Sa signature ne correspond pas à la clé de Vigie : le fichier téléchargé est écarté.")).toBeInTheDocument();
+    await userEvent.click(page.getByRole("button", { name: "Réessayer" }));
+    await expect(args.onInstallUpdate).toHaveBeenCalled();
+  },
+};
+
+// Homebrew updates it: the command to copy; a Linux package and a build of the sources say so.
+export const UpdatedElsewhere: Story = {
+  args: { tab: "about", onCopy: fn(), selfUpdate: selfUpdate({ install: "homebrew" }) },
+  globals: { lang: "fr" },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByText(/installée avec Homebrew/)).toBeInTheDocument();
+    await userEvent.click(page.getByRole("button", { name: "Copier" }));
+    await expect(args.onCopy).toHaveBeenCalledWith("brew upgrade --cask vigie");
+    await expect(page.queryByRole("button", { name: "Rechercher une mise à jour" })).toBeNull();
+  },
+};
+
+// github.com in a section of its own, its switch.
+export const LookupsWithGitHub: Story = {
+  args: { lookups: { ...lookups, destinations: [...lookups.destinations, { id: "github", on: true }] } },
+  globals: { lang: "fr" },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByRole("heading", { level: 2, name: "Nouvelles versions de Vigie" })).toBeInTheDocument();
+    await expect(page.getByText(/une fois par jour au plus, et quand vous le demandez dans À propos/)).toBeInTheDocument();
+    await userEvent.click(page.getByRole("switch", { name: "github.com" }));
+    await expect(args.onDestination).toHaveBeenCalledWith("github", false);
   },
 };

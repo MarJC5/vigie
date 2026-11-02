@@ -1238,8 +1238,8 @@
       },
       "github": {
         "name": "github.com",
-        "sent": "Vigie's version, the system and the architecture, once a day at most and when you ask in About",
-        "kept": "nothing, nothing downloaded without you"
+        "sent": "Vigie's version, the system and the architecture",
+        "kept": "nothing"
       }
     },
     "off": {
@@ -1254,7 +1254,7 @@
   },
   "consent": {
     "title": "Before the first security scan",
-    "lead": "To find known vulnerabilities, closed plugins and expiry dates, Vigie asks a few services from your computer. This is exactly what each one receives. Nothing is sent until you agree.",
+    "lead": "To find known vulnerabilities, closed plugins, expiry dates and its own new versions, Vigie asks a few services from your computer. This is exactly what each one receives. Nothing is sent until you agree.",
     "later": "You can change these choices at any time in Settings.",
     "notNow": "Not now",
     "agree": "Agree"
@@ -1320,7 +1320,28 @@
     "license": "License",
     "licenseDesc": "MIT. Not affiliated with the WordPress Foundation.",
     "receives": "Receives: {{sent}} · answer kept {{kept}}",
-    "neverRow": "What never leaves your computer"
+    "neverRow": "What never leaves your computer",
+    "update": {
+      "section": "New versions of Vigie",
+      "githubDesc": "Receives: Vigie's version, the system and the architecture · once a day at most, and when you ask in About. Nothing is downloaded without you.",
+      "current": "Vigie {{version}}.",
+      "checkedToday": "Vigie {{version}}, checked today at {{time}}.",
+      "checkedOn": "Vigie {{version}}, checked on {{date}} at {{time}}.",
+      "check": "Check for updates",
+      "checking": "Checking…",
+      "available": "Vigie {{version}}. Version {{latest}} is available, published on {{date}}.",
+      "install": "Install and restart",
+      "notesTitle": "What is new in {{latest}}",
+      "allNotes": "All notes on GitHub",
+      "downloading": "Downloading Vigie {{latest}}, checked before it is installed.",
+      "downloadingButton": "Downloading…",
+      "downloaded": "{{written}} of {{total}}",
+      "notInstalled": "Vigie {{version}}. Version {{latest}} was not installed.",
+      "retry": "Try again",
+      "homebrew": "Vigie {{version}}, installed with Homebrew: it updates with Homebrew, in Terminal.",
+      "package": "Vigie {{version}}, installed from a package: it updates with your package manager (apt, dnf, pacman).",
+      "dev": "Vigie built from the sources: no automatic updates."
+    }
   },
   "data": {
     "backup": "Backup",

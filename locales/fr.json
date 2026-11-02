@@ -1329,8 +1329,8 @@
       },
       "github": {
         "name": "github.com",
-        "sent": "la version de Vigie, le système et l'architecture, une fois par jour au plus et quand vous le demandez dans À propos",
-        "kept": "rien, rien n'est téléchargé sans vous"
+        "sent": "la version de Vigie, le système et l'architecture",
+        "kept": "rien"
       }
     },
     "off": {
@@ -1345,7 +1345,7 @@
   },
   "consent": {
     "title": "Avant le premier relevé de sécurité",
-    "lead": "Pour connaître les vulnérabilités, les extensions fermées et les dates d'expiration, Vigie interroge quelques services depuis votre ordinateur. Voici exactement ce que chacun reçoit. Rien n'est envoyé sans votre accord.",
+    "lead": "Pour connaître les vulnérabilités, les extensions fermées, les dates d'expiration et ses propres nouvelles versions, Vigie interroge quelques services depuis votre ordinateur. Voici exactement ce que chacun reçoit. Rien n'est envoyé sans votre accord.",
     "later": "Vous pouvez changer ces choix à tout moment dans Réglages.",
     "notNow": "Pas maintenant",
     "agree": "Accepter"
@@ -1412,7 +1412,28 @@
     "license": "Licence",
     "licenseDesc": "MIT. Sans lien avec la WordPress Foundation.",
     "receives": "Reçoit : {{sent}} · réponse gardée {{kept}}",
-    "neverRow": "Ce qui ne quitte jamais votre ordinateur"
+    "neverRow": "Ce qui ne quitte jamais votre ordinateur",
+    "update": {
+      "section": "Nouvelles versions de Vigie",
+      "githubDesc": "Reçoit : la version de Vigie, le système et l'architecture · une fois par jour au plus, et quand vous le demandez dans À propos. Rien n'est téléchargé sans vous.",
+      "current": "Vigie {{version}}.",
+      "checkedToday": "Vigie {{version}}, vérifiée aujourd'hui à {{time}}.",
+      "checkedOn": "Vigie {{version}}, vérifiée le {{date}} à {{time}}.",
+      "check": "Rechercher une mise à jour",
+      "checking": "Recherche…",
+      "available": "Vigie {{version}}. La version {{latest}} est disponible, publiée le {{date}}.",
+      "install": "Installer et redémarrer",
+      "notesTitle": "Nouveautés de la {{latest}}",
+      "allNotes": "Toutes les notes sur GitHub",
+      "downloading": "Téléchargement de Vigie {{latest}}, vérifiée avant d'être installée.",
+      "downloadingButton": "Téléchargement…",
+      "downloaded": "{{written}} sur {{total}}",
+      "notInstalled": "Vigie {{version}}. La version {{latest}} n'a pas été installée.",
+      "retry": "Réessayer",
+      "homebrew": "Vigie {{version}}, installée avec Homebrew : elle se met à jour avec Homebrew, dans le Terminal.",
+      "package": "Vigie {{version}}, installée par un paquet : elle se met à jour avec votre gestionnaire de paquets (apt, dnf, pacman).",
+      "dev": "Vigie compilée depuis les sources : pas de mise à jour automatique."
+    }
   },
   "data": {
     "backup": "Sauvegarde",

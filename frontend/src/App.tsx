@@ -2,7 +2,7 @@ import { Browser, Clipboard, Events } from "@wailsio/runtime";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { I18nextProvider } from "react-i18next";
 
-import { VigieDiscovery, VigieMenu, VigieScans, VigieUpdates } from "../bindings/events";
+import { VigieDiscovery, VigieMenu, VigieScans, VigieSelfupdate, VigieUpdates } from "../bindings/events";
 import {
   Addons,
   CommandLink,
@@ -13,12 +13,13 @@ import {
   Preferences,
   Scanner,
   Security,
+  SelfUpdate,
   SiteManager,
   Activity,
   Updates,
   Watch,
 } from "../bindings/github.com/MarJC5/vigie/internal/app";
-import type { BackgroundSettings, CommandView, DatabaseView, Journal, LoginItemState, LookupsView, Node, ScansState, TagView, TreeView, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { BackgroundSettings, CommandView, DatabaseView, Journal, LoginItemState, SelfUpdateView, LookupsView, Node, ScansState, TagView, TreeView, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { ActivityPage } from "./components/ActivityPage/ActivityPage";
 import { AddHostWizard, type WizardApi } from "./components/AddHostWizard/AddHostWizard";
 import { type AddonsApi, AddonsFlow } from "./components/AddonsFlow/AddonsFlow";
@@ -161,6 +162,8 @@ export function App() {
   const [loginItem, setLoginItem] = useState<LoginItemState>({ supported: false, on: false });
   // The vigie command (ADR-0036), read again each time the settings open.
   const [command, setCommand] = useState<CommandView>();
+  // Vigie's own update (ADR-0038), followed from the Go side.
+  const [selfUpdate, setSelfUpdate] = useState<SelfUpdateView>();
   useEffect(() => {
     if (section === "settings") void CommandLink.State().then(setCommand);
   }, [section]);
@@ -187,11 +190,21 @@ export function App() {
     void LoginItem.State().then(setLoginItem);
     void Scanner.State().then(setScans);
     void Updates.State().then(setUpdates);
+    void SelfUpdate.State().then(setSelfUpdate);
     const offScans = Events.On(VigieScans, (event) => setScans(event.data));
     const offUpdates = Events.On(VigieUpdates, (event) => setUpdates(event.data));
+    const offSelf = Events.On(VigieSelfupdate, (event) => setSelfUpdate(event.data));
+    // A new version in the eye's menu: Settings, About.
+    const offAbout = Events.On(VigieMenu, (event) => {
+      if (event.data.action !== "about") return;
+      setSection("settings");
+      setSettingsTab("about");
+    });
     return () => {
       offScans();
       offUpdates();
+      offSelf();
+      offAbout();
     };
   }, []);
 
@@ -376,6 +389,9 @@ export function App() {
                 loginItem={loginItem}
                 onLoginItem={(on) => void changeLoginItem(on)}
                 command={command}
+                selfUpdate={selfUpdate}
+                onCheckUpdate={() => void SelfUpdate.Check()}
+                onInstallUpdate={() => void SelfUpdate.Install()}
                 onCheckCommand={() => void CommandLink.State().then(setCommand)}
                 onCopy={copyText}
               />

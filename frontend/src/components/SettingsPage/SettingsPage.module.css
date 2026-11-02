@@ -115,3 +115,18 @@
   display: inline-flex;
   color: var(--vg-status-ok);
 }
+
+/* The notes of a new version of Vigie, under its row. */
+.notes {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--vg-space-2);
+  padding: var(--vg-space-3) 14px;
+  border-radius: var(--vg-radius-control);
+  background: var(--vg-surface-row);
+}
+
+.notesTitle {
+  font-weight: var(--vg-weight-strong);
+}
