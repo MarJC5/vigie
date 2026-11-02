@@ -5,6 +5,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/sys/unix"
 )
 
 // bundleOf returns the app bundle a binary is in ("/Applications/Vigie.app" for
@@ -26,9 +28,10 @@ func handsOver(goos string, terminal bool, bundle string) bool {
 }
 
 // inTerminal tells whether the input is a terminal: vigie typed in one, not started by the system.
+// A character device is not enough: LaunchServices gives /dev/null, which is one too.
 func inTerminal() bool {
-	info, err := os.Stdin.Stat()
-	return err == nil && info.Mode()&os.ModeCharDevice != 0
+	_, err := unix.IoctlGetTermios(int(os.Stdin.Fd()), termiosRequest)
+	return err == nil
 }
 
 // openBundle asks LaunchServices to open the app with the arguments given: it opens the window, or
