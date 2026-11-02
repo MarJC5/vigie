@@ -81,10 +81,11 @@ export interface EditApi extends HostEditApi, FindSitesApi {
   Rename(id: string, name: string): Promise<Problem | null>;
   Move(id: string, folderId: string): Promise<Problem | null>;
   SetColor(id: string, color: string): Promise<Problem | null>;
-  /** withBackups: the sites' backups on their server are removed first (ADR-0033). */
-  Delete(id: string, withBackups: boolean): Promise<DeleteResult>;
-  /** What the sites of a site or host keep on their server, for the delete dialog. */
-  Backups(id: string): Promise<SiteBackupsView[] | null>;
+  /** One item or several, all or none; withBackups: the sites' backups on their server are removed
+   first (ADR-0033). */
+  Delete(ids: string[], withBackups: boolean): Promise<DeleteResult>;
+  /** What the sites of sites and hosts keep on their server, for the delete dialog. */
+  Backups(ids: string[]): Promise<SiteBackupsView[] | null>;
   SetAdminURL(id: string, address: string): Promise<Problem | null>;
   SetNotes(id: string, notes: string): Promise<Problem | null>;
   SetTags(id: string, tags: string[]): Promise<Problem | null>;
@@ -270,7 +271,7 @@ export function AppShell({
   useEffect(() => {
     if (!edit || !deleting || (deleting.kind !== "site" && deleting.kind !== "host")) return;
     let current = true;
-    void edit.Backups(deleting.id).then((sites) => {
+    void edit.Backups([deleting.id]).then((sites) => {
       if (current) setDeleteBackups({ id: deleting.id, sites: sites ?? [] });
     });
     return () => {
@@ -717,7 +718,7 @@ export function AppShell({
               return;
             }
             void run(async () => {
-              const result = await edit.Delete(dialogNode.id, withBackups);
+              const result = await edit.Delete([dialogNode.id], withBackups);
               if (result.command && (dialogNode.kind === "site" || dialogNode.kind === "host")) {
                 setLeftBackups({ name: dialogNode.name, kind: dialogNode.kind, command: result.command });
               }

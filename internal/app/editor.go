@@ -64,13 +64,23 @@ func (e *Editor) Move(ctx context.Context, id, folderID string) *Problem {
 	if err != nil {
 		return ProblemOf(err)
 	}
-	folder := model.NoID
-	if folderID != "" {
-		if folder, err = uuid.Parse(folderID); err != nil {
-			return ProblemOf(model.ErrNotFound)
-		}
+	folder, err := e.folderID(ctx, folderID)
+	if err != nil {
+		return ProblemOf(err)
 	}
 	return ProblemOf(e.ws.Move(ctx, n, folder))
+}
+
+// folderID reads the folder an item goes in: "" for the root.
+func (e *Editor) folderID(_ context.Context, folderID string) (model.ID, error) {
+	if folderID == "" {
+		return model.NoID, nil
+	}
+	folder, err := uuid.Parse(folderID)
+	if err != nil {
+		return model.NoID, model.ErrNotFound
+	}
+	return folder, nil
 }
 
 // SetColor gives a node one of the eight colors by name ("none": inherit its parent's).

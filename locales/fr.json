@@ -316,6 +316,7 @@
     "running": "Des relevés ou des mises à jour sont en cours : attendez leur fin pour compacter la base.",
     "backupDays": "Les sauvegardes sont gardées 7, 30 ou 90 jours, ou sans limite.",
     "backupsNotRemoved": "Le serveur n'a pas supprimé les sauvegardes : {{message}}",
+    "nothingToMove": "Seuls les dossiers et les hébergements se déplacent : les sites restent sous leur hébergement.",
     "notAFolder": "Les sites ne s'importent que dans un dossier.",
     "keyChanged": "Vigie fait confiance à une autre clé pour l'un de ces serveurs depuis l'aperçu : regardez de nouveau l'aperçu.",
     "importChanged": "Le gestionnaire de sites a changé depuis l'aperçu : regardez de nouveau l'aperçu.",

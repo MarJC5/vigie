@@ -2,7 +2,6 @@ package workspace_test
 
 import (
 	"context"
-	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -51,35 +50,5 @@ func TestRemoveOldBackups(t *testing.T) {
 	latest, _, err := db.LatestScan(ctx, site.ID)
 	if err != nil || len(latest.Backups) != 1 || latest.Backups[0].At.Format(remote.BackupTimeLayout) != recent || latest.Backups[0].Bytes != 48000*1024 {
 		t.Errorf("latest scan's backups = %+v, %v; want the one left", latest.Backups, err)
-	}
-}
-
-// Deleting a host with its backups removes its sites' folders on its server, then the host; a
-// server that cannot be reached leaves them, named, and the host goes anyway.
-func TestDeleteWithBackups(t *testing.T) {
-	ctx := context.Background()
-	for _, reachable := range []bool{true, false} {
-		ws, db, fake := setup(t)
-		line := lineOf(t)
-		host := resolve(t, ws, "Clients/Bench")
-		var ids []model.ID
-		for _, name := range []string{"outdated.example.test", "network.example.test", "broken"} {
-			ids = append(ids, resolve(t, ws, "Clients/Bench/"+name).ID)
-		}
-		if reachable {
-			fake.Set(line(remote.RemoveSiteBackups(ids...)), sshx.Result{})
-		}
-		left, err := ws.DeleteWithBackups(ctx, host)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := map[bool][]model.ID{true: nil, false: ids}[reachable]; !slices.Equal(left, want) {
-			t.Errorf("reachable %v: left %v, want %v", reachable, left, want)
-		}
-		if tree, err := db.LoadTree(ctx); err != nil {
-			t.Fatal(err)
-		} else if _, err := tree.Resolve("Clients/Bench"); err == nil {
-			t.Errorf("reachable %v: the host is still there", reachable)
-		}
 	}
 }

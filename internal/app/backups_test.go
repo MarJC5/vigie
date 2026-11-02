@@ -41,14 +41,38 @@ func TestBackupsOfASite(t *testing.T) {
 func TestDeleteWithBackupsUnreachable(t *testing.T) {
 	ctx := context.Background()
 	e, ws, ids := editor(t)
-	if b, err := e.Backups(ctx, ids["host"]); err != nil || len(b) != 1 || b[0].SiteID != ids["site"] || b[0].Read {
+	if b, err := e.Backups(ctx, []string{ids["host"]}); err != nil || len(b) != 1 || b[0].SiteID != ids["site"] || b[0].Read {
 		t.Errorf("Backups(host) = %+v, %v; want its one site, not read", b, err)
 	}
-	r := e.Delete(ctx, ids["site"], true)
+	r := e.Delete(ctx, []string{ids["site"]}, true)
 	if r.Problem != nil || len(r.Left) != 1 || r.Command != "rm -rf ~/.vigie/backups/"+ids["site"] {
 		t.Errorf("Delete() = %+v", r)
 	}
 	if tree, _ := ws.DB().LoadTree(ctx); len(tree.SitesUnder(model.Root)) != 0 {
 		t.Error("the site is still there")
+	}
+}
+
+// Several items at once (ADR-0034): moved, colored and tagged together; sites alone are not moved.
+func TestEditSeveral(t *testing.T) {
+	ctx := context.Background()
+	e, ws, ids := editor(t)
+	if p := e.MoveMany(ctx, []string{ids["site"]}, ""); code(p) != "problem.nothingToMove" {
+		t.Errorf("MoveMany(site) = %+v, want problem.nothingToMove", p)
+	}
+	if p := e.MoveMany(ctx, []string{ids["host"], ids["site"]}, ""); p != nil {
+		t.Fatal(p)
+	}
+	if p := e.SetColorMany(ctx, []string{ids["host"], ids["site"]}, "green"); p != nil {
+		t.Fatal(p)
+	}
+	if p := e.TagMany(ctx, []string{ids["host"]}, "Client Dupont", true); p != nil {
+		t.Fatal(p)
+	}
+	tree, _ := ws.DB().LoadTree(ctx)
+	h, _ := tree.Host(uuid.MustParse(ids["host"]))
+	s, _ := tree.Site(uuid.MustParse(ids["site"]))
+	if h.FolderID != model.NoID || h.Color != model.ColorGreen || s.Color != model.ColorGreen || len(s.Tags) != 1 {
+		t.Errorf("host %+v, site %+v; want the host at the root, both green, the site tagged", h, s)
 	}
 }

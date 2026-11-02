@@ -324,7 +324,7 @@ export const DeleteFromTheTitleMenu: Story = {
     await userEvent.click(shell.getByRole("menuitem", { name: "Delete the host…" }));
     const dialog = shell.getByRole("dialog", { name: 'Delete "Shared hosting"?' });
     await userEvent.click(within(dialog).getByRole("button", { name: "Delete the host" }));
-    await waitFor(() => expect(args.edit!.Delete).toHaveBeenCalledWith("shared", true));
+    await waitFor(() => expect(args.edit!.Delete).toHaveBeenCalledWith(["shared"], true));
   },
 };
 

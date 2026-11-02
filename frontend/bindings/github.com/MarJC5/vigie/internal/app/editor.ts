@@ -16,11 +16,11 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 import * as $models from "./models.js";
 
 /**
- * Backups returns what the sites of a site or host keep on their server, as their latest scans
- * read them; none for a folder, which is only deleted empty.
+ * Backups returns what the sites of the sites and hosts given keep on their server, as their latest
+ * scans read them; none for a folder, which is only deleted empty.
  */
-export function Backups(id: string): $CancellablePromise<$models.SiteBackupsView[] | null> {
-    return $Call.ByID(4188964941, id);
+export function Backups(ids: string[] | null): $CancellablePromise<$models.SiteBackupsView[] | null> {
+    return $Call.ByID(4188964941, ids);
 }
 
 /**
@@ -31,11 +31,11 @@ export function CreateFolder(parentID: string, name: string): $CancellablePromis
 }
 
 /**
- * Delete removes a site, a host with its sites, or an empty folder from Vigie; with backups, the
- * sites' backups on their server first (ADR-0033).
+ * Delete removes sites, hosts with their sites, and empty folders from Vigie, one or several, all
+ * or none (ADR-0034); with backups, the sites' backups on their servers first (ADR-0033).
  */
-export function Delete(id: string, backups: boolean): $CancellablePromise<$models.DeleteResult> {
-    return $Call.ByID(836639749, id, backups);
+export function Delete(ids: string[] | null, backups: boolean): $CancellablePromise<$models.DeleteResult> {
+    return $Call.ByID(836639749, ids, backups);
 }
 
 /**
@@ -57,6 +57,14 @@ export function Host(id: string): $CancellablePromise<$models.HostDetails> {
  */
 export function Move(id: string, folderID: string): $CancellablePromise<$models.Problem | null> {
     return $Call.ByID(2624996695, id, folderID);
+}
+
+/**
+ * MoveMany puts the folders and hosts among the items in a folder ("" for the root), all or none;
+ * sites stay under their hosts (ADR-0034).
+ */
+export function MoveMany(ids: string[] | null, folderID: string): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(1401763152, ids, folderID);
 }
 
 /**
@@ -95,6 +103,13 @@ export function SetColor(id: string, color: string): $CancellablePromise<$models
 }
 
 /**
+ * SetColorMany gives every item its own color ("none": inherit it).
+ */
+export function SetColorMany(ids: string[] | null, color: string): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(3498094394, ids, color);
+}
+
+/**
  * SetNotes writes the Markdown notes of a node (ADR-0023), at most model.MaxNotes characters.
  */
 export function SetNotes(id: string, notes: string): $CancellablePromise<$models.Problem | null> {
@@ -107,4 +122,11 @@ export function SetNotes(id: string, notes: string): $CancellablePromise<$models
  */
 export function SetTags(id: string, tags: string[] | null): $CancellablePromise<$models.Problem | null> {
     return $Call.ByID(4211368835, id, tags);
+}
+
+/**
+ * TagMany adds a tag to every site the items hold (add), or takes it off those that have it.
+ */
+export function TagMany(ids: string[] | null, tag: string, add: boolean): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(1530858453, ids, tag, add);
 }

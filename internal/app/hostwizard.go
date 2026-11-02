@@ -80,6 +80,7 @@ var problemCodes = []struct {
 	{errRunning, "problem.running"},
 	{workspace.ErrBackupDays, "problem.backupDays"},
 	{workspace.ErrRemoveRefused, "problem.backupsNotRemoved"},
+	{workspace.ErrNothingToMove, "problem.nothingToMove"},
 	{workspace.ErrNotAFolder, "problem.notAFolder"},
 	{workspace.ErrKeyChanged, "problem.keyChanged"},
 	{store.ErrIDTaken, "problem.importChanged"},

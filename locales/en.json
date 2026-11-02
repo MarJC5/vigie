@@ -301,6 +301,7 @@
     "running": "Scans or updates are running: wait for them to end before compacting the database.",
     "backupDays": "Backups are kept 7, 30 or 90 days, or with no limit.",
     "backupsNotRemoved": "The server did not remove the backups: {{message}}",
+    "nothingToMove": "Only folders and hosts are moved: sites stay under their hosts.",
     "notAFolder": "Sites can only be imported into a folder.",
     "keyChanged": "Vigie trusts another key for one of these servers since the preview: look at the preview again.",
     "importChanged": "The site manager changed since the preview: look at the preview again.",

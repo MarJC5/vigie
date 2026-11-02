@@ -9,6 +9,7 @@ import (
 	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/store"
 	"github.com/MarJC5/vigie/internal/update"
+	"github.com/MarJC5/vigie/internal/workspace"
 )
 
 // BackupView is the backups of one update on the server, as the latest scan read them.
@@ -86,22 +87,25 @@ type SiteBackupsView struct {
 	Bytes  int64  `json:"bytes"`
 }
 
-// Backups returns what the sites of a site or host keep on their server, as their latest scans
-// read them; none for a folder, which is only deleted empty.
-func (e *Editor) Backups(ctx context.Context, id string) ([]SiteBackupsView, error) {
-	n, err := e.node(ctx, id)
+// Backups returns what the sites of the sites and hosts given keep on their server, as their latest
+// scans read them; none for a folder, which is only deleted empty.
+func (e *Editor) Backups(ctx context.Context, ids []string) ([]SiteBackupsView, error) {
+	nodes, err := e.nodes(ctx, ids)
 	if err != nil {
 		return nil, err
-	}
-	views := []SiteBackupsView{}
-	if n.Kind != model.KindSite && n.Kind != model.KindHost {
-		return views, nil
 	}
 	tree, err := e.ws.DB().LoadTree(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for _, site := range tree.SitesUnder(n) {
+	var held []model.Node
+	for _, n := range nodes {
+		if n.Kind == model.KindSite || n.Kind == model.KindHost {
+			held = append(held, n)
+		}
+	}
+	views := []SiteBackupsView{}
+	for _, site := range workspace.SitesOf(tree, held) {
 		v := SiteBackupsView{SiteID: site.ID.String()}
 		scan, ok, err := e.ws.DB().LatestScan(ctx, site.ID)
 		if err != nil {
@@ -126,17 +130,17 @@ type DeleteResult struct {
 	Command string   `json:"command"`
 }
 
-// Delete removes a site, a host with its sites, or an empty folder from Vigie; with backups, the
-// sites' backups on their server first (ADR-0033).
-func (e *Editor) Delete(ctx context.Context, id string, backups bool) DeleteResult {
-	n, err := e.node(ctx, id)
+// Delete removes sites, hosts with their sites, and empty folders from Vigie, one or several, all
+// or none (ADR-0034); with backups, the sites' backups on their servers first (ADR-0033).
+func (e *Editor) Delete(ctx context.Context, ids []string, backups bool) DeleteResult {
+	nodes, err := e.nodes(ctx, ids)
 	if err != nil {
 		return DeleteResult{Problem: ProblemOf(err)}
 	}
 	if !backups {
-		return DeleteResult{Problem: ProblemOf(e.ws.Delete(ctx, n))}
+		return DeleteResult{Problem: ProblemOf(e.ws.DeleteMany(ctx, nodes))}
 	}
-	left, err := e.ws.DeleteWithBackups(ctx, n)
+	left, err := e.ws.DeleteManyWithBackups(ctx, nodes)
 	if err != nil {
 		return DeleteResult{Problem: ProblemOf(err)}
 	}
@@ -150,6 +154,55 @@ func (e *Editor) Delete(ctx context.Context, id string, backups bool) DeleteResu
 		result.Command = "rm -rf " + strings.Join(dirs, " ")
 	}
 	return result
+}
+
+// MoveMany puts the folders and hosts among the items in a folder ("" for the root), all or none;
+// sites stay under their hosts (ADR-0034).
+func (e *Editor) MoveMany(ctx context.Context, ids []string, folderID string) *Problem {
+	nodes, err := e.nodes(ctx, ids)
+	if err != nil {
+		return ProblemOf(err)
+	}
+	folder, err := e.folderID(ctx, folderID)
+	if err != nil {
+		return ProblemOf(err)
+	}
+	return ProblemOf(e.ws.MoveMany(ctx, nodes, folder))
+}
+
+// SetColorMany gives every item its own color ("none": inherit it).
+func (e *Editor) SetColorMany(ctx context.Context, ids []string, color string) *Problem {
+	nodes, err := e.nodes(ctx, ids)
+	if err != nil {
+		return ProblemOf(err)
+	}
+	c, err := model.ParseColor(color)
+	if err != nil {
+		return ProblemOf(err)
+	}
+	return ProblemOf(e.ws.SetColorMany(ctx, nodes, c))
+}
+
+// TagMany adds a tag to every site the items hold (add), or takes it off those that have it.
+func (e *Editor) TagMany(ctx context.Context, ids []string, tag string, add bool) *Problem {
+	nodes, err := e.nodes(ctx, ids)
+	if err != nil {
+		return ProblemOf(err)
+	}
+	return ProblemOf(e.ws.TagMany(ctx, nodes, tag, add))
+}
+
+// nodes resolves the items of a selection; an unknown one refuses them all.
+func (e *Editor) nodes(ctx context.Context, ids []string) ([]model.Node, error) {
+	nodes := make([]model.Node, 0, len(ids))
+	for _, id := range ids {
+		n, err := e.node(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		nodes = append(nodes, n)
+	}
+	return nodes, nil
 }
 
 // BackupDays returns the days the backups of an update stay on the server, 0 for no limit.

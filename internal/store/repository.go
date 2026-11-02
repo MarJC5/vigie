@@ -318,54 +318,114 @@ func saveSiteChildren(ctx context.Context, tx *sql.Tx, s model.Site) error {
 	return nil
 }
 
+// folderChildren counts what a folder holds: its folders and its hosts.
+const folderChildren = "SELECT (SELECT count(*) FROM folders WHERE parent_id = ?1) + (SELECT count(*) FROM hosts WHERE folder_id = ?1)"
+
 // DeleteFolder deletes an empty folder.
 func (db *DB) DeleteFolder(ctx context.Context, id model.ID) error {
-	return db.deleteNode(ctx, "folders", id,
-		"SELECT (SELECT count(*) FROM folders WHERE parent_id = ?1) + (SELECT count(*) FROM hosts WHERE folder_id = ?1)")
+	return db.withTx(ctx, func(tx *sql.Tx) error { return deleteNode(ctx, tx, "folders", id, folderChildren) })
 }
 
 // DeleteHost deletes a host with its sites, and their tags, subsites and scans.
 func (db *DB) DeleteHost(ctx context.Context, id model.ID) error {
-	return db.withTx(ctx, func(tx *sql.Tx) error {
-		ok, err := exists(ctx, tx, "hosts", id)
-		if err != nil {
-			return err
-		}
-		if !ok {
-			return fmt.Errorf("hosts %s: %w", id, model.ErrNotFound)
-		}
-		if _, err := tx.ExecContext(ctx, "DELETE FROM sites WHERE host_id = ?", id.String()); err != nil {
-			return err
-		}
-		_, err = tx.ExecContext(ctx, "DELETE FROM hosts WHERE id = ?", id.String())
+	return db.withTx(ctx, func(tx *sql.Tx) error { return deleteHost(ctx, tx, id) })
+}
+
+func deleteHost(ctx context.Context, tx *sql.Tx, id model.ID) error {
+	ok, err := exists(ctx, tx, "hosts", id)
+	if err != nil {
 		return err
-	})
+	}
+	if !ok {
+		return fmt.Errorf("hosts %s: %w", id, model.ErrNotFound)
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM sites WHERE host_id = ?", id.String()); err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, "DELETE FROM hosts WHERE id = ?", id.String())
+	return err
 }
 
 // DeleteSite deletes a site with its tags, subsites and scans.
 func (db *DB) DeleteSite(ctx context.Context, id model.ID) error {
-	return db.deleteNode(ctx, "sites", id, "")
+	return db.withTx(ctx, func(tx *sql.Tx) error { return deleteNode(ctx, tx, "sites", id, "") })
 }
 
-func (db *DB) deleteNode(ctx context.Context, table string, id model.ID, childrenQuery string) error {
-	return db.withTx(ctx, func(tx *sql.Tx) error {
-		ok, err := exists(ctx, tx, table, id)
-		if err != nil {
+func deleteNode(ctx context.Context, tx *sql.Tx, table string, id model.ID, childrenQuery string) error {
+	ok, err := exists(ctx, tx, table, id)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return fmt.Errorf("%s %s: %w", table, id, model.ErrNotFound)
+	}
+	if childrenQuery != "" {
+		var children int
+		if err := tx.QueryRowContext(ctx, childrenQuery, id.String()).Scan(&children); err != nil {
 			return err
 		}
-		if !ok {
-			return fmt.Errorf("%s %s: %w", table, id, model.ErrNotFound)
+		if children > 0 {
+			return fmt.Errorf("%s %s: %w", table, id, ErrNotEmpty)
 		}
-		if childrenQuery != "" {
-			var children int
-			if err := tx.QueryRowContext(ctx, childrenQuery, id.String()).Scan(&children); err != nil {
+	}
+	_, err = tx.ExecContext(ctx, "DELETE FROM "+table+" WHERE id = ?", id.String())
+	return err
+}
+
+// Edits are changes to several items saved together (ADR-0034): the folders, hosts and sites
+// changed, the tags of sites, then the items deleted.
+type Edits struct {
+	Folders []model.Folder
+	Hosts   []model.Host
+	Sites   []model.Site
+	Tags    map[model.ID][]string
+	// Delete: the sites, then the hosts with their sites, then the folders in the order given, the
+	// deepest first: a folder emptied by the same edits can go.
+	Delete []model.Node
+}
+
+// ApplyEdits saves edits in one transaction: all or none, the first refusal returned.
+func (db *DB) ApplyEdits(ctx context.Context, e Edits) error {
+	return db.withTx(ctx, func(tx *sql.Tx) error {
+		for _, f := range e.Folders {
+			if err := saveFolder(ctx, tx, f); err != nil {
 				return err
 			}
-			if children > 0 {
-				return fmt.Errorf("%s %s: %w", table, id, ErrNotEmpty)
+		}
+		for _, h := range e.Hosts {
+			if err := saveHost(ctx, tx, h); err != nil {
+				return err
 			}
 		}
-		_, err = tx.ExecContext(ctx, "DELETE FROM "+table+" WHERE id = ?", id.String())
-		return err
+		for _, s := range e.Sites {
+			if err := saveSite(ctx, tx, s); err != nil {
+				return err
+			}
+		}
+		for id, tags := range e.Tags {
+			if err := saveTags(ctx, tx, id.String(), tags); err != nil {
+				return err
+			}
+		}
+		for _, kind := range []model.NodeKind{model.KindSite, model.KindHost, model.KindFolder} {
+			for _, n := range e.Delete {
+				if n.Kind != kind {
+					continue
+				}
+				var err error
+				switch kind {
+				case model.KindSite:
+					err = deleteNode(ctx, tx, "sites", n.ID, "")
+				case model.KindHost:
+					err = deleteHost(ctx, tx, n.ID)
+				case model.KindFolder:
+					err = deleteNode(ctx, tx, "folders", n.ID, folderChildren)
+				}
+				if err != nil {
+					return err
+				}
+			}
+		}
+		return nil
 	})
 }

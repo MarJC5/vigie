@@ -141,31 +141,3 @@ func (w *Workspace) RemoveOldBackups(ctx context.Context, siteID model.ID) error
 
 // ErrRemoveRefused is a removal of backups the server refused; its message follows.
 var ErrRemoveRefused = errors.New("the server did not remove the backups")
-
-// DeleteWithBackups removes the backups of a site, or of a host's sites, on their server, then
-// deletes it from Vigie (ADR-0033). A server that cannot be reached leaves its sites' backups:
-// left names those sites, and the node is deleted anyway.
-func (w *Workspace) DeleteWithBackups(ctx context.Context, n model.Node) (left []model.ID, err error) {
-	tree, err := w.db.LoadTree(ctx)
-	if err != nil {
-		return nil, err
-	}
-	sites := tree.SitesUnder(n)
-	if n.Kind == model.KindSite || n.Kind == model.KindHost {
-		var ids []model.ID
-		for _, s := range sites {
-			ids = append(ids, s.ID)
-		}
-		if len(ids) > 0 {
-			host, _ := tree.Host(sites[0].HostID)
-			line, err := remote.RemoveSiteBackups(ids...)
-			if err != nil {
-				return nil, err
-			}
-			if res, err := w.runOn(ctx, host, line); err != nil || res.ExitCode != 0 {
-				left = ids
-			}
-		}
-	}
-	return left, w.Delete(ctx, n)
-}
