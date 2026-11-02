@@ -58,6 +58,8 @@ func TestRemoteCommands(t *testing.T) {
 			`f='/home/u/sites/a/wp-content/debug.log'; [ -f "$f" ] || exit 0; wc -c < "$f"; tail -c 1048576 "$f" | grep -E 'PHP (Fatal|Parse) error' | tail -n 50`},
 		{"backups", func() (string, error) { return remote.ListBackups(site) }, `ls -1 '.vigie/backups/01a18704-356b-77be-ab41-b92a0d67a6bc'`},
 		{"remove a backup", func() (string, error) { return remote.RemoveBackup(dir) }, `rm -rf '` + dir + `'`},
+		{"backups of a scan", func() (string, error) { return remote.BackupSizes(site) },
+			`cd '.vigie/backups/01a18704-356b-77be-ab41-b92a0d67a6bc' 2>/dev/null && du -sk -- */ 2>/dev/null; true`},
 	}
 	for _, tt := range tests {
 		got, err := tt.got()
@@ -110,6 +112,14 @@ func TestParsers(t *testing.T) {
 	backups := remote.ParseBackups([]byte("20261029-131203\nnotes.txt\n20261028-090000\n20261029-140000\n"))
 	if want := []string{"20261028-090000", "20261029-131203", "20261029-140000"}; !slices.Equal(backups, want) {
 		t.Errorf("ParseBackups = %v, want %v (only times, sorted)", backups, want)
+	}
+	// The runs with their sizes, oldest first; a folder that is not a run is left out (ADR-0033).
+	sizes := remote.ParseBackupSizes([]byte("47104\t20261029-131203/\n12\tnotes/\n44032\t20261028-090000/\n"))
+	if want := []remote.BackupSize{{Run: "20261028-090000", Bytes: 44032 * 1024}, {Run: "20261029-131203", Bytes: 47104 * 1024}}; !slices.Equal(sizes, want) {
+		t.Errorf("ParseBackupSizes = %v, want %v", sizes, want)
+	}
+	if sizes := remote.ParseBackupSizes(nil); sizes == nil || len(sizes) != 0 {
+		t.Errorf("ParseBackupSizes(nothing) = %#v, want an empty list: read, none there", sizes)
 	}
 	fatal := "[29-Oct-2026 14:12:18 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function x() in /a/b.php:6"
 	if got := remote.ParseFatals(sshx.Result{Stdout: []byte(fatal + "\n")}); !slices.Equal(got, []string{fatal}) {

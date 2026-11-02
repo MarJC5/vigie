@@ -331,6 +331,42 @@ func ListBackups(site uuid.UUID) (string, error) {
 	return quotedLine("ls -1", ".vigie/backups/"+site.String())
 }
 
+// BackupSizes lists the runs of a site's backups with their sizes in kilobytes, for a scan: it only
+// reads, and answers nothing, without failing, when the site has none (ADR-0033).
+func BackupSizes(site uuid.UUID) (string, error) {
+	q, err := quoted(".vigie/backups/" + site.String())
+	if err != nil {
+		return "", err
+	}
+	return "cd " + q + " 2>/dev/null && du -sk -- */ 2>/dev/null; true", nil
+}
+
+// BackupSize is one run of a site's backups and its size on disk.
+type BackupSize struct {
+	Run   string // the run's folder, its time (BackupTimeLayout)
+	Bytes int64
+}
+
+// ParseBackupSizes reads BackupSizes's answer, oldest first; a folder that is not a run is left
+// out. Nothing answered is an empty list: read, and none there.
+func ParseBackupSizes(out []byte) []BackupSize {
+	sizes := []BackupSize{}
+	for _, line := range strings.Split(string(out), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) != 2 {
+			continue
+		}
+		run := strings.TrimSuffix(fields[1], "/")
+		kb, err := strconv.ParseInt(fields[0], 10, 64)
+		if err != nil || !backupTime.MatchString(run) {
+			continue
+		}
+		sizes = append(sizes, BackupSize{Run: run, Bytes: kb * 1024})
+	}
+	slices.SortFunc(sizes, func(a, b BackupSize) int { return strings.Compare(a.Run, b.Run) })
+	return sizes
+}
+
 // RemoveBackup removes the backups of one run.
 func RemoveBackup(dir string) (string, error) {
 	if !backupDir.MatchString(dir) {

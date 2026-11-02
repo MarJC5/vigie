@@ -59,16 +59,25 @@ func saveScan(ctx context.Context, tx *sql.Tx, s model.Scan) error {
 			return err
 		}
 	}
+	// The site's backups on the server, or NULL when the scan did not read them (ADR-0033).
+	var backups any
+	if s.Backups != nil {
+		data, err := json.Marshal(s.Backups)
+		if err != nil {
+			return err
+		}
+		backups = string(data)
+	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO scans (id, site_id, started_at, finished_at, outcome, failure, error,
 			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
 			files_checked_at, run_id, site_url, php_web, php_web_seen_at, php_web_unknown, admin_email, admin_email_pending,
-			debug_log_path, debug_log_size, debug_log_written, network_plugins, recorded_status, recorded_changes)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			debug_log_path, debug_log_size, debug_log_written, network_plugins, recorded_status, recorded_changes, backups)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		s.ID.String(), s.SiteID.String(), timeText(s.Started), timeText(s.Finished), string(s.Outcome), s.Failure, s.Error,
 		s.WordPress, s.PHPCLI, s.WPCLI, s.Home, s.CoreChecked, s.PluginsChecked, s.ThemesChecked, s.LanguagesChecked,
 		optionalTime(s.FilesChecked), optionalID(s.RunID), s.SiteURL, s.PHPWeb.Version, optionalTime(s.PHPWeb.Seen),
 		string(s.PHPWeb.Unknown), s.AdminEmail, s.AdminEmailPending, s.DebugLog.Path, s.DebugLog.Size, s.DebugLog.Written,
-		networkPlugins, string(s.RecordedStatus), recordedChanges)
+		networkPlugins, string(s.RecordedStatus), recordedChanges, backups)
 	if err != nil {
 		return err
 	}
@@ -187,7 +196,7 @@ func (db *DB) readScans(ctx context.Context, where string, args ...any) ([]model
 	rows, err := db.sql.QueryContext(ctx, `SELECT id, site_id, started_at, finished_at, outcome, failure, error,
 			wordpress, php_cli, wp_cli, home, core_checked, plugins_checked, themes_checked, languages_checked,
 			files_checked_at, run_id, site_url, php_web, php_web_seen_at, php_web_unknown, admin_email, admin_email_pending,
-			debug_log_path, debug_log_size, debug_log_written, network_plugins, recorded_status, recorded_changes
+			debug_log_path, debug_log_size, debug_log_written, network_plugins, recorded_status, recorded_changes, backups
 		FROM scans s WHERE `+where+` ORDER BY id`, args...)
 	if err != nil {
 		return nil, err
@@ -197,18 +206,23 @@ func (db *DB) readScans(ctx context.Context, where string, args ...any) ([]model
 	for rows.Next() {
 		var s model.Scan
 		var id, site, started, finished, outcome, filesChecked, run, webSeen, webUnknown string
-		var networkPlugins, recordedChanges sql.NullString
+		var networkPlugins, recordedChanges, backups sql.NullString
 		var recordedStatus string
 		if err := rows.Scan(&id, &site, &started, &finished, &outcome, &s.Failure, &s.Error,
 			&s.WordPress, &s.PHPCLI, &s.WPCLI, &s.Home,
 			&s.CoreChecked, &s.PluginsChecked, &s.ThemesChecked, &s.LanguagesChecked, &filesChecked, &run, &s.SiteURL,
 			&s.PHPWeb.Version, &webSeen, &webUnknown, &s.AdminEmail, &s.AdminEmailPending,
-			&s.DebugLog.Path, &s.DebugLog.Size, &s.DebugLog.Written, &networkPlugins, &recordedStatus, &recordedChanges); err != nil {
+			&s.DebugLog.Path, &s.DebugLog.Size, &s.DebugLog.Written, &networkPlugins, &recordedStatus, &recordedChanges, &backups); err != nil {
 			return nil, err
 		}
 		if recordedChanges.Valid {
 			s.Recorded, s.RecordedStatus = true, model.SiteStatus(recordedStatus)
 			if err := json.Unmarshal([]byte(recordedChanges.String), &s.RecordedChanges); err != nil {
+				return nil, err
+			}
+		}
+		if backups.Valid {
+			if err := json.Unmarshal([]byte(backups.String), &s.Backups); err != nil {
 				return nil, err
 			}
 		}

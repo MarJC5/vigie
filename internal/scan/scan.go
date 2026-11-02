@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/MarJC5/vigie/internal/model"
+	"github.com/MarJC5/vigie/internal/remote"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/wpcli"
 )
@@ -47,15 +48,15 @@ type Scanner struct {
 // checksums, the PHP files in its uploads.
 const filesSteps = 3
 
-// steps is the number of commands of a scan known before it starts, for the progress: 24; a
+// steps is the number of commands of a scan known before it starts, for the progress: 25; a
 // network reads its subsites' list too, and its administrators in one go (ADR-0029). The comparison
 // of the files, each administrator of a single site, each constant read and Wordfence add theirs
 // once known. A theme in a plugin's folder takes one more, the themes read again with the plugins.
 func (j Job) steps() int {
 	if j.Site.Multisite {
-		return 25
+		return 26
 	}
-	return 24
+	return 25
 }
 
 // Site scans one site. The scan is always returned, also when it failed or was cancelled; for a
@@ -258,6 +259,7 @@ func (r *run) scan(ctx context.Context, result *model.Scan) ([]model.Subsite, er
 	if err != nil {
 		return nil, err
 	}
+	r.backups(ctx, result)
 	if !r.job.Site.Multisite {
 		return nil, nil
 	}
@@ -419,6 +421,25 @@ func (r *run) themes(ctx context.Context) ([]wpcli.Extension, bool, error) {
 	}
 	list, err = wpcli.ParseThemes(out)
 	return list, true, err
+}
+
+// backups reads the site's backups on the server, Vigie's own before each update (ADR-0033): one
+// command that only reads. Unread, they stay unknown; the scan goes on.
+func (r *run) backups(ctx context.Context, result *model.Scan) {
+	line, err := remote.BackupSizes(r.job.Site.ID)
+	if err != nil {
+		return
+	}
+	res, err := r.run(ctx, line)
+	if err != nil || res.ExitCode != 0 {
+		return
+	}
+	result.Backups = []model.Backup{}
+	for _, b := range remote.ParseBackupSizes(res.Stdout) {
+		if at, err := time.Parse(remote.BackupTimeLayout, b.Run); err == nil {
+			result.Backups = append(result.Backups, model.Backup{At: at, Bytes: b.Bytes})
+		}
+	}
 }
 
 // translations keeps the translation updates of an update check's data, for languages.

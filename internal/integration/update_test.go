@@ -15,6 +15,7 @@ import (
 
 	"github.com/MarJC5/vigie/internal/httpcheck"
 	"github.com/MarJC5/vigie/internal/model"
+	"github.com/MarJC5/vigie/internal/scan"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/store"
 	"github.com/MarJC5/vigie/internal/update"
@@ -183,6 +184,12 @@ func TestUpdateOverSSH(t *testing.T) {
 	ops, err := db.Operations(ctx, job.Site.ID)
 	if err != nil || len(ops) != 1 || len(ops[0].Steps) == 0 {
 		t.Errorf("operations recorded: %+v, %v", ops, err)
+	}
+	// A scan of the site reads its backups left, with their sizes.
+	s := scan.Scanner{Runner: u.Runner, Limiter: sshx.NewLimiter(), Now: time.Now}
+	scanned, _ := s.Site(ctx, scan.Job{Site: job.Site, Target: job.Target, HostKey: "bench", Max: 2, WPCLI: "wp"}, nil)
+	if b := scanned.Backups; len(b) != 2 || b[1].At.Format("20060102-150405") != filepath.Base(op.BackupDir) || b[1].Bytes < 1024 {
+		t.Errorf("backups read by a scan: %+v, want yesterday's and the update's, with their sizes", b)
 	}
 }
 

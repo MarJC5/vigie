@@ -100,6 +100,12 @@ func (i ScanItem) UpdateSourceUnknown() bool {
 }
 
 // Scan is one scan of a site; every scan is kept.
+// Backup is the backups of one update on the server, as a scan read them (ADR-0033).
+type Backup struct {
+	At    time.Time `json:"at"` // the update's time, the name of its folder
+	Bytes int64     `json:"bytes"`
+}
+
 type Scan struct {
 	ID       ID
 	SiteID   ID
@@ -121,6 +127,9 @@ type Scan struct {
 	// Network is what a scan of a network read of its subsites (ADR-0029); nil for a single site,
 	// or when the read failed (the administrators are then "not checked").
 	Network *NetworkRead
+	// Backups are the site's backups on the server, Vigie's own before each update, oldest first
+	// (ADR-0033); nil when not read.
+	Backups []Backup
 	// What the scan noted of itself when it was made, for the journal (ADR-0030): its status with
 	// the ignores of then, and what changed since the site's complete scan before (empty when
 	// nothing did, or there was none). Recorded is false for a scan stored before ADR-0030 until

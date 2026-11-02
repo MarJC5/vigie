@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/MarJC5/vigie/internal/model"
+	"github.com/MarJC5/vigie/internal/remote"
 	"github.com/MarJC5/vigie/internal/scan"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/sshx/sshxtest"
@@ -120,6 +121,29 @@ func TestScanAsksNothingPerPlugin(t *testing.T) {
 	}
 }
 
+// A scan reads the site's backups on the server, read-only (ADR-0033); a read that fails leaves
+// them unknown, and the scan goes on.
+func TestScanReadsTheBackupsOnTheServer(t *testing.T) {
+	j := job("outdated")
+	fake := replay(t, "outdated")
+	line, err := remote.BackupSizes(j.Site.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fake.Set(line, sshx.Result{Stdout: []byte("44032\t20261028-090000/\n47104\t20261029-131203/\n")})
+	got, _ := scanner(fake).Site(context.Background(), j, nil)
+	want := []model.Backup{{At: time.Date(2026, 10, 28, 9, 0, 0, 0, time.UTC), Bytes: 44032 * 1024},
+		{At: time.Date(2026, 10, 29, 13, 12, 3, 0, time.UTC), Bytes: 47104 * 1024}}
+	if got.Outcome != model.ScanCompleted || !slices.EqualFunc(got.Backups, want, func(a, b model.Backup) bool { return a.At.Equal(b.At) && a.Bytes == b.Bytes }) {
+		t.Errorf("backups = %+v (%s), want %+v", got.Backups, got.Outcome, want)
+	}
+	// Not answered: unknown.
+	got, _ = scanner(replay(t, "outdated")).Site(context.Background(), job("outdated"), nil)
+	if got.Outcome != model.ScanCompleted || got.Backups != nil {
+		t.Errorf("unread backups = %#v (%s), want nil and a completed scan", got.Backups, got.Outcome)
+	}
+}
+
 func TestScanWithoutOutboundHTTPNeverSaysUpToDate(t *testing.T) {
 	got, _ := scanner(replay(t, "offline")).Site(context.Background(), job("offline"), nil)
 	if got.Outcome != model.ScanCompleted {
@@ -217,9 +241,10 @@ func TestProgressCountsTheSteps(t *testing.T) {
 	// 12 commands for the versions, the addresses and the updates, and the dashboard's checks of
 	// PHP; for security, 4 to compare the files, then the administrators and the one's two-factor,
 	// the constants' names and WP_DEBUG, the admin email and the one waiting, debug.log, the search
-	// engines, WP-Cron, the options and transients, the database version: 29, then the end.
-	if last.Total != 29 || len(steps) != 30 {
-		t.Errorf("progress = %d reports, total %d; want 29 commands and the end", len(steps), last.Total)
+	// engines, WP-Cron, the options and transients, the database version; the backups on the
+	// server: 30, then the end.
+	if last.Total != 30 || len(steps) != 31 {
+		t.Errorf("progress = %d reports, total %d; want 30 commands and the end", len(steps), last.Total)
 	}
 	if last.Done != last.Total || !slices.IsSortedFunc(steps, func(a, b scan.Progress) int { return a.Done - b.Done }) {
 		t.Fatalf("progress = %+v, want increasing up to the total", steps)
