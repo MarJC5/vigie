@@ -30,7 +30,16 @@
     "updating_many": "{{count}} sites en mise à jour",
     "updating_other": "{{count}} sites en mise à jour",
     "inNotes": "dans les notes",
-    "inTags": "dans les étiquettes"
+    "inTags": "dans les étiquettes",
+    "dragHosts_one": "{{count}} hébergement",
+    "dragHosts_many": "{{count}} hébergements",
+    "dragHosts_other": "{{count}} hébergements",
+    "dragFolders_one": "{{count}} dossier",
+    "dragFolders_many": "{{count}} dossiers",
+    "dragFolders_other": "{{count}} dossiers",
+    "dragItems_one": "{{count}} élément",
+    "dragItems_many": "{{count}} éléments",
+    "dragItems_other": "{{count}} éléments"
   },
   "empty": {
     "title": "Ajoutez votre premier hébergement",

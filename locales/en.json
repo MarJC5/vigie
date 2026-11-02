@@ -26,7 +26,13 @@
     "updating_one": "{{count}} site updating",
     "updating_other": "{{count}} sites updating",
     "inNotes": "in the notes",
-    "inTags": "in the tags"
+    "inTags": "in the tags",
+    "dragHosts_one": "{{count}} host",
+    "dragHosts_other": "{{count}} hosts",
+    "dragFolders_one": "{{count}} folder",
+    "dragFolders_other": "{{count}} folders",
+    "dragItems_one": "{{count}} item",
+    "dragItems_other": "{{count}} items"
   },
   "empty": {
     "title": "Add your first host",

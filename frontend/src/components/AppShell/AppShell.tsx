@@ -48,7 +48,7 @@ import { RenameTagDialog } from "../RenameTagDialog/RenameTagDialog";
 import { SearchField } from "../SearchField/SearchField";
 import { SiteOverview } from "../SiteOverview/SiteOverview";
 import { SitesOverview } from "../SitesOverview/SitesOverview";
-import { type Drag, SiteTree } from "../SiteTree/SiteTree";
+import { carriedKey, type Drag, SiteTree } from "../SiteTree/SiteTree";
 import { StatusDot } from "../StatusDot/StatusDot";
 import { SubsitePage } from "../SubsitePage/SubsitePage";
 import { UpdateFlow, type UpdatesApi } from "../UpdateFlow/UpdateFlow";
@@ -80,6 +80,8 @@ export interface EditApi extends HostEditApi, FindSitesApi {
   CreateFolder(parentId: string, name: string): Promise<CreateResult>;
   Rename(id: string, name: string): Promise<Problem | null>;
   Move(id: string, folderId: string): Promise<Problem | null>;
+  /** The folders and hosts among ids into a folder, all or none (ADR-0034). */
+  MoveMany(ids: string[], folderId: string): Promise<Problem | null>;
   SetColor(id: string, color: string): Promise<Problem | null>;
   /** One item or several, all or none; withBackups: the sites' backups on their server are removed
    first (ADR-0033). */
@@ -193,9 +195,13 @@ export function AppShell({
 }: AppShellProps) {
   const { t } = useTranslation();
   // Something to show at once: the item asked for, else the first host, else the first item.
-  const [selectedId, setSelectedId] = useState<string | undefined>(
-    () => initialSelectedId ?? (nodes.find((n) => n.kind === "host") ?? nodes[0])?.id,
-  );
+  // Several items can be selected (ADR-0034); selectedId is the one when there is one.
+  const [selection, setSelection] = useState<string[]>(() => {
+    const first = initialSelectedId ?? (nodes.find((n) => n.kind === "host") ?? nodes[0])?.id;
+    return first ? [first] : [];
+  });
+  const selectedId = selection.length === 1 ? selection[0] : undefined;
+  const setSelectedId = (id: string | undefined) => setSelection(id ? [id] : []);
   // The list hidden and the folders folded, as the user left them; each change kept for next time,
   // without the items deleted since.
   const [paneOpen, setPaneOpen] = useState(!treeView?.hidden);
@@ -415,9 +421,12 @@ export function AppShell({
     }
     const dragged = drag && byId.get(drag.id);
     if (dragged && drag.target !== undefined) {
+      // Several: how many, of which kind.
+      const name =
+        drag.ids.length > 1 ? t(carriedKey(drag.ids.map((id) => byId.get(id)?.kind)), { count: drag.ids.length }) : dragged.name;
       const text = drag.target
-        ? t("edit.dropInto", { name: dragged.name, folder: byId.get(drag.target)?.name })
-        : t("edit.dropAtRoot", { name: dragged.name });
+        ? t("edit.dropInto", { name, folder: byId.get(drag.target)?.name })
+        : t("edit.dropAtRoot", { name });
       return <span className={styles.running}>{text}</span>;
     }
     if (editingId) return <span className={styles.running}>{t("edit.renameHint")}</span>;
@@ -545,6 +554,8 @@ export function AppShell({
                 tags={tags}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
+                selectedIds={selection}
+                onSelectionChange={setSelection}
                 filter={query}
                 collapsed={folded}
                 onCollapsedChange={(next) => leave(paneOpen, next)}
@@ -559,7 +570,8 @@ export function AppShell({
                   onCancelEdit: () => setEditingId(undefined),
                   onDelete: (id: string) => setDialog({ kind: "delete", id }),
                   onMenu: openMenu,
-                  onMove: (id: string, folderId: string) => void run(() => edit.Move(id, folderId)),
+                  onMove: (ids: string[], folderId: string) =>
+                    void run(() => (ids.length === 1 && ids[0] ? edit.Move(ids[0], folderId) : edit.MoveMany(ids, folderId))),
                   onDragChange: setDrag,
                 })}
               />

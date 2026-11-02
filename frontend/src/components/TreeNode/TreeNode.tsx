@@ -24,7 +24,9 @@ export interface TreeNodeProps {
   meta?: string;
   /** Hosts only: the updates waiting on its sites, in a badge when there are some. */
   updates?: number;
-  onSelect: () => void;
+  /** A click or Enter; with ⌘ (or Ctrl) the item is added or taken out of the selection, with ⇧
+   the visible items up to it are selected (ADR-0034). */
+  onSelect: (gesture?: SelectGesture) => void;
   onToggle?: () => void;
   /** Reachable with Tab; by default only the selected item is (roving focus). */
   tabbable?: boolean;
@@ -51,6 +53,12 @@ export interface TreeNodeProps {
   onContextMenu?: (event: MouseEvent) => void;
 }
 
+/** How an item was selected: alone, added or taken out (toggle), or with those before it (range). */
+export interface SelectGesture {
+  toggle?: boolean;
+  range?: boolean;
+}
+
 export function TreeNode({
   kind, name, depth, expanded, selected = false, status, color, meta, updates = 0, onSelect, onToggle, tabbable, itemId, onEdit,
   editing = false, editLabel, onRename, onCancelEdit, draggable = false, dragging = false, dropTarget = false,
@@ -64,7 +72,8 @@ export function TreeNode({
       onEdit();
     } else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      onSelect();
+      // Ctrl-Space, and ⌘-Space, toggle as ⌘-click does (the APG's model with modifier keys).
+      onSelect({ toggle: event.key === " " && (event.ctrlKey || event.metaKey) });
     } else if (branch && ((event.key === "ArrowLeft" && expanded) || (event.key === "ArrowRight" && !expanded))) {
       event.preventDefault();
       onToggle?.();
@@ -94,7 +103,7 @@ export function TreeNode({
       data-dragging={dragging || undefined}
       data-drop-target={dropTarget || undefined}
       draggable={draggable && !editing}
-      onClick={onSelect}
+      onClick={(event) => onSelect({ toggle: event.metaKey || event.ctrlKey, range: event.shiftKey })}
       onKeyDown={editing ? undefined : onKeyDown}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}

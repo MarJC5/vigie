@@ -239,6 +239,7 @@ function fakeEdit(): EditApi {
       name === "Clients" ? { code: "problem.duplicateName", detail: "" } : null,
     ),
     Move: fn(async () => null),
+    MoveMany: fn(async () => null),
     SetColor: fn(async () => null),
     Delete: fn(async () => ({ problem: null, left: [], command: "" })),
     Backups: fn(async () => []),

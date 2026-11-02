@@ -63,6 +63,7 @@ const editApi: EditApi = {
   CreateFolder: Editor.CreateFolder,
   Rename: Editor.Rename,
   Move: Editor.Move,
+  MoveMany: Editor.MoveMany,
   SetColor: Editor.SetColor,
   Delete: Editor.Delete,
   Backups: Editor.Backups,

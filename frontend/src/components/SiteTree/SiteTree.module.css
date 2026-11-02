@@ -11,3 +11,33 @@
   border-radius: var(--vg-radius-control);
   box-shadow: inset 0 0 0 2px var(--vg-accent);
 }
+
+/* Several selected: the row with the focus is outlined, apart from the others (ADR-0034, APG). */
+.tree[data-several] :global([role="treeitem"]:focus) {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: -2px;
+}
+
+/* The label by the pointer while several items are dragged, drawn off screen until then. */
+.dragLabel {
+  position: fixed;
+  top: -100px;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--vg-radius-control);
+  background: var(--vg-surface-raised);
+  box-shadow: 0 0 0 1px var(--vg-raised-stroke), var(--vg-shadow-raised);
+  color: var(--vg-text);
+  font-size: var(--vg-text-small);
+  font-weight: var(--vg-weight-strong);
+  white-space: nowrap;
+}
+
+.dragIcon {
+  display: inline-flex;
+  color: var(--vg-text-muted);
+}

@@ -7,6 +7,31 @@ import { withSubsites } from "../../lib/subsites";
 import { sampleTags, sampleTree } from "../../fixtures/tree";
 import { SiteTree } from "./SiteTree";
 
+// Several items selected (ADR-0034): a click selects one, ⌘-click, ⇧-click, ⇧-arrows, ⌘A and Escape
+// change the selection.
+function Several({
+  initial = ["atelier"],
+  onMove,
+  tags,
+}: {
+  initial?: string[];
+  onMove?: (ids: string[], folderId: string) => void;
+  tags?: typeof sampleTags;
+}) {
+  const [ids, setIds] = useState(initial);
+  return (
+    <SiteTree
+      label="Site manager"
+      nodes={sampleTree}
+      selectedIds={ids}
+      onSelect={(id) => setIds([id])}
+      onSelectionChange={setIds}
+      onMove={onMove}
+      tags={tags}
+    />
+  );
+}
+
 function Controlled() {
   const [selected, setSelected] = useState("atelier");
   return <SiteTree label="Site manager" nodes={sampleTree} selectedId={selected} onSelect={setSelected} />;
@@ -169,11 +194,11 @@ export const DragAHost: Story = {
     fireEvent.dragStart(row(/Managed VPS/), { dataTransfer: data });
     fireEvent.dragOver(row(/Clients/), { dataTransfer: data });
     await waitFor(() => expect(row(/Clients/)).toHaveAttribute("data-drop-target", "true"));
-    await expect(args.onDragChange).toHaveBeenLastCalledWith({ id: "vps", target: "clients" });
+    await expect(args.onDragChange).toHaveBeenLastCalledWith({ id: "vps", ids: ["vps"], target: "clients" });
     fireEvent.dragOver(row(/boulangerie-exemple.ch/), { dataTransfer: data });
-    await expect(args.onDragChange).toHaveBeenLastCalledWith({ id: "vps", target: "clients" });
+    await expect(args.onDragChange).toHaveBeenLastCalledWith({ id: "vps", ids: ["vps"], target: "clients" });
     fireEvent.drop(row(/boulangerie-exemple.ch/), { dataTransfer: data });
-    await expect(args.onMove).toHaveBeenCalledWith("vps", "clients");
+    await expect(args.onMove).toHaveBeenCalledWith(["vps"], "clients");
     fireEvent.dragEnd(row(/Managed VPS/), { dataTransfer: data });
     await expect(args.onDragChange).toHaveBeenLastCalledWith(null);
   },
@@ -187,14 +212,14 @@ export const NoMoveIntoItself: Story = {
     const data = new DataTransfer();
     fireEvent.dragStart(row(/Clients/), { dataTransfer: data });
     fireEvent.dragOver(row(/Shared hosting/), { dataTransfer: data });
-    await expect(args.onDragChange).toHaveBeenLastCalledWith({ id: "clients", target: undefined });
+    await expect(args.onDragChange).toHaveBeenLastCalledWith({ id: "clients", ids: ["clients"], target: undefined });
     fireEvent.drop(row(/Shared hosting/), { dataTransfer: data });
     await expect(args.onMove).not.toHaveBeenCalled();
     // A drop ends the drag: the next try starts again.
     fireEvent.dragStart(row(/Clients/), { dataTransfer: data });
     fireEvent.dragOver(row(/Personal/), { dataTransfer: data });
     fireEvent.drop(row(/Personal/), { dataTransfer: data });
-    await expect(args.onMove).toHaveBeenCalledWith("clients", "personal");
+    await expect(args.onMove).toHaveBeenCalledWith(["clients"], "personal");
   },
 };
 
@@ -209,7 +234,7 @@ export const DropAtTheRoot: Story = {
     fireEvent.dragOver(tree!, { dataTransfer: data });
     await waitFor(() => expect(tree).toHaveAttribute("data-drop-target", "true"));
     fireEvent.drop(tree!, { dataTransfer: data });
-    await expect(args.onMove).toHaveBeenCalledWith("vps", "");
+    await expect(args.onMove).toHaveBeenCalledWith(["vps"], "");
   },
 };
 
@@ -268,5 +293,113 @@ export const ANetworkUnfolded: Story = {
     await expect(tree.getByRole("treeitem", { name: /^\/gamma/ })).toHaveTextContent("archivé");
     await userEvent.click(tree.getByRole("treeitem", { name: "/beta" }));
     await expect(args.onSelect).toHaveBeenCalledWith("subsite:ecoles:3");
+  },
+};
+
+// ⌘-click adds a row or takes it out, ⇧-click selects the visible rows from the last one clicked.
+export const SelectSeveral: Story = {
+  render: () => <Several />,
+  play: async ({ canvas }) => {
+    const row = (name: RegExp) => canvas.getAllByRole("treeitem", { name })[0]!;
+    const [tree] = canvas.getAllByRole("tree");
+    await expect(tree).toHaveAttribute("aria-multiselectable", "true");
+    fireEvent.click(row(/reseau-ecoles.ch/), { metaKey: true });
+    await expect(row(/atelier-exemple.ch/)).toHaveAttribute("aria-selected", "true");
+    await expect(row(/reseau-ecoles.ch/)).toHaveAttribute("aria-selected", "true");
+    await expect(row(/boulangerie-exemple.ch/)).toHaveAttribute("aria-selected", "false");
+    // Only one row is reached by Tab: the last one clicked.
+    await expect(row(/reseau-ecoles.ch/)).toHaveAttribute("tabindex", "0");
+    await expect(row(/atelier-exemple.ch/)).toHaveAttribute("tabindex", "-1");
+    // ⌘-click again takes it out.
+    fireEvent.click(row(/reseau-ecoles.ch/), { metaKey: true });
+    await expect(row(/reseau-ecoles.ch/)).toHaveAttribute("aria-selected", "false");
+    // ⇧-click: from the last one clicked to this one.
+    fireEvent.click(row(/Shared hosting/));
+    fireEvent.click(row(/Managed VPS/), { shiftKey: true });
+    for (const name of [/Shared hosting/, /atelier-exemple.ch/, /boulangerie-exemple.ch/, /reseau-ecoles.ch/, /Personal/, /Managed VPS/]) {
+      await expect(row(name)).toHaveAttribute("aria-selected", "true");
+    }
+    await expect(row(/Clients/)).toHaveAttribute("aria-selected", "false");
+    // A click alone selects one again.
+    fireEvent.click(row(/Personal/));
+    await expect(row(/Personal/)).toHaveAttribute("aria-selected", "true");
+    await expect(row(/Managed VPS/)).toHaveAttribute("aria-selected", "false");
+  },
+};
+
+// ⇧↓ extends the selection from the anchor; ⌘A selects every visible row; Escape keeps the focused one.
+export const SelectFromTheKeyboard: Story = {
+  render: () => <Several />,
+  play: async ({ canvas }) => {
+    const row = (name: RegExp) => canvas.getAllByRole("treeitem", { name })[0]!;
+    row(/atelier-exemple.ch/).focus();
+    await userEvent.keyboard("{Shift>}{ArrowDown}{ArrowDown}{/Shift}");
+    await expect(row(/reseau-ecoles.ch/)).toHaveFocus();
+    for (const name of [/atelier-exemple.ch/, /boulangerie-exemple.ch/, /reseau-ecoles.ch/]) {
+      await expect(row(name)).toHaveAttribute("aria-selected", "true");
+    }
+    // Back up: the selection shrinks toward the anchor.
+    await userEvent.keyboard("{Shift>}{ArrowUp}{/Shift}");
+    await expect(row(/reseau-ecoles.ch/)).toHaveAttribute("aria-selected", "false");
+    await expect(row(/boulangerie-exemple.ch/)).toHaveAttribute("aria-selected", "true");
+    await userEvent.keyboard("{Meta>}a{/Meta}");
+    for (const name of [/Clients/, /Shared hosting/, /Personal/, /Managed VPS/]) {
+      await expect(row(name)).toHaveAttribute("aria-selected", "true");
+    }
+    await userEvent.keyboard("{Escape}");
+    await expect(row(/boulangerie-exemple.ch/)).toHaveAttribute("aria-selected", "true");
+    await expect(row(/Clients/)).toHaveAttribute("aria-selected", "false");
+    await expect(row(/atelier-exemple.ch/)).toHaveAttribute("aria-selected", "false");
+  },
+};
+
+// A tag is always selected alone.
+export const ATagAlone: Story = {
+  render: () => <Several initial={["atelier", "vps"]} tags={sampleTags} />,
+  play: async ({ canvas }) => {
+    const row = (name: RegExp) => canvas.getAllByRole("treeitem", { name })[0]!;
+    await expect(row(/Managed VPS/)).toHaveAttribute("aria-selected", "true");
+    fireEvent.click(row(/^Prioritaire/), { metaKey: true });
+    await expect(row(/^Prioritaire/)).toHaveAttribute("aria-selected", "true");
+    await expect(row(/Managed VPS/)).toHaveAttribute("aria-selected", "false");
+  },
+};
+
+// Dragging a selected row carries every selected folder and host; the sites stay.
+export const DragSeveral: Story = {
+  args: { onMove: fn() },
+  render: (args) => <Several initial={["shared", "boulangerie", "vps"]} onMove={args.onMove} />,
+  play: async ({ canvas, args }) => {
+    const row = (name: RegExp) => canvas.getAllByRole("treeitem", { name })[0]!;
+    const [tree] = canvas.getAllByRole("tree");
+    const data = new DataTransfer();
+    fireEvent.dragStart(row(/Shared hosting/), { dataTransfer: data });
+    await expect(row(/Managed VPS/)).toHaveAttribute("data-dragging", "true");
+    await expect(row(/boulangerie-exemple.ch/)).not.toHaveAttribute("data-dragging");
+    fireEvent.dragOver(tree!, { dataTransfer: data });
+    fireEvent.drop(tree!, { dataTransfer: data });
+    await expect(args.onMove).toHaveBeenCalledWith(["shared", "vps"], "");
+  },
+};
+
+// A folder of the selection never goes into itself: the drop is refused for all.
+export const NoSeveralIntoItself: Story = {
+  args: { onMove: fn() },
+  render: (args) => <Several initial={["clients", "vps"]} onMove={args.onMove} />,
+  play: async ({ canvas, args }) => {
+    const row = (name: RegExp) => canvas.getAllByRole("treeitem", { name })[0]!;
+    const data = new DataTransfer();
+    fireEvent.dragStart(row(/Managed VPS/), { dataTransfer: data });
+    fireEvent.dragOver(row(/Shared hosting/), { dataTransfer: data });
+    fireEvent.drop(row(/Shared hosting/), { dataTransfer: data });
+    await expect(args.onMove).not.toHaveBeenCalled();
+  },
+};
+
+// What the window shows: three rows selected, the focus on one of them.
+export const SeveralSelected: Story = {
+  render: () => <Several initial={["shared", "boulangerie", "vps"]} />,
+  play: async ({ canvas }) => {
+    canvas.getAllByRole("treeitem", { name: /Managed VPS/ })[0]!.focus();
   },
 };
