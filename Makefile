@@ -5,7 +5,7 @@ WAILS := go run $(WAILS_MODULE)
 WAILS_BIN := $(CURDIR)/.task/bin
 
 # Container tests (Docker needed): make test-integration; make record refreshes the WP-CLI outputs.
-.PHONY: test-integration record test vet fmt-check vuln go-check frontend-install frontend-browsers frontend-lint frontend-test frontend-build frontend-e2e bindings bindings-check library app check
+.PHONY: test-integration record test vet fmt-check vuln go-check frontend-install frontend-browsers frontend-lint frontend-test frontend-build frontend-e2e bindings bindings-check library app wails check
 
 # The module shared with add-ons (./addon) is a module of its own: ./... does not reach it.
 test:
@@ -70,10 +70,13 @@ bindings-check:
 library:
 	go generate ./internal/addons
 
-# Vigie.app (macOS, signed ad hoc) or the Linux build, with the Wails tasks.
-app:
+# Vigie.app (macOS, signed ad hoc) or the Linux packages, with the Wails tasks; VERSION=x.y.z writes
+# a release's version in them, "dev" otherwise.
+app: wails
+	PATH="$(WAILS_BIN):$$PATH" "$(WAILS_BIN)/wails3" package $(if $(VERSION),VERSION=$(VERSION))
+
+wails:
 	GOBIN="$(WAILS_BIN)" go install $(WAILS_MODULE)
-	PATH="$(WAILS_BIN):$$PATH" "$(WAILS_BIN)/wails3" package
 
 # The interface is built first: the Go binary embeds frontend/dist.
 check: frontend-build go-check bindings-check frontend-lint frontend-test frontend-e2e
