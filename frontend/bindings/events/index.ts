@@ -24,6 +24,11 @@ export const VigieMenu = "vigie:menu";
 export const VigieScans = "vigie:scans";
 
 /**
+ * Name of the custom event "vigie:selfupdate".
+ */
+export const VigieSelfupdate = "vigie:selfupdate";
+
+/**
  * Name of the custom event "vigie:updates".
  */
 export const VigieUpdates = "vigie:updates";

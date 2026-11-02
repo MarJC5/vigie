@@ -39,13 +39,14 @@ type keeper struct {
 	record  func(model.Notice) error // keeps a notification sent, for the Activity page
 	label   func(key string, vars map[string]any) string
 	emit    func(name string, data any) // to the window: the page a notification opens
+	self    *app.SelfUpdate             // Vigie's own update: the daily check, the eye's line
 
 	notifyStart sync.Once
 	notifyErr   error // why notifications cannot be sent here (no bundle, the server build)
 
-	mu           sync.Mutex // the eye is made and removed while refresh writes its menu
-	tray         *application.SystemTray
-	next, urgent *application.MenuItem
+	mu                    sync.Mutex // the eye is made and removed while refresh writes its menu
+	tray                  *application.SystemTray
+	next, urgent, release *application.MenuItem
 
 	// The eye's menu is written again once scans are stored, not at each site of a run: reading
 	// what it says goes through every site's latest scan.
@@ -108,6 +109,10 @@ func (k *keeper) start(ctx context.Context) {
 	// Opened again from the Finder or Spotlight while hidden.
 	k.wails.Event.OnApplicationEvent(events.Mac.ApplicationShouldHandleReopen, func(*application.ApplicationEvent) { k.open() })
 	k.prefs.OnBackground = func(b app.BackgroundSettings) { k.apply(b) }
+	// A new version found: the eye's line shows it at once.
+	k.wails.Event.On(app.SelfUpdateEvent, func(*application.CustomEvent) {
+		k.refreshes.run(func() { k.refresh(ctx) })
+	})
 	k.wails.Event.On(app.ScansEvent, func(*application.CustomEvent) {
 		if c := int64(k.scanner.State().Completed); k.completed.Swap(c) != c {
 			k.refreshes.run(func() { k.refresh(ctx) })
@@ -133,6 +138,10 @@ func (k *keeper) start(ctx context.Context) {
 		defer ticker.Stop()
 		for {
 			k.refresh(ctx)
+			// Vigie's new versions, once a day when the lookups allow it (ADR-0038).
+			if k.self != nil {
+				go k.self.Due(ctx)
+			}
 			select {
 			case <-ctx.Done():
 				return
@@ -303,6 +312,13 @@ func (k *keeper) showEye() {
 	k.next = menu.Add("").SetEnabled(false)
 	k.urgent = menu.Add("").SetEnabled(false)
 	menu.AddSeparator()
+	// A new version of Vigie, hidden until one is found; it opens About.
+	k.release = menu.Add("").SetHidden(true).OnClick(func(*application.Context) {
+		go func() {
+			k.open()
+			k.emit(app.MenuEvent, app.MenuCommand{Action: app.ActionAbout})
+		}()
+	})
 	menu.Add(k.label("tray.quit", nil)).OnClick(func(*application.Context) { k.wails.Quit() })
 	k.tray = k.wails.SystemTray.New().SetTemplateIcon(trayIcon).SetMenu(menu)
 	k.tray.SetTooltip("Vigie")
@@ -314,7 +330,7 @@ func (k *keeper) removeEye() {
 	defer k.mu.Unlock()
 	if k.tray != nil {
 		k.tray.Destroy()
-		k.tray, k.next, k.urgent = nil, nil, nil
+		k.tray, k.next, k.urgent, k.release = nil, nil, nil, nil
 	}
 }
 
@@ -352,6 +368,13 @@ func (k *keeper) refresh(ctx context.Context) {
 		k.urgent.SetLabel(k.label("tray.urgent", map[string]any{"count": state.Urgent}))
 	} else {
 		k.urgent.SetLabel(k.label("tray.noneUrgent", nil))
+	}
+	if k.self != nil {
+		if v := k.self.State(); v.State == "available" {
+			k.release.SetLabel(k.label("tray.release", map[string]any{"version": v.Latest})).SetHidden(false)
+		} else {
+			k.release.SetHidden(true)
+		}
 	}
 }
 

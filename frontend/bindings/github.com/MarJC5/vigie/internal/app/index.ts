@@ -11,6 +11,7 @@ import * as LoginItem from "./loginitem.js";
 import * as Preferences from "./preferences.js";
 import * as Scanner from "./scanner.js";
 import * as Security from "./security.js";
+import * as SelfUpdate from "./selfupdate.js";
 import * as SiteManager from "./sitemanager.js";
 import * as Updates from "./updates.js";
 import * as Watch from "./watch.js";
@@ -25,6 +26,7 @@ export {
     Preferences,
     Scanner,
     Security,
+    SelfUpdate,
     SiteManager,
     Updates,
     Watch
@@ -91,6 +93,7 @@ export type {
     ScanView,
     ScansState,
     SelectionView,
+    SelfUpdateView,
     SettingView,
     SiteBackupsView,
     SiteChangesView,

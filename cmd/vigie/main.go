@@ -13,6 +13,7 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/services/notifications"
+	"github.com/wailsapp/wails/v3/pkg/updater"
 
 	"github.com/MarJC5/vigie/frontend"
 	"github.com/MarJC5/vigie/internal/addons"
@@ -33,6 +34,7 @@ func init() {
 	application.RegisterEvent[app.UpdatesState](app.UpdatesEvent)
 	application.RegisterEvent[app.DiscoveryProgress](app.DiscoveryEvent)
 	application.RegisterEvent[app.MenuCommand](app.MenuEvent)
+	application.RegisterEvent[app.SelfUpdateView](app.SelfUpdateEvent)
 }
 
 func main() {
@@ -167,6 +169,11 @@ func openWindow(opts cli.Options) error {
 	}
 	docked := newDock()
 	notifier := notifications.New()
+	// Vigie's own update (ADR-0038): its updater exists once the app does; never while scans or
+	// updates run.
+	kind := installKind(runtime.GOOS, buildinfo.Version(), os.Getenv("APPIMAGE"), exists)
+	selfUpdate := app.NewSelfUpdate(ws, appUpdater{&wails}, kind, buildinfo.Version(),
+		func() bool { return len(scanner.State().Running) > 0 || updates.State().Active > 0 }, emit, time.Now)
 
 	// The keeper, once made: a second launch brings its window forward.
 	var keep *keeper
@@ -188,6 +195,7 @@ func openWindow(opts cli.Options) error {
 			application.NewService(app.NewEditor(ws)),
 			application.NewService(updates),
 			application.NewService(scanner),
+			application.NewService(selfUpdate),
 			application.NewService(app.NewSecurity(ws, time.Now)),
 			application.NewService(data),
 			application.NewService(app.NewAddons(data, files, func() string { return addons.Folders(os.Getenv("PATH"), home) })),
@@ -204,6 +212,16 @@ func openWindow(opts cli.Options) error {
 		return err
 	}
 	wails.Menu.Set(menu)
+	if kind == app.InstallApp {
+		if err := configureUpdates(wails.Updater, buildinfo.Version(), os.Getenv); err != nil {
+			fmt.Fprintln(os.Stderr, "vigie: updates:", err)
+		}
+	}
+	wails.Event.On(updater.EventDownloadProgress, func(e *application.CustomEvent) {
+		if p, ok := progressOf(e.Data); ok {
+			selfUpdate.Progress(p.Written, p.Total)
+		}
+	})
 	watching, stopWatching := context.WithCancel(context.Background())
 	defer stopWatching()
 	go auto.Run(watching)
@@ -224,7 +242,7 @@ func openWindow(opts cli.Options) error {
 	// The background mode: the eye in the menu bar, the window hidden instead of closed.
 	keep = &keeper{
 		wails: wails, window: window, dock: docked, prefs: preferences, login: login, atLogin: opts.AtLogin,
-		watch: watch, scanner: scanner, notify: notifier, emit: emit,
+		watch: watch, scanner: scanner, notify: notifier, emit: emit, self: selfUpdate,
 		record: func(n model.Notice) error { return db.SaveNotice(context.Background(), n) },
 		label: func(key string, vars map[string]any) string {
 			all := map[string]any{"app": "Vigie"}

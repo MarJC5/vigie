@@ -23,8 +23,9 @@ const (
 	lookupsOffSetting    = "lookups.off"
 )
 
-// Destinations are the services a scan may ask, in the order the interface lists them.
-var Destinations = []lookup.Destination{lookup.WPVulnerability, lookup.WordPressOrg, lookup.Registry, lookup.Site}
+// Destinations are the services Vigie may ask, in the order the interface lists them: those of a
+// scan, then GitHub for Vigie's new versions (ADR-0038).
+var Destinations = []lookup.Destination{lookup.WPVulnerability, lookup.WordPressOrg, lookup.Registry, lookup.Site, lookup.GitHub}
 
 // LookupSettings are the user's choices about the lookups.
 type LookupSettings struct {

@@ -49,7 +49,7 @@ test("a scan before the user answered asks first, and the settings agree or with
   await page.getByRole("button", { name: "Scan now" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Before the first security scan");
   await expect(page.getByRole("main")).toHaveCount(1);
-  await expect(page.getByRole("switch")).toHaveCount(4);
+  await expect(page.getByRole("switch")).toHaveCount(5);
   await page.getByRole("button", { name: "Not now" }).click();
   await expect(tree()).toBeVisible();
 

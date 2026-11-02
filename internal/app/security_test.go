@@ -31,7 +31,7 @@ func TestTheUsersChoicesAboutLookups(t *testing.T) {
 	ctx := context.Background()
 
 	v, err := s.Lookups(ctx)
-	if err != nil || v.Agreed != "" || v.Asked != "" || len(on(v)) != 4 {
+	if err != nil || v.Agreed != "" || v.Asked != "" || len(on(v)) != 5 {
 		t.Fatalf("Lookups() at first = %+v, %v; want nothing agreed, every destination on", v, err)
 	}
 	if p := s.NotNow(ctx); p != nil {

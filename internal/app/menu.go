@@ -14,6 +14,8 @@ const (
 	ActionHelp      = "help"       // opens the help page
 	// ActionOpen opens the page of what a notified run covered (ADR-0035): Nodes, one or several.
 	ActionOpen = "open"
+	// ActionAbout opens Settings, About: a new version of Vigie (ADR-0038).
+	ActionAbout = "about"
 )
 
 // MenuCommand is what the window receives with MenuEvent.

@@ -442,7 +442,12 @@
     "addonNoExport": "L'add-on s'est terminé sans rien écrire : rien n'a été ajouté.",
     "addonFailed": "L'add-on s'est arrêté sur une erreur, et rien n'a été ajouté : {{message}}",
     "addonInvalid": "Cet add-on ne se décrit pas comme Vigie le lit : {{message}}",
-    "addonNewer": "Cet add-on est fait pour un Vigie plus récent : mettez Vigie à jour pour l'utiliser."
+    "addonNewer": "Cet add-on est fait pour un Vigie plus récent : mettez Vigie à jour pour l'utiliser.",
+    "selfUpdateUnreachable": "GitHub n'a pas répondu, ou aucune version n'est encore publiée.",
+    "selfUpdateSignature": "Sa signature ne correspond pas à la clé de Vigie : le fichier téléchargé est écarté.",
+    "selfUpdateFailed": "La mise à jour n'a pas pu être installée : {{message}}",
+    "selfUpdateBusy": "Des relevés ou des mises à jour sont en cours : installez une fois qu'ils sont terminés.",
+    "selfUpdateNotHere": "Cette installation se met à jour autrement."
   },
   "wizard": {
     "close": "Fermer",
@@ -730,7 +735,8 @@
     "urgent_many": "{{count}} sites urgents",
     "urgent_other": "{{count}} sites urgents",
     "noneUrgent": "Aucun site urgent",
-    "quit": "Quitter {{app}}"
+    "quit": "Quitter {{app}}",
+    "release": "Vigie {{version}} est disponible…"
   },
   "menu": {
     "about": "À propos de {{app}}",
@@ -1320,13 +1326,19 @@
         "name": "Le site lui-même",
         "sent": "son nom (certificat) et une requête pour le premier octet de debug.log",
         "kept": "rien"
+      },
+      "github": {
+        "name": "github.com",
+        "sent": "la version de Vigie, le système et l'architecture, une fois par jour au plus et quand vous le demandez dans À propos",
+        "kept": "rien, rien n'est téléchargé sans vous"
       }
     },
     "off": {
       "wpvulnerability": "Désactivé : les vulnérabilités connues ne sont pas vérifiées.",
       "wordpressOrg": "Désactivé : les extensions fermées ou abandonnées ne sont pas vérifiées.",
       "registry": "Désactivé : l'expiration des domaines n'est pas vérifiée.",
-      "site": "Désactivé : le certificat et debug.log ne sont pas vérifiés."
+      "site": "Désactivé : le certificat et debug.log ne sont pas vérifiés.",
+      "github": "Désactivé : Vigie ne cherche pas ses nouvelles versions d'elle-même."
     },
     "neverTitle": "Jamais envoyé",
     "neverText": "L'adresse de vos sites à des tiers, les versions de vos extensions (comparées sur votre ordinateur), vos accès SSH, le contenu de vos bases de données."

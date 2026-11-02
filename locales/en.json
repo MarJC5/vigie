@@ -401,7 +401,12 @@
     "addonNoExport": "The add-on ended without writing anything: nothing was added.",
     "addonFailed": "The add-on stopped with an error, and nothing was added: {{message}}",
     "addonInvalid": "This add-on does not describe itself the way Vigie reads it: {{message}}",
-    "addonNewer": "This add-on is made for a newer Vigie: update Vigie to use it."
+    "addonNewer": "This add-on is made for a newer Vigie: update Vigie to use it.",
+    "selfUpdateUnreachable": "GitHub did not answer, or no version is published yet.",
+    "selfUpdateSignature": "Its signature does not match Vigie's key: the file downloaded is discarded.",
+    "selfUpdateFailed": "The update could not be installed: {{message}}",
+    "selfUpdateBusy": "Scans or updates are running: install once they are over.",
+    "selfUpdateNotHere": "This install is updated another way."
   },
   "wizard": {
     "close": "Close",
@@ -664,7 +669,8 @@
     "urgent_one": "{{count}} site urgent",
     "urgent_other": "{{count}} sites urgent",
     "noneUrgent": "No site urgent",
-    "quit": "Quit {{app}}"
+    "quit": "Quit {{app}}",
+    "release": "Vigie {{version}} is available…"
   },
   "menu": {
     "about": "About {{app}}",
@@ -1229,13 +1235,19 @@
         "name": "The site itself",
         "sent": "its name (certificate) and one request for the first byte of debug.log",
         "kept": "nothing"
+      },
+      "github": {
+        "name": "github.com",
+        "sent": "Vigie's version, the system and the architecture, once a day at most and when you ask in About",
+        "kept": "nothing, nothing downloaded without you"
       }
     },
     "off": {
       "wpvulnerability": "Off: known vulnerabilities are not checked.",
       "wordpressOrg": "Off: closed and abandoned plugins are not checked.",
       "registry": "Off: domain expiry is not checked.",
-      "site": "Off: the certificate and debug.log are not checked."
+      "site": "Off: the certificate and debug.log are not checked.",
+      "github": "Turned off: Vigie does not look for its new versions by itself."
     },
     "neverTitle": "Never sent",
     "neverText": "Your sites’ addresses to third parties, the versions of your plugins (compared on your computer), your SSH details, anything from your databases."

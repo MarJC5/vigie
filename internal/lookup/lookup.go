@@ -25,6 +25,8 @@ const (
 	WordPressOrg    Destination = "wordpress.org"
 	Registry        Destination = "registry" // the IANA bootstrap and the RDAP servers of the registries
 	Site            Destination = "site"     // the site itself: its certificate, its debug.log
+	// GitHub is where Vigie learns of its own new versions (ADR-0038), not asked by a scan.
+	GitHub Destination = "github"
 )
 
 // ErrOff is returned for a destination the user turned off or has not agreed to yet: its checks

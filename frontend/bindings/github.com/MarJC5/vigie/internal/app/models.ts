@@ -1148,6 +1148,45 @@ export interface SelectionView {
 }
 
 /**
+ * SelfUpdateView is what Settings, About shows of Vigie's own update.
+ */
+export interface SelfUpdateView {
+    /**
+     * app, homebrew, package, dev
+     */
+    "install": string;
+    "current": string;
+
+    /**
+     * State: idle, checking, up-to-date, available, downloading, error.
+     */
+    "state": string;
+    "latest": string;
+
+    /**
+     * Markdown
+     */
+    "notes": string;
+
+    /**
+     * RFC 3339
+     */
+    "published": string;
+
+    /**
+     * the last check, RFC 3339
+     */
+    "checked": string;
+
+    /**
+     * bytes downloaded
+     */
+    "written": number;
+    "total": number;
+    "problem": Problem | null;
+}
+
+/**
  * SettingView is something a run asks for.
  */
 export interface SettingView {
