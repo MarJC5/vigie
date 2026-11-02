@@ -198,3 +198,10 @@ Un changement fait puis défait entre deux relevés n'est pas vu.
 surveiller ou pas entièrement vérifié, 2 quand un site est urgent, et 3 quand un relevé n'a pas pu
 aller au bout. `--json` liste les constats de chaque site avec leur niveau, leurs faits et s'ils
 sont ignorés, et ses `changes` depuis le relevé précédent. `--check-files` compare à nouveau les fichiers, même dans la journée.
+
+Dans un terminal, `vigie scan`, `vigie update` et `vigie discover` montrent leur avancement sur la
+sortie d'erreur, redessiné sur place et effacé avant le résultat : une ligne par site en cours de
+relevé avec la barre de ses étapes (par site en cours de mise à jour, avec son étape), les derniers
+sites terminés, et un total avec le temps passé. Jamais plus haut que le terminal, jamais avec
+`--json`, ni quand la sortie va dans un fichier ou un autre programme : les scripts lisent la même
+sortie qu'avant.

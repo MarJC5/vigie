@@ -173,3 +173,9 @@ not fully checked, 2 when one is urgent, and 3 when a scan could not complete. `
 findings of each site with their level, facts and whether they are ignored, and its `changes`
 since the previous scan; `--check-files`
 compares the files again even within the day.
+
+In a terminal, `vigie scan`, `vigie update` and `vigie discover` show their progress on the
+standard error, redrawn in place and erased before the results: a line per site being scanned with
+the bar of its steps (per site being updated, with its step), the last sites done, and a total with
+the time spent. Never taller than the terminal, never with `--json`, nor when the output goes to a
+file or another program, so scripts read the same output as before.

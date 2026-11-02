@@ -151,6 +151,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Command line shows the one command that links it, to copy, and says when it is linked; the Linux
   packages install `/usr/bin/vigie`. Typed alone in a terminal, `vigie` opens the app and frees
   the terminal; one window at a time, a second launch bringing the open one forward.
+- `vigie scan`, `vigie update` and `vigie discover` show their progress in a terminal, as
+  `docker pull` does: a line per site being scanned with the bar of its steps (per site being
+  updated, with its step), the last sites done and a total with the time spent, erased before the
+  results. Nothing changes with `--json`, nor when the output goes to a file or another program.
 
 ### Changed
 
