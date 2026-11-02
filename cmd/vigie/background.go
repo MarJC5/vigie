@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -44,6 +45,39 @@ type keeper struct {
 	mu           sync.Mutex // the eye is made and removed while refresh writes its menu
 	tray         *application.SystemTray
 	next, urgent *application.MenuItem
+
+	// The eye's menu is written again once scans are stored, not at each site of a run: reading
+	// what it says goes through every site's latest scan.
+	completed atomic.Int64
+	refreshes coalescer
+}
+
+// coalescer runs a function in the background, once at a time: asked again while it runs, it runs
+// the latest one asked once more after, however many times it was asked.
+type coalescer struct {
+	mu      sync.Mutex
+	running bool
+	next    func() // asked while running
+}
+
+// run starts fn unless a function is running, in which case fn runs when it ends.
+func (c *coalescer) run(fn func()) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.running {
+		c.next = fn
+		return
+	}
+	c.running = true
+	go func() {
+		for fn != nil {
+			fn()
+			c.mu.Lock()
+			fn, c.next = c.next, nil
+			c.running = fn != nil
+			c.mu.Unlock()
+		}
+	}()
 }
 
 // start puts the eye in the menu bar while the mode is on, and takes the window's closing. With the
@@ -73,7 +107,11 @@ func (k *keeper) start(ctx context.Context) {
 	// Opened again from the Finder or Spotlight while hidden.
 	k.wails.Event.OnApplicationEvent(events.Mac.ApplicationShouldHandleReopen, func(*application.ApplicationEvent) { k.open() })
 	k.prefs.OnBackground = func(b app.BackgroundSettings) { k.apply(b) }
-	k.wails.Event.On(app.ScansEvent, func(*application.CustomEvent) { k.refresh(ctx) })
+	k.wails.Event.On(app.ScansEvent, func(*application.CustomEvent) {
+		if c := int64(k.scanner.State().Completed); k.completed.Swap(c) != c {
+			k.refreshes.run(func() { k.refresh(ctx) })
+		}
+	})
 	k.scanner.OnScanned = func(tree *model.Tree, before map[model.ID]model.Scan, after []model.Scan, changes map[model.ID][]model.Change) {
 		if b, err := k.prefs.Background(ctx); err == nil && b.Notify {
 			run := model.NoID
@@ -223,8 +261,15 @@ func (k *keeper) open() {
 	k.window.Focus()
 }
 
-// refresh writes what the eye's menu says: the next automatic scan, the urgent sites.
+// refresh writes what the eye's menu says: the next automatic scan, the urgent sites; nothing when
+// the eye is not shown.
 func (k *keeper) refresh(ctx context.Context) {
+	k.mu.Lock()
+	shown := k.tray != nil
+	k.mu.Unlock()
+	if !shown {
+		return
+	}
 	state, err := k.watch.State(ctx)
 	if err != nil {
 		return
