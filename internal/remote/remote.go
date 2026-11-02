@@ -31,8 +31,11 @@ var (
 
 // BackupDir is the folder of the backups of a run started at at.
 func BackupDir(site uuid.UUID, at time.Time) string {
-	return ".vigie/backups/" + site.String() + "/" + at.UTC().Format("20060102-150405")
+	return ".vigie/backups/" + site.String() + "/" + at.UTC().Format(BackupTimeLayout)
 }
+
+// BackupTimeLayout names the folder of a run's backups after its time, in UTC.
+const BackupTimeLayout = "20060102-150405"
 
 // backupFile checks a file of a run's backups with the extension given.
 func backupFile(file, ext string) error {

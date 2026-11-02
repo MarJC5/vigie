@@ -127,6 +127,20 @@ func TestBreakingUpdateRolledBackOverSSH(t *testing.T) {
 func TestUpdateOverSSH(t *testing.T) {
 	ctx := context.Background()
 	u, job, db := updateBench(t, "vigie")
+	// Older runs, of this site and of another site of the account (ADR-0033): kept 30 days, and the
+	// last three runs of a site at most, whatever their age.
+	backups := ".vigie/backups/" + job.Site.ID.String()
+	other := model.NewID()
+	otherBackups := ".vigie/backups/" + other.String()
+	recent := time.Now().UTC().Add(-24 * time.Hour).Format("20060102-150405")
+	older := []string{"20250101-080000", "20250102-080000", recent}
+	job.KeepFor, job.Siblings = 30*24*time.Hour, []model.ID{other}
+	for _, dir := range []string{backups + "/" + older[0], backups + "/" + older[1], backups + "/" + older[2],
+		otherBackups + "/20250101-080000", otherBackups + "/" + recent} {
+		if res, err := runAs(ctx, "sh", "-c", "mkdir -p "+dir+" && echo old > "+dir+"/database.sql.gz"); err != nil || res.exit != 0 {
+			t.Fatalf("older backups: %v %s", err, res.stderr)
+		}
+	}
 	preview, err := u.Preview(ctx, job)
 	if err != nil {
 		t.Fatal(err)
@@ -155,6 +169,16 @@ func TestUpdateOverSSH(t *testing.T) {
 		if !strings.Contains(res.stdout, file) {
 			t.Errorf("backups: %q has no %s", res.stdout, file)
 		}
+	}
+	// The backups are whole: the dump is a database's, the archives open.
+	res, err = runAs(ctx, "sh", "-c", "gzip -dc "+op.BackupDir+"/database.sql.gz | grep -c 'CREATE TABLE' && "+
+		"tar -tzf "+op.BackupDir+"/plugin-akismet.tar.gz | grep -c akismet.php")
+	if lines := strings.Fields(res.stdout); err != nil || res.exit != 0 || len(lines) != 2 || lines[0] == "0" || lines[1] == "0" {
+		t.Errorf("backups not whole: %v %q %s", err, res.stdout, res.stderr)
+	}
+	res, err = runAs(ctx, "sh", "-c", "ls -1 "+backups+" && ls -1 "+otherBackups)
+	if want := strings.Join([]string{recent, filepath.Base(op.BackupDir), recent}, "\n"); err != nil || strings.TrimSpace(res.stdout) != want {
+		t.Errorf("backups kept: %q, want the runs of the last 30 days, of both sites: %q", res.stdout, want)
 	}
 	ops, err := db.Operations(ctx, job.Site.ID)
 	if err != nil || len(ops) != 1 || len(ops[0].Steps) == 0 {

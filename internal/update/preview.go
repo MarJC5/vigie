@@ -21,6 +21,12 @@ type Job struct {
 	HostKey string // shares the host's limit of commands at a time (the host ID)
 	Max     int    // commands at a time on the host
 	WPCLI   string // the site's effective WP-CLI command
+	// KeepFor is how long a run's backups stay on the server, 0 for no limit; the last keptBackups
+	// runs of a site at most, whatever the limit (ADR-0033).
+	KeepFor time.Duration
+	// Siblings are the other sites of this Vigie on the account, whose backups the limits apply to
+	// at the end of an update too.
+	Siblings []model.ID
 }
 
 // Updater previews and runs updates.

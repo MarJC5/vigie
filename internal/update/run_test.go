@@ -338,6 +338,64 @@ func TestCancelTurnsMaintenanceOff(t *testing.T) {
 	}
 }
 
+// removedBackups runs an update and returns the folders of backups it removed.
+func (b *runBench) removedBackups() []string {
+	b.t.Helper()
+	if _, err := b.updater().Run(context.Background(), b.job, b.preview, update.Selection{Plugins: []string{"akismet"}}); err != nil {
+		b.t.Fatal(err)
+	}
+	var removed []string
+	for _, c := range b.fake.Calls() {
+		if dir, ok := strings.CutPrefix(c, "rm -rf '"); ok {
+			removed = append(removed, strings.TrimSuffix(dir, "'"))
+		}
+	}
+	return removed
+}
+
+// A run's backups older than the limit are removed, the run's own kept (ADR-0033); no limit keeps
+// the last three runs only.
+func TestBackupsPastTheAgeLimitRemoved(t *testing.T) {
+	for _, c := range []struct {
+		keep time.Duration
+		want []string
+	}{
+		{30 * 24 * time.Hour, []string{"20260901-080000"}},
+		{0, nil},
+	} {
+		b := newRun(t)
+		b.job.KeepFor = c.keep
+		base := ".vigie/backups/" + b.job.Site.ID.String() + "/"
+		b.fake.Set(b.line(remote.ListBackups(b.job.Site.ID)), sshx.Result{Stdout: []byte("20260901-080000\n20261020-080000\n" + filepath.Base(b.dir) + "\n")})
+		var want []string
+		for _, old := range c.want {
+			b.fake.Set(b.line(remote.RemoveBackup(base+old)), sshx.Result{})
+			want = append(want, base+old)
+		}
+		if got := b.removedBackups(); !slices.Equal(got, want) {
+			t.Errorf("keep %s: removed %v, want %v", c.keep, got, want)
+		}
+	}
+}
+
+// The limits hold for every site of this Vigie on the account, not only the one updated; a site
+// whose backups cannot be listed is left for the next update.
+func TestBackupsOfTheAccountsOtherSitesPruned(t *testing.T) {
+	b := newRun(t)
+	other, unread := model.NewID(), model.NewID()
+	b.job.Siblings, b.job.KeepFor = []model.ID{unread, other}, 30*24*time.Hour
+	b.fake.Set(b.line(remote.ListBackups(unread)), sshx.Result{ExitCode: 2, Stderr: []byte("ls: cannot access")})
+	b.fake.Set(b.line(remote.ListBackups(other)), sshx.Result{Stdout: []byte("20260915-080000\n20261020-080000\n20261021-080000\n20261022-080000\n20261023-080000\n")})
+	base := ".vigie/backups/" + other.String() + "/"
+	for _, old := range []string{"20260915-080000", "20261020-080000"} {
+		b.fake.Set(b.line(remote.RemoveBackup(base+old)), sshx.Result{})
+	}
+	want := []string{base + "20260915-080000", base + "20261020-080000"}
+	if got := b.removedBackups(); !slices.Equal(got, want) {
+		t.Errorf("removed %v, want the other site's run past the limit and beyond the last three", got)
+	}
+}
+
 // One operation at a time on a site, the window and the command line together.
 func TestRunOnABusySite(t *testing.T) {
 	b := newRun(t)

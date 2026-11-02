@@ -415,27 +415,48 @@ func (r *run) fatalsSince(ctx context.Context, offset int64) []string {
 	return remote.ParseFatals(res)
 }
 
-// prune removes the backups of older runs, keeping the last few; a failure is ignored.
+// prune removes the backups of older runs, on the site and on the other sites of this Vigie on the
+// account: beyond the last keptBackups runs of a site, and older than the job's limit (ADR-0033).
+// The run's own backups stay; a failure is ignored, left for the next update.
 func (r *run) prune(ctx context.Context) {
-	line, err := remote.ListBackups(r.s.job.Site.ID)
-	if err != nil {
-		return
-	}
-	res, err := r.s.shell(ctx, line)
-	if err != nil || res.ExitCode != 0 {
-		return
-	}
-	runs := remote.ParseBackups(res.Stdout)
-	for _, old := range runs[:max(0, len(runs)-keptBackups)] {
-		line, err := remote.RemoveBackup(path.Dir(r.op.BackupDir) + "/" + old)
+	for _, site := range append([]model.ID{r.s.job.Site.ID}, r.s.job.Siblings...) {
+		line, err := remote.ListBackups(site)
 		if err != nil {
 			continue
 		}
-		// A backup left behind is removed at the next run.
-		if _, err := r.s.shell(ctx, line); err != nil {
-			return
+		res, err := r.s.shell(ctx, line)
+		if err != nil {
+			return // the connection: nothing more can be removed now
+		}
+		if res.ExitCode != 0 {
+			continue // no backups, or a folder that cannot be read
+		}
+		dir := ".vigie/backups/" + site.String() + "/"
+		for _, old := range r.expired(remote.ParseBackups(res.Stdout)) {
+			line, err := remote.RemoveBackup(dir + old)
+			if err != nil || dir+old == r.op.BackupDir {
+				continue
+			}
+			// A backup left behind is removed at the next run.
+			if _, err := r.s.shell(ctx, line); err != nil {
+				return
+			}
 		}
 	}
+}
+
+// expired returns the runs to remove among a site's, oldest first: beyond the last keptBackups,
+// and older than the job's limit.
+func (r *run) expired(runs []string) []string {
+	var old []string
+	for i, run := range runs {
+		at, err := time.Parse(remote.BackupTimeLayout, run)
+		past := r.s.job.KeepFor > 0 && err == nil && r.s.u.Now().Sub(at) > r.s.job.KeepFor
+		if i < len(runs)-keptBackups || past {
+			old = append(old, run)
+		}
+	}
+	return old
 }
 
 // step records a step before and after it runs; false when it failed. A step that cannot be

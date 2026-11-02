@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"maps"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -273,5 +274,42 @@ func TestABulkRunLeavesTheIgnoredUpdatesOut(t *testing.T) {
 	}
 	if sel := u.chosen["a1"]; len(sel.Plugins) != 1 || sel.Plugins[0] != "akismet" {
 		t.Errorf("a1 was given %+v, want akismet only", sel)
+	}
+}
+
+// An update keeps the backups 30 days by default, as set; its job names the other sites of its
+// host, whose backups the limits apply to too (ADR-0033).
+func TestUpdateJobsCarryTheBackupLimits(t *testing.T) {
+	ctx := context.Background()
+	ws, _ := twoHosts(t)
+	if days, err := ws.BackupDays(ctx); err != nil || days != 30 {
+		t.Fatalf("BackupDays() = %d, %v; want 30 by default", days, err)
+	}
+	if err := ws.SetBackupDays(ctx, 12); !errors.Is(err, workspace.ErrBackupDays) {
+		t.Errorf("SetBackupDays(12) = %v, want ErrBackupDays", err)
+	}
+	if err := ws.SetBackupDays(ctx, 7); err != nil {
+		t.Fatal(err)
+	}
+	names := map[model.ID]string{}
+	previews := previewAll(t, ws)
+	for _, p := range previews {
+		names[p.Site.ID] = p.Site.Name
+	}
+	for _, p := range previews {
+		var siblings []string
+		for _, id := range p.Job.Siblings {
+			siblings = append(siblings, names[id])
+		}
+		want := map[string][]string{"a1": {"a2", "a3"}, "a2": {"a1", "a3"}, "a3": {"a1", "a2"}, "b1": nil}[p.Site.Name]
+		if p.Job.KeepFor != 7*24*time.Hour || !slices.Equal(siblings, want) {
+			t.Errorf("%s: keep %s, siblings %v; want 7 days and %v", p.Site.Name, p.Job.KeepFor, siblings, want)
+		}
+	}
+	if err := ws.SetBackupDays(ctx, 0); err != nil {
+		t.Fatal(err)
+	}
+	if p := previewAll(t, ws)[0]; p.Job.KeepFor != 0 {
+		t.Errorf("no limit: keep %s, want 0", p.Job.KeepFor)
 	}
 }

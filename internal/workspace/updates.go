@@ -105,6 +105,10 @@ func (w *Workspace) PreviewNode(ctx context.Context, node model.Node) ([]SitePre
 		return nil, err
 	}
 	sites := tree.SitesUnder(node)
+	keep, siblings, err := w.backupLimits(ctx, tree)
+	if err != nil {
+		return nil, err
+	}
 	previews := make([]SitePreview, len(sites))
 	u := w.updater(nil)
 	slots := make(chan struct{}, parallelSites)
@@ -114,7 +118,7 @@ func (w *Workspace) PreviewNode(ctx context.Context, node model.Node) ([]SitePre
 		previews[i] = SitePreview{
 			Site: site, Path: tree.PathOf(model.Node{Kind: model.KindSite, ID: site.ID}),
 			Job: update.Job{Site: site, Target: sshx.TargetFor(host), HostKey: host.ID.String(), Max: maxConcurrent(host),
-				WPCLI: tree.EffectiveWPCLI(site.ID)},
+				WPCLI: tree.EffectiveWPCLI(site.ID), KeepFor: keep, Siblings: siblings(site)},
 		}
 		ignores, err := w.db.Ignores(ctx, site.ID)
 		if err != nil {
