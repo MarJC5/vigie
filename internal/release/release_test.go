@@ -111,3 +111,26 @@ func TestTheManifestWailsReads(t *testing.T) {
 		}
 	}
 }
+
+// The notes of a version are its section of the changelog, without the next one nor the links.
+func TestNotesFromTheChangelog(t *testing.T) {
+	changelog := "# Changelog\n\n## [Unreleased]\n\n### Added\n\n- Next.\n\n" +
+		"## [1.1.0] - 2026-11-20\n\n### Fixed\n\n- A fix.\n\n" +
+		"## [1.0.0] - 2026-11-14\n\n### Added\n\n- The first release.\n\n" +
+		"[1.1.0]: https://github.com/MarJC5/vigie/compare/v1.0.0...v1.1.0\n[1.0.0]: https://github.com/MarJC5/vigie/releases/tag/v1.0.0\n"
+	cases := map[string]string{
+		"1.1.0": "### Fixed\n\n- A fix.",
+		"1.0.0": "### Added\n\n- The first release.",
+	}
+	for version, want := range cases {
+		got, err := release.Notes(changelog, version)
+		if err != nil || got != want {
+			t.Errorf("Notes(%s) = %q, %v; want %q", version, got, err, want)
+		}
+	}
+	for _, version := range []string{"1.2.0", "1.0"} {
+		if _, err := release.Notes(changelog, version); err == nil {
+			t.Errorf("Notes(%s): no error for a version the changelog does not have", version)
+		}
+	}
+}

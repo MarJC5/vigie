@@ -1,9 +1,11 @@
 // Command vigie-release signs a release of Vigie on the owner's Mac (ADR-0038): it makes the key
-// pair once, then signs the artifacts of each version and writes SHA256SUMS and update.json. It is
-// not part of the app, and never runs in CI.
+// pair once, then signs the artifacts of each version and writes SHA256SUMS and update.json; make
+// release also takes a version's notes from the changelog with it. It is not part of the app, and
+// never runs in CI.
 //
 //	vigie-release keygen <folder>
-//	vigie-release sign -key <file> -version <x.y.z> [-notes <file>] <artifact>…
+//	vigie-release notes -version <x.y.z> <changelog>
+//	vigie-release sign -key <file> -version <x.y.z> [-notes <file>] [-base <url>] <artifact>…
 package main
 
 import (
@@ -14,6 +16,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/MarJC5/vigie/internal/release"
@@ -25,13 +28,15 @@ func main() {
 
 func run(args []string, out, errOut io.Writer, now func() time.Time) int {
 	if len(args) == 0 {
-		fmt.Fprintln(errOut, "usage: vigie-release keygen <folder> | sign -key <file> -version <x.y.z> [-notes <file>] <artifact>…")
+		fmt.Fprintln(errOut, "usage: vigie-release keygen <folder> | notes -version <x.y.z> <changelog> | sign -key <file> -version <x.y.z> [-notes <file>] [-base <url>] <artifact>…")
 		return 2
 	}
 	var err error
 	switch args[0] {
 	case "keygen":
 		err = keygen(args[1:], out)
+	case "notes":
+		err = notes(args[1:], out)
 	case "sign":
 		err = sign(args[1:], out, now)
 	default:
@@ -74,12 +79,35 @@ func keygen(args []string, out io.Writer) error {
 	return nil
 }
 
+// notes prints a version's section of the changelog: the release's notes.
+func notes(args []string, out io.Writer) error {
+	fs := flag.NewFlagSet("notes", flag.ContinueOnError)
+	version := fs.String("version", "", "the version, without v")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *version == "" || fs.NArg() != 1 {
+		return errors.New("notes needs -version and the changelog")
+	}
+	text, err := os.ReadFile(fs.Arg(0))
+	if err != nil {
+		return err
+	}
+	section, err := release.Notes(string(text), *version)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(out, section)
+	return nil
+}
+
 // sign signs each artifact and writes SHA256SUMS and update.json next to the first one.
 func sign(args []string, out io.Writer, now func() time.Time) error {
 	fs := flag.NewFlagSet("sign", flag.ContinueOnError)
 	keyFile := fs.String("key", "", "the private key written by keygen")
 	version := fs.String("version", "", "the version, without v")
 	notesFile := fs.String("notes", "", "the release notes, Markdown")
+	base := fs.String("base", "", "where the artifacts are served, to try an update from a local server; the release's tag on GitHub otherwise")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -107,6 +135,9 @@ func sign(args []string, out io.Writer, now func() time.Time) error {
 		s, err := release.Sign(key, *version, path)
 		if err != nil {
 			return err
+		}
+		if *base != "" {
+			s.URL = strings.TrimSuffix(*base, "/") + "/" + s.Filename
 		}
 		signed = append(signed, s)
 	}

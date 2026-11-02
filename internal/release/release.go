@@ -149,3 +149,30 @@ func Manifest(version, notes string, published time.Time, signed []Signed) ([]by
 	}
 	return json.MarshalIndent(m, "", "  ")
 }
+
+// Notes is the section of a version in a changelog kept as Keep a Changelog writes it: what follows
+// its heading ("## [1.2.0] - 2026-11-14"), up to the next version or the links at the end.
+func Notes(changelog, version string) (string, error) {
+	var lines []string
+	in := false
+	for line := range strings.SplitSeq(changelog, "\n") {
+		if heading, ok := strings.CutPrefix(line, "## "); ok {
+			if in {
+				break
+			}
+			in = strings.HasPrefix(heading, "["+version+"]")
+			continue
+		}
+		if in && strings.HasPrefix(line, "[") && strings.Contains(line, "]: ") {
+			break
+		}
+		if in {
+			lines = append(lines, line)
+		}
+	}
+	notes := strings.TrimSpace(strings.Join(lines, "\n"))
+	if notes == "" {
+		return "", fmt.Errorf("the changelog has no notes under ## [%s]", version)
+	}
+	return notes, nil
+}
