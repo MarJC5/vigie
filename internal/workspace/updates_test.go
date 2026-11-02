@@ -313,3 +313,31 @@ func TestUpdateJobsCarryTheBackupLimits(t *testing.T) {
 		t.Errorf("no limit: keep %s, want 0", p.Job.KeepFor)
 	}
 }
+
+// A selection's sites are previewed once each, in tree order (ADR-0034).
+func TestPreviewASelection(t *testing.T) {
+	ctx := context.Background()
+	ws, u := twoHosts(t)
+	tree, err := ws.DB().LoadTree(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var a1, hostA model.Node
+	for _, s := range tree.SitesUnder(model.Root) {
+		if s.Name == "a1" {
+			a1 = model.Node{Kind: model.KindSite, ID: s.ID}
+		}
+	}
+	hostA = model.Node{Kind: model.KindHost, ID: u.hostOf["a1"]}
+	previews, err := ws.PreviewNodes(ctx, []model.Node{a1, hostA})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, p := range previews {
+		names = append(names, p.Site.Name)
+	}
+	if !slices.Equal(names, []string{"a1", "a2", "a3"}) {
+		t.Errorf("previewed %v, want host A's sites once each", names)
+	}
+}

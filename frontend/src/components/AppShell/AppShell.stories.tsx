@@ -179,7 +179,7 @@ export const ScansRunning: Story = {
   args: {
     data,
     initialSelectedId: "shared",
-    scans: { running: [{ nodeId: "shared", sites: 3, done: 1 }], completed: 0 },
+    scans: { running: [{ nodeId: "shared", nodeIds: ["shared"], sites: 3, done: 1 }], completed: 0 },
     onStopAll: fn(),
   },
   play: async ({ canvas, args }) => {

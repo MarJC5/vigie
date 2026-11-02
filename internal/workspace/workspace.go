@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -176,11 +177,16 @@ func (w *Workspace) Scan(ctx context.Context, path string, opts ScanOptions, pro
 
 // ScanNode is Scan for a node of the tree (model.Root for all).
 func (w *Workspace) ScanNode(ctx context.Context, node model.Node, opts ScanOptions, progress func(scan.Progress)) ([]Scanned, error) {
+	return w.ScanNodes(ctx, []model.Node{node}, opts, progress)
+}
+
+// ScanNodes scans the sites the nodes hold, each once, in one run named after the nodes (ADR-0034).
+func (w *Workspace) ScanNodes(ctx context.Context, nodes []model.Node, opts ScanOptions, progress func(scan.Progress)) ([]Scanned, error) {
 	tree, err := w.db.LoadTree(ctx)
 	if err != nil {
 		return nil, err
 	}
-	sites := tree.SitesUnder(node)
+	sites := SitesOf(tree, nodes)
 	latest, err := w.db.LatestScans(ctx)
 	if err != nil {
 		return nil, err
@@ -190,8 +196,13 @@ func (w *Workspace) ScanNode(ctx context.Context, node model.Node, opts ScanOpti
 	if run.By == "" {
 		run.By = model.RunByUser
 	}
-	if node != model.Root {
-		run.Path = tree.PathOf(node)
+	everything := len(nodes) == 1 && nodes[0] == model.Root
+	if !everything {
+		paths := make([]string, len(nodes))
+		for i, n := range nodes {
+			paths[i] = tree.PathOf(n)
+		}
+		run.Path = strings.Join(paths, ", ")
 	}
 	if err := w.db.StartRun(ctx, run); err != nil {
 		return nil, err
@@ -236,7 +247,7 @@ func (w *Workspace) ScanNode(ctx context.Context, node model.Node, opts ScanOpti
 		return results, err
 	}
 	// The schedule of automatic scans counts from the end of the latest complete scan of everything.
-	if node == model.Root && ctx.Err() == nil {
+	if everything && ctx.Err() == nil {
 		if err := w.db.SetSetting(keep, everythingScannedSetting, w.deps.Now().UTC().Format(time.RFC3339)); err != nil {
 			return results, err
 		}

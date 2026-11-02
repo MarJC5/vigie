@@ -100,11 +100,16 @@ func ignoredIn(p update.Preview, ignores []model.Ignore) []update.Item {
 // PreviewNode reads the previews of a site, the sites of a host, or every site under a folder
 // (model.Root for all), in tree order; several sites at once, each host within its limit.
 func (w *Workspace) PreviewNode(ctx context.Context, node model.Node) ([]SitePreview, error) {
+	return w.PreviewNodes(ctx, []model.Node{node})
+}
+
+// PreviewNodes reads the previews of the sites the nodes hold, each once, in tree order (ADR-0034).
+func (w *Workspace) PreviewNodes(ctx context.Context, nodes []model.Node) ([]SitePreview, error) {
 	tree, err := w.db.LoadTree(ctx)
 	if err != nil {
 		return nil, err
 	}
-	sites := tree.SitesUnder(node)
+	sites := SitesOf(tree, nodes)
 	keep, siblings, err := w.backupLimits(ctx, tree)
 	if err != nil {
 		return nil, err

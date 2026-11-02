@@ -973,9 +973,14 @@ export interface Problem {
  */
 export interface RunningScan {
     /**
-     * empty: the whole tree
+     * empty: the whole tree; the IDs joined with "," for several
      */
     "nodeId": string;
+
+    /**
+     * NodeIDs are the nodes scanned: one, or the items of a selection (ADR-0034).
+     */
+    "nodeIds": string[] | null;
 
     /**
      * sites to scan

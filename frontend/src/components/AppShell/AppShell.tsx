@@ -331,7 +331,8 @@ export function AppShell({
   // A node is being scanned when it, one of its parents, or everything is; a site, also when one
   // of its tags is.
   const scanning = (node: Node) => {
-    const ids = new Set(running.map((r) => r.nodeId));
+    // A scan of a selection runs on each of its items (ADR-0034).
+    const ids = new Set(running.flatMap((r) => (r.nodeIds && r.nodeIds.length > 0 ? r.nodeIds : [r.nodeId])));
     if (ids.has("")) return true;
     if (node.kind === "site" && [...ids].some((id) => tagOf(id) !== undefined && hasTag(node.tags, tagOf(id)!))) return true;
     for (let n: Node | undefined = node; n; n = nodes.find((p) => p.id === n!.parentId)) {

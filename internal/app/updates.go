@@ -151,15 +151,23 @@ func (u *Updates) scanning(sites ...model.ID) bool {
 
 // Preview reads what an update of a site, or of the sites of a host or folder, would change.
 func (u *Updates) Preview(ctx context.Context, nodeID string) ([]SitePreviewView, error) {
+	return u.PreviewMany(ctx, []string{nodeID})
+}
+
+// PreviewMany reads what an update of the sites the items of a selection hold would change, each
+// site once (ADR-0034).
+func (u *Updates) PreviewMany(ctx context.Context, nodeIDs []string) ([]SitePreviewView, error) {
 	tree, err := u.ws.DB().LoadTree(ctx)
 	if err != nil {
 		return nil, err
 	}
-	node, err := nodeByID(tree, nodeID)
-	if err != nil {
-		return nil, err
+	nodes := make([]model.Node, len(nodeIDs))
+	for i, id := range nodeIDs {
+		if nodes[i], err = nodeByID(tree, id); err != nil {
+			return nil, err
+		}
 	}
-	previews, err := u.ws.PreviewNode(ctx, node)
+	previews, err := u.ws.PreviewNodes(ctx, nodes)
 	if err != nil {
 		return nil, err
 	}
@@ -226,22 +234,31 @@ func (u *Updates) Update(siteID string, sel SelectionView) *Problem {
 // UpdateAll starts updating every site previewed under a host or folder with all its items, and
 // returns at once; the summary shows in the state's Bulk when it ends.
 func (u *Updates) UpdateAll(nodeID string) *Problem {
+	return u.UpdateMany([]string{nodeID})
+}
+
+// UpdateMany updates, from their previews, the sites the items of a selection hold, each once, in
+// one run (ADR-0034).
+func (u *Updates) UpdateMany(nodeIDs []string) *Problem {
 	tree, err := u.ws.DB().LoadTree(context.Background())
 	if err != nil {
 		return ProblemOf(err)
 	}
-	node, err := nodeByID(tree, nodeID)
-	if err != nil {
-		return ProblemOf(errNodeNotFound)
+	nodes := make([]model.Node, len(nodeIDs))
+	for i, id := range nodeIDs {
+		if nodes[i], err = nodeByID(tree, id); err != nil {
+			return ProblemOf(errNodeNotFound)
+		}
 	}
-	for _, site := range tree.SitesUnder(node) {
+	sites := workspace.SitesOf(tree, nodes)
+	for _, site := range sites {
 		if u.scanning(site.ID) {
 			return ProblemOf(errScanning)
 		}
 	}
 	var previews []workspace.SitePreview
 	u.mu.Lock()
-	for _, site := range tree.SitesUnder(node) {
+	for _, site := range sites {
 		if p, ok := u.previews[site.ID]; ok {
 			previews = append(previews, p)
 		}

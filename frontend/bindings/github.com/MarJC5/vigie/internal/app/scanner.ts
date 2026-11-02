@@ -45,6 +45,14 @@ export function Scan(nodeID: string): $CancellablePromise<$models.Problem | null
 }
 
 /**
+ * ScanMany scans the sites the items of a selection hold, each once, in one run (ADR-0034); it is
+ * stopped by Cancel with the IDs joined by ",".
+ */
+export function ScanMany(nodeIDs: string[] | null): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(3942816283, nodeIDs);
+}
+
+/**
  * ScanScheduled is Scan of everything for the automatic scans: its run says the schedule started it.
  */
 export function ScanScheduled(): $CancellablePromise<$models.Problem | null> {

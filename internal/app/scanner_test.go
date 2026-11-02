@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -267,5 +268,36 @@ func TestARunPrunesTheHistory(t *testing.T) {
 	scans, err := db.Scans(ctx, site.ID)
 	if err != nil || len(scans) != 1 || scans[0].ID == old.ID {
 		t.Fatalf("scans of the site = %d, %v; want the run's only", len(scans), err)
+	}
+}
+
+// A selection's sites are scanned once each, in one run named after its items (ADR-0034).
+func TestScanASelection(t *testing.T) {
+	ws, db, host := benchSites(t, sshxtest.NewFake())
+	ctx := context.Background()
+	tree, err := db.LoadTree(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	site := tree.SitesUnder(model.Node{Kind: model.KindHost, ID: host.ID})[0]
+	ev := newEvents()
+	s := app.NewScanner(ws, ev.emit)
+	ids := []string{site.ID.String(), host.ID.String()}
+	if p := s.ScanMany(ids); p != nil {
+		t.Fatal(p)
+	}
+	final := ev.idle(t)
+	ev.mu.Lock()
+	first := ev.states[0]
+	ev.mu.Unlock()
+	if r := first.Running; len(r) != 1 || !slices.Equal(r[0].NodeIDs, ids) || r[0].NodeID != strings.Join(ids, ",") || r[0].Sites != 2 {
+		t.Fatalf("first state = %+v, want the selection running with its two sites", first)
+	}
+	if final.Completed != 2 {
+		t.Errorf("%d scans completed, want each site once", final.Completed)
+	}
+	runs, err := db.Runs(ctx, time.Now().Add(-time.Hour))
+	if err != nil || len(runs) != 1 || runs[0].Path != "Bench/outdated.example.test, Bench" {
+		t.Errorf("runs = %+v, %v; want one, named after the selection", runs, err)
 	}
 }

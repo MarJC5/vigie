@@ -17,9 +17,11 @@ const ScansEvent = "vigie:scans"
 
 // RunningScan is a scan of a node in progress.
 type RunningScan struct {
-	NodeID string `json:"nodeId"` // empty: the whole tree
-	Sites  int    `json:"sites"`  // sites to scan
-	Done   int    `json:"done"`   // sites finished
+	NodeID string `json:"nodeId"` // empty: the whole tree; the IDs joined with "," for several
+	// NodeIDs are the nodes scanned: one, or the items of a selection (ADR-0034).
+	NodeIDs []string `json:"nodeIds"`
+	Sites   int      `json:"sites"` // sites to scan
+	Done    int      `json:"done"`  // sites finished
 }
 
 // ScansState lists the scans in progress; Completed counts the site scans stored since Vigie
@@ -44,6 +46,7 @@ type Scanner struct {
 }
 
 type running struct {
+	nodes  []string
 	cancel context.CancelFunc
 	sites  int
 	ids    map[model.ID]bool // the sites of the scan
@@ -85,14 +88,27 @@ func (s *Scanner) CheckFiles(nodeID string) *Problem {
 }
 
 func (s *Scanner) start(nodeID string, opts workspace.ScanOptions) *Problem {
+	return s.startMany([]string{nodeID}, opts)
+}
+
+// ScanMany scans the sites the items of a selection hold, each once, in one run (ADR-0034); it is
+// stopped by Cancel with the IDs joined by ",".
+func (s *Scanner) ScanMany(nodeIDs []string) *Problem {
+	return s.startMany(nodeIDs, workspace.ScanOptions{})
+}
+
+func (s *Scanner) startMany(nodeIDs []string, opts workspace.ScanOptions) *Problem {
 	tree, err := s.ws.DB().LoadTree(context.Background())
 	if err != nil {
 		return ProblemOf(err)
 	}
-	node, err := nodeByID(tree, nodeID)
-	if err != nil {
-		return ProblemOf(err)
+	nodes := make([]model.Node, len(nodeIDs))
+	for i, id := range nodeIDs {
+		if nodes[i], err = nodeByID(tree, id); err != nil {
+			return ProblemOf(err)
+		}
 	}
+	nodeID := strings.Join(nodeIDs, ",")
 	ctx, cancel := context.WithCancel(context.Background())
 	s.mu.Lock()
 	if _, busy := s.running[nodeID]; busy {
@@ -100,12 +116,12 @@ func (s *Scanner) start(nodeID string, opts workspace.ScanOptions) *Problem {
 		cancel()
 		return nil
 	}
-	sites := tree.SitesUnder(node)
+	sites := workspace.SitesOf(tree, nodes)
 	ids := map[model.ID]bool{}
 	for _, site := range sites {
 		ids[site.ID] = true
 	}
-	s.running[nodeID] = &running{cancel: cancel, sites: len(sites), ids: ids, done: map[model.ID]bool{}}
+	s.running[nodeID] = &running{nodes: nodeIDs, cancel: cancel, sites: len(sites), ids: ids, done: map[model.ID]bool{}}
 	s.order = append(s.order, nodeID)
 	s.mu.Unlock()
 	s.send()
@@ -116,7 +132,7 @@ func (s *Scanner) start(nodeID string, opts workspace.ScanOptions) *Problem {
 	}
 	go func() {
 		defer cancel()
-		results, _ := s.ws.ScanNode(ctx, node, opts, func(p scan.Progress) { s.progress(nodeID, p) })
+		results, _ := s.ws.ScanNodes(ctx, nodes, opts, func(p scan.Progress) { s.progress(nodeID, p) })
 		if s.OnScanned != nil && before != nil {
 			after := make([]model.Scan, len(results))
 			changes := map[model.ID][]model.Change{}
@@ -169,7 +185,7 @@ func (s *Scanner) State() ScansState {
 	state := ScansState{Running: []RunningScan{}, Completed: s.completed}
 	for _, id := range s.order {
 		r := s.running[id]
-		state.Running = append(state.Running, RunningScan{NodeID: id, Sites: r.sites, Done: len(r.done)})
+		state.Running = append(state.Running, RunningScan{NodeID: id, NodeIDs: r.nodes, Sites: r.sites, Done: len(r.done)})
 	}
 	return state
 }

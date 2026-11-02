@@ -45,6 +45,14 @@ export function Preview(nodeID: string): $CancellablePromise<$models.SitePreview
 }
 
 /**
+ * PreviewMany reads what an update of the sites the items of a selection hold would change, each
+ * site once (ADR-0034).
+ */
+export function PreviewMany(nodeIDs: string[] | null): $CancellablePromise<$models.SitePreviewView[] | null> {
+    return $Call.ByID(4072522060, nodeIDs);
+}
+
+/**
  * RemoveOldBackups removes a site's backups past the limits, on its server; refused while the
  * site is updated or scanned.
  */
@@ -79,4 +87,12 @@ export function Update(siteID: string, sel: $models.SelectionView): $Cancellable
  */
 export function UpdateAll(nodeID: string): $CancellablePromise<$models.Problem | null> {
     return $Call.ByID(684240315, nodeID);
+}
+
+/**
+ * UpdateMany updates, from their previews, the sites the items of a selection hold, each once, in
+ * one run (ADR-0034).
+ */
+export function UpdateMany(nodeIDs: string[] | null): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(3822808815, nodeIDs);
 }
