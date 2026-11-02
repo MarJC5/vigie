@@ -1456,7 +1456,30 @@
         "cause": "User and port:",
         "todo": "check that SSH is turned on for this account, and the user and port your host gives (Edit the connection, in the menu of the host)."
       },
-      "shortcuts": "Shortcuts"
+      "shortcuts": "Shortcuts",
+      "inList": "In the site list",
+      "gestures": {
+        "toggle": {
+          "keys": "⌘-click",
+          "label": "Add or remove an item"
+        },
+        "range": {
+          "keys": "⇧-click",
+          "label": "Select a range"
+        },
+        "extend": {
+          "keys": "⇧↑ ⇧↓",
+          "label": "Extend the selection"
+        },
+        "all": {
+          "keys": "⌘A",
+          "label": "Select all"
+        },
+        "one": {
+          "keys": "Escape",
+          "label": "Go back to one"
+        }
+      }
     }
   },
   "admin": {

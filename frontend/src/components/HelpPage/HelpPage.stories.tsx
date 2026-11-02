@@ -50,6 +50,10 @@ export const GettingStartedInFrench: Story = {
     await expect(canvas.getAllByRole("heading", { level: 2, name: "Votre premier hébergement" })).toHaveLength(2);
     await expect(canvas.getAllByText("« Le serveur ne répond pas. »")).toHaveLength(2);
     await expect(canvas.getAllByText("Nouvel hébergement").length).toBe(2);
+    // The gestures of the site list, beside the shortcuts of the menu bar (ADR-0034).
+    await expect(canvas.getAllByRole("heading", { level: 3, name: "Dans la liste des sites" })).toHaveLength(2);
+    await expect(canvas.getAllByText("⌘-clic")).toHaveLength(2);
+    await expect(canvas.getAllByText("Revenir à un seul")).toHaveLength(2);
   },
 };
 

@@ -196,3 +196,39 @@ test("how long backups stay on the servers is kept in the settings", async () =>
   await page.getByRole("tab", { name: "Data" }).click();
   await expect(page.getByRole("combobox", { name: "Backups before updates" })).toHaveValue("90");
 });
+
+// Several items selected (ADR-0034): their page, a drag that carries every host, one delete for all.
+test("several items: their page, then a drag moves every host at once", async () => {
+  await page.getByRole("navigation", { name: "Navigation" }).getByRole("link", { name: "Sites" }).click();
+  await item(/^Personal/).focus();
+  await page.keyboard.press("ArrowRight");
+  await item(/Shared hosting/).click();
+  await item(/Managed VPS/).click({ modifiers: ["ControlOrMeta"] });
+  await expect(tree()).toHaveAttribute("aria-multiselectable", "true");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("2 items selected");
+  await expect(page.getByRole("complementary")).toContainText("2 selected · 2 sites");
+  await expect(page.getByRole("table", { name: "Sites of the selection" }).getByRole("row")).toHaveCount(3);
+
+  // Shared hosting is already in Clients: the drag of the VPS brings it there too.
+  await item(/Managed VPS/).dragTo(item(/^Clients/));
+  await item(/^Clients/).focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(item(/Managed VPS/)).toHaveCount(0);
+  await expect(item(/Shared hosting/)).toHaveCount(0);
+  await page.keyboard.press("ArrowRight");
+});
+
+test("several items deleted at once: what goes, and the folder that stays", async () => {
+  await item(/^Personal/).click();
+  await item(/Managed VPS/).click({ modifiers: ["ControlOrMeta"] });
+  await item(/^Clients/).click({ modifiers: ["ControlOrMeta"] });
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("3 items selected");
+  await page.keyboard.press("ControlOrMeta+Backspace");
+  const dialog = page.getByRole("dialog", { name: "Delete 2 items?" });
+  await expect(dialog.getByRole("listitem")).toHaveText(["Managed VPS0 sites", "Personalempty"]);
+  await expect(dialog.getByRole("note")).toHaveText("“Clients” stays: only an empty folder can be deleted.");
+  await dialog.getByRole("button", { name: "Delete the 2 items" }).click();
+  await expect(item(/Managed VPS/)).toHaveCount(0);
+  await expect(item(/^Personal/)).toHaveCount(0);
+  await expect(item(/^Clients/)).toBeVisible();
+});

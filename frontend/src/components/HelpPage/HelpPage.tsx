@@ -28,6 +28,9 @@ const shortcuts = [
   ["⌘,", "menu.settings"],
 ] as const;
 
+// The gestures of the site list (ADR-0034): its selection of several items.
+const gestures = ["toggle", "range", "extend", "all", "one"] as const;
+
 // What a host that refuses answers: the first sentence of the message Vigie shows, the cause, and
 // what to do.
 const refusals = [
@@ -135,6 +138,17 @@ export function HelpPage({ tab, onTab, onOpen, onAddHost }: HelpPageProps) {
                       <kbd className={styles.kbd}>{keys}</kbd>
                     </dt>
                     <dd>{t(label).replace(/…$/, "")}</dd>
+                  </div>
+                ))}
+              </dl>
+              <h3 className={styles.asideSubtitle}>{t("help.start.inList")}</h3>
+              <dl className={styles.shortcuts}>
+                {gestures.map((g) => (
+                  <div key={g} className={styles.shortcut}>
+                    <dt>
+                      <kbd className={styles.kbd}>{t(`help.start.gestures.${g}.keys`)}</kbd>
+                    </dt>
+                    <dd>{t(`help.start.gestures.${g}.label`)}</dd>
                   </div>
                 ))}
               </dl>

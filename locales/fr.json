@@ -1541,7 +1541,30 @@
         "cause": "Utilisateur et port :",
         "todo": "vérifiez que SSH est activé pour ce compte, et l'utilisateur et le port que donne l'hébergeur (Modifier la connexion, dans le menu de l'hébergement)."
       },
-      "shortcuts": "Raccourcis"
+      "shortcuts": "Raccourcis",
+      "inList": "Dans la liste des sites",
+      "gestures": {
+        "toggle": {
+          "keys": "⌘-clic",
+          "label": "Ajouter ou retirer un élément"
+        },
+        "range": {
+          "keys": "⇧-clic",
+          "label": "Sélectionner une suite"
+        },
+        "extend": {
+          "keys": "⇧↑ ⇧↓",
+          "label": "Étendre la sélection"
+        },
+        "all": {
+          "keys": "⌘A",
+          "label": "Tout sélectionner"
+        },
+        "one": {
+          "keys": "Échap",
+          "label": "Revenir à un seul"
+        }
+      }
     }
   },
   "admin": {

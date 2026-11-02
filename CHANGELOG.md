@@ -137,6 +137,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   subsite is a finding as those of the main site are, the super administrators first.
 - Settings, Data, Database: the history kept, and "Compact the database", which shows the size of
   the database and the space free in it, and gives that space back to the disk.
+- Several items selected in the site list: ⌘-click adds or removes one, ⇧-click selects a range,
+  ⇧↑ and ⇧↓ extend the selection, ⌘A selects every item, Escape goes back to one. Their page
+  counts the sites they hold and lists them with where each is; its buttons and the menu of a
+  selected row scan them, update them, move the folders and hosts, color them, add or remove a tag
+  on their sites, or delete them, each in one go (all done or none). Dragging a selected row
+  carries every folder and host selected.
 
 ### Changed
 

@@ -152,6 +152,14 @@
   color: var(--vg-text-muted);
 }
 
+/* A second group of the aside, a step below the first. */
+.asideSubtitle {
+  margin: var(--vg-space-2) 0 0;
+  font-size: var(--vg-text-small);
+  font-weight: var(--vg-weight-strong);
+  color: var(--vg-text-muted);
+}
+
 .shortcuts {
   margin: 0;
   display: grid;
