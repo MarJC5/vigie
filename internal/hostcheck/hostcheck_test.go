@@ -19,6 +19,7 @@ const (
 	infoBin    = "'bin/wp' 'cli' 'info' '--format=json'"
 	infoPhar   = "'php' 'wp-cli.phar' 'cli' 'info' '--format=json'"
 	infoCustom = "'/opt/wp/bin/wp' 'cli' 'info' '--format=json'"
+	binExists  = `'sh' '-c' 'test -e "$HOME/bin/wp"'`
 )
 
 // The keys Vigie reads from `wp cli info --format=json` (full recordings: internal/wpcli).
@@ -65,12 +66,49 @@ func TestNoWPCLIListsWhatWasTried(t *testing.T) {
 	for _, c := range []string{infoWP, infoWPCLI, infoBin, infoPhar} {
 		fake.Set(c, notFound)
 	}
+	fake.Set(binExists, sshx.Result{ExitCode: 1})
 	report, err := hostcheck.Check(context.Background(), fake, sshx.Target{Alias: "a"}, "wp")
 	if !errors.Is(err, hostcheck.ErrNoWPCLI) {
 		t.Fatalf("Check() error = %v, want ErrNoWPCLI", err)
 	}
 	if report.PHPVersion != "8.4.27" || len(report.Tried) != 4 {
 		t.Fatalf("Check() = %+v, want the PHP version and the four commands tried", report)
+	}
+	if !report.CanInstall() {
+		t.Fatalf("CanInstall() = false for %+v, want the offer (ADR-0039)", report)
+	}
+}
+
+// No offer to install WP-CLI when PHP is older than it needs, or when ~/bin/wp is there already
+// and does not answer: Vigie leaves it alone (ADR-0039).
+func TestNoOfferWhenItCannotInstall(t *testing.T) {
+	cases := []struct {
+		name, php string
+		exists    bool
+		tooOld    bool
+	}{
+		{"PHP 7.1", "7.1.33", false, true},
+		{"PHP 7.2.24, the oldest WP-CLI runs on", "7.2.24", false, false},
+		{"~/bin/wp there", "8.4.27", true, false},
+	}
+	for _, c := range cases {
+		fake := sshxtest.NewFake()
+		fake.Set(phpVersion, sshx.Result{Stdout: []byte(c.php)})
+		for _, cmd := range []string{infoWP, infoWPCLI, infoBin, infoPhar} {
+			fake.Set(cmd, notFound)
+		}
+		exit := 1
+		if c.exists {
+			exit = 0
+		}
+		fake.Set(binExists, sshx.Result{ExitCode: exit})
+		report, err := hostcheck.Check(context.Background(), fake, sshx.Target{Alias: "a"}, "")
+		if !errors.Is(err, hostcheck.ErrNoWPCLI) {
+			t.Fatalf("%s: %v", c.name, err)
+		}
+		if report.PHPTooOld != c.tooOld || report.Existing != c.exists || report.CanInstall() != (!c.tooOld && !c.exists) {
+			t.Errorf("%s: %+v, CanInstall %v", c.name, report, report.CanInstall())
+		}
 	}
 }
 

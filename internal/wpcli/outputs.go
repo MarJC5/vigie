@@ -23,8 +23,17 @@ var ErrCannotLoad = errors.New("WordPress cannot be loaded")
 // WordPress any more: the site was most likely removed from the server.
 var ErrNotWordPress = errors.New("no WordPress at this path")
 
+// ErrCommandNotFound is returned when the shell found no WP-CLI command at all (exit status 127):
+// the host's command is wrong, or WP-CLI is not installed on the account (ADR-0039).
+var ErrCommandNotFound = errors.New("WP-CLI command not found")
+
+// exitNotFound is the shell's status for a command it cannot find (POSIX, "Command Search and
+// Execution").
+const exitNotFound = 127
+
 // Check turns a failed WP-CLI command into ErrCannotLoad with its message, also ErrNotWordPress when
-// WP-CLI finds no WordPress at the path; a success gives nil.
+// WP-CLI finds no WordPress at the path, or into ErrCommandNotFound when there is no such command;
+// a success gives nil.
 func Check(res sshx.Result) error {
 	if res.ExitCode == 0 {
 		return nil
@@ -32,6 +41,9 @@ func Check(res sshx.Result) error {
 	msg := strings.TrimSpace(string(res.Stderr))
 	if msg == "" {
 		msg = "exit status " + strconv.Itoa(res.ExitCode)
+	}
+	if res.ExitCode == exitNotFound {
+		return fmt.Errorf("%w: %s", ErrCommandNotFound, msg)
 	}
 	// WP-CLI's words, the same for a missing folder and a folder without wp-load.php.
 	if strings.Contains(msg, "This does not seem to be a WordPress installation") {

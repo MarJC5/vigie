@@ -210,3 +210,11 @@ type Subsite struct {
 	Deleted  bool
 	Pinned   bool // checked over HTTP after updates
 }
+
+// Account is the host's SSH account, as it is reached: its alias, else user@hostname:port.
+func (h Host) Account() string {
+	if h.Alias != "" {
+		return h.Alias
+	}
+	return fmt.Sprintf("%s@%s:%d", h.User, h.Hostname, h.EffectivePort())
+}

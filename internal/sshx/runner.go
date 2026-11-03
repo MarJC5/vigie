@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -49,6 +50,16 @@ func (r ExecRunner) Run(ctx context.Context, target Target, remote string) (Resu
 
 // RunInput runs remote on target with input on its standard input, at most Timeout.
 func (r ExecRunner) RunInput(ctx context.Context, target Target, remote string, input []byte) (Result, error) {
+	var in io.Reader
+	if input != nil {
+		in = bytes.NewReader(input)
+	}
+	return r.RunReader(ctx, target, remote, in)
+}
+
+// RunReader runs remote on target with what input gives on its standard input, at most Timeout:
+// a large input is read as it is sent, so its reader can tell how far it went.
+func (r ExecRunner) RunReader(ctx context.Context, target Target, remote string, input io.Reader) (Result, error) {
 	ctx, cancel := context.WithTimeout(ctx, r.Timeout)
 	defer cancel()
 	binary := r.SSH
@@ -60,7 +71,7 @@ func (r ExecRunner) RunInput(ctx context.Context, target Target, remote string, 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	if input != nil {
-		cmd.Stdin = bytes.NewReader(input)
+		cmd.Stdin = input
 	}
 	err := cmd.Run()
 	res := Result{Stdout: stdout.Bytes(), Stderr: stderr.Bytes()}

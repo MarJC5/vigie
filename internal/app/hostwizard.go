@@ -19,6 +19,7 @@ import (
 	"github.com/MarJC5/vigie/internal/update"
 	"github.com/MarJC5/vigie/internal/workspace"
 	"github.com/MarJC5/vigie/internal/wpcli"
+	"github.com/MarJC5/vigie/internal/wpcliinstall"
 )
 
 // Problem is why a step failed. Code is the key of its text in the catalogs ("failure.timedOut",
@@ -68,6 +69,9 @@ var problemCodes = []struct {
 	{workspace.ErrUnknownDestination, "problem.unknownDestination"},
 	{model.ErrNotFound, "problem.folderNotFound"},
 	{sshx.ErrNoHostKey, "problem.noHostKey"},
+	{wpcliinstall.ErrDigest, "problem.wpCliDigest"},
+	{wpcliinstall.ErrExists, "problem.wpCliExists"},
+	{wpcliinstall.ErrNoAnswer, "problem.wpCliNoAnswer"},
 	{errKeyNotReceived, "problem.keyNotReceived"},
 	{hostcheck.ErrNoPHP, "problem.noPhp"},
 	{discover.ErrFind, "problem.findFailed"},
@@ -161,10 +165,12 @@ type KeysResult struct {
 
 // TestResult is the answer of TestConnection.
 type TestResult struct {
-	PHPVersion   string   `json:"phpVersion"`
-	WPCLI        string   `json:"wpCli"`
-	WPCLIVersion string   `json:"wpCliVersion"`
-	Problem      *Problem `json:"problem"`
+	PHPVersion   string `json:"phpVersion"`
+	WPCLI        string `json:"wpCli"`
+	WPCLIVersion string `json:"wpCliVersion"`
+	// Install is the WP-CLI Vigie offers to install when none answered (ADR-0039); nil otherwise.
+	Install *WPCLIOffer `json:"install"`
+	Problem *Problem    `json:"problem"`
 }
 
 // Install is a WordPress install found on the account.
@@ -291,7 +297,15 @@ func (w *HostWizard) TestConnection(ctx context.Context, d HostDetails) TestResu
 	report, err := w.ws.TestConnection(ctx, h)
 	result := TestResult{PHPVersion: report.PHPVersion, WPCLI: report.WPCLI, WPCLIVersion: report.WPCLIVersion}
 	if errors.Is(err, hostcheck.ErrNoWPCLI) {
-		result.Problem = &Problem{Code: "problem.noWpCli", Detail: strings.Join(report.Tried, ", ")}
+		switch {
+		case report.PHPTooOld:
+			result.Problem = &Problem{Code: "problem.wpCliPhpTooOld", Detail: report.PHPVersion}
+		case report.Existing:
+			result.Problem = &Problem{Code: "problem.wpCliExists", Detail: wpcliinstall.Path}
+		default:
+			result.Problem = &Problem{Code: "problem.noWpCli", Detail: strings.Join(report.Tried, ", ")}
+			result.Install = &WPCLIOffer{Version: wpcliinstall.Version, Size: wpcliinstall.Size, Path: wpcliinstall.Path}
+		}
 		return result
 	}
 	result.Problem = ProblemOf(err)

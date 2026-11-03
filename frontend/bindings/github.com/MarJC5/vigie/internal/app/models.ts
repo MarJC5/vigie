@@ -3,11 +3,11 @@
 
 /**
  * ActivityEntry is a line of the journal: a run with what it changed and what Vigie notified, a
- * scan made before runs were recorded, an update or a rollback.
+ * scan made before runs were recorded, an update or a rollback, an install of WP-CLI.
  */
 export interface ActivityEntry {
     /**
-     * "run", "scan", "update", "rollback"
+     * "run", "scan", "update", "rollback", "wpcli"
      */
     "kind": string;
 
@@ -58,6 +58,12 @@ export interface ActivityEntry {
      */
     "siteChanges": SiteChangesView[] | null;
     "notices": NoticeView[] | null;
+
+    /**
+     * WPCLI is an install of WP-CLI's (ADR-0039); its Path is its host's, or the name the host
+     * had when it is not stored.
+     */
+    "wpCli": WPCLIInstallView | null;
 }
 
 /**
@@ -1437,6 +1443,11 @@ export interface TestResult {
     "phpVersion": string;
     "wpCli": string;
     "wpCliVersion": string;
+
+    /**
+     * Install is the WP-CLI Vigie offers to install when none answered (ADR-0039); nil otherwise.
+     */
+    "install": WPCLIOffer | null;
     "problem": Problem | null;
 }
 
@@ -1542,6 +1553,42 @@ export interface UpdatesState {
      * updated again until it leaves the list.
      */
     "sites": string[] | null;
+}
+
+/**
+ * WPCLIInstallResult is the answer of InstallWPCLI: the command that answered and its version, or
+ * the step it stopped at and why.
+ */
+export interface WPCLIInstallResult {
+    "command": string;
+    "version": string;
+    "failedStep": string;
+    "problem": Problem | null;
+}
+
+/**
+ * WPCLIInstallView is an install of WP-CLI on an account: its version, the host's command once
+ * done, or the step it stopped at and what was said there.
+ */
+export interface WPCLIInstallView {
+    /**
+     * empty when its host is not stored
+     */
+    "hostId": string;
+    "version": string;
+    "command": string;
+    "failedStep": string;
+    "message": string;
+}
+
+/**
+ * WPCLIOffer is the WP-CLI Vigie offers to install on an account that has none (ADR-0039): its
+ * version, its size, and where it goes.
+ */
+export interface WPCLIOffer {
+    "version": string;
+    "size": number;
+    "path": string;
 }
 
 /**

@@ -80,6 +80,8 @@ func (s Scanner) Site(ctx context.Context, job Job, progress func(Progress)) (mo
 		result.Outcome, result.Failure, result.Error = model.ScanFailed, string(connErr.Failure), connErr.Message
 	case errors.Is(err, wpcli.ErrUnexpectedOutput):
 		result.Outcome, result.Failure, result.Error = model.ScanFailed, FailureUnreadable, err.Error()
+	case errors.Is(err, wpcli.ErrCommandNotFound):
+		result.Outcome, result.Failure, result.Error = model.ScanFailed, FailureNoWPCLI, err.Error()
 	default:
 		result.Outcome, result.Error = model.ScanFailed, err.Error()
 	}
@@ -94,6 +96,11 @@ var errNotInstalled = errors.New("WordPress is not installed at this path")
 // FailureUnreadable is the failure of a scan whose WP-CLI output Vigie could not read; its text
 // in the catalogs is "failure.unreadable".
 const FailureUnreadable = "unreadable"
+
+// FailureNoWPCLI is the failure of a scan whose WP-CLI command does not exist on the account; its
+// text in the catalogs is "failure.noWpCli", which points to the host's connection test, where
+// Vigie offers to install WP-CLI (ADR-0039).
+const FailureNoWPCLI = "noWpCli"
 
 // FailureNotWordPress is why a site could not load when its folder is gone or holds no WordPress
 // any more: most likely removed from the server. Its text in the catalogs is "outcome.notWordPress".

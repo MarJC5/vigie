@@ -3,6 +3,7 @@ package wpcli_test
 import (
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/MarJC5/vigie/internal/model"
@@ -104,6 +105,15 @@ func TestCheckTellsAFolderWithoutWordPress(t *testing.T) {
 	}
 	if err := wpcli.Check(result(load(t, "broken", "plugin-list"))); errors.Is(err, wpcli.ErrNotWordPress) {
 		t.Errorf("Check() of a database error = %v, want no ErrNotWordPress", err)
+	}
+}
+
+// The shell's status when the command does not exist (127): WP-CLI is missing, not WordPress
+// that cannot load (ADR-0039).
+func TestCheckTellsACommandNotFound(t *testing.T) {
+	err := wpcli.Check(sshx.Result{ExitCode: 127, Stderr: []byte("bash: line 1: wp: command not found")})
+	if !errors.Is(err, wpcli.ErrCommandNotFound) || errors.Is(err, wpcli.ErrCannotLoad) || !strings.Contains(err.Error(), "command not found") {
+		t.Fatalf("Check() = %v, want ErrCommandNotFound with the shell's words", err)
 	}
 }
 

@@ -286,6 +286,21 @@ func TestUnreadableOutputIsClassified(t *testing.T) {
 	}
 }
 
+// A WP-CLI command that does not exist on the account fails the scan as such, not as a WordPress
+// that cannot load: the window points to the host's connection test (ADR-0039).
+func TestAMissingWPCLIIsClassified(t *testing.T) {
+	fake := replay(t, "plain")
+	remote, err := wpcli.PluginList().Remote("wp", "~/sites/plain")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fake.Set(remote, sshx.Result{ExitCode: 127, Stderr: []byte("bash: line 1: wp: command not found")})
+	got, _ := scanner(fake).Site(context.Background(), job("plain"), nil)
+	if got.Outcome != model.ScanFailed || got.Failure != scan.FailureNoWPCLI || !strings.Contains(got.Error, "command not found") {
+		t.Fatalf("scan = %q, failure %q, %q; want failed, noWpCli, with the shell's words", got.Outcome, got.Failure, got.Error)
+	}
+}
+
 // A theme can live in a plugin's folder (register_theme_directory): read without the plugins,
 // WordPress sees no theme. The scan reads the themes again with the plugins.
 func TestScanOfAThemeInAPlugin(t *testing.T) {

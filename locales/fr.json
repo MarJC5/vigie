@@ -378,7 +378,8 @@
     "authRefused": "Le serveur refuse la clé. Est-elle chargée dans votre agent SSH (Bitwarden, 1Password, ssh-agent) ?",
     "keyFileMissing": "Le fichier de clé indiqué pour cet hébergement n'existe pas.",
     "other": "Échec de SSH : {{message}}",
-    "unreadable": "Vigie n'a pas pu lire la réponse de WP-CLI : ce WordPress ou ce WP-CLI répond d'une façon que Vigie ne connaît pas encore."
+    "unreadable": "Vigie n'a pas pu lire la réponse de WP-CLI : ce WordPress ou ce WP-CLI répond d'une façon que Vigie ne connaît pas encore.",
+    "noWpCli": "WP-CLI est introuvable sur ce compte : la commande WP-CLI de l'hébergement n'y existe pas. Testez la connexion de l'hébergement : Vigie y propose d'installer WP-CLI."
   },
   "found": {
     "new": "Nouveau",
@@ -398,6 +399,10 @@
     "keyNotReceived": "Cette clé n'a pas été reçue du serveur. Demandez à nouveau les clés.",
     "noPhp": "PHP ne fonctionne pas en ligne de commande sur ce compte : {{message}}",
     "noWpCli": "WP-CLI est introuvable sur ce compte (essayé : {{message}}).",
+    "wpCliPhpTooOld": "WP-CLI demande PHP 7.2.24 ou plus en ligne de commande, ce compte a PHP {{message}}. Demandez à votre hébergeur une version plus récente, puis réessayez.",
+    "wpCliExists": "{{message}} est déjà sur ce compte, mais il ne répond pas comme WP-CLI. Vigie n'y touche pas : retirez-le, ou indiquez la bonne commande WP-CLI de l'hébergement.",
+    "wpCliDigest": "Le fichier téléchargé n'est pas le WP-CLI qu'attend Vigie : il est écarté, rien n'a été envoyé au serveur.",
+    "wpCliNoAnswer": "WP-CLI ne répond pas sur ce compte, ni comme ~/bin/wp ni avec php : le fichier envoyé a été retiré, rien d'autre n'a changé.",
     "findFailed": "La recherche des installations WordPress a échoué : {{message}}",
     "notFound": "Cet élément n'existe plus : la liste a changé entre-temps.",
     "siteMoved": "Un site reste sous son hébergement. S'il a changé de compte, supprimez-le ici et utilisez « Chercher de nouveaux sites » sur cet hébergement.",

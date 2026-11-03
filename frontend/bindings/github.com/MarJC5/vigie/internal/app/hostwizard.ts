@@ -61,6 +61,16 @@ export function HostKeys(d: $models.HostDetails): $CancellablePromise<$models.Ke
 }
 
 /**
+ * InstallWPCLI installs WP-CLI on the account of the details (ADR-0039), after the user confirmed
+ * it, sending WPCLIInstallEvent as it goes. hostID names a stored host, whose command then
+ * becomes the one that answered; empty for the wizard, or for a host being edited, whose form
+ * takes the command.
+ */
+export function InstallWPCLI(d: $models.HostDetails, hostID: string): $CancellablePromise<$models.WPCLIInstallResult> {
+    return $Call.ByID(998788480, d, hostID);
+}
+
+/**
  * KeepKey records, for a stored host whose address changed, the key the user trusted: the server
  * must have presented it in this session, as in Add.
  */

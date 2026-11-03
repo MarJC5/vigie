@@ -13,7 +13,7 @@ const stored: HostDetails = {
 function fakeApi(): HostEditApi {
   return {
     Host: fn(async () => stored),
-    TestConnection: fn(async () => ({ phpVersion: "8.4.27", wpCli: "wp", wpCliVersion: "2.12.0", problem: null })),
+    TestConnection: fn(async () => ({ phpVersion: "8.4.27", wpCli: "wp", wpCliVersion: "2.12.0", install: null, problem: null })),
     EditHost: fn(async (_id: string, d: HostDetails) => {
       if (d.name === "") return { keyCleared: false, problem: { code: "problem.emptyName", detail: "" } };
       return { keyCleared: d.hostname !== stored.hostname, problem: null };

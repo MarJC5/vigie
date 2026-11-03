@@ -34,7 +34,7 @@ export function HostTestDialog({ name, details, test, onClose, onHelp }: HostTes
       try {
         return await test(await details());
       } catch (err) {
-        return { phpVersion: "", wpCli: "", wpCliVersion: "", problem: { code: "problem.error", detail: err instanceof Error ? err.message : String(err) } };
+        return { phpVersion: "", wpCli: "", wpCliVersion: "", install: null, problem: { code: "problem.error", detail: err instanceof Error ? err.message : String(err) } };
       }
     };
     void run().then((r) => {

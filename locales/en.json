@@ -337,7 +337,8 @@
     "authRefused": "The server refused the key. Is it loaded in your SSH agent (Bitwarden, 1Password, ssh-agent)?",
     "keyFileMissing": "The key file set for this host does not exist.",
     "other": "SSH failed: {{message}}",
-    "unreadable": "Vigie could not read the answer of WP-CLI: this WordPress or WP-CLI answers in a way Vigie does not know yet."
+    "unreadable": "Vigie could not read the answer of WP-CLI: this WordPress or WP-CLI answers in a way Vigie does not know yet.",
+    "noWpCli": "WP-CLI was not found on this account: the host's WP-CLI command does not exist there. Test the connection of the host: Vigie offers to install WP-CLI."
   },
   "found": {
     "new": "New",
@@ -357,6 +358,10 @@
     "keyNotReceived": "This key was not received from the server. Ask for the keys again.",
     "noPhp": "PHP does not run on the command line of this account: {{message}}",
     "noWpCli": "WP-CLI was not found on this account (tried: {{message}}).",
+    "wpCliPhpTooOld": "WP-CLI needs PHP 7.2.24 or later on the command line; this account has PHP {{message}}. Ask your host for a newer version, then try again.",
+    "wpCliExists": "{{message}} is already on this account, but it does not answer as WP-CLI. Vigie leaves it alone: remove it, or give the host its right WP-CLI command.",
+    "wpCliDigest": "The file downloaded is not the WP-CLI Vigie expects: it is discarded, nothing was sent to the server.",
+    "wpCliNoAnswer": "WP-CLI does not answer on this account, neither as ~/bin/wp nor with php: the file sent was removed, nothing else changed.",
     "findFailed": "The search for WordPress installs failed: {{message}}",
     "notFound": "This item no longer exists: the list was changed meanwhile.",
     "siteMoved": "A site stays under its host. If it moved to another account, delete it here and use \"Find new sites\" on that host.",

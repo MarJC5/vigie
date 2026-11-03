@@ -99,3 +99,13 @@ func TestColorValid(t *testing.T) {
 		}
 	}
 }
+
+// A host's account is its alias, else user@hostname:port.
+func TestHostAccount(t *testing.T) {
+	if got := (model.Host{Alias: "vps"}).Account(); got != "vps" {
+		t.Errorf("alias: %q", got)
+	}
+	if got := (model.Host{User: "u12ab", Hostname: "ssh.example-host.ch"}).Account(); got != "u12ab@ssh.example-host.ch:22" {
+		t.Errorf("host: %q", got)
+	}
+}

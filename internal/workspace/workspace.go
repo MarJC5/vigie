@@ -18,6 +18,7 @@ import (
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/store"
 	"github.com/MarJC5/vigie/internal/update"
+	"github.com/MarJC5/vigie/internal/wpcliinstall"
 )
 
 // ErrNotAHost is returned when discovery is asked for a folder or a site.
@@ -63,6 +64,9 @@ type Deps struct {
 	// Lookups makes the outside lookups of a scan; nil makes none, and their checks are "not
 	// checked".
 	Lookups scan.Lookups
+	// DownloadWPCLI downloads the WP-CLI that Vigie installs, checked (ADR-0039); nil, in tests,
+	// installs none.
+	DownloadWPCLI func(ctx context.Context, progress func(wpcliinstall.Progress)) ([]byte, error)
 }
 
 // Workspace holds the database and the means to reach servers.
@@ -103,6 +107,7 @@ func Open(ctx context.Context, dataDir, version string) (*Workspace, error) {
 		KnownHosts: options.KnownHostsFile, Home: home, Now: time.Now,
 	})
 	ws.deps.Lookups = newLookups(db, version, time.Now, ws.LookupAllowed)
+	ws.deps.DownloadWPCLI = wpcliDownload(version)
 	ws.close = db.Close
 	return ws, nil
 }

@@ -7,9 +7,9 @@ import { HostTestDialog } from "./HostTestDialog";
 const shared: HostDetails = {
   name: "Shared hosting", alias: "", hostname: "ssh.example-host.ch", port: 22, user: "u12ab", keyPath: "", wpCli: "wp", folderId: "clients", maxConcurrent: 0,
 };
-const passed: TestResult = { phpVersion: "8.4.27", wpCli: "wp", wpCliVersion: "2.12.0", problem: null };
+const passed: TestResult = { phpVersion: "8.4.27", wpCli: "wp", wpCliVersion: "2.12.0", install: null, problem: null };
 const timedOut: TestResult = {
-  phpVersion: "", wpCli: "", wpCliVersion: "",
+  phpVersion: "", wpCli: "", wpCliVersion: "", install: null,
   problem: { code: "failure.timedOut", detail: "ssh: connect to host ssh.example-host.ch port 22: Operation timed out" },
 };
 

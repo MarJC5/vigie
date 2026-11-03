@@ -112,5 +112,8 @@ export type {
     UpdateItemView,
     UpdateView,
     UpdatesState,
+    WPCLIInstallResult,
+    WPCLIInstallView,
+    WPCLIOffer,
     WatchState
 } from "./models.js";

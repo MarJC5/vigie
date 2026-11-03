@@ -129,3 +129,51 @@ func sameOnceNoted(t *testing.T, db *store.DB, now time.Time, computed app.Journ
 		t.Fatalf("journal from the noted facts =\n%+v\nwant the computed one\n%+v", noted, computed)
 	}
 }
+
+// The installs of WP-CLI are in the journal under the stored host of their account, those of a
+// host not stored (a wizard closed) under the name it had, and only in the whole journal.
+func TestTheJournalTellsTheInstallsOfWPCLI(t *testing.T) {
+	ctx := context.Background()
+	db := repository(t)
+	now := time.Date(2026, 11, 3, 15, 0, 0, 0, time.UTC)
+	folder := model.Folder{ID: model.NewID(), Name: "Clients"}
+	other := model.Folder{ID: model.NewID(), Name: "Personal"}
+	host := model.Host{ID: model.NewID(), FolderID: folder.ID, Name: "Shared hosting", Hostname: "ssh.example.test", User: "u12ab"}
+	for _, f := range []model.Folder{folder, other} {
+		if err := db.SaveFolder(ctx, f); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.SaveHost(ctx, host); err != nil {
+		t.Fatal(err)
+	}
+	done := model.WPCLIInstall{ID: model.NewID(), Account: host.Account(), HostName: "Bench", Started: now.Add(-20 * time.Minute),
+		Finished: now.Add(-19 * time.Minute), Completed: true, Version: "2.12.0", Command: "~/bin/wp"}
+	gone := model.WPCLIInstall{ID: model.NewID(), Account: "u9@elsewhere.example:22", HostName: "Elsewhere", Started: now.Add(-time.Hour),
+		Finished: now.Add(-time.Hour), Version: "2.12.0", FailedStep: "send", Message: "connection closed"}
+	for _, i := range []model.WPCLIInstall{done, gone} {
+		if err := db.SaveWPCLIInstall(ctx, i); err != nil {
+			t.Fatal(err)
+		}
+	}
+	activity := app.NewActivity(db, func() time.Time { return now })
+
+	all, err := activity.Journal(ctx, 7, "")
+	if err != nil || len(all.Entries) != 2 {
+		t.Fatalf("Journal() = %+v, %v", all, err)
+	}
+	first, second := all.Entries[0], all.Entries[1]
+	if first.Kind != "wpcli" || first.Path != "Clients/Shared hosting" || first.Outcome != "completed" ||
+		first.WPCLI == nil || first.WPCLI.HostID != host.ID.String() || first.WPCLI.Command != "~/bin/wp" {
+		t.Errorf("first = %+v, %+v", first, first.WPCLI)
+	}
+	if second.Path != "Elsewhere" || second.Outcome != "failed" || second.WPCLI.HostID != "" || second.WPCLI.FailedStep != "send" || second.WPCLI.Message != "connection closed" {
+		t.Errorf("second = %+v, %+v", second, second.WPCLI)
+	}
+	for id, want := range map[string]int{folder.ID.String(): 1, host.ID.String(): 1, other.ID.String(): 0} {
+		got, err := activity.Journal(ctx, 7, id)
+		if err != nil || len(got.Entries) != want {
+			t.Errorf("Journal(%s) = %d entries, %v; want %d", id, len(got.Entries), err, want)
+		}
+	}
+}

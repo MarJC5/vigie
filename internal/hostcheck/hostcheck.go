@@ -1,5 +1,6 @@
 // Package hostcheck tests a host before it is added: the connection, PHP on the command line and
-// a working WP-CLI. It only reads; nothing is written on the server.
+// a working WP-CLI, and when there is none, whether Vigie can install it (ADR-0039). It only
+// reads; nothing is written on the server.
 package hostcheck
 
 import (
@@ -10,7 +11,9 @@ import (
 	"strings"
 
 	"github.com/MarJC5/vigie/internal/sshx"
+	"github.com/MarJC5/vigie/internal/version"
 	"github.com/MarJC5/vigie/internal/wpcli"
+	"github.com/MarJC5/vigie/internal/wpcliinstall"
 )
 
 var (
@@ -30,6 +33,16 @@ type Report struct {
 	WPCLI        string   // the command that answered
 	WPCLIVersion string   // its version
 	Tried        []string // the commands tried, when none answered
+	// When none answered: PHP is older than WP-CLI needs, or ~/bin/wp is there but does not answer.
+	// Either way Vigie does not offer to install WP-CLI.
+	PHPTooOld bool
+	Existing  bool
+}
+
+// CanInstall tells whether Vigie offers to install WP-CLI: none answered, PHP is recent enough,
+// and ~/bin/wp is free.
+func (r Report) CanInstall() bool {
+	return r.WPCLI == "" && r.PHPVersion != "" && !r.PHPTooOld && !r.Existing
 }
 
 // Check runs the test; a connection error (sshx.ConnectionError) stops it at once.
@@ -68,6 +81,16 @@ func Check(ctx context.Context, runner sshx.Runner, target sshx.Target, configur
 		report.WPCLI, report.WPCLIVersion, report.Tried = candidate, info.WPCLIVersion, nil
 		return report, nil
 	}
+	report.PHPTooOld = version.Compare(report.PHPVersion, wpcliinstall.MinPHP) < 0
+	exists, err := sshx.Quote("sh", "-c", `test -e "$HOME/bin/wp"`)
+	if err != nil {
+		return report, err
+	}
+	res, err = runner.Run(ctx, target, exists)
+	if err != nil {
+		return report, err
+	}
+	report.Existing = res.ExitCode == 0
 	return report, ErrNoWPCLI
 }
 

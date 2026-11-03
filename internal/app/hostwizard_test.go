@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/MarJC5/vigie/internal/workspace"
 	"github.com/MarJC5/vigie/internal/wpcli"
 	"github.com/MarJC5/vigie/internal/wpcli/wpclitest"
+	"github.com/MarJC5/vigie/internal/wpcliinstall"
 )
 
 func benchKeys(t *testing.T) []sshx.HostKey {
@@ -138,9 +140,74 @@ func TestConnectionResultAndProblems(t *testing.T) {
 		remote, _ := wpcli.CLIInfo().Remote(c, "")
 		fake.Set(remote, sshx.Result{ExitCode: 127})
 	}
+	exists, _ := sshx.Quote("sh", "-c", `test -e "$HOME/bin/wp"`)
+	fake.Set(exists, sshx.Result{ExitCode: 1})
 	got = w.TestConnection(context.Background(), details)
 	if code(got.Problem) != "problem.noWpCli" || !strings.Contains(got.Problem.Detail, "wp-cli") {
 		t.Fatalf("TestConnection(no WP-CLI) = %+v", got)
+	}
+	// Vigie offers to install it (ADR-0039)...
+	if got.Install == nil || got.Install.Version != wpcliinstall.Version || got.Install.Path != "~/bin/wp" || got.Install.Size != wpcliinstall.Size {
+		t.Fatalf("TestConnection(no WP-CLI).Install = %+v, want the offer", got.Install)
+	}
+	// ...but not over a ~/bin/wp that is there, nor with a PHP too old for WP-CLI.
+	fake.Set(exists, sshx.Result{})
+	if got = w.TestConnection(context.Background(), details); code(got.Problem) != "problem.wpCliExists" || got.Install != nil {
+		t.Fatalf("TestConnection(~/bin/wp there) = %+v", got)
+	}
+	fake.Set(exists, sshx.Result{ExitCode: 1})
+	fake.Set(php, sshx.Result{Stdout: []byte("7.1.33")})
+	if got = w.TestConnection(context.Background(), details); code(got.Problem) != "problem.wpCliPhpTooOld" || got.Problem.Detail != "7.1.33" || got.Install != nil {
+		t.Fatalf("TestConnection(PHP 7.1) = %+v", got)
+	}
+}
+
+// The install of WP-CLI tells the window each step and the bytes sent, and gives the command
+// that answered; a stored host keeps it, a host being added does not exist yet.
+func TestInstallWPCLIFromTheWindow(t *testing.T) {
+	fake := sshxtest.NewFake()
+	phar := []byte("<?php the phar")
+	ws := workspace.New(repository(t), workspace.Deps{
+		Runner: fake, KeyScanner: keyScanner{benchKeys(t)}, Resolver: noAliases{}, KnownHosts: filepath.Join(t.TempDir(), "known_hosts"), Now: time.Now,
+		DownloadWPCLI: func(_ context.Context, progress func(wpcliinstall.Progress)) ([]byte, error) {
+			progress(wpcliinstall.Progress{Step: wpcliinstall.StepDownload, Total: 14})
+			progress(wpcliinstall.Progress{Step: wpcliinstall.StepDownload, Done: 14, Total: 14})
+			progress(wpcliinstall.Progress{Step: wpcliinstall.StepCheck})
+			return phar, nil
+		},
+	})
+	var events []app.WPCLIInstallProgress
+	w := app.NewHostWizard(ws, func(name string, data any) {
+		if name == app.WPCLIInstallEvent {
+			events = append(events, data.(app.WPCLIInstallProgress))
+		}
+	})
+	send, _ := wpcliinstall.SendCommand()
+	fake.Set(send, sshx.Result{})
+	info, _ := wpcli.CLIInfo().Remote("~/bin/wp", "")
+	fake.Set(info, wpclitest.Recorded(t, "plain", "cli-info"))
+
+	got := w.InstallWPCLI(context.Background(), details, "")
+	if got.Problem != nil || got.Command != "~/bin/wp" || got.Version != "2.12.0" {
+		t.Fatalf("InstallWPCLI() = %+v", got)
+	}
+	var steps []string
+	for _, e := range events {
+		if len(steps) == 0 || steps[len(steps)-1] != e.Step {
+			steps = append(steps, e.Step)
+		}
+	}
+	if !slices.Equal(steps, []string{"download", "check", "send", "test"}) {
+		t.Errorf("steps told %q", steps)
+	}
+
+	fake.Set(send, sshx.Result{ExitCode: 3})
+	got = w.InstallWPCLI(context.Background(), details, "")
+	if code(got.Problem) != "problem.wpCliExists" || got.FailedStep != "send" || got.Problem.Detail != "~/bin/wp" {
+		t.Fatalf("InstallWPCLI(~/bin/wp there) = %+v", got)
+	}
+	if got = w.InstallWPCLI(context.Background(), details, "not an id"); code(got.Problem) != "problem.notFound" {
+		t.Fatalf("InstallWPCLI(bad host) = %+v", got)
 	}
 }
 

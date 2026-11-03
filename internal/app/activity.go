@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/MarJC5/vigie/internal/model"
@@ -28,9 +29,9 @@ type NoticeView struct {
 }
 
 // ActivityEntry is a line of the journal: a run with what it changed and what Vigie notified, a
-// scan made before runs were recorded, an update or a rollback.
+// scan made before runs were recorded, an update or a rollback, an install of WP-CLI.
 type ActivityEntry struct {
-	Kind    string   `json:"kind"`    // "run", "scan", "update", "rollback"
+	Kind    string   `json:"kind"`    // "run", "scan", "update", "rollback", "wpcli"
 	At      string   `json:"at"`      // when it started, RFC 3339
 	Ended   string   `json:"ended"`   // "" while it runs
 	By      string   `json:"by"`      // a run's: "user", "schedule", "cli"
@@ -44,6 +45,19 @@ type ActivityEntry struct {
 	// run's, or a scan's without a run.
 	SiteChanges []SiteChangesView `json:"siteChanges"`
 	Notices     []NoticeView      `json:"notices"`
+	// WPCLI is an install of WP-CLI's (ADR-0039); its Path is its host's, or the name the host
+	// had when it is not stored.
+	WPCLI *WPCLIInstallView `json:"wpCli"`
+}
+
+// WPCLIInstallView is an install of WP-CLI on an account: its version, the host's command once
+// done, or the step it stopped at and what was said there.
+type WPCLIInstallView struct {
+	HostID     string `json:"hostId"` // empty when its host is not stored
+	Version    string `json:"version"`
+	Command    string `json:"command"`
+	FailedStep string `json:"failedStep"`
+	Message    string `json:"message"`
 }
 
 // Journal is the journal of the days asked, newest first.
@@ -60,6 +74,7 @@ type activityData interface {
 	ScanStatuses(ctx context.Context, since time.Time, sites []model.ID) ([]model.Scan, error)
 	JournalScans(ctx context.Context, since time.Time, sites []model.ID) ([]model.Scan, error)
 	OperationsSince(ctx context.Context, since time.Time) ([]model.Operation, error)
+	WPCLIInstalls(ctx context.Context, since time.Time) ([]model.WPCLIInstall, error)
 }
 
 // Activity serves the journal to the Activity page: it reads what is stored, and keeps nothing.
@@ -216,6 +231,11 @@ func (a *Activity) Journal(ctx context.Context, days int, nodeID string) (Journa
 			entries = append(entries, e)
 		}
 	}
+	installs, err := a.repo.WPCLIInstalls(ctx, since)
+	if err != nil {
+		return Journal{}, err
+	}
+	entries = append(entries, installEntries(tree, node, installs)...)
 	// Newest first; RFC 3339 in UTC sorts as time does.
 	slices.SortStableFunc(entries, func(x, y ActivityEntry) int {
 		switch {
@@ -256,4 +276,45 @@ func changesOf(tree *model.Tree, before model.Scan, had bool, s model.Scan, stat
 		}
 	}
 	return found
+}
+
+// installEntries are the installs of WP-CLI, each under the stored host of its account, those of
+// the node asked when it is not the root.
+func installEntries(tree *model.Tree, node model.Node, installs []model.WPCLIInstall) []ActivityEntry {
+	hosts := map[string]model.Host{}
+	tree.Walk(func(n model.Node, _ int) {
+		if n.Kind != model.KindHost {
+			return
+		}
+		if h, ok := tree.Host(n.ID); ok {
+			if _, taken := hosts[h.Account()]; !taken {
+				hosts[h.Account()] = h
+			}
+		}
+	})
+	under := ""
+	if node != model.Root {
+		under = tree.PathOf(node)
+	}
+	entries := []ActivityEntry{}
+	for _, i := range installs {
+		h, stored := hosts[i.Account]
+		path, hostID := i.HostName, ""
+		if stored {
+			path, hostID = tree.PathOf(model.Node{Kind: model.KindHost, ID: h.ID}), h.ID.String()
+		}
+		if under != "" && (!stored || (path != under && !strings.HasPrefix(path, under+"/"))) {
+			continue
+		}
+		outcome := string(model.OperationCompleted)
+		if !i.Completed {
+			outcome = string(model.OperationFailed)
+		}
+		entries = append(entries, ActivityEntry{
+			Kind: "wpcli", At: rfc3339(i.Started), Ended: rfc3339(i.Finished), Path: path, Outcome: outcome,
+			Changes: []Change{}, SiteChanges: []SiteChangesView{}, Notices: []NoticeView{},
+			WPCLI: &WPCLIInstallView{HostID: hostID, Version: i.Version, Command: i.Command, FailedStep: i.FailedStep, Message: i.Message},
+		})
+	}
+	return entries
 }
