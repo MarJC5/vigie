@@ -7,7 +7,7 @@ cask "vigie" do
   desc "Monitor and update WordPress sites over SSH and WP-CLI"
   homepage "https://github.com/MarJC5/vigie"
 
-  depends_on macos: ">= :monterey"
+  depends_on macos: :monterey
 
   app "Vigie.app"
   binary "#{appdir}/Vigie.app/Contents/MacOS/Vigie", target: "vigie"
