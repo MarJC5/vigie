@@ -172,7 +172,7 @@ func openWindow(opts cli.Options) error {
 	notifier := notifications.New()
 	// Vigie's own update (ADR-0038): its updater exists once the app does; never while scans or
 	// updates run.
-	kind := installKind(runtime.GOOS, buildinfo.Version(), os.Getenv("APPIMAGE"), exists)
+	kind := installKind(runtime.GOOS, buildinfo.Version(), os.Getenv("APPIMAGE"), runningBundle(), homebrewApps())
 	selfUpdate := app.NewSelfUpdate(ws, appUpdater{&wails}, kind, buildinfo.Version(),
 		func() bool { return len(scanner.State().Running) > 0 || updates.State().Active > 0 }, emit, time.Now)
 

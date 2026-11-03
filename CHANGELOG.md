@@ -12,6 +12,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The summary of "Update all" on a host or folder is its own: it no longer shows the sites of an
   earlier update of another host while the new one runs, nor is it replaced by another run that
   ends after it.
+- Settings, About says "installed with Homebrew" only for the app Homebrew installed, not for
+  another copy of Vigie on a Mac that also has the cask.
 
 ## [0.1.0] - 2026-11-03
 

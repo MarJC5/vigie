@@ -11,23 +11,25 @@ import (
 	"github.com/MarJC5/vigie/internal/app"
 )
 
-// Who updates this Vigie (ADR-0038).
+// Who updates this Vigie (ADR-0038). The cask's app is Homebrew's; another copy on the same Mac (a
+// DMG elsewhere, a build of a release) updates itself.
 func TestInstallKind(t *testing.T) {
-	none := func(string) bool { return false }
-	cask := func(p string) bool { return p == "/opt/homebrew/Caskroom/vigie" }
+	cask := []string{"/Applications/Vigie.app"}
 	cases := []struct {
-		name, goos, version, appImage string
-		exists                        func(string) bool
-		want                          app.InstallKind
+		name, goos, version, appImage, bundle string
+		homebrew                              []string
+		want                                  app.InstallKind
 	}{
-		{"a build of the sources", "darwin", "dev", "", none, app.InstallDev},
-		{"the app from the DMG", "darwin", "0.6.0", "", none, app.InstallApp},
-		{"the app from Homebrew", "darwin", "0.6.0", "", cask, app.InstallHomebrew},
-		{"a Linux package", "linux", "0.6.0", "", none, app.InstallPackage},
-		{"the AppImage", "linux", "0.6.0", "/home/m/Vigie.AppImage", none, app.InstallApp},
+		{"a build of the sources", "darwin", "dev", "", "/Users/m/vigie/bin/Vigie.app", cask, app.InstallDev},
+		{"the app from the DMG", "darwin", "0.6.0", "", "/Applications/Vigie.app", nil, app.InstallApp},
+		{"the app from Homebrew", "darwin", "0.6.0", "", "/Applications/Vigie.app", cask, app.InstallHomebrew},
+		{"another copy next to the cask", "darwin", "0.6.0", "", "/Users/m/vigie/bin/Vigie.app", cask, app.InstallApp},
+		{"not in a bundle", "darwin", "0.6.0", "", "", cask, app.InstallApp},
+		{"a Linux package", "linux", "0.6.0", "", "", nil, app.InstallPackage},
+		{"the AppImage", "linux", "0.6.0", "/home/m/Vigie.AppImage", "", nil, app.InstallApp},
 	}
 	for _, c := range cases {
-		if got := installKind(c.goos, c.version, c.appImage, c.exists); got != c.want {
+		if got := installKind(c.goos, c.version, c.appImage, c.bundle, c.homebrew); got != c.want {
 			t.Errorf("%s: %s, want %s", c.name, got, c.want)
 		}
 	}

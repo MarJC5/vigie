@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/base64"
 	"os"
+	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -15,12 +17,14 @@ import (
 )
 
 // installKind tells who updates this Vigie (ADR-0038): a build of the sources nobody, Homebrew its
-// cask, a Linux package its package manager, the app and the AppImage themselves.
-func installKind(goos, version, appImage string, exists func(string) bool) app.InstallKind {
+// cask, a Linux package its package manager, the app and the AppImage themselves. bundle is the app
+// running, homebrew the apps Homebrew installed: another copy of Vigie (a DMG, a build) on a Mac
+// that also has the cask is not Homebrew's.
+func installKind(goos, version, appImage, bundle string, homebrew []string) app.InstallKind {
 	switch {
 	case version == "" || version == "dev":
 		return app.InstallDev
-	case goos == "darwin" && (exists("/opt/homebrew/Caskroom/vigie") || exists("/usr/local/Caskroom/vigie")):
+	case goos == "darwin" && bundle != "" && slices.Contains(homebrew, bundle):
 		return app.InstallHomebrew
 	case goos == "linux" && appImage == "":
 		return app.InstallPackage
@@ -81,8 +85,34 @@ func progressOf(data any) (updater.Progress, bool) {
 	return updater.Progress{}, false
 }
 
-// exists tells whether a path exists.
-func exists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
+// runningBundle is the app bundle the running binary is in (…/Vigie.app), its links resolved; ""
+// outside a bundle.
+func runningBundle() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+	if exe, err = filepath.EvalSymlinks(exe); err != nil {
+		return ""
+	}
+	bundle := filepath.Dir(filepath.Dir(filepath.Dir(exe)))
+	if filepath.Ext(bundle) != ".app" {
+		return ""
+	}
+	return bundle
+}
+
+// homebrewApps are the apps the cask installed, as Homebrew keeps them: a link from its Caskroom
+// (<prefix>/Caskroom/vigie/<version>/Vigie.app) to the app in the Applications folder, resolved.
+func homebrewApps() []string {
+	var apps []string
+	for _, prefix := range []string{"/opt/homebrew", "/usr/local"} {
+		links, _ := filepath.Glob(filepath.Join(prefix, "Caskroom", "vigie", "*", "Vigie.app"))
+		for _, link := range links {
+			if app, err := filepath.EvalSymlinks(link); err == nil {
+				apps = append(apps, app)
+			}
+		}
+	}
+	return apps
 }
