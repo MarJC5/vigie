@@ -234,8 +234,10 @@ func TestCompactFromTheWindow(t *testing.T) {
 		t.Errorf("Compact() while running = %+v, want problem.running", got)
 	}
 	running = false
+	// Both sizes reach the window; that compacting gives the free space back is the store's test
+	// (a database with none, as here, may come out a page longer).
 	got := d.Compact(ctx)
-	if got.Problem != nil || got.Before == 0 || got.After == 0 || got.After > got.Before {
+	if got.Problem != nil || got.Before == 0 || got.After == 0 {
 		t.Errorf("Compact() = %+v, want the sizes before and after", got)
 	}
 }
