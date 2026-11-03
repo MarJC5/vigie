@@ -54,7 +54,7 @@ jobs:
       - name: Install GTK4 and WebKitGTK 6.0 (the window, built with cgo)
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev libwayland-dev build-essential pkg-config file
+          sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev libwayland-dev build-essential pkg-config file rpm
       - run: make frontend-install
       - name: Build the AppImage, deb, rpm and Arch packages
         run: make app VERSION="${VERSION#v}"
@@ -71,6 +71,14 @@ jobs:
           mv bin/Vigie.rpm "dist/Vigie-$v-${{ matrix.arch }}.rpm"
           mv bin/Vigie.pkg.tar.zst "dist/Vigie-$v-${{ matrix.arch }}.pkg.tar.zst"
           ls -l dist
+      - name: Check the architecture each package declares
+        run: |
+          v="${VERSION#v}"
+          deb="$(dpkg-deb -f "dist/Vigie-$v-${{ matrix.deb }}.deb" Architecture)"
+          rpm="$(rpm -qp --qf '%{ARCH}' "dist/Vigie-$v-${{ matrix.arch }}.rpm")"
+          arch="$(tar --zstd -xOf "dist/Vigie-$v-${{ matrix.arch }}.pkg.tar.zst" .PKGINFO | sed -n 's/^arch = //p')"
+          echo "deb: $deb, rpm: $rpm, Arch: $arch"
+          [ "$deb" = "${{ matrix.deb }}" ] && [ "$rpm" = "${{ matrix.arch }}" ] && [ "$arch" = "${{ matrix.arch }}" ]
       - uses: actions/upload-artifact@v7
         with:
           name: linux-${{ matrix.arch }}
