@@ -27,13 +27,19 @@ avec les mêmes limites par hébergement et votre choix pour les recherches ext�
 automatique ne met jamais rien à jour, et ne compare jamais à nouveau les fichiers (cela reste
 **Vérifier les fichiers**).
 
-- Le prochain relevé a lieu un intervalle après le dernier relevé complet de tous les sites, le
-  vôtre ou un automatique, à l'heure près : le pied de la liste des sites et le menu de l'œil
-  donnent son heure.
-- Un ordinateur resté en veille plusieurs intervalles fait un seul relevé à son réveil, pas un par
-  intervalle.
+- Les relevés ont lieu à heures fixes, tous les intervalles depuis 06:05. Toutes les heures : à
+  cinq. Toutes les 3 heures : 00:05, 03:05, 06:05 et ainsi de suite. Toutes les 6 heures : 00:05,
+  06:05, 12:05 et 18:05. Toutes les 12 heures : 06:05 et 18:05. Chaque jour : 06:05. Le pied de la
+  liste des sites et le menu de l'œil donnent le prochain.
+- Un relevé complet de tous les sites, le vôtre ou un automatique, terminé moins d'un
+  demi-intervalle avant une heure en tient lieu : relevez tout à 11:50 et, toutes les 6 heures, le
+  prochain relevé automatique est celui de 18:05.
+- Une heure manquée pendant que l'ordinateur dormait ou que Vigie était fermée donne un seul relevé
+  dès que Vigie tourne à nouveau, pas un par heure manquée. Seules comptent les heures depuis que
+  vous avez mis en marche les relevés automatiques : mis en marche à 10:00, toutes les 6 heures, le
+  premier a lieu à 12:05 (tout de suite si aucun site n'a jamais été relevé).
 - Un relevé prévu pendant qu'un autre a lieu attend sa fin. Un relevé automatique que vous arrêtez,
-  ou qui ne va pas au bout, est retenté un intervalle plus tard.
+  ou qui ne va pas au bout, est retenté à l'heure suivante.
 - Les relevés automatiques ont lieu tant que Vigie est ouverte : sa fenêtre ouverte, ou gardée
   ouverte dans la barre des menus.
 

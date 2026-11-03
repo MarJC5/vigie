@@ -3,6 +3,7 @@ package app_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/MarJC5/vigie/internal/app"
 )
@@ -90,6 +91,49 @@ func TestAChangeOfTheBackgroundSettingsIsTold(t *testing.T) {
 	}
 	if len(told) != 1 || told[0] != want {
 		t.Fatalf("told %+v, want only the stored change", told)
+	}
+}
+
+// The moment automatic scans are turned on is kept (ADR-0040): a change of interval keeps it, turning
+// them off and on again moves it.
+func TestWhenAutomaticScansWereTurnedOnIsKept(t *testing.T) {
+	ctx := context.Background()
+	db := repository(t)
+	now := time.Date(2026, 11, 3, 10, 0, 0, 0, time.UTC)
+	prefs := app.NewPreferences(db, nil)
+	prefs.Now = func() time.Time { return now }
+	if _, ok, err := app.AutoScanSince(prefs)(ctx); err != nil || ok {
+		t.Fatalf("AutoScanSince() before any choice = %v, %v; want none", ok, err)
+	}
+	set := func(hours int) {
+		t.Helper()
+		if err := prefs.SetBackground(ctx, app.BackgroundSettings{AutoScan: hours}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	since := func() time.Time {
+		t.Helper()
+		at, ok, err := app.AutoScanSince(app.NewPreferences(db, nil))(ctx)
+		if err != nil || !ok {
+			t.Fatalf("AutoScanSince() = %v, %v, %v", at, ok, err)
+		}
+		return at
+	}
+	set(6)
+	if got := since(); !got.Equal(now) {
+		t.Fatalf("since %v, want %v", got, now)
+	}
+	turnedOn := now
+	now = now.Add(time.Hour)
+	set(1)
+	if got := since(); !got.Equal(turnedOn) {
+		t.Fatalf("since %v after a change of interval, want %v kept", got, turnedOn)
+	}
+	set(0)
+	now = now.Add(time.Hour)
+	set(12)
+	if got := since(); !got.Equal(now) {
+		t.Fatalf("since %v after turning them on again, want %v", got, now)
 	}
 }
 

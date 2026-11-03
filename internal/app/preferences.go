@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"time"
 
 	"github.com/MarJC5/vigie/internal/buildinfo"
 	"github.com/MarJC5/vigie/internal/i18n"
@@ -22,8 +23,10 @@ const (
 	themeSetting      = "theme"
 	backgroundSetting = "background"
 	autoScanSetting   = "autoscan"
-	notifySetting     = "notify"
-	treeSetting       = "tree"
+	// autoScanSinceSetting is when automatic scans were last turned on (ADR-0040), in RFC 3339.
+	autoScanSinceSetting = "autoscansince"
+	notifySetting        = "notify"
+	treeSetting          = "tree"
 )
 
 // AutoScanHours are the intervals offered for automatic scans, in hours; 0 is off.
@@ -40,13 +43,15 @@ const (
 type Preferences struct {
 	store  settingsStore
 	system func() string
+	// Now is the clock that dates the moment automatic scans are turned on.
+	Now func() time.Time
 	// OnBackground, when set, hears each change of the background settings once stored.
 	OnBackground func(BackgroundSettings)
 }
 
 // NewPreferences returns the service; system gives the system language (i18n.SystemLanguage).
 func NewPreferences(store settingsStore, system func() string) *Preferences {
-	return &Preferences{store: store, system: system}
+	return &Preferences{store: store, system: system, Now: time.Now}
 }
 
 // Language returns the interface language: the stored choice, else the system language.
@@ -121,10 +126,20 @@ func (p *Preferences) Background(ctx context.Context) (BackgroundSettings, error
 	return b, nil
 }
 
-// SetBackground stores the background settings; an interval not offered is refused.
+// SetBackground stores the background settings; an interval not offered is refused. Turning
+// automatic scans on keeps the moment (AutoScanSince); a change of interval keeps it as it was.
 func (p *Preferences) SetBackground(ctx context.Context, b BackgroundSettings) error {
 	if !slices.Contains(AutoScanHours, b.AutoScan) {
 		return fmt.Errorf("automatic scans every %d hours: not an interval offered", b.AutoScan)
+	}
+	before, err := p.Background(ctx)
+	if err != nil {
+		return err
+	}
+	if before.AutoScan == 0 && b.AutoScan > 0 {
+		if err := p.store.SetSetting(ctx, autoScanSinceSetting, p.Now().UTC().Format(time.RFC3339)); err != nil {
+			return err
+		}
 	}
 	onOff := map[bool]string{true: "on", false: "off"}
 	for key, value := range map[string]string{
@@ -140,6 +155,25 @@ func (p *Preferences) SetBackground(ctx context.Context, b BackgroundSettings) e
 		p.OnBackground(b)
 	}
 	return nil
+}
+
+// AutoScanSince returns, for the schedule, when automatic scans were last turned on, if known: it
+// does not catch up the times before it (ADR-0040). Unknown when they were turned on before Vigie
+// kept it. A function rather than a method, so that it stays out of the window's bindings.
+func AutoScanSince(p *Preferences) func(ctx context.Context) (time.Time, bool, error) {
+	return p.autoScanSince
+}
+
+func (p *Preferences) autoScanSince(ctx context.Context) (time.Time, bool, error) {
+	value, ok, err := p.store.Setting(ctx, autoScanSinceSetting)
+	if err != nil || !ok {
+		return time.Time{}, false, err
+	}
+	at, err := time.Parse(time.RFC3339, value)
+	if err != nil {
+		return time.Time{}, false, nil
+	}
+	return at, true, nil
 }
 
 // TreeView is how the user left the site list, kept from one launch to the next: the folders and

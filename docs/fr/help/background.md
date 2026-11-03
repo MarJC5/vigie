@@ -16,7 +16,9 @@ fenêtre fermée.
 ## Relevés automatiques
 
 Toutes les 1, 3, 6, 12 ou 24 heures, Vigie relève tous les sites, comme **Relever tous les sites**.
-Elle ne met jamais rien à jour. Le pied de la liste des sites donne l'heure du prochain. Un
+Elle ne met jamais rien à jour. Les relevés ont lieu à heures fixes, tous les intervalles depuis
+06:05 (chaque jour à 06:05, toutes les 6 heures à 00:05, 06:05, 12:05 et 18:05). Le pied de la liste
+des sites donne le prochain. Un relevé de tous les sites fait peu avant une heure en tient lieu. Un
 ordinateur sorti de veille fait un seul relevé à son réveil.
 
 ## Notifications

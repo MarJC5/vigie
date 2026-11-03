@@ -7,6 +7,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Automatic scans run at fixed times of the day, every interval from 06:05 (every 6 hours: 00:05,
+  06:05, 12:05 and 18:05), instead of an interval after the latest complete scan. A scan of every
+  site made shortly before a time stands for it, and turning automatic scans on no longer catches
+  up a time that came before.
+
 ### Fixed
 
 - The summary of "Update all" on a host or folder is its own: it no longer shows the sites of an

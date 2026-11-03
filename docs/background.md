@@ -24,11 +24,18 @@ Every 1, 3, 6, 12 or 24 hours, Vigie scans every site, as **Scan all sites** doe
 limits per host and your choice for outside lookups. An automatic scan never updates anything, and
 never compares the files again (that stays **Check files now**).
 
-- The next scan is due an interval after the latest complete scan of every site, yours or
-  automatic, on the clock: the foot of the site list and the eye's menu show its time.
-- A computer that slept across several intervals runs one scan when it wakes, not one per interval.
+- Scans run at fixed times of the day, every interval from 06:05: every hour at five past; every 3
+  hours at 00:05, 03:05, 06:05 and so on; every 6 hours at 00:05, 06:05, 12:05 and 18:05; every 12
+  hours at 06:05 and 18:05; every day at 06:05. The foot of the site list and the eye's menu show
+  the next one.
+- A complete scan of every site, yours or automatic, that ended less than half an interval before a
+  time stands for it: scan everything at 11:50 and, every 6 hours, the next automatic scan is the
+  one of 18:05.
+- A time missed while the computer slept or Vigie was closed gives one scan as soon as Vigie runs
+  again, not one per time missed. Only the times since you turned automatic scans on count: turned
+  on at 10:00, every 6 hours, the first comes at 12:05 (at once if no site was ever scanned).
 - A scan due while another runs waits for it to end. An automatic scan you stop, or one that does
-  not complete, is tried again an interval later.
+  not complete, is tried again at the next time.
 - Automatic scans run while Vigie runs: its window open, or kept running in the menu bar.
 
 ## Notifications

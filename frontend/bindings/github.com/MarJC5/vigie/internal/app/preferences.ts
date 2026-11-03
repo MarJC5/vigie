@@ -29,7 +29,8 @@ export function Language(): $CancellablePromise<string> {
 }
 
 /**
- * SetBackground stores the background settings; an interval not offered is refused.
+ * SetBackground stores the background settings; an interval not offered is refused. Turning
+ * automatic scans on keeps the moment (AutoScanSince); a change of interval keeps it as it was.
  */
 export function SetBackground(b: $models.BackgroundSettings): $CancellablePromise<void> {
     return $Call.ByID(3824605099, b);

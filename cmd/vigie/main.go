@@ -152,8 +152,9 @@ func openWindow(opts cli.Options) error {
 			b, err := preferences.Background(ctx)
 			return time.Duration(b.AutoScan) * time.Hour, err
 		},
-		Last: ws.EverythingScanned,
-		Busy: func() bool { return len(scanner.State().Running) > 0 },
+		Last:  ws.EverythingScanned,
+		Since: app.AutoScanSince(preferences),
+		Busy:  func() bool { return len(scanner.State().Running) > 0 },
 		Start: func() {
 			if p := scanner.ScanScheduled(); p != nil {
 				wails.Logger.Error("automatic scan", "problem", p.Code, "detail", p.Detail)
