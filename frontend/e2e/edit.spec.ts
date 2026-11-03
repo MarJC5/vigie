@@ -191,6 +191,8 @@ test("how long backups stay on the servers is kept in the settings", async () =>
   const keep = page.getByRole("combobox", { name: "Backups before updates" });
   await expect(keep).toHaveValue("30");
   await keep.selectOption({ label: "90 days" });
+  // The menu shows 90 once the setting is stored: reloading before would read the old one.
+  await expect(keep).toHaveValue("90");
   await page.reload();
   await page.getByRole("navigation", { name: "Navigation" }).getByRole("link", { name: "Settings" }).click();
   await page.getByRole("tab", { name: "Data" }).click();
