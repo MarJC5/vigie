@@ -14,7 +14,7 @@ step() { printf '\n== %s\n' "$*"; }
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "VERSION is x.y.z, without v: $VERSION"
 [[ "$(uname -s)" == Darwin ]] || fail "the macOS app is built on a Mac"
 [[ -r "$KEY" ]] || fail "cannot read the key $KEY"
-for tool in gh git ditto lipo plutil shasum; do
+for tool in gh git ditto lipo plutil shasum unzip; do
 	command -v "$tool" >/dev/null || fail "$tool is needed"
 done
 
@@ -53,7 +53,14 @@ archs="$(lipo -archs "$app/Contents/MacOS/Vigie")"
 codesign --verify --deep --strict "$app"
 # The universal binary, now in the app: go build refuses to overwrite it at the next make app.
 rm -f bin/Vigie
-ditto -c -k --keepParent "$app" "$out/Vigie-$VERSION-macos.zip"
+# Without the files' extended attributes: ditto would store them as ._ files, which the updater
+# extracts into the bundle as plain files, and its signature no longer holds.
+ditto -c -k --norsrc --noextattr --noacl --keepParent "$app" "$out/Vigie-$VERSION-macos.zip"
+# Extracted as the updater does (a plain unzip), the app must still pass its signature check.
+check="$(mktemp -d)"
+unzip -q "$out/Vigie-$VERSION-macos.zip" -d "$check"
+codesign --verify --deep --strict "$check/Vigie.app" || fail "the zipped app fails its signature once extracted"
+rm -rf "$check"
 wails3 task darwin:create:dmg
 mv bin/Vigie.dmg "$out/Vigie-$VERSION.dmg"
 

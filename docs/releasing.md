@@ -63,7 +63,7 @@ lower version, then serve a higher one.
 ```sh
 make app VERSION=0.0.1          # copy bin/Vigie.app to /Applications
 make app VERSION=0.0.2
-mkdir -p dist/try && ditto -c -k --keepParent bin/Vigie.app dist/try/Vigie-0.0.2-macos.zip
+mkdir -p dist/try && ditto -c -k --norsrc --noextattr --noacl --keepParent bin/Vigie.app dist/try/Vigie-0.0.2-macos.zip
 go run ./cmd/vigie-release sign -key ~/somewhere-private/vigie-release.key -version 0.0.2 \
   -base http://127.0.0.1:8000 dist/try/Vigie-0.0.2-macos.zip
 python3 -m http.server 8000 --bind 127.0.0.1 --directory dist/try
