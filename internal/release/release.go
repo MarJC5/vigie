@@ -14,6 +14,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -174,5 +175,21 @@ func Notes(changelog, version string) (string, error) {
 	if notes == "" {
 		return "", fmt.Errorf("the changelog has no notes under ## [%s]", version)
 	}
-	return notes, nil
+	return absoluteLinks(notes), nil
+}
+
+// markdownLink is a Markdown link, its target in the group.
+var markdownLink = regexp.MustCompile(`\]\(([^)\s]+)\)`)
+
+// absoluteLinks points the links of the changelog relative to the repository (docs/updates.md) at
+// its files on main: the release page and the window resolve them from elsewhere. Addresses and
+// anchors stay as they are.
+func absoluteLinks(notes string) string {
+	return markdownLink.ReplaceAllStringFunc(notes, func(link string) string {
+		target := markdownLink.FindStringSubmatch(link)[1]
+		if strings.Contains(target, ":") || strings.HasPrefix(target, "#") || strings.HasPrefix(target, "/") {
+			return link
+		}
+		return "](" + Repository + "/blob/main/" + strings.TrimPrefix(target, "./") + ")"
+	})
 }

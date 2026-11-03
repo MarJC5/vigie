@@ -134,3 +134,19 @@ func TestNotesFromTheChangelog(t *testing.T) {
 		}
 	}
 }
+
+// The links of the notes relative to the repository point at its files on main, as the release
+// page and the window read them from elsewhere; addresses, mail and anchors stay as they are.
+func TestNotesLinksAreAbsolute(t *testing.T) {
+	changelog := "## [0.2.0] - 2026-12-01\n\n- Updates ([docs/updates.md](docs/updates.md)), see [the guide](./CONTRIBUTING.md#tests).\n" +
+		"- [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), [below](#added), <dev@misits.ch>, [mail](mailto:dev@misits.ch).\n"
+	got, err := release.Notes(changelog, "0.2.0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "- Updates ([docs/updates.md](https://github.com/MarJC5/vigie/blob/main/docs/updates.md)), see [the guide](https://github.com/MarJC5/vigie/blob/main/CONTRIBUTING.md#tests).\n" +
+		"- [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), [below](#added), <dev@misits.ch>, [mail](mailto:dev@misits.ch)."
+	if got != want {
+		t.Errorf("Notes() =\n%s\nwant\n%s", got, want)
+	}
+}
