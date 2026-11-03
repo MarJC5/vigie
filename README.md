@@ -22,8 +22,8 @@
   <img src="docs/images/window-light.png" alt="Vigie's window: the sites of a hosting account, the status and worst finding of each, the updates waiting">
 </picture>
 
-> **Status: preparing 0.1.0, the first release.** Vigie does everything listed below; its
-> interface and its command line may still change before 1.0.
+> **Status: 0.1, the first release.** Vigie does everything listed below; its interface and its
+> command line may still change before 1.0.
 
 ## Contents
 
@@ -70,8 +70,6 @@ to protect. Vigie takes another route:
 - English and French, dark and light, following the system.
 
 ## Install
-
-No release is published yet. Once there is one:
 
 | System | How |
 | --- | --- |
