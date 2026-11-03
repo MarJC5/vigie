@@ -1,0 +1,27 @@
+name: Idea
+description: Something Vigie could do, or do better.
+labels: [idea]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What you need
+      description: The situation and the problem, before the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What Vigie could do
+  - type: textarea
+    id: today
+    attributes:
+      label: How you do it today
+      description: Another tool, a script, by hand.
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Vigie's rules
+      description: What every change keeps ([CONTRIBUTING.md](https://github.com/MarJC5/vigie/blob/main/CONTRIBUTING.md#what-every-change-keeps)).
+      options:
+        - label: It needs nothing installed on the sites, and writes on a server only after asking.

@@ -1,0 +1,60 @@
+name: Bug report
+description: Something in Vigie does not work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Leave out passwords, keys, host names and site addresses you do not want public:
+        a made-up example is enough. A security problem goes to the [security policy](https://github.com/MarJC5/vigie/security/policy), not here.
+  - type: input
+    id: version
+    attributes:
+      label: Vigie version
+      description: Settings, About, or `vigie version`.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Installed with
+      options:
+        - The DMG (macOS)
+        - Homebrew (macOS)
+        - The AppImage (Linux)
+        - A deb, rpm or Arch package (Linux)
+        - Built from the sources
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: System
+      placeholder: "macOS 27.0, Apple silicon / Ubuntu 24.04, x86_64"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to make it happen again
+      placeholder: |
+        1. Select the host …
+        2. Click …
+  - type: textarea
+    id: server
+    attributes:
+      label: The server, if it is about one
+      description: The hosting provider, and the versions of PHP and WP-CLI Vigie shows for it.
+  - type: textarea
+    id: output
+    attributes:
+      label: Messages
+      description: What Vigie said, or the output of the `vigie` command.
+      render: shell
