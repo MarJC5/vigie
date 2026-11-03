@@ -164,7 +164,7 @@ export interface AppShellProps {
 }
 
 const idle: ScansState = { running: [], completed: 0 };
-const noUpdates: UpdatesState = { running: [], active: 0, bulk: [], completed: 0, sites: [] };
+const noUpdates: UpdatesState = { running: [], active: 0, bulks: [], completed: 0, sites: [] };
 
 /** The update of a site open in the window. */
 interface Flow {
@@ -179,6 +179,12 @@ interface Flow {
 type DialogKind = "move" | "delete" | "host" | "find" | "renameTag";
 
 /** The main window: navigation rail, site manager pane and the detail of the selected item. */
+/** The summary of the last update of several sites that covered these items (their ids, comma
+ joined, as the update was asked for): never another run's (a host updated after another one). */
+function bulkOf(updates: UpdatesState, key: string): SiteResultView[] | undefined {
+  return (updates.bulks ?? []).find((b) => (b.nodeIds ?? []).join(",") === key)?.sites ?? undefined;
+}
+
 export function AppShell({
   nodes,
   onAddHost,
@@ -704,7 +710,7 @@ export function AppShell({
               })}
               {...(updatesApi && {
                 onUpdateAll: () => updateMany(chosen),
-                bulk: bulkFor === chosenKey ? (updates.bulk ?? []) : undefined,
+                bulk: bulkFor === chosenKey ? bulkOf(updates, chosenKey) : undefined,
                 onDismissBulk: () => setBulkFor(undefined),
               })}
             />
@@ -769,7 +775,7 @@ export function AppShell({
                     void updatesApi.Rollback(site.id, operationID).then((p) => p && setProblem(p));
                   },
                   onUpdateAll: () => updateAll(selected),
-                  bulk: bulkFor === selected.id ? (updates.bulk ?? []) : undefined,
+                  bulk: bulkFor === selected.id ? bulkOf(updates, selected.id) : undefined,
                   onDismissBulk: () => setBulkFor(undefined),
                 })}
               />

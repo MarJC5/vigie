@@ -83,7 +83,7 @@ export function Update(siteID: string, sel: $models.SelectionView): $Cancellable
 
 /**
  * UpdateAll starts updating every site previewed under a host or folder with all its items, and
- * returns at once; the summary shows in the state's Bulk when it ends.
+ * returns at once; the summary shows in the state's Bulks when it ends.
  */
 export function UpdateAll(nodeID: string): $CancellablePromise<$models.Problem | null> {
     return $Call.ByID(684240315, nodeID);

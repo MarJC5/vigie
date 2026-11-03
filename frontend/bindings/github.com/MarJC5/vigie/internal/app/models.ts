@@ -186,6 +186,15 @@ export interface BackupsView {
 }
 
 /**
+ * BulkView is how an update of several sites ended: the items it covered, as the window asked for
+ * them (a host or folder, or the items of a selection), and the result of each site.
+ */
+export interface BulkView {
+    "nodeIds": string[] | null;
+    "sites": SiteResultView[] | null;
+}
+
+/**
  * Change is what a scan changed for a site: turned urgent, its host turned unreachable (as
  * notifications tell them, Alerts), or back.
  */
@@ -1534,8 +1543,9 @@ export interface UpdateView {
 }
 
 /**
- * UpdatesState is what runs now and how the last update of several sites ended; Completed counts
- * the operations ended since Vigie started, so the window reloads what changed when it grows.
+ * UpdatesState is what runs now and how the last updates of several sites ended, each with what it
+ * covered; Completed counts the operations ended since Vigie started, so the window reloads what
+ * changed when it grows.
  */
 export interface UpdatesState {
     "running": OperationView[] | null;
@@ -1545,7 +1555,12 @@ export interface UpdatesState {
      * goes on.
      */
     "active": number;
-    "bulk": SiteResultView[] | null;
+
+    /**
+     * Bulks are the summaries of the last updates of several sites, oldest first: the window shows
+     * the one of the items on screen, never another's.
+     */
+    "bulks": BulkView[] | null;
     "completed": number;
 
     /**

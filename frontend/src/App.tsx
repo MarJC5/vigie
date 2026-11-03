@@ -148,7 +148,7 @@ export function App() {
   // A host just added: selected when the shell opens again.
   const [added, setAdded] = useState<string>();
   const [scans, setScans] = useState<ScansState>({ running: [], completed: 0 });
-  const [updates, setUpdates] = useState<UpdatesState>({ running: [], active: 0, bulk: [], completed: 0, sites: [] });
+  const [updates, setUpdates] = useState<UpdatesState>({ running: [], active: 0, bulks: [], completed: 0, sites: [] });
   const [lookups, setLookups] = useState<LookupsView>();
   const [waiting, setWaiting] = useState<Waiting>();
   const [section, setSection] = useState<Section>("sites");

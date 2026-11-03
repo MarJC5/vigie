@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -79,6 +80,20 @@ type updateEvents struct {
 	mu     sync.Mutex
 	states []app.UpdatesState
 	sent   chan struct{}
+}
+
+// count is how many states were sent so far.
+func (e *updateEvents) count() int {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return len(e.states)
+}
+
+// at is the state sent in the i-th place, from 0.
+func (e *updateEvents) at(i int) app.UpdatesState {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.states[i]
 }
 
 func (e *updateEvents) emit(name string, data any) {
@@ -186,7 +201,7 @@ func TestUpdateASite(t *testing.T) {
 	}
 	close(gate)
 	state := ev.done(t, 1)
-	if state.Completed != 1 || len(state.Bulk) != 0 {
+	if state.Completed != 1 || len(state.Bulks) != 0 {
 		t.Errorf("state = %+v", state)
 	}
 	history, err := u.History(context.Background(), ids["a1"])
@@ -236,13 +251,16 @@ func TestUpdateAHostAndRollBack(t *testing.T) {
 	if end := <-ended; !end.Several || end.Name != "A" || end.Updated != 0 || end.Failed != 1 || end.RunID == model.NoID {
 		t.Fatalf("end = %+v", end)
 	}
+	if len(state.Bulks) != 1 || !slices.Equal(state.Bulks[0].NodeIDs, []string{ids["host"]}) {
+		t.Fatalf("bulks = %+v, want the host's", state.Bulks)
+	}
 	outcomes := map[string]string{}
-	for _, r := range state.Bulk {
+	for _, r := range state.Bulks[0].Sites {
 		outcomes[r.Path] = r.Outcome
 	}
 	// The host stops at a1: the sites after it, broken included, are not started.
 	if outcomes["A/a1"] != "failed" || outcomes["A/a2"] != "not-started" || outcomes["A/broken"] != "not-started" {
-		t.Fatalf("bulk = %+v", state.Bulk)
+		t.Fatalf("bulk = %+v", state.Bulks[0].Sites)
 	}
 	history, err := u.History(context.Background(), ids["a1"])
 	if err != nil || len(history) != 1 || history[0].Rollback == nil || history[0].Rollback.Slug != "akismet" {
@@ -292,4 +310,46 @@ func TestUpdateOfAPreviewInError(t *testing.T) {
 	if p := u.Update(ids["broken"], app.SelectionView{}); code(p) != "problem.cannotLoad" {
 		t.Errorf("Update() of a preview in error = %+v", p)
 	}
+}
+
+// Each update of several sites keeps its summary with the items it covered: updating a host shows
+// no summary of another run while it goes, and updating the same items again drops their old one
+// as it starts.
+func TestEachBulkSummaryKeepsWhatItCovered(t *testing.T) {
+	u, ev, ids := updatesService(t, nil, nil)
+	if _, err := u.Preview(context.Background(), ids["host"]); err != nil {
+		t.Fatal(err)
+	}
+	covers := func(state app.UpdatesState, nodes ...string) bool {
+		return slices.ContainsFunc(state.Bulks, func(b app.BulkView) bool { return slices.Equal(b.NodeIDs, nodes) })
+	}
+	if p := u.UpdateMany([]string{ids["a2"]}); p != nil {
+		t.Fatal(p)
+	}
+	state := ev.done(t, 1)
+	if len(state.Bulks) != 1 || !covers(state, ids["a2"]) || len(state.Bulks[0].Sites) != 1 {
+		t.Fatalf("after a2: %+v", state.Bulks)
+	}
+
+	// The state the start sends, before the run goes: nothing of the run can be in it yet.
+	sent := ev.count()
+	if p := u.UpdateAll(ids["host"]); p != nil {
+		t.Fatal(p)
+	}
+	if started := ev.at(sent); covers(started, ids["host"]) || !covers(started, ids["a2"]) {
+		t.Fatalf("while the host updates: %+v, want a2's summary alone", started.Bulks)
+	}
+	state = ev.done(t, state.Completed+1)
+	if len(state.Bulks) != 2 || !covers(state, ids["a2"]) || !covers(state, ids["host"]) {
+		t.Fatalf("after the host: %+v", state.Bulks)
+	}
+
+	sent = ev.count()
+	if p := u.UpdateMany([]string{ids["a2"]}); p != nil {
+		t.Fatal(p)
+	}
+	if started := ev.at(sent); covers(started, ids["a2"]) || !covers(started, ids["host"]) {
+		t.Fatalf("while a2 updates again: %+v, want the host's summary alone", started.Bulks)
+	}
+	ev.done(t, state.Completed+1)
 }

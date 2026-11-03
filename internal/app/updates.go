@@ -94,15 +94,28 @@ type SiteResultView struct {
 	OperationID string `json:"operationId"`
 }
 
-// UpdatesState is what runs now and how the last update of several sites ended; Completed counts
-// the operations ended since Vigie started, so the window reloads what changed when it grows.
+// BulkView is how an update of several sites ended: the items it covered, as the window asked for
+// them (a host or folder, or the items of a selection), and the result of each site.
+type BulkView struct {
+	NodeIDs []string         `json:"nodeIds"`
+	Sites   []SiteResultView `json:"sites"`
+}
+
+// keptBulks is how many summaries of updates of several sites the state keeps, the newest.
+const keptBulks = 8
+
+// UpdatesState is what runs now and how the last updates of several sites ended, each with what it
+// covered; Completed counts the operations ended since Vigie started, so the window reloads what
+// changed when it grows.
 type UpdatesState struct {
 	Running []OperationView `json:"running"`
 	// Active counts the runs not over yet: between two sites of a host, nothing runs but the run
 	// goes on.
-	Active    int              `json:"active"`
-	Bulk      []SiteResultView `json:"bulk"`
-	Completed int              `json:"completed"`
+	Active int `json:"active"`
+	// Bulks are the summaries of the last updates of several sites, oldest first: the window shows
+	// the one of the items on screen, never another's.
+	Bulks     []BulkView `json:"bulks"`
+	Completed int        `json:"completed"`
 	// Sites lists the sites of the runs not over yet, waiting or updating: none can be scanned or
 	// updated again until it leaves the list.
 	Sites []string `json:"sites"`
@@ -120,7 +133,7 @@ type Updates struct {
 	previews  map[model.ID]workspace.SitePreview // the last preview read of each site
 	running   map[model.ID]*OperationView        // by operation
 	order     []model.ID
-	bulk      []SiteResultView
+	bulks     []BulkView
 	completed int
 	cancels   map[int]context.CancelFunc
 	next      int
@@ -234,7 +247,7 @@ func (u *Updates) Update(siteID string, sel SelectionView) *Problem {
 }
 
 // UpdateAll starts updating every site previewed under a host or folder with all its items, and
-// returns at once; the summary shows in the state's Bulk when it ends.
+// returns at once; the summary shows in the state's Bulks when it ends.
 func (u *Updates) UpdateAll(nodeID string) *Problem {
 	return u.UpdateMany([]string{nodeID})
 }
@@ -298,6 +311,10 @@ func (u *Updates) start(planned []workspace.Planned, end RunEnd) *Problem {
 	key := u.next
 	u.next++
 	u.cancels[key] = cancel
+	// The summary of an earlier update of the same items goes: this run's replaces it when it ends.
+	if bulk {
+		u.bulks = slices.DeleteFunc(u.bulks, func(b BulkView) bool { return slices.Equal(b.NodeIDs, end.NodeIDs) })
+	}
 	u.mu.Unlock()
 	u.send()
 	// A site leaves the busy ones as soon as it ends, the others when the run does.
@@ -325,9 +342,14 @@ func (u *Updates) start(planned []workspace.Planned, end RunEnd) *Problem {
 		}
 		delete(u.cancels, key)
 		if bulk {
-			u.bulk = make([]SiteResultView, len(results))
+			sites := make([]SiteResultView, len(results))
 			for i, r := range results {
-				u.bulk[i] = resultView(r)
+				sites[i] = resultView(r)
+			}
+			u.bulks = slices.DeleteFunc(u.bulks, func(b BulkView) bool { return slices.Equal(b.NodeIDs, end.NodeIDs) })
+			u.bulks = append(u.bulks, BulkView{NodeIDs: slices.Clone(end.NodeIDs), Sites: sites})
+			if len(u.bulks) > keptBulks {
+				u.bulks = slices.Clone(u.bulks[len(u.bulks)-keptBulks:])
 			}
 		}
 		u.mu.Unlock()
@@ -468,7 +490,7 @@ func (u *Updates) CancelAll() {
 func (u *Updates) State() UpdatesState {
 	u.mu.Lock()
 	defer u.mu.Unlock()
-	state := UpdatesState{Running: []OperationView{}, Active: len(u.cancels), Bulk: append([]SiteResultView{}, u.bulk...),
+	state := UpdatesState{Running: []OperationView{}, Active: len(u.cancels), Bulks: append([]BulkView{}, u.bulks...),
 		Completed: u.completed, Sites: []string{}}
 	for id := range u.busy {
 		state.Sites = append(state.Sites, id.String())

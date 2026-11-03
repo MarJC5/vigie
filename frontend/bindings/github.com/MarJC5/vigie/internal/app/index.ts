@@ -41,6 +41,7 @@ export type {
     BackgroundSettings,
     BackupView,
     BackupsView,
+    BulkView,
     Change,
     ChangeView,
     ChecksView,

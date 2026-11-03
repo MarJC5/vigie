@@ -141,7 +141,7 @@ export const SiteUpdating: Story = {
     data: { ...boulangerie, history: async () => [running, completed] },
     initialSelectedId: "boulangerie",
     onScan: fn(),
-    updates: { running: [{ ...running, siteId: "boulangerie" }], active: 1, bulk: [], completed: 0, sites: ["boulangerie"] },
+    updates: { running: [{ ...running, siteId: "boulangerie" }], active: 1, bulks: [], completed: 0, sites: ["boulangerie"] },
     updatesApi: updatesApi(),
   },
   play: async ({ canvas, args }) => {
@@ -175,6 +175,34 @@ export const UpdateAllOfAHost: Story = {
     await expect(args.updatesApi!.Preview).toHaveBeenCalledWith("shared");
     await userEvent.click((await canvas.findAllByRole("button", { name: "Update 1 site" }))[0]!);
     await waitFor(() => expect(args.updatesApi!.UpdateAll).toHaveBeenCalledWith("shared"));
+  },
+};
+
+// A host updated after another one shows its own summary, never the other host's (the last run
+// of each is kept with what it covered).
+export const UpdateAllShowsItsOwnSummary: Story = {
+  args: {
+    data,
+    initialSelectedId: "shared",
+    updatesApi: updatesApi(),
+    updates: {
+      running: [], active: 0, completed: 2, sites: [],
+      bulks: [
+        { nodeIds: ["shared"], sites: [{ siteId: "boulangerie", path: "Clients/Shared hosting/boulangerie-exemple.ch", outcome: "updated", detail: "", operationId: "op-1" }] },
+        { nodeIds: ["vps"], sites: [{ siteId: "vps-site", path: "Personal/Managed VPS/vps-only.example.test", outcome: "updated", detail: "", operationId: "op-2" }] },
+      ],
+    },
+  },
+  play: async ({ canvas, args }) => {
+    // Before any update from this window, the host's page.
+    await expect(canvas.queryByRole("button", { name: "Back to the sites" })).toBeNull();
+    await userEvent.click((await canvas.findAllByRole("button", { name: "Update all" }))[0]!);
+    await userEvent.click((await canvas.findAllByRole("button", { name: "Update 1 site" }))[0]!);
+    await waitFor(() => expect(args.updatesApi!.UpdateAll).toHaveBeenCalledWith("shared"));
+    // Its summary: its own site, not the other host's.
+    await expect((await canvas.findAllByRole("button", { name: "Back to the sites" }))[0]).toBeInTheDocument();
+    await expect(canvas.getAllByText("boulangerie-exemple.ch").length).toBeGreaterThan(0);
+    await expect(canvas.queryByText("vps-only.example.test")).toBeNull();
   },
 };
 

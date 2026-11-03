@@ -7,6 +7,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- The summary of "Update all" on a host or folder is its own: it no longer shows the sites of an
+  earlier update of another host while the new one runs, nor is it replaced by another run that
+  ends after it.
+
 ## [0.1.0] - 2026-11-03
 
 The first release.

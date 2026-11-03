@@ -8,7 +8,7 @@ import { completed, failed, preview, rolledBack, running } from "../../fixtures/
 import { namesOf } from "../../lib/updates";
 import { UpdateFlow, type UpdatesApi } from "./UpdateFlow";
 
-const idle: UpdatesState = { running: [], active: 0, bulk: [], completed: 0, sites: [] };
+const idle: UpdatesState = { running: [], active: 0, bulks: [], completed: 0, sites: [] };
 const site = { id: "outdated", name: "boulangerie-exemple.ch" };
 const keys = new Set(["plugin:akismet", "plugin:woocommerce", "languages"]);
 
