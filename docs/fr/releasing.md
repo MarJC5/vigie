@@ -77,6 +77,29 @@ avec la clé de l'app quand même. L'entrée lue depuis `/dev/null` garde l'app 
 avec la variable, au lieu de passer la main au Finder. Dans Réglages, accepter les recherches
 extérieures si elles sont demandées, puis À propos, « Rechercher une mise à jour ».
 
+## Le WP-CLI qu'installe Vigie
+
+Vigie installe une version de WP-CLI sur les comptes qui n'en ont pas (ADR-0039), fixée dans
+`internal/wpcliinstall` avec sa taille et son SHA-512. Pour en fixer une plus récente, vérifier
+d'abord sa signature avec la clé de publication de WP-CLI, dans un trousseau à part :
+
+```sh
+v=2.13.0
+mkdir -p /tmp/wpcli && cd /tmp/wpcli
+curl -LO https://github.com/wp-cli/wp-cli/releases/download/v$v/wp-cli-$v.phar \
+     -LO https://github.com/wp-cli/wp-cli/releases/download/v$v/wp-cli-$v.phar.asc \
+     -LO https://github.com/wp-cli/wp-cli/releases/download/v$v/wp-cli-$v.phar.sha512
+mkdir -m 700 gnupg
+curl -L https://raw.githubusercontent.com/wp-cli/builds/gh-pages/wp-cli.pgp | GNUPGHOME=gnupg gpg --import
+GNUPGHOME=gnupg gpg --verify wp-cli-$v.phar.asc wp-cli-$v.phar
+```
+
+La signature doit être bonne, de la clé `63AF 7AA1 5067 C056 16FD DD88 A3A2 E8F2 26F0 BC06`
+(« Verifying WP-CLI Downloads » de WP-CLI). Ensuite, mettre `Version`, `SHA512` et `Size` dans
+`internal/wpcliinstall/wpcliinstall.go`, le fichier `.sha512` dans son `testdata` (le test le lit),
+et la même version et la même empreinte dans le Dockerfile du banc
+(`internal/integration/testdata/wordpress/Dockerfile`), pour que le test d'intégration l'installe.
+
 ## La version d'un build
 
 `make app VERSION=x.y.z` inscrit la version dans le binaire (`vigie version`), dans l'`Info.plist`

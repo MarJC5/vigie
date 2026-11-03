@@ -102,6 +102,29 @@ the check is "not checked".
 Vulnerability data come from WPVulnerability, in the public domain (CC0), without warranty: no
 known vulnerability is not the same as safe. Vigie links to each record's sources.
 
+## WP-CLI installed on an account
+
+When the connection test of a host finds PHP but no WP-CLI, Vigie offers to install it, in the
+wizard and in **Test the connection**. Nothing happens before you confirm, and the dialog says
+what will be written. The offer is not made when PHP is older than WP-CLI needs (7.2.24), nor
+over a `~/bin/wp` that is already there.
+
+- **What is written**: one file, `~/bin/wp`, in the home folder of the account; nothing in your
+  sites. It is written under a temporary name and renamed, so a failure leaves nothing behind.
+- **Where it comes from**: the WP-CLI release on github.com, downloaded **on your computer**, not
+  by the server. This download is your own action, not one of the lookups above: it sends nothing
+  about your sites, and says what it is (`User-Agent: Vigie/<version>`).
+- **How it is checked**: Vigie installs one version of WP-CLI, pinned with its SHA-512 digest; a
+  file that does not match is discarded before anything is sent. The digest is checked against
+  WP-CLI's GPG signature each time the version is changed.
+- **Then**: the file is sent over SSH and run once. The host's WP-CLI command becomes `~/bin/wp`
+  (or `php ~/bin/wp` when the home does not allow running programs). If neither answers, the file
+  is removed.
+- **Kept in Activity**: each install, done or stopped at a step, under its host.
+
+To remove it: `rm ~/bin/wp` on the account. WP-CLI updates itself with `wp cli update`; Vigie
+does not update it.
+
 ## How findings are ranked
 
 **Urgent**:

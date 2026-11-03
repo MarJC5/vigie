@@ -163,6 +163,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   its own switch. Installed with Homebrew or from a Linux package, About says to update it there.
 - Releases: the macOS app (universal, in a DMG and a zip), the AppImage, deb, rpm and Arch packages
   for x86_64 and aarch64, with their `SHA256SUMS` ([docs/releasing.md](docs/releasing.md)).
+- WP-CLI installed on an account that has none: the connection test (in the wizard, and Test the
+  connection on a host) offers it, says what it writes, then downloads WP-CLI on your computer,
+  checks it against the digest built into Vigie, sends it to `~/bin/wp` over SSH and runs it once;
+  the host's command becomes `~/bin/wp`. Not offered when PHP is too old for WP-CLI, nor over a
+  `~/bin/wp` already there. Each install is in Activity, done or where it stopped.
+- A scan whose WP-CLI command does not exist says that WP-CLI was not found, and opens the host's
+  connection test, instead of "WordPress cannot be loaded".
 
 ### Changed
 

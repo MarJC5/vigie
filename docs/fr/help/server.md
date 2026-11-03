@@ -22,6 +22,12 @@ d'abord votre accord, avant le premier relevé qui en a besoin.
 - Chacun peut être coupé dans **Réglages, Recherches extérieures**. Ses vérifications sont alors
   « Non vérifié ».
 
+## Quand WP-CLI manque
+
+Le test de connexion propose de l'installer dans le dossier personnel du compte, `~/bin/wp`, après
+votre confirmation : téléchargé sur votre ordinateur, vérifié, puis envoyé. Rien n'est écrit dans
+vos sites.
+
 ## Ce qu'écrit une mise à jour
 
 Seulement la mise à jour elle-même, et ses sauvegardes dans `~/.vigie/backups/` (voir « Mettre à

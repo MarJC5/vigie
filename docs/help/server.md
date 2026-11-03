@@ -20,6 +20,11 @@ needs them.
   from your databases.
 - Each one can be turned off in **Settings, Lookups outside**. Its checks are then "Not checked".
 
+## When WP-CLI is missing
+
+The connection test offers to install it in the account's home, `~/bin/wp`, after you confirm:
+downloaded on your computer, checked, then sent. Nothing is written in your sites.
+
 ## What an update writes
 
 Only the update itself, and its backups in `~/.vigie/backups/` (see "Update a site, and roll

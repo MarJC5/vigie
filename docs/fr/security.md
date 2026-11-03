@@ -115,6 +115,31 @@ Les données de vulnérabilités viennent de WPVulnerability, dans le domaine pu
 garantie : aucune vulnérabilité connue ne veut pas dire sûr. Vigie renvoie aux sources de chaque
 fiche.
 
+## WP-CLI installé sur un compte
+
+Quand le test de connexion d'un hébergement trouve PHP mais pas WP-CLI, Vigie propose de
+l'installer, dans l'assistant et dans **Tester la connexion**. Rien ne se passe avant votre
+confirmation, et la fenêtre dit ce qui sera écrit. L'offre n'est pas faite quand PHP est plus
+ancien que ce que demande WP-CLI (7.2.24), ni par-dessus un `~/bin/wp` déjà présent.
+
+- **Ce qui est écrit** : un seul fichier, `~/bin/wp`, dans le dossier personnel du compte, rien
+  dans vos sites. Il est écrit sous un nom temporaire puis renommé : un échec ne laisse rien.
+- **D'où il vient** : de la version publiée par WP-CLI sur github.com, téléchargée **sur votre
+  ordinateur**, pas par le serveur. Ce téléchargement est votre propre action, pas une des
+  recherches ci-dessus : il n'envoie rien sur vos sites, et dit ce qu'il est
+  (`User-Agent: Vigie/<version>`).
+- **Comment il est vérifié** : Vigie installe une version de WP-CLI, fixée avec son empreinte
+  SHA-512 ; un fichier qui ne correspond pas est écarté avant tout envoi. L'empreinte est vérifiée
+  avec la signature GPG de WP-CLI à chaque changement de version.
+- **Ensuite** : le fichier est envoyé par SSH et lancé une fois. La commande WP-CLI de
+  l'hébergement devient `~/bin/wp` (ou `php ~/bin/wp` quand le dossier personnel n'autorise pas à
+  lancer des programmes). Si aucune ne répond, le fichier est retiré.
+- **Gardé dans Activité** : chaque installation, réussie ou arrêtée à une étape, sous son
+  hébergement.
+
+Pour le retirer : `rm ~/bin/wp` sur le compte. WP-CLI se met à jour avec `wp cli update` ; Vigie
+ne le met pas à jour.
+
 ## Comment les constats sont classés
 
 **Urgent** :

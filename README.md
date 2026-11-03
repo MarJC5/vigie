@@ -78,7 +78,8 @@ from a Linux package, your package manager. How a release is made:
 ## Requirements
 
 - macOS or Linux.
-- For each site: SSH access with a key, PHP on the command line and WP-CLI on the server.
+- For each site: SSH access with a key, PHP on the command line and WP-CLI on the server. When an
+  account has no WP-CLI, Vigie offers to install it in its home folder ([docs/security.md](docs/security.md)).
 
 ## License
 
