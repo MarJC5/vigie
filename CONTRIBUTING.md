@@ -69,6 +69,8 @@ Tests never reach a real server: they replay recorded WP-CLI outputs
 
 ## Commits and pull requests
 
+- Pull requests target `develop`, where the work happens. `main` holds the latest release and moves
+  only when one is made.
 - One change per pull request, with its tests and its docs.
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/), in English:
   `fix(window): …`, `feat: …`, `docs: …`.

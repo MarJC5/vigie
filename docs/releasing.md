@@ -30,13 +30,20 @@ release signed with another key is refused by every installed Vigie. The public 
 
 ## Making a release
 
-1. In `CHANGELOG.md`, move what is under `Unreleased` to a new section `## [x.y.z] - YYYY-MM-DD`:
-   its text becomes the release's notes, in the window too.
-2. Commit, then tag and push:
+Work happens on `develop`. `main` moves only when a release is made, so that it always shows the
+latest release, and its README the version people install.
+
+1. On `develop`, in `CHANGELOG.md`, move what is under `Unreleased` to a new section
+   `## [x.y.z] - YYYY-MM-DD`: its text becomes the release's notes, in the window too. Commit and
+   push `develop`, and wait for its CI.
+2. Bring `main` to `develop`, then tag and push:
 
    ```sh
+   git switch main
+   git merge --ff-only develop
    git tag vx.y.z
    git push origin main vx.y.z
+   git switch develop
    ```
 
    The tag runs the Release workflow: the CI's checks, then the Linux packages for x86_64 and

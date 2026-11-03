@@ -32,13 +32,20 @@ publique va dans `internal/buildinfo/update.go` (`UpdateKey`). Une clé n'est ja
 
 ## Publier une version
 
-1. Dans `CHANGELOG.md`, déplacer ce qui est sous `Unreleased` dans une nouvelle section
-   `## [x.y.z] - AAAA-MM-JJ` : son texte devient les notes de la version, dans la fenêtre aussi.
-2. Commiter, puis poser l'étiquette et pousser :
+Le travail se fait sur `develop`. `main` ne bouge qu'à la publication d'une version : elle montre
+toujours la dernière version publiée, et son README la version que les gens installent.
+
+1. Sur `develop`, dans `CHANGELOG.md`, déplacer ce qui est sous `Unreleased` dans une nouvelle
+   section `## [x.y.z] - AAAA-MM-JJ` : son texte devient les notes de la version, dans la fenêtre
+   aussi. Commiter et pousser `develop`, et attendre sa CI.
+2. Amener `main` à `develop`, puis poser l'étiquette et pousser :
 
    ```sh
+   git switch main
+   git merge --ff-only develop
    git tag vx.y.z
    git push origin main vx.y.z
+   git switch develop
    ```
 
    L'étiquette lance le workflow Release : les vérifications de la CI, puis les paquets Linux pour
