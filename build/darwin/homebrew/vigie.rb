@@ -1,5 +1,3 @@
-# The cask of the tap MarJC5/tap (ADR-0012), copied there at each release with its version and the
-# DMG's SHA-256; the release fills them in. It links the vigie command (ADR-0036).
 cask "vigie" do
   version "0.0.0"
   sha256 "0000000000000000000000000000000000000000000000000000000000000000"
