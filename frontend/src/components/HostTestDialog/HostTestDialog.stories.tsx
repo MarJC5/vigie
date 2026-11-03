@@ -53,3 +53,39 @@ export const TimedOut: Story = {
     await expect(args.onHelp).toHaveBeenCalled();
   },
 };
+
+const noWpCli: TestResult = {
+  phpVersion: "8.4.27", wpCli: "", wpCliVersion: "", install: { version: "2.12.0", size: 7142777, path: "~/bin/wp" },
+  problem: { code: "problem.noWpCli", detail: "wp, wp-cli, ~/bin/wp, php ~/wp-cli.phar" },
+};
+
+// No WP-CLI on the account: Vigie offers to install it, then the test passes with ~/bin/wp, which
+// the host keeps (ADR-0039).
+export const InstallWPCLI: Story = {
+  args: {
+    test: fn(async () => noWpCli),
+    install: fn(async () => ({ command: "~/bin/wp", version: "2.12.0", failedStep: "", problem: null })),
+    onInstalled: fn(),
+  },
+  play: async ({ canvas, args }) => {
+    const [offer] = await canvas.findAllByRole("button", { name: "Install WP-CLI…" });
+    await userEvent.click(offer!);
+    const [confirm] = await canvas.findAllByRole("button", { name: "Install WP-CLI" });
+    await userEvent.click(confirm!);
+    await waitFor(() => expect(args.onInstalled).toHaveBeenCalledWith("~/bin/wp"));
+    await expect(args.install).toHaveBeenCalledWith(shared);
+    const [checks] = canvas.getAllByRole("list", { name: "Checks" });
+    await expect(checks).toHaveTextContent("2.12.0 (~/bin/wp), installed by Vigie");
+    await expect(canvas.getAllByText("WP-CLI is installed")[0]).toBeInTheDocument();
+  },
+};
+
+// Where no install can be run, nothing is offered: the test says WP-CLI was not found.
+export const WithoutTheOffer: Story = {
+  args: { test: fn(async () => noWpCli) },
+  play: async ({ canvas }) => {
+    const [alert] = await canvas.findAllByRole("alert");
+    await expect(alert).toHaveTextContent("WP-CLI was not found on this account");
+    await expect(canvas.queryByRole("button", { name: "Install WP-CLI…" })).toBeNull();
+  },
+};

@@ -112,6 +112,7 @@ export type {
     UpdateItemView,
     UpdateView,
     UpdatesState,
+    WPCLIInstallProgress,
     WPCLIInstallResult,
     WPCLIInstallView,
     WPCLIOffer,

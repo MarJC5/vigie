@@ -35,6 +35,7 @@ func init() {
 	application.RegisterEvent[app.DiscoveryProgress](app.DiscoveryEvent)
 	application.RegisterEvent[app.MenuCommand](app.MenuEvent)
 	application.RegisterEvent[app.SelfUpdateView](app.SelfUpdateEvent)
+	application.RegisterEvent[app.WPCLIInstallProgress](app.WPCLIInstallEvent)
 }
 
 func main() {

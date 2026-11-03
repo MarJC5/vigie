@@ -84,6 +84,7 @@ const icons: Record<string, IconName> = {
   scan: "refresh",
   update: "update",
   rollback: "rollback",
+  wpcli: "terminal",
 };
 
 function Entry({ entry: e, onOpen }: { entry: ActivityEntry; onOpen: (nodeId: string) => void }) {
@@ -104,14 +105,18 @@ function Entry({ entry: e, onOpen }: { entry: ActivityEntry; onOpen: (nodeId: st
         <span className={styles.line}>
           {run ? (
             <span className={styles.what}>{title}</span>
+          ) : e.kind === "wpcli" && !e.wpCli?.hostId ? (
+            // An install for a host that was never added: its name, with nothing to open.
+            <span className={styles.what}>{t("activity.wpcli", { path: e.path })}</span>
           ) : (
             <span className={styles.what}>
-              <Named text={t(`activity.${e.kind}`, { path: mark })} name={e.path} onOpen={() => onOpen(e.siteId)} />
+              <Named text={t(`activity.${e.kind}`, { path: mark })} name={e.path} onOpen={() => onOpen(e.wpCli?.hostId || e.siteId)} />
             </span>
           )}
           {meta.length > 0 && <span className={styles.meta}>{meta.join(" · ")}</span>}
         </span>
         {e.summary && <span className={styles.meta}>{e.summary}</span>}
+        {e.wpCli && <span className={styles.meta}>{wpCliLine(e, t)}</span>}
         {changes.map((c) => (
           <ChangeLine key={`${c.kind}-${c.nodeId}`} change={c} onOpen={onOpen} />
         ))}
@@ -186,6 +191,13 @@ function ChangeLine({ change: c, onOpen }: { change: Change; onOpen: (nodeId: st
       <Named text={t(`activity.${c.kind}`, { name: mark })} name={c.name} onOpen={() => onOpen(c.nodeId)} />
     </span>
   );
+}
+
+// An install of WP-CLI (ADR-0039): what was installed and the host's command, or where it stopped.
+function wpCliLine(e: ActivityEntry, t: TFunction): string {
+  const i = e.wpCli!;
+  if (e.outcome === "completed") return t("activity.wpcliDone", { version: i.version, path: "~/bin/wp", command: i.command });
+  return t("activity.wpcliFailed", { step: t(`wpCliInstall.stepName.${i.failedStep || "download"}`), message: i.message });
 }
 
 // The outcome worth saying: one that is not a plain end.

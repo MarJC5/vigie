@@ -22,6 +22,8 @@ import type {
   TagView,
   TreeView,
   UpdatesState,
+  WPCLIInstallProgress,
+  WPCLIInstallResult,
 } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { clock, day } from "../../lib/findings";
 import { openKey, subsiteId, subsiteOf, withSubsites } from "../../lib/subsites";
@@ -100,6 +102,11 @@ export interface EditApi extends HostEditApi, FindSitesApi {
   TagMany(ids: string[], tag: string, add: boolean): Promise<Problem | null>;
   RenameTag(from: string, to: string): Promise<Problem | null>;
   RemoveTag(tag: string): Promise<Problem | null>;
+  /** Installs WP-CLI on an account that has none (ADR-0039): hostId names a stored host, which
+   then keeps the command; "" for a host being edited, whose form takes it. */
+  InstallWPCLI(d: HostDetails, hostId: string): Promise<WPCLIInstallResult>;
+  /** Follows that install (the "vigie:wpcli-install" event); returns the unsubscribe. */
+  onWpCliInstall?(listener: (p: WPCLIInstallProgress) => void): () => void;
 }
 
 export interface AppShellProps {
@@ -260,7 +267,14 @@ export function AppShell({
   // The admin address of a site being given, with the site's own and computed ones.
   const [admin, setAdmin] = useState<{ id: string; own: string; computed: string } | null>(null);
   // The connection test of a host: the stored connection, or the one being edited.
-  const [hostTest, setHostTest] = useState<{ name: string; details: () => Promise<HostDetails> } | null>(null);
+  // The host tested: stored (hostId), or being edited, whose form takes the command of a WP-CLI
+  // installed from the test (onInstalled).
+  const [hostTest, setHostTest] = useState<{
+    name: string;
+    details: () => Promise<HostDetails>;
+    hostId?: string;
+    onInstalled?: (command: string) => void;
+  } | null>(null);
 
   // A tag's page is a node of its own, addressed by tagId and not stored (ADR-0025).
   const tagNodes = useMemo(
@@ -471,7 +485,7 @@ export function AppShell({
     if (action === "rename") setEditingId(id);
     if (action === "move" || action === "delete" || action === "host" || action === "find" || action === "renameTag") setDialog({ kind: action, id });
     if (action === "updateAll" && byId.get(id)) updateAll(byId.get(id)!);
-    if (action === "test" && edit) setHostTest({ name: byId.get(id)?.name ?? "", details: () => edit.Host(id) });
+    if (action === "test" && edit) setHostTest({ name: byId.get(id)?.name ?? "", details: () => edit.Host(id), hostId: id });
     if (action === "admin") void data?.site(id).then((site) => setAdmin({ id, own: site.ownAdminUrl, computed: site.computedAdminUrl }));
   };
 
@@ -708,6 +722,11 @@ export function AppShell({
                 onMore={edit && selected.kind !== "subsite" ? (point) => openMenu(selected.id, point) : undefined}
                 onSiteMenu={edit && ((id, point) => openMenu(id, point, false))}
                 onRemove={edit && (() => setDialog({ kind: "delete", id: selected.id }))}
+                onTestHost={
+                  edit && selected.kind === "site"
+                    ? () => setHostTest({ name: byId.get(selected.parentId)?.name ?? "", details: () => edit.Host(selected.parentId), hostId: selected.parentId })
+                    : undefined
+                }
                 onRemoveBackups={data.removeOldBackups && ((site, backups) => setRemoving({ site, backups }))}
                 updating={updating(selected)}
                 onCheckFiles={onCheckFiles && (() => !updating(selected) && onCheckFiles(selected.id))}
@@ -968,7 +987,7 @@ export function AppShell({
             setDialog(null);
             void onChanged?.();
           }}
-          onTest={(d) => setHostTest({ name: d.name, details: async () => d })}
+          onTest={(d, takeCommand) => setHostTest({ name: d.name, details: async () => d, onInstalled: takeCommand })}
         />
       )}
       {edit && hostTest && (
@@ -976,6 +995,13 @@ export function AppShell({
           name={hostTest.name}
           details={hostTest.details}
           test={(d) => edit.TestConnection(d)}
+          install={(d) => edit.InstallWPCLI(d, hostTest.hostId ?? "")}
+          onInstallProgress={edit.onWpCliInstall}
+          onInstalled={(command) => {
+            hostTest.onInstalled?.(command);
+            // A stored host has its new command: the window reads it again.
+            if (hostTest.hostId) void onChanged?.();
+          }}
           onClose={() => setHostTest(null)}
           onHelp={
             onSection &&
@@ -1096,6 +1122,7 @@ function Loaded({
   onMore,
   onSiteMenu,
   onRemove,
+  onTestHost,
   onRemoveBackups,
   updating,
   onUpdate,
@@ -1126,6 +1153,8 @@ function Loaded({
   onMore?: (point: { x: number; y: number }) => void;
   onSiteMenu?: (id: string, point: { x: number; y: number }) => void;
   onRemove?: () => void;
+  /** Tests the connection of the site's host (its WP-CLI was not found). */
+  onTestHost?: () => void;
   /** Asks to remove a site's backups past the limits. */
   onRemoveBackups?: (site: SiteView, backups: BackupView[]) => void;
   updating: boolean;
@@ -1211,6 +1240,7 @@ function Loaded({
         backups={v.backups}
         onRemoveBackups={onRemoveBackups && v.backups && (() => onRemoveBackups(site, (v.backups!.items ?? []).filter((b) => b.expired)))}
         onRemove={onRemove}
+        onTestHost={onTestHost}
         onCheckFiles={onCheckFiles}
         onIgnore={onIgnore && ((finding) => onIgnore(site, finding))}
         onRestore={onRestore && ((finding) => onRestore(site, finding))}

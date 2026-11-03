@@ -21,6 +21,13 @@
   box-shadow: none;
 }
 
+/* What was done: the row's ground, no colored edge, the icon in green. */
+.notice[data-tone="ok"] {
+  --vg-notice-tone: var(--vg-status-ok);
+  background: var(--vg-surface-row);
+  box-shadow: none;
+}
+
 .icon {
   display: inline-flex;
   padding-top: 2px;

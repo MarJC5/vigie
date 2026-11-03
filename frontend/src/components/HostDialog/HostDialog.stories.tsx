@@ -101,6 +101,10 @@ export const TestBeforeSaving: Story = {
     await userEvent.clear(name);
     await userEvent.type(name, "Shared hosting 2");
     await userEvent.click(within(dialog).getByRole("button", { name: "Test the connection" }));
-    await expect(args.onTest).toHaveBeenCalledWith(expect.objectContaining({ name: "Shared hosting 2", hostname: stored.hostname }));
+    await expect(args.onTest).toHaveBeenCalledWith(expect.objectContaining({ name: "Shared hosting 2", hostname: stored.hostname }), expect.any(Function));
+    // A WP-CLI installed from the test: its command goes in the form, saved with it (ADR-0039).
+    const takeCommand = (args.onTest as ReturnType<typeof fn>).mock.calls.at(-1)![1] as (command: string) => void;
+    takeCommand("~/bin/wp");
+    await waitFor(() => expect(within(dialog).getByRole("textbox", { name: "WP-CLI command" })).toHaveValue("~/bin/wp"));
   },
 };

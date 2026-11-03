@@ -1,7 +1,7 @@
 import { type Status, StatusDot } from "../StatusDot/StatusDot";
 import styles from "./CheckList.module.css";
 
-export type CheckState = "ok" | "failed" | "waiting" | "running";
+export type CheckState = "ok" | "warn" | "failed" | "waiting" | "running";
 
 export interface CheckItem {
   label: string;
@@ -16,7 +16,7 @@ export interface CheckListProps {
   stateLabels: Record<CheckState, string>;
 }
 
-const dots: Record<CheckState, Status> = { ok: "ok", failed: "danger", waiting: "unknown", running: "unknown" };
+const dots: Record<CheckState, Status> = { ok: "ok", warn: "warn", failed: "danger", waiting: "unknown", running: "unknown" };
 
 /** The checks of a test, each with its result: the shape of the dot, never color alone. */
 export function CheckList({ label, items, stateLabels }: CheckListProps) {

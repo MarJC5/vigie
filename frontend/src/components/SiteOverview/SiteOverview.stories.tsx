@@ -228,6 +228,25 @@ export const UnreadableAnswer: Story = {
   },
 };
 
+// The host's WP-CLI command does not exist on the account: the notice says so and opens the host's
+// connection test, where Vigie offers to install WP-CLI (ADR-0039).
+export const NoWPCLI: Story = {
+  args: {
+    site: {
+      ...failedSite,
+      scan: { ...failedSite.scan!, problem: { code: "failure.noWpCli", detail: "WP-CLI command not found: bash: line 1: wp: command not found" } },
+    },
+    onTestHost: fn(),
+  },
+  play: async ({ canvas, args }) => {
+    const [alert] = canvas.getAllByRole("alert");
+    await expect(alert).toHaveTextContent("WP-CLI was not found on this account");
+    await expect(alert).toHaveTextContent("wp: command not found");
+    await userEvent.click(canvas.getAllByRole("button", { name: "Test the connection…" })[0]!);
+    await expect(args.onTestHost).toHaveBeenCalled();
+  },
+};
+
 export const NeverScanned: Story = {
   args: { site: newSite },
   play: async ({ canvas }) => {

@@ -37,8 +37,9 @@ export interface HostDialogProps {
   onClose: () => void;
   /** Saved, and its key trusted again when the address changed. */
   onSaved: () => void;
-  /** Tests the connection as it is in the form, before saving it. */
-  onTest?: (d: HostDetails) => void;
+  /** Tests the connection as it is in the form, before saving it; takeCommand puts in the form the
+   command of a WP-CLI installed from the test (ADR-0039). */
+  onTest?: (d: HostDetails, takeCommand: (command: string) => void) => void;
 }
 
 interface Form {
@@ -209,7 +210,7 @@ export function HostDialog({ api, hostId, sites, onClose, onSaved, onTest }: Hos
       actions={
         <>
           {onTest && (
-            <Button variant="text" className={styles.test} icon="ok" onClick={() => onTest(details())}>
+            <Button variant="text" className={styles.test} icon="ok" onClick={() => onTest(details(), set("wpCli"))}>
               {t("edit.host.test")}
             </Button>
           )}

@@ -474,7 +474,7 @@
     "lead": {
       "connection": "Un hébergement est un compte SSH. Vigie utilise les clés de votre agent SSH et ne demande jamais de mot de passe.",
       "key": "Première connexion à {{host}}. Comparez cette empreinte avec celle publiée par votre hébergeur avant de l'approuver.",
-      "test": "Vigie vérifie la connexion, PHP en ligne de commande et WP-CLI, puis cherche les installations WordPress du compte. Rien n'est écrit sur le serveur.",
+      "test": "Vigie vérifie la connexion, PHP en ligne de commande et WP-CLI, puis cherche les installations WordPress du compte. Rien n'est écrit sur le serveur sans votre accord.",
       "sites_one": "{{count}} installation WordPress trouvée sur le compte. Vigie n'ajoute que celles que vous cochez.",
       "sites_many": "{{count}} installations WordPress trouvées sur le compte. Vigie n'ajoute que celles que vous cochez.",
       "sites_other": "{{count}} installations WordPress trouvées sur le compte. Vigie n'ajoute que celles que vous cochez."
@@ -509,13 +509,17 @@
       "ssh": "Connexion SSH",
       "php": "PHP en ligne de commande",
       "wpCli": "WP-CLI",
-      "connected": "Connecté"
+      "connected": "Connecté",
+      "wpCliNotFound": "Introuvable (essayé : {{tried}})",
+      "wpCliExists": "{{path}} existe mais ne répond pas comme WP-CLI",
+      "wpCliInstalled": "{{version}} ({{command}}), installé par Vigie"
     },
     "state": {
       "ok": "Réussi",
       "failed": "Échec",
       "waiting": "Pas encore lancé",
-      "running": "En cours"
+      "running": "En cours",
+      "warn": "À voir"
     },
     "testFailed": "Le test de connexion a échoué",
     "retry": "Réessayer",
@@ -611,7 +615,8 @@
     "debugLogNoneNote": "WordPress n'en écrit pas",
     "debugLogEmpty": "Vide",
     "debugLogWritten": "écrit par WordPress dans {{path}}",
-    "debugLogLeft": "resté d'avant : WordPress n'y écrit plus"
+    "debugLogLeft": "resté d'avant : WordPress n'y écrit plus",
+    "testHost": "Tester la connexion…"
   },
   "updates": {
     "label": "Mises à jour en attente",
@@ -729,7 +734,10 @@
       "installed": "extension ou thème installé hors de Vigie"
     },
     "notifiedChange": "Notifié : {{what}} sur {{names}}",
-    "and": " et "
+    "and": " et ",
+    "wpcli": "Installation de WP-CLI sur {{path}}",
+    "wpcliDone": "WP-CLI {{version}} dans {{path}}, vérifié (SHA-512). Commande de l'hébergement : {{command}}.",
+    "wpcliFailed": "Arrêtée à l'étape {{step}} : {{message}}"
   },
   "tray": {
     "open": "Ouvrir {{app}}",
@@ -1640,7 +1648,7 @@
       },
       "step3": {
         "title": "Testez la connexion.",
-        "text": "Vigie vérifie SSH, PHP en ligne de commande et WP-CLI, puis cherche les installations WordPress du compte. Rien n'est écrit sur le serveur."
+        "text": "Vigie vérifie SSH, PHP en ligne de commande et WP-CLI, puis cherche les installations WordPress du compte. Rien n'est écrit sur le serveur sans votre accord."
       },
       "step4": {
         "title": "Choisissez les sites.",
@@ -1707,7 +1715,7 @@
   },
   "hostTest": {
     "title": "Tester la connexion à {{name}}",
-    "lead": "Vigie vérifie la connexion, PHP en ligne de commande et WP-CLI. Rien n'est écrit sur le serveur.",
+    "lead": "Vigie vérifie la connexion, PHP en ligne de commande et WP-CLI. Rien n'est écrit sur le serveur sans votre accord.",
     "again": "Tester à nouveau",
     "help": "Voir l'aide"
   },
@@ -1933,5 +1941,66 @@
     "old_one": "{{count}} sauvegarde au-delà des limites, {{size}}",
     "old_many": "{{count}} sauvegardes au-delà des limites, {{size}}",
     "old_other": "{{count}} sauvegardes au-delà des limites, {{size}}"
+  },
+  "wpCliInstall": {
+    "offerTitle": "WP-CLI manque sur ce compte",
+    "offerText": "Vigie peut l'installer dans votre dossier personnel, {{path}}, sans toucher à vos sites : WP-CLI {{version}}, téléchargé sur cet ordinateur et vérifié avant d'être envoyé.",
+    "offerAction": "Installer WP-CLI…",
+    "oldTitle": "PHP est trop ancien pour WP-CLI",
+    "existsTitle": "{{path}} existe déjà",
+    "doneTitle": "WP-CLI est installé",
+    "doneText": "La commande WP-CLI de cet hébergement est maintenant {{command}}. Pour le retirer un jour : rm {{path}}",
+    "confirmTitle": "Installer WP-CLI sur {{name}} ?",
+    "confirmLead": "Vigie écrit un seul fichier dans le dossier personnel du compte {{account}}. Vos sites ne sont pas touchés.",
+    "file": "Fichier écrit",
+    "wpCli": "WP-CLI",
+    "source": "Provenance",
+    "check": "Vérification",
+    "command": "Commande de l'hébergement",
+    "remove": "Pour le retirer",
+    "wpCliValue": "{{version}} · {{size}}",
+    "sourceValue": "github.com/wp-cli, téléchargé sur cet ordinateur",
+    "checkValue": "Empreinte SHA-512 inscrite dans Vigie, avant tout envoi",
+    "commandValue": "devient {{path}}",
+    "cancel": "Annuler",
+    "confirm": "Installer WP-CLI",
+    "close": "Fermer",
+    "installing": "Installation…",
+    "runTitle": "Installation de WP-CLI",
+    "runLead": "Sur {{name}} ({{account}}).",
+    "stepsLabel": "Étapes de l'installation",
+    "step": {
+      "download": "Téléchargement",
+      "check": "Vérification de l'empreinte",
+      "send": "Envoi par SSH",
+      "test": "Test de la commande"
+    },
+    "stepName": {
+      "download": "du téléchargement",
+      "check": "de la vérification",
+      "send": "de l'envoi",
+      "test": "du test"
+    },
+    "detail": {
+      "download": "github.com, {{size}}",
+      "check": "SHA-512 de WP-CLI {{version}}",
+      "send": "vers {{path}}",
+      "sendRunning": "{{done}} sur {{total}}",
+      "test": "{{path}} cli info"
+    },
+    "state": {
+      "done": "fait",
+      "running": "en cours",
+      "failed": "échec",
+      "waiting": "à venir"
+    },
+    "failed": {
+      "download": "Le téléchargement a échoué",
+      "check": "Le fichier téléchargé est refusé",
+      "send": "L'envoi a échoué",
+      "test": "WP-CLI ne répond pas sur ce compte"
+    },
+    "removeCommand": "rm {{path}}",
+    "progress": "Étape {{step}} sur {{total}}"
   }
 }

@@ -2,7 +2,7 @@ import { Browser, Clipboard, Events } from "@wailsio/runtime";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { I18nextProvider } from "react-i18next";
 
-import { VigieDiscovery, VigieMenu, VigieScans, VigieSelfupdate, VigieUpdates } from "../bindings/events";
+import { VigieDiscovery, VigieMenu, VigieScans, VigieSelfupdate, VigieUpdates, VigieWpcliInstall } from "../bindings/events";
 import {
   Addons,
   CommandLink,
@@ -37,6 +37,7 @@ import { sizeText } from "./lib/data";
 const wizardApi: WizardApi = {
   ...HostWizard,
   onDiscovery: (listener) => Events.On(VigieDiscovery, (event) => listener(event.data)),
+  onWpCliInstall: (listener) => Events.On(VigieWpcliInstall, (event) => listener(event.data)),
 };
 
 // What the detail pane reads, from the site manager service.
@@ -87,6 +88,8 @@ const editApi: EditApi = {
   DiscoverHost: HostWizard.DiscoverHost,
   AddSites: HostWizard.AddSites,
   onDiscovery: (listener) => Events.On(VigieDiscovery, (event) => listener(event.data)),
+  InstallWPCLI: HostWizard.InstallWPCLI,
+  onWpCliInstall: (listener) => Events.On(VigieWpcliInstall, (event) => listener(event.data)),
 };
 
 // What exports and imports, from the data service.

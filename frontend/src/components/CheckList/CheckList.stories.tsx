@@ -3,7 +3,7 @@ import { expect } from "storybook/test";
 
 import { CheckList } from "./CheckList";
 
-const stateLabels = { ok: "Passed", failed: "Failed", waiting: "Not run yet", running: "In progress" };
+const stateLabels = { ok: "Passed", warn: "To check", failed: "Failed", waiting: "Not run yet", running: "In progress" };
 
 const meta = {
   component: CheckList,

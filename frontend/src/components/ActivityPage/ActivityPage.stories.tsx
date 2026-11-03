@@ -115,3 +115,34 @@ export const TheEndOfALongRun: Story = {
     await expect(page.getByText("Notifié : Mise à jour terminée, 5 sites mis à jour, 1 en échec.")).toBeInTheDocument();
   },
 };
+
+// The installs of WP-CLI (ADR-0039): under their host, which opens; one for a host never added
+// under the name it had; what was installed, or where it stopped.
+export const WPCLIInstalls: Story = {
+  globals: { lang: "fr" },
+  args: {
+    journal: {
+      since: at(1, 14),
+      entries: [
+        {
+          kind: "wpcli", at: at(31, 14, 38), ended: at(31, 14, 38), by: "", path: "Clients/Shared hosting", siteId: "", sites: 0, outcome: "completed", summary: "",
+          wpCli: { hostId: "shared", version: "2.12.0", command: "~/bin/wp", failedStep: "", message: "" }, changes: [], siteChanges: [], notices: [],
+        },
+        {
+          kind: "wpcli", at: at(31, 14, 31), ended: at(31, 14, 31), by: "", path: "Nouveau VPS", siteId: "", sites: 0, outcome: "failed", summary: "",
+          wpCli: { hostId: "", version: "2.12.0", command: "", failedStep: "send", message: "Connection to ssh.example-host.ch closed by remote host." }, changes: [], siteChanges: [], notices: [],
+        },
+      ],
+    },
+  },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByText("WP-CLI 2.12.0 dans ~/bin/wp, vérifié (SHA-512). Commande de l'hébergement : ~/bin/wp.")).toBeInTheDocument();
+    await userEvent.click(page.getByRole("button", { name: "Clients/Shared hosting" }));
+    await expect(args.onOpen).toHaveBeenCalledWith("shared");
+    await expect(page.getByText("Installation de WP-CLI sur Nouveau VPS")).toBeInTheDocument();
+    await expect(page.queryByRole("button", { name: "Nouveau VPS" })).toBeNull();
+    await expect(page.getByText("Arrêtée à l'étape de l'envoi : Connection to ssh.example-host.ch closed by remote host.")).toBeInTheDocument();
+    await expect(page.getByText("en échec")).toBeInTheDocument();
+  },
+};

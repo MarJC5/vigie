@@ -1556,6 +1556,16 @@ export interface UpdatesState {
 }
 
 /**
+ * WPCLIInstallProgress is where an install stands: its step (download, check, send, test), and
+ * for a download or a send the bytes so far.
+ */
+export interface WPCLIInstallProgress {
+    "step": string;
+    "done": number;
+    "total": number;
+}
+
+/**
  * WPCLIInstallResult is the answer of InstallWPCLI: the command that answered and its version, or
  * the step it stopped at and why.
  */

@@ -47,6 +47,9 @@ export interface SiteOverviewProps {
   onRemoveBackups?: () => void;
   /** Asks to remove the site from Vigie, offered when its folder holds no WordPress any more. */
   onRemove?: () => void;
+  /** Tests the connection of the site's host, offered when its WP-CLI command was not found:
+   there, Vigie offers to install WP-CLI (ADR-0039). */
+  onTestHost?: () => void;
   /** Scans again, comparing the files even when it was done less than a day ago. */
   onCheckFiles?: () => void;
   /** Opens the dialog that sets a finding aside; without it, findings are only listed. */
@@ -92,6 +95,7 @@ export function SiteOverview({
   onRemoveBackups,
   onRollback,
   onRemove,
+  onTestHost,
   onCheckFiles,
   onIgnore,
   onRestore,
@@ -205,10 +209,10 @@ export function SiteOverview({
       </div>
       <div role="tabpanel" id={panel} aria-labelledby={`${panel}-${tab}`} className={styles.panel}>
         {scan?.problem && tab !== "history" && (
-          <ScanNotice code={scan.problem.code} detail={scan.problem.detail} onRemove={onRemove} />
+          <ScanNotice code={scan.problem.code} detail={scan.problem.detail} onRemove={onRemove} onTestHost={onTestHost} />
         )}
         {scan?.attempt?.problem && tab !== "history" && (
-          <AttemptNotice finished={scan.finished} problem={scan.attempt.problem} onRemove={onRemove} />
+          <AttemptNotice finished={scan.finished} problem={scan.attempt.problem} onRemove={onRemove} onTestHost={onTestHost} />
         )}
         {tab === "overview" && (site.changes ?? []).length > 0 && <SinceBefore site={site} />}
         {tab === "overview" && <Overview site={site} onExtensions={() => setTab("extensions")} />}
@@ -480,12 +484,24 @@ function newestCore(scan: ScanView): string {
     .at(-1) ?? "";
 }
 
+/** What to do about a scan that did not complete: remove a site with no WordPress left at its path,
+ test the host of one whose WP-CLI command was not found. */
+function scanAction(
+  code: string,
+  t: (key: string) => string,
+  onRemove?: () => void,
+  onTestHost?: () => void,
+): { label: string; onClick: () => void } | undefined {
+  if (code === "outcome.notWordPress" && onRemove) return { label: t("overview.remove"), onClick: onRemove };
+  if (code === "failure.noWpCli" && onTestHost) return { label: t("overview.testHost"), onClick: onTestHost };
+  return undefined;
+}
+
 /** The latest scan did not complete, the results shown are from the one before: why, and since when.
  A site with no WordPress left at its path can be removed from Vigie at once. */
-function AttemptNotice({ finished, problem, onRemove }: { finished: string; problem: { code: string; detail: string }; onRemove?: () => void }) {
+function AttemptNotice({ finished, problem, onRemove, onTestHost }: { finished: string; problem: { code: string; detail: string }; onRemove?: () => void; onTestHost?: () => void }) {
   const { t } = useTranslation();
   const reason = t(problem.code, { message: problem.detail });
-  const gone = problem.code === "outcome.notWordPress";
   return (
     <Notice
       title={t("overview.attemptTitle")}
@@ -493,14 +509,14 @@ function AttemptNotice({ finished, problem, onRemove }: { finished: string; prob
       text={t("overview.attemptText", { reason: reason.replace(/\.$/, ""), date: day(finished), time: clock(finished) })}
       detail={problem.detail && !reason.includes(problem.detail) ? problem.detail : undefined}
       tone="warn"
-      action={gone && onRemove ? { label: t("overview.remove"), onClick: onRemove } : undefined}
+      action={scanAction(problem.code, t, onRemove, onTestHost)}
     />
   );
 }
 
 /** Why the last scan did not complete; the raw message only when the text does not already say it.
  A site with no WordPress left at its path can be removed from Vigie at once. */
-function ScanNotice({ code, detail, onRemove }: { code: string; detail: string; onRemove?: () => void }) {
+function ScanNotice({ code, detail, onRemove, onTestHost }: { code: string; detail: string; onRemove?: () => void; onTestHost?: () => void }) {
   const { t } = useTranslation();
   const text = t(code, { message: detail });
   const gone = code === "outcome.notWordPress";
@@ -510,7 +526,7 @@ function ScanNotice({ code, detail, onRemove }: { code: string; detail: string; 
       text={text}
       detail={detail && !text.includes(detail) ? detail : undefined}
       tone={gone ? "warn" : "danger"}
-      action={gone && onRemove ? { label: t("overview.remove"), onClick: onRemove } : undefined}
+      action={scanAction(code, t, onRemove, onTestHost)}
     />
   );
 }

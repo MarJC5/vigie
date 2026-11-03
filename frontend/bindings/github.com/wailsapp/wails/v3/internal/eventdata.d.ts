@@ -17,6 +17,7 @@ declare module "@wailsio/runtime" {
             "vigie:scans": app$0.ScansState;
             "vigie:selfupdate": app$0.SelfUpdateView;
             "vigie:updates": app$0.UpdatesState;
+            "vigie:wpcli-install": app$0.WPCLIInstallProgress;
         }
     }
 }

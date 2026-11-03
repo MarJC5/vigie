@@ -33,3 +33,8 @@ export const VigieSelfupdate = "vigie:selfupdate";
  */
 export const VigieUpdates = "vigie:updates";
 
+/**
+ * Name of the custom event "vigie:wpcli-install".
+ */
+export const VigieWpcliInstall = "vigie:wpcli-install";
+

@@ -11,6 +11,8 @@ import type {
   KeysResult,
   Problem,
   TestResult,
+  WPCLIInstallProgress,
+  WPCLIInstallResult,
 } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { CheckList } from "../CheckList/CheckList";
 import { Checkbox } from "../Checkbox/Checkbox";
@@ -23,7 +25,8 @@ import type { ProgressProps } from "../Progress/Progress";
 import { SelectField } from "../SelectField/SelectField";
 import { TextField } from "../TextField/TextField";
 import { WizardStep } from "../WizardStep/WizardStep";
-import { checkItems, installItem, keyType } from "../../lib/hosts";
+import { WpCliInstallDialog, WpCliNotice, accountOf, wpCliNoticeShown } from "../WpCliInstall/WpCliInstall";
+import { checkItems, checkStateLabels, installItem, keyType } from "../../lib/hosts";
 
 /** The Go service the wizard calls (app.HostWizard); stories and tests give a fake. */
 export interface WizardApi {
@@ -35,6 +38,10 @@ export interface WizardApi {
   Add(d: HostDetails, fingerprint: string, choices: Choice[] | null): Promise<AddResult>;
   /** Follows the checks of Discover (the "vigie:discovery" event); returns the unsubscribe. */
   onDiscovery?(listener: (p: DiscoveryProgress) => void): () => void;
+  /** Installs WP-CLI on the account when the test found none (ADR-0039); hostId "" here. */
+  InstallWPCLI(d: HostDetails, hostId: string): Promise<WPCLIInstallResult>;
+  /** Follows that install (the "vigie:wpcli-install" event); returns the unsubscribe. */
+  onWpCliInstall?(listener: (p: WPCLIInstallProgress) => void): () => void;
 }
 
 export interface AddHostWizardProps {
@@ -107,6 +114,9 @@ export function AddHostWizard({ api, folders, onClose, onAdded }: AddHostWizardP
   const [keys, setKeys] = useState<KeysResult | null>(null);
   const [compared, setCompared] = useState(false);
   const [test, setTest] = useState<TestResult | null>(null);
+  // WP-CLI being installed from the test step, then installed: the test passes with it.
+  const [installing, setInstalling] = useState(false);
+  const [installed, setInstalled] = useState(false);
   const [installs, setInstalls] = useState<Array<Install & { checked: boolean }>>([]);
 
   const set = (field: keyof Form) => (value: string) => setForm((f) => ({ ...f, [field]: value }));
@@ -157,6 +167,7 @@ export function AddHostWizard({ api, folders, onClose, onAdded }: AddHostWizardP
   // Tests the connection, then, when it passes, searches the account at once: both only read.
   const runTest = async () => {
     setTest(null);
+    setInstalled(false);
     const result = await call(() => api.TestConnection(details(form)));
     if (!result) return;
     setTest(result);
@@ -203,6 +214,16 @@ export function AddHostWizard({ api, folders, onClose, onAdded }: AddHostWizardP
     if (!result) return;
     if (result.problem) return setProblem(result.problem);
     onAdded(result.hostId);
+  };
+
+  // WP-CLI answers once installed: the host keeps its command, the test passes; the search waits
+  // for the user, who reads the notice first.
+  const wpCliInstalled = (r: WPCLIInstallResult) => {
+    setInstalling(false);
+    setForm((f) => ({ ...f, wpCli: r.command }));
+    setTest((before) => before && { ...before, wpCli: r.command, wpCliVersion: r.version, problem: null, install: null });
+    setProblem(null);
+    setInstalled(true);
   };
 
   const back = (to: Step) => () => {
@@ -356,13 +377,23 @@ export function AddHostWizard({ api, folders, onClose, onAdded }: AddHostWizardP
 
       {step === "test" && (
         <>
-          <CheckList label={t("wizard.checks")} items={checkItems(test, busy, t)} stateLabels={{
-            ok: t("wizard.state.ok"),
-            failed: t("wizard.state.failed"),
-            waiting: t("wizard.state.waiting"),
-            running: t("wizard.state.running"),
-          }} />
-          {notice}
+          <CheckList label={t("wizard.checks")} items={checkItems(test, busy, t, installed)} stateLabels={checkStateLabels(t)} />
+          {wpCliNoticeShown(test, installed) ? (
+            <WpCliNotice test={test} installed={installed} onInstall={() => setInstalling(true)} onRetry={() => void runTest()} />
+          ) : (
+            notice
+          )}
+          {installing && test?.install && (
+            <WpCliInstallDialog
+              offer={test.install}
+              name={form.name.trim()}
+              account={accountOf(details(form))}
+              install={() => api.InstallWPCLI(details(form), "")}
+              onProgress={api.onWpCliInstall}
+              onInstalled={wpCliInstalled}
+              onClose={() => setInstalling(false)}
+            />
+          )}
         </>
       )}
 

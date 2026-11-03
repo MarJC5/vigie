@@ -9,6 +9,7 @@ import type {
   KeysResult,
   Problem,
   TestResult,
+  WPCLIInstallResult,
 } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { AddHostWizard, type WizardApi } from "./AddHostWizard";
 
@@ -40,11 +41,19 @@ const timedOut: TestResult = {
   problem: { code: "failure.timedOut", detail: "ssh: connect to host ssh.example-host.ch port 22: Operation timed out" },
 };
 
+const offer = { version: "2.12.0", size: 7142777, path: "~/bin/wp" };
+const noWpCli: TestResult = {
+  phpVersion: "8.4.27", wpCli: "", wpCliVersion: "", install: offer,
+  problem: { code: "problem.noWpCli", detail: "wp, wp-cli, ~/bin/wp, php ~/wp-cli.phar" },
+};
+const installedWpCli: WPCLIInstallResult = { command: "~/bin/wp", version: "2.12.0", failedStep: "", problem: null };
+
 // A fake of the Go service: records the calls, answers as a server would.
-function fake(tests: TestResult[] = [passed]) {
+function fake(tests: TestResult[] = [passed], install: WPCLIInstallResult = installedWpCli) {
   const calls = {
     trust: [] as Array<[string, string]>,
     added: [] as Array<{ details: HostDetails; fingerprint: string; choices: Choice[] }>,
+    installed: [] as Array<{ details: HostDetails; hostId: string }>,
   };
   let test = 0;
   const api: WizardApi = {
@@ -59,6 +68,10 @@ function fake(tests: TestResult[] = [passed]) {
     Add: async (details, fingerprint, choices): Promise<AddResult> => {
       calls.added.push({ details, fingerprint, choices: choices ?? [] });
       return { hostId: "host-1", problem: null };
+    },
+    InstallWPCLI: async (details, hostId) => {
+      calls.installed.push({ details, hostId });
+      return install;
     },
   };
   return { api, calls };
@@ -239,5 +252,89 @@ export const SearchFailsThenRetried: Story = {
     // Try again searches again, without testing again.
     await userEvent.click(ui.getByRole("button", { name: "Try again" }));
     await expect(await ui.findByRole("heading", { level: 1, name: "Choose the sites to add" })).toBeInTheDocument();
+  },
+};
+
+// Up to the test step of a host on the account of u12ab.
+async function toTheTest(canvasElement: HTMLElement) {
+  const ui = first(canvasElement);
+  await userEvent.type(ui.getByLabelText("Name in Vigie"), "Shared hosting");
+  await userEvent.type(ui.getByLabelText("Host name"), "ssh.example-host.ch");
+  await userEvent.type(ui.getByLabelText("User"), "u12ab");
+  await userEvent.click(ui.getByRole("button", { name: "Continue" }));
+  await userEvent.click(await ui.findByLabelText("I compared this fingerprint with the one of my host"));
+  await userEvent.click(ui.getByRole("button", { name: "Trust and continue" }));
+  return ui;
+}
+
+const installing = fake([noWpCli]);
+
+// No WP-CLI on the account: Vigie offers to install it, says what it writes, then the test passes
+// with ~/bin/wp, which the host keeps (ADR-0039).
+export const InstallWPCLI: Story = {
+  args: { api: installing.api },
+  play: async ({ canvasElement, args }) => {
+    const ui = await toTheTest(canvasElement);
+    await expect(await ui.findByText("WP-CLI is missing on this account")).toBeInTheDocument();
+    await expect(ui.getByRole("list", { name: "Checks" })).toHaveTextContent("Not found (tried: wp, wp-cli, ~/bin/wp, php ~/wp-cli.phar)");
+    await expect(ui.getByRole("button", { name: "Search for sites" })).toBeDisabled();
+    await userEvent.click(ui.getByRole("button", { name: "Install WP-CLI…" }));
+
+    const dialog = within(await within(canvasElement).findByRole("dialog", { name: "Install WP-CLI on Shared hosting?" }));
+    await expect(dialog.getByText(/account u12ab@ssh.example-host.ch/)).toBeInTheDocument();
+    await expect(dialog.getByText("rm ~/bin/wp")).toBeInTheDocument();
+    await expect(dialog.getByText(/^2\.12\.0 · 7(\.|,)1 MB$/)).toBeInTheDocument();
+    await userEvent.click(dialog.getByRole("button", { name: "Install WP-CLI" }));
+
+    await expect(await ui.findByText("WP-CLI is installed")).toBeInTheDocument();
+    await expect(ui.getByRole("list", { name: "Checks" })).toHaveTextContent("2.12.0 (~/bin/wp), installed by Vigie");
+    await expect(installing.calls.installed).toHaveLength(1);
+    await expect(installing.calls.installed[0]!.hostId).toBe("");
+    await userEvent.click(ui.getByRole("button", { name: "Search for sites" }));
+    await userEvent.click(await ui.findByRole("button", { name: /Add the host/ }));
+    await waitFor(() => expect(args.onAdded).toHaveBeenCalled());
+    await expect(installing.calls.added.at(-1)!.details.wpCli).toBe("~/bin/wp");
+  },
+};
+
+// The file downloaded is not the WP-CLI pinned: the install stops at the check, nothing sent.
+export const InstallRefused: Story = {
+  args: {
+    api: fake([noWpCli], {
+      command: "", version: "", failedStep: "check",
+      problem: { code: "problem.wpCliDigest", detail: "the file downloaded is not WP-CLI 2.12.0" },
+    }).api,
+  },
+  play: async ({ canvasElement }) => {
+    const ui = await toTheTest(canvasElement);
+    await userEvent.click(await ui.findByRole("button", { name: "Install WP-CLI…" }));
+    await userEvent.click(await within(canvasElement).findByRole("button", { name: "Install WP-CLI" }));
+    const dialog = within(await within(canvasElement).findByRole("dialog", { name: "Installing WP-CLI" }));
+    await expect(await dialog.findByText("The file downloaded is refused")).toBeInTheDocument();
+    await expect(dialog.getByRole("list", { name: "Steps of the install" })).toHaveTextContent("Digest check");
+    await expect(dialog.getByRole("img", { name: "failed" })).toBeInTheDocument();
+    await userEvent.click(dialog.getByRole("button", { name: "Close" }));
+    // Still missing: the offer stays.
+    await expect(ui.getByText("WP-CLI is missing on this account")).toBeInTheDocument();
+  },
+};
+
+// No offer when PHP is too old for WP-CLI, nor over a ~/bin/wp that is there.
+export const NoOffer: Story = {
+  args: {
+    api: fake([
+      { phpVersion: "7.1.33", wpCli: "", wpCliVersion: "", install: null, problem: { code: "problem.wpCliPhpTooOld", detail: "7.1.33" } },
+      { phpVersion: "8.4.27", wpCli: "", wpCliVersion: "", install: null, problem: { code: "problem.wpCliExists", detail: "~/bin/wp" } },
+    ]).api,
+  },
+  play: async ({ canvasElement }) => {
+    const ui = await toTheTest(canvasElement);
+    await expect(await ui.findByText("PHP is too old for WP-CLI")).toBeInTheDocument();
+    await expect(ui.getByRole("img", { name: "To check" })).toBeInTheDocument();
+    await expect(ui.queryByRole("button", { name: "Install WP-CLI…" })).toBeNull();
+    await userEvent.click(ui.getByRole("button", { name: "Try again" }));
+    await expect(await ui.findByText("~/bin/wp already exists")).toBeInTheDocument();
+    await expect(ui.getByRole("list", { name: "Checks" })).toHaveTextContent("~/bin/wp exists but does not answer as WP-CLI");
+    await expect(ui.queryByRole("button", { name: "Install WP-CLI…" })).toBeNull();
   },
 };

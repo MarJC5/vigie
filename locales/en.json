@@ -433,7 +433,7 @@
     "lead": {
       "connection": "A host is one SSH account. Vigie uses the keys of your SSH agent and never asks for a password.",
       "key": "First connection to {{host}}. Compare this fingerprint with the one your host publishes before trusting it.",
-      "test": "Vigie checks the connection, PHP on the command line and WP-CLI, then searches the account for WordPress installs. Nothing is written on the server.",
+      "test": "Vigie checks the connection, PHP on the command line and WP-CLI, then searches the account for WordPress installs. Nothing is written on the server without your consent.",
       "sites_one": "{{count}} WordPress install found in the account. Vigie adds only the ones you check.",
       "sites_other": "{{count}} WordPress installs found in the account. Vigie adds only the ones you check."
     },
@@ -467,13 +467,17 @@
       "ssh": "SSH connection",
       "php": "PHP on the command line",
       "wpCli": "WP-CLI",
-      "connected": "Connected"
+      "connected": "Connected",
+      "wpCliNotFound": "Not found (tried: {{tried}})",
+      "wpCliExists": "{{path}} exists but does not answer as WP-CLI",
+      "wpCliInstalled": "{{version}} ({{command}}), installed by Vigie"
     },
     "state": {
       "ok": "Passed",
       "failed": "Failed",
       "waiting": "Not run yet",
-      "running": "In progress"
+      "running": "In progress",
+      "warn": "To check"
     },
     "testFailed": "The connection test failed",
     "retry": "Try again",
@@ -559,7 +563,8 @@
     "debugLogNoneNote": "WordPress writes none",
     "debugLogEmpty": "Empty",
     "debugLogWritten": "written by WordPress to {{path}}",
-    "debugLogLeft": "left from before: WordPress no longer writes to it"
+    "debugLogLeft": "left from before: WordPress no longer writes to it",
+    "testHost": "Test the connection…"
   },
   "updates": {
     "label": "Pending updates",
@@ -664,7 +669,10 @@
       "installed": "plugin or theme installed outside Vigie"
     },
     "notifiedChange": "Notified: {{what}} on {{names}}",
-    "and": " and "
+    "and": " and ",
+    "wpcli": "Install of WP-CLI on {{path}}",
+    "wpcliDone": "WP-CLI {{version}} in {{path}}, checked (SHA-512). Host's command: {{command}}.",
+    "wpcliFailed": "Stopped at the {{step}}: {{message}}"
   },
   "tray": {
     "open": "Open {{app}}",
@@ -1536,7 +1544,7 @@
       },
       "step3": {
         "title": "Test the connection.",
-        "text": "Vigie checks SSH, PHP on the command line and WP-CLI, then searches the account for WordPress installs. Nothing is written on the server."
+        "text": "Vigie checks SSH, PHP on the command line and WP-CLI, then searches the account for WordPress installs. Nothing is written on the server without your consent."
       },
       "step4": {
         "title": "Choose the sites.",
@@ -1603,7 +1611,7 @@
   },
   "hostTest": {
     "title": "Test the connection to {{name}}",
-    "lead": "Vigie checks the connection, PHP on the command line and WP-CLI. Nothing is written on the server.",
+    "lead": "Vigie checks the connection, PHP on the command line and WP-CLI. Nothing is written on the server without your consent.",
     "again": "Test again",
     "help": "See the help"
   },
@@ -1810,5 +1818,66 @@
     "oldByAge_other": "{{count}} backups over {{days}} days old, {{size}}",
     "old_one": "{{count}} backup past the limits, {{size}}",
     "old_other": "{{count}} backups past the limits, {{size}}"
+  },
+  "wpCliInstall": {
+    "offerTitle": "WP-CLI is missing on this account",
+    "offerText": "Vigie can install it in your home folder, {{path}}, without touching your sites: WP-CLI {{version}}, downloaded on this computer and checked before it is sent.",
+    "offerAction": "Install WP-CLI…",
+    "oldTitle": "PHP is too old for WP-CLI",
+    "existsTitle": "{{path}} already exists",
+    "doneTitle": "WP-CLI is installed",
+    "doneText": "This host's WP-CLI command is now {{command}}. To remove it one day: rm {{path}}",
+    "confirmTitle": "Install WP-CLI on {{name}}?",
+    "confirmLead": "Vigie writes one file in the home folder of the account {{account}}. Your sites are not touched.",
+    "file": "File written",
+    "wpCli": "WP-CLI",
+    "source": "Source",
+    "check": "Check",
+    "command": "Host's command",
+    "remove": "To remove it",
+    "wpCliValue": "{{version}} · {{size}}",
+    "sourceValue": "github.com/wp-cli, downloaded on this computer",
+    "checkValue": "SHA-512 digest built into Vigie, before anything is sent",
+    "commandValue": "becomes {{path}}",
+    "cancel": "Cancel",
+    "confirm": "Install WP-CLI",
+    "close": "Close",
+    "installing": "Installing…",
+    "runTitle": "Installing WP-CLI",
+    "runLead": "On {{name}} ({{account}}).",
+    "stepsLabel": "Steps of the install",
+    "step": {
+      "download": "Download",
+      "check": "Digest check",
+      "send": "Sent over SSH",
+      "test": "Command test"
+    },
+    "stepName": {
+      "download": "download",
+      "check": "check",
+      "send": "send",
+      "test": "test"
+    },
+    "detail": {
+      "download": "github.com, {{size}}",
+      "check": "SHA-512 of WP-CLI {{version}}",
+      "send": "to {{path}}",
+      "sendRunning": "{{done}} of {{total}}",
+      "test": "{{path}} cli info"
+    },
+    "state": {
+      "done": "done",
+      "running": "running",
+      "failed": "failed",
+      "waiting": "next"
+    },
+    "failed": {
+      "download": "The download failed",
+      "check": "The file downloaded is refused",
+      "send": "The send failed",
+      "test": "WP-CLI does not answer on this account"
+    },
+    "removeCommand": "rm {{path}}",
+    "progress": "Step {{step}} of {{total}}"
   }
 }
