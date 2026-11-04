@@ -14,7 +14,7 @@ export interface UpdateChoicesProps {
   onChange: (chosen: Set<string>) => void;
   /** The titles of the plugins and themes, by key. */
   names: Map<string, string>;
-  /** Opens the dialog that ignores an update (ADR-0026); without it, no "Ignore…". */
+  /** Opens the dialog that ignores an update (ADR-0026); without it, no "Ignore". */
   onIgnore?: (choice: Choice) => void;
   /** Counts an ignored update again. */
   onRestore?: (choice: Choice) => void;
@@ -22,7 +22,7 @@ export interface UpdateChoicesProps {
   onOpen?: (href: string) => void;
 }
 
-/** The updates of a site by kind, each offered one with a checkbox, its changelog and "Ignore…"; a
+/** The updates of a site by kind, each offered one with a checkbox, its changelog and "Ignore"; a
  kind with none says so; the ignored updates last, unticked, with why. */
 export function UpdateChoices({ groups, chosen, onChange, names, onIgnore, onRestore, onOpen }: UpdateChoicesProps) {
   const { t } = useTranslation();

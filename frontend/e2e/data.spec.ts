@@ -32,9 +32,9 @@ test.afterAll(async () => {
   await empty.close();
 });
 
-test("Export… in the menu of a host chooses that host", async () => {
+test("Export in the menu of a host chooses that host", async () => {
   await tree(seeded).getByRole("treeitem", { name: /Shared hosting/ }).click({ button: "right" });
-  await seeded.getByRole("menuitem", { name: "Export…" }).click();
+  await seeded.getByRole("menuitem", { name: "Export" }).click();
   const dialog = seeded.getByRole("dialog", { name: "Export the site manager" });
   await expect(dialog.getByRole("radio", { name: /A folder or a host/ })).toBeChecked();
   await expect(dialog.getByRole("combobox", { name: "A folder or a host" })).toHaveValue(/.+/);
@@ -45,12 +45,12 @@ test("Export… in the menu of a host chooses that host", async () => {
 
 test("everything is exported with its history, to a file readable by its owner only", async () => {
   await dataTab(seeded);
-  await seeded.getByRole("tabpanel").getByRole("button", { name: "Export…" }).click();
+  await seeded.getByRole("tabpanel").getByRole("button", { name: "Export" }).click();
   const dialog = seeded.getByRole("dialog", { name: "Export the site manager" });
   await expect(dialog.getByRole("radio", { name: /Everything/ })).toBeChecked();
   await expect(dialog).toContainText("A sensitive file");
   await dialog.getByRole("checkbox", { name: /Include the history/ }).check();
-  await dialog.getByRole("button", { name: "Export…" }).click();
+  await dialog.getByRole("button", { name: "Export" }).click();
   await expect(seeded.getByRole("tabpanel")).toContainText(/Saved to .*vigie-\d{4}-\d{2}-\d{2}\.json\./);
 
   const name = readdirSync(files).find((f) => /^vigie-\d{4}-\d{2}-\d{2}\.json$/.test(f))!;
@@ -64,7 +64,7 @@ test("everything is exported with its history, to a file readable by its owner o
 
 test("the export imported into an empty Vigie gives the tree, the history and the finding set aside", async () => {
   await dataTab(empty);
-  await empty.getByRole("tabpanel").getByRole("button", { name: "Import…" }).first().click();
+  await empty.getByRole("tabpanel").getByRole("button", { name: "Import" }).first().click();
   await expect(empty.getByRole("heading", { level: 1 })).toHaveText("Import import.json");
   await expect(empty.getByRole("main")).toHaveCount(1);
   await expect(empty.getByText(/, with history\. Nothing is added until you confirm\.$/)).toBeVisible();
@@ -85,7 +85,7 @@ test("the export imported into an empty Vigie gives the tree, the history and th
 
 test("the same file again adds nothing", async () => {
   await dataTab(empty);
-  await empty.getByRole("tabpanel").getByRole("button", { name: "Import…" }).first().click();
+  await empty.getByRole("tabpanel").getByRole("button", { name: "Import" }).first().click();
   await expect(empty.getByText("Nothing to add: everything is already in Vigie.")).toBeVisible();
   await expect(empty.getByRole("button", { name: "Add 0 items" })).toBeDisabled();
   await empty.getByRole("button", { name: "Cancel" }).click();
@@ -94,7 +94,7 @@ test("the same file again adds nothing", async () => {
 
 test("a CSV list is previewed with the line refused, then added into a folder", async () => {
   writeFileSync(join(files, "import.csv"), "folder;host;user;path\nCSV;ssh.example.test;atelier;~/www/atelier\nCSV;ssh.example.test;atelier;\n");
-  await empty.getByRole("tabpanel").getByRole("button", { name: "Import…" }).last().click();
+  await empty.getByRole("tabpanel").getByRole("button", { name: "Import" }).last().click();
   await expect(empty.getByText(/^2 lines read, separated by semicolons\./)).toBeVisible();
   await expect(empty.getByText("Line 3: no path")).toBeVisible();
   await empty.getByRole("combobox", { name: "Into" }).selectOption({ label: "Clients" });

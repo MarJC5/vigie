@@ -5,7 +5,7 @@ ordinateur, ou venir d'ailleurs. Rien n'est envoyé nulle part.
 
 ## Exporter
 
-**Réglages, Données, Exporter…**, ou **Exporter…** dans le menu d'un dossier ou d'un hébergement.
+**Réglages, Données, Exporter**, ou **Exporter** dans le menu d'un dossier ou d'un hébergement.
 Le fichier n'est lisible que par vous. Il nomme vos serveurs et vos utilisateurs SSH et contient vos
 notes : gardez-le en lieu sûr. **Jamais** une clé privée ni un mot de passe.
 

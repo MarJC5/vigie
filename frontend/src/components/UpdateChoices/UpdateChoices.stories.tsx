@@ -44,7 +44,7 @@ export const Choices: StoryObj<typeof meta> = {
 };
 
 // An update ignored (ADR-0026): apart, unticked, with why; each offered update has its changelog
-// and "Ignore…".
+// and "Ignore".
 const ignore = { untilVersion: "", reason: "payment not tested", created: "2026-11-01T10:00:00Z" };
 const held = choicesOf(updates.map((u) => (u.slug === "woocommerce" ? { ...u, ignore } : u)));
 

@@ -55,7 +55,7 @@ export interface SiteOverviewProps {
   /** Opens the dialog that sets a finding aside; without it, findings are only listed. */
   onIgnore?: (finding: FindingView) => void;
   onRestore?: (finding: FindingView) => void;
-  /** Opens the dialog that ignores an update offered (ADR-0026); without it, no "Ignore…". */
+  /** Opens the dialog that ignores an update offered (ADR-0026); without it, no "Ignore". */
   onIgnoreUpdate?: (choice: Choice) => void;
   onRestoreUpdate?: (choice: Choice) => void;
   /** Opens an address in the browser, or an ssh:// address in the user's terminal. */

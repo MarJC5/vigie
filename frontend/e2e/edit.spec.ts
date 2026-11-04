@@ -47,7 +47,7 @@ test("a name already used is refused, and the footer says why", async () => {
 
 test("a host is moved from its menu", async () => {
   await item(/Managed VPS/).click({ button: "right" });
-  await page.getByRole("menuitem", { name: "Move to…" }).click();
+  await page.getByRole("menuitem", { name: "Move to" }).click();
   const dialog = page.getByRole("dialog", { name: 'Move "Managed VPS"' });
   await dialog.getByRole("radio", { name: /Clients/ }).check();
   await dialog.getByRole("button", { name: "Move" }).click();
@@ -58,7 +58,7 @@ test("a host is moved from its menu", async () => {
 // WebKit does not focus a clicked radio: Escape must close the dialog all the same.
 test("Escape closes a dialog after a choice", async () => {
   await item(/Managed VPS/).click({ button: "right" });
-  await page.getByRole("menuitem", { name: "Move to…" }).click();
+  await page.getByRole("menuitem", { name: "Move to" }).click();
   await page.getByRole("radio", { name: /Personal/ }).check();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -83,7 +83,7 @@ test("a site takes a color of its own from its menu", async () => {
 
 test("an empty folder is deleted after a confirmation", async () => {
   await item(/^Valais/).click({ button: "right" });
-  await page.getByRole("menuitem", { name: "Delete the folder…" }).click();
+  await page.getByRole("menuitem", { name: "Delete the folder" }).click();
   await page.getByRole("dialog", { name: 'Delete the folder "Valais"?' }).getByRole("button", { name: "Delete the folder" }).click();
   await expect(item(/^Valais/)).toHaveCount(0);
 });
@@ -142,7 +142,7 @@ test("a tag across sites: its page, renamed onto another, removed", async () => 
 
   // Renamed onto Dupont: both become one, and the page follows.
   await page.getByRole("button", { name: "More actions" }).click();
-  await page.getByRole("menuitem", { name: "Rename the tag…" }).click();
+  await page.getByRole("menuitem", { name: "Rename the tag" }).click();
   const rename = page.getByRole("dialog", { name: "Rename “Contrat”" });
   await rename.getByRole("textbox", { name: "Name" }).fill("dupont");
   await expect(rename.getByRole("note")).toContainText("Both become one tag, on 2 sites.");
@@ -153,7 +153,7 @@ test("a tag across sites: its page, renamed onto another, removed", async () => 
 
   // Removed from every site: the group goes with its last tag.
   await page.getByRole("button", { name: "More actions" }).click();
-  await page.getByRole("menuitem", { name: "Remove from every site…" }).click();
+  await page.getByRole("menuitem", { name: "Remove from every site" }).click();
   await page.getByRole("dialog", { name: "Remove “Dupont” from every site?" }).getByRole("button", { name: "Remove the tag" }).click();
   await expect(item(/^Dupont/)).toHaveCount(0);
   await expect(item(/^Tags/)).toHaveCount(0);
@@ -165,7 +165,7 @@ test("a site's backups: listed in its History tab, those past 30 days removed af
   const panel = page.getByRole("tabpanel");
   await expect(panel.getByRole("heading", { name: "Backups on the server" })).toBeVisible();
   await expect(panel.getByText("1 backup over 30 days old, 45.1 MB")).toBeVisible();
-  await panel.getByRole("button", { name: "Remove…" }).click();
+  await panel.getByRole("button", { name: "Remove" }).click();
   const dialog = page.getByRole("dialog", { name: "Remove 1 backup of boulangerie-exemple.ch?" });
   await dialog.getByRole("button", { name: "Remove the backup" }).click();
   // The seed's servers do not exist: the footer says the server could not be reached.
@@ -174,7 +174,7 @@ test("a site's backups: listed in its History tab, those past 30 days removed af
 
 test("a site deleted with its backups, its server unreachable: the command that removes them", async () => {
   await item(/boulangerie-exemple\.ch/).click({ button: "right" });
-  await page.getByRole("menuitem", { name: "Delete the site…" }).click();
+  await page.getByRole("menuitem", { name: "Delete the site" }).click();
   const dialog = page.getByRole("dialog", { name: 'Delete "boulangerie-exemple.ch"?' });
   await expect(dialog.getByRole("checkbox", { name: /Also remove its backups on the server/ })).toBeChecked();
   await expect(dialog.getByText(/^2 backups, 93 MB, in ~\/\.vigie\/backups\./)).toBeVisible();

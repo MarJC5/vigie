@@ -59,7 +59,7 @@ export const ThreeItems: Story = {
 export const OnlySites: Story = {
   render: (args) => <SelectionPage {...args} onMove={undefined} />,
   play: async ({ canvas }) => {
-    await expect(canvas.queryByRole("button", { name: "Move to…" })).toBeNull();
+    await expect(canvas.queryByRole("button", { name: "Move to" })).toBeNull();
   },
 };
 

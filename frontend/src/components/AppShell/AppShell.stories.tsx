@@ -325,9 +325,9 @@ export const MoveFromTheMenu: Story = {
     await userEvent.pointer({ keys: "[MouseRight]", target: shell.getByRole("treeitem", { name: /Managed VPS/ }) });
     const menu = shell.getByRole("menu", { name: "Actions on Managed VPS" });
     await expect(within(menu).getAllByRole("menuitem").map((i) => i.textContent)).toEqual([
-      "Scan⌘R", "New folder⇧⌘N", "Rename↩", "Move to…", "Edit the connection…", "Test the connection…", "Find new sites…", "Delete the host…⌘⌫",
+      "Scan⌘R", "New folder⇧⌘N", "Rename↩", "Move to", "Edit the connection", "Test the connection", "Find new sites", "Delete the host⌘⌫",
     ]);
-    await userEvent.click(within(menu).getByRole("menuitem", { name: "Move to…" }));
+    await userEvent.click(within(menu).getByRole("menuitem", { name: "Move to" }));
     const dialog = shell.getByRole("dialog", { name: 'Move "Managed VPS"' });
     await expect(firstWindow(canvas).querySelector("nav")).toHaveAttribute("inert");
     await userEvent.click(within(dialog).getByRole("radio", { name: /Clients/ }));
@@ -375,7 +375,7 @@ export const DeleteFromTheTitleMenu: Story = {
   play: async ({ canvas, args }) => {
     const shell = within(firstWindow(canvas));
     await userEvent.click(await shell.findByRole("button", { name: "More actions" }));
-    await userEvent.click(shell.getByRole("menuitem", { name: "Delete the host…" }));
+    await userEvent.click(shell.getByRole("menuitem", { name: "Delete the host" }));
     const dialog = shell.getByRole("dialog", { name: 'Delete "Shared hosting"?' });
     await userEvent.click(within(dialog).getByRole("button", { name: "Delete the host" }));
     await waitFor(() => expect(args.edit!.Delete).toHaveBeenCalledWith(["shared"], true));
@@ -529,11 +529,11 @@ export const MenuOfASelection: Story = {
     await userEvent.pointer({ keys: "[MouseRight]", target: shell.getByRole("treeitem", { name: /Shared hosting/ }) });
     const menu = shell.getByRole("menu", { name: "2 items selected" });
     await expect(within(menu).getAllByRole("menuitem").map((i) => i.textContent)).toEqual([
-      "Scan the 3 sites⌘R", "Update all…", "Move the 2 hosts…", "Tags of the 3 sites…", "Delete the 2 items…⌘⌫",
+      "Scan the 3 sites⌘R", "Update all", "Move the 2 hosts", "Tags of the 3 sites", "Delete the 2 items⌘⌫",
     ]);
     // The selection stays.
     await expect(shell.getByRole("treeitem", { name: /Managed VPS/ })).toHaveAttribute("aria-selected", "true");
-    await userEvent.click(within(menu).getByRole("menuitem", { name: "Move the 2 hosts…" }));
+    await userEvent.click(within(menu).getByRole("menuitem", { name: "Move the 2 hosts" }));
     const dialog = shell.getByRole("dialog", { name: "Move 2 hosts" });
     await userEvent.click(within(dialog).getByRole("radio", { name: /Top level/ }));
     await userEvent.click(within(dialog).getByRole("button", { name: "Move" }));
@@ -566,7 +566,7 @@ export const TagsOfSeveral: Story = {
   play: async ({ canvas, args }) => {
     const shell = within(firstWindow(canvas));
     fireEvent.click(shell.getByRole("treeitem", { name: /Managed VPS/ }), { metaKey: true });
-    await userEvent.click(await shell.findByRole("button", { name: "Tags…" }));
+    await userEvent.click(await shell.findByRole("button", { name: "Tags" }));
     const dialog = shell.getByRole("dialog", { name: "Tags of 3 sites" });
     await userEvent.type(within(dialog).getByRole("textbox", { name: "New tag" }), "Contrat{Enter}");
     await waitFor(() => expect(args.edit!.TagMany).toHaveBeenCalledWith(["shared", "vps"], "Contrat", true));

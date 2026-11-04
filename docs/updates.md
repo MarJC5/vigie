@@ -74,7 +74,7 @@ in its own folder only. A folder named after a site this Vigie does not know is 
 belong to Vigie on another computer.
 
 Each scan reads a site's backups, the date and size of each update's, and only reads. The site's
-**History** tab lists them; those past the limits can be removed at once with **Remove…**, after a
+**History** tab lists them; those past the limits can be removed at once with **Remove**, after a
 confirmation. The history of the updates stays in Vigie's own database, on your computer.
 
 ## Rolling back

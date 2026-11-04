@@ -22,7 +22,7 @@ wordpress.org, ce que Vigie fait sinon une fois par jour.
 
 ## Ignorer un constat
 
-Un constat que vous connaissez peut être ignoré : **Ignorer…**, puis soit **jusqu'à la prochaine
+Un constat que vous connaissez peut être ignoré : **Ignorer**, puis soit **jusqu'à la prochaine
 version** de son extension, de son thème, de WordPress ou de PHP, soit **définitivement**, avec une
 raison. Il reste listé, grisé, et ne compte plus dans l'état. **Ne plus ignorer** le rétablit.
 

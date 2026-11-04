@@ -144,7 +144,7 @@ export interface AppShellProps {
   helpPage?: ReactNode;
   /** Scans a node comparing its files again, even within the day. */
   onCheckFiles?: (nodeId: string) => void;
-  /** "Export…" in the menu of a folder or host. */
+  /** "Export" in the menu of a folder or host. */
   onExport?: (nodeId: string) => void;
   /** Without it, findings are listed but not set aside. */
   security?: SecurityApi;

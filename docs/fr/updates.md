@@ -83,7 +83,7 @@ connaît pas reste tel quel : il peut appartenir au Vigie d'un autre ordinateur
 
 Chaque relevé lit les sauvegardes d'un site, la date et la taille de celles de chaque mise à jour,
 et ne fait que lire. L'onglet **Historique** du site les liste, et celles au-delà des limites se
-suppriment d'un coup avec **Supprimer…**, après une confirmation. L'historique des mises à jour
+suppriment d'un coup avec **Supprimer**, après une confirmation. L'historique des mises à jour
 reste dans la base de Vigie, sur votre ordinateur.
 
 ## Revenir en arrière

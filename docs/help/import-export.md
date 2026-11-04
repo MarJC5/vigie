@@ -5,7 +5,7 @@ from elsewhere. Nothing is sent anywhere.
 
 ## Export
 
-**Settings, Data, Export…**, or **Export…** in the menu of a folder or host. The file is readable
+**Settings, Data, Export**, or **Export** in the menu of a folder or host. The file is readable
 by you only. It names your servers and SSH users and holds your notes: keep it somewhere safe.
 **Never** a private key or a password.
 

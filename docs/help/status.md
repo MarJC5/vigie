@@ -20,7 +20,7 @@ otherwise once a day.
 
 ## Set a finding aside
 
-A finding you know about can be ignored: **Ignore…**, then either **until the next version** of
+A finding you know about can be ignored: **Ignore**, then either **until the next version** of
 its plugin, theme, WordPress or PHP, or **permanently**, with a reason. It stays listed, dimmed,
 and no longer counts in the status. **Stop ignoring** puts it back.
 

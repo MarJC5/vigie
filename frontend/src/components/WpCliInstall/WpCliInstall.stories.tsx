@@ -100,7 +100,7 @@ export const Notices: Story = {
     </div>
   ),
   play: async ({ canvas }) => {
-    await expect(canvas.getAllByRole("button", { name: "Install WP-CLI…" })).toHaveLength(2);
+    await expect(canvas.getAllByRole("button", { name: "Install WP-CLI" })).toHaveLength(2);
     await expect(canvas.getAllByText("PHP is too old for WP-CLI")).toHaveLength(2);
     await expect(canvas.getAllByText("~/bin/wp already exists")).toHaveLength(2);
     await expect(canvas.getAllByText("WP-CLI is installed")).toHaveLength(2);

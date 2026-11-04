@@ -36,7 +36,7 @@ export const ExportEverything: Story = {
   play: async ({ canvasElement, args }) => {
     const dialog = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark] [role=dialog]")!);
     await waitFor(() => expect(dialog.getByText("3 folders, 6 hosts, 11 sites, 4 findings set aside")).toBeInTheDocument());
-    await userEvent.click(dialog.getByRole("button", { name: "Export…" }));
+    await userEvent.click(dialog.getByRole("button", { name: "Export" }));
     await waitFor(() =>
       expect(args.onClose).toHaveBeenCalledWith({ row: "export", text: "Saved to /Users/someone/Documents/vigie-2026-10-30.json." }),
     );

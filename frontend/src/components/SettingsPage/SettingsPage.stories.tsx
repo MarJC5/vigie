@@ -126,11 +126,11 @@ export const Data: Story = {
   args: { tab: "data", dataNote: { row: "import", text: "5 folders, hosts and sites added." } },
   play: async ({ canvasElement, args }) => {
     const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
-    await userEvent.click(page.getByRole("button", { name: "Export…" }));
+    await userEvent.click(page.getByRole("button", { name: "Export" }));
     await expect(args.onExport).toHaveBeenCalled();
-    await userEvent.click(page.getByRole("button", { name: "Choose…" }));
+    await userEvent.click(page.getByRole("button", { name: "Choose" }));
     await expect(args.onImport).toHaveBeenCalledWith("ssh");
-    await userEvent.click(page.getAllByRole("button", { name: "Import…" })[1]!);
+    await userEvent.click(page.getAllByRole("button", { name: "Import" })[1]!);
     await expect(args.onImport).toHaveBeenLastCalledWith("csv");
     await expect(page.getByText("5 folders, hosts and sites added.")).toBeInTheDocument();
   },

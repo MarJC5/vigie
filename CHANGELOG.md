@@ -7,6 +7,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Buttons and menus no longer end with an ellipsis ("Export", not "Export…"); what is running
+  keeps it ("Scanning…").
+
 ## [0.1.1] - 2026-11-03
 
 ### Changed

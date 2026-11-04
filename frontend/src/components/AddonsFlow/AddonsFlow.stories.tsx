@@ -29,7 +29,7 @@ export const RunASource: StoryObj<typeof meta> = {
     const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
     await userEvent.click(await page.findByRole("tab", { name: "Installed" }));
     await userEvent.click(page.getByRole("button", { name: "Open Site list" }));
-    await userEvent.click(page.getByRole("button", { name: "Other file…" }));
+    await userEvent.click(page.getByRole("button", { name: "Other file" }));
     await waitFor(() => expect(page.getByRole("textbox", { name: "List" })).toHaveValue("/Users/someone/servers.xml"));
     await userEvent.click(page.getByRole("button", { name: "Run the import" }));
     await waitFor(() => expect(args.onPreview).toHaveBeenCalled());

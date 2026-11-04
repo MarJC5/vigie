@@ -278,7 +278,7 @@ export const InstallWPCLI: Story = {
     await expect(await ui.findByText("WP-CLI is missing on this account")).toBeInTheDocument();
     await expect(ui.getByRole("list", { name: "Checks" })).toHaveTextContent("Not found (tried: wp, wp-cli, ~/bin/wp, php ~/wp-cli.phar)");
     await expect(ui.getByRole("button", { name: "Search for sites" })).toBeDisabled();
-    await userEvent.click(ui.getByRole("button", { name: "Install WP-CLI…" }));
+    await userEvent.click(ui.getByRole("button", { name: "Install WP-CLI" }));
 
     const dialog = within(await within(canvasElement).findByRole("dialog", { name: "Install WP-CLI on Shared hosting?" }));
     await expect(dialog.getByText(/account u12ab@ssh.example-host.ch/)).toBeInTheDocument();
@@ -307,8 +307,9 @@ export const InstallRefused: Story = {
   },
   play: async ({ canvasElement }) => {
     const ui = await toTheTest(canvasElement);
-    await userEvent.click(await ui.findByRole("button", { name: "Install WP-CLI…" }));
-    await userEvent.click(await within(canvasElement).findByRole("button", { name: "Install WP-CLI" }));
+    await userEvent.click(await ui.findByRole("button", { name: "Install WP-CLI" }));
+    const question = within(await within(canvasElement).findByRole("dialog", { name: "Install WP-CLI on Shared hosting?" }));
+    await userEvent.click(question.getByRole("button", { name: "Install WP-CLI" }));
     const dialog = within(await within(canvasElement).findByRole("dialog", { name: "Installing WP-CLI" }));
     await expect(await dialog.findByText("The file downloaded is refused")).toBeInTheDocument();
     await expect(dialog.getByRole("list", { name: "Steps of the install" })).toHaveTextContent("Digest check");
@@ -331,10 +332,10 @@ export const NoOffer: Story = {
     const ui = await toTheTest(canvasElement);
     await expect(await ui.findByText("PHP is too old for WP-CLI")).toBeInTheDocument();
     await expect(ui.getByRole("img", { name: "To check" })).toBeInTheDocument();
-    await expect(ui.queryByRole("button", { name: "Install WP-CLI…" })).toBeNull();
+    await expect(ui.queryByRole("button", { name: "Install WP-CLI" })).toBeNull();
     await userEvent.click(ui.getByRole("button", { name: "Try again" }));
     await expect(await ui.findByText("~/bin/wp already exists")).toBeInTheDocument();
     await expect(ui.getByRole("list", { name: "Checks" })).toHaveTextContent("~/bin/wp exists but does not answer as WP-CLI");
-    await expect(ui.queryByRole("button", { name: "Install WP-CLI…" })).toBeNull();
+    await expect(ui.queryByRole("button", { name: "Install WP-CLI" })).toBeNull();
   },
 };

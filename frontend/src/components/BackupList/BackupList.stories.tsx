@@ -22,7 +22,7 @@ export const PastTheLimit: Story = {
     await expect(rows[0]).toHaveTextContent(/Update45\.1 MBOver 30 days/);
     await expect(rows[2]).toHaveTextContent(/Update of 2 items48\.2 MB/);
     await expect(list.getByText("1 backup over 30 days old, 45.1 MB")).toBeInTheDocument();
-    await userEvent.click(list.getByRole("button", { name: "Remove…" }));
+    await userEvent.click(list.getByRole("button", { name: "Remove" }));
     await expect(args.onRemove).toHaveBeenCalled();
   },
 };
@@ -32,7 +32,7 @@ export const Busy: Story = {
   args: { busy: true },
   play: async ({ canvasElement }) => {
     const list = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
-    await expect(list.getByRole("button", { name: "Remove…" })).toBeDisabled();
+    await expect(list.getByRole("button", { name: "Remove" })).toBeDisabled();
   },
 };
 

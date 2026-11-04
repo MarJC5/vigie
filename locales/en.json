@@ -53,21 +53,21 @@
     "empty": "No site in these items.",
     "hint": "⌘-click adds or removes an item, ⇧-click selects a range, ⌘A all, Escape goes back to one.",
     "action": {
-      "tags": "Tags…",
-      "delete": "Delete…"
+      "tags": "Tags",
+      "delete": "Delete"
     },
     "menu": {
-      "update": "Update all…",
-      "moveHosts_one": "Move the host…",
-      "moveHosts_other": "Move the {{count}} hosts…",
-      "moveFolders_one": "Move the folder…",
-      "moveFolders_other": "Move the {{count}} folders…",
-      "moveItems_one": "Move the item…",
-      "moveItems_other": "Move the {{count}} items…",
-      "tags_one": "Tags of the site…",
-      "tags_other": "Tags of the {{count}} sites…",
-      "delete_one": "Delete the item…",
-      "delete_other": "Delete the {{count}} items…"
+      "update": "Update all",
+      "moveHosts_one": "Move the host",
+      "moveHosts_other": "Move the {{count}} hosts",
+      "moveFolders_one": "Move the folder",
+      "moveFolders_other": "Move the {{count}} folders",
+      "moveItems_one": "Move the item",
+      "moveItems_other": "Move the {{count}} items",
+      "tags_one": "Tags of the site",
+      "tags_other": "Tags of the {{count}} sites",
+      "delete_one": "Delete the item",
+      "delete_other": "Delete the {{count}} items"
     },
     "delete": {
       "title_one": "Delete {{count}} item?",
@@ -543,7 +543,7 @@
     "sourceUnknownCount_other": "{{count}} plugins",
     "show": "Show",
     "close": "Close",
-    "remove": "Remove from Vigie…",
+    "remove": "Remove from Vigie",
     "attemptTitle": "The latest scan did not complete",
     "attemptText": "{{reason}}. These results are from the scan of {{date}} at {{time}}.",
     "showPlugins": "Show the plugins",
@@ -564,7 +564,7 @@
     "debugLogEmpty": "Empty",
     "debugLogWritten": "written by WordPress to {{path}}",
     "debugLogLeft": "left from before: WordPress no longer writes to it",
-    "testHost": "Test the connection…"
+    "testHost": "Test the connection"
   },
   "updates": {
     "label": "Pending updates",
@@ -683,17 +683,17 @@
     "urgent_other": "{{count}} sites urgent",
     "noneUrgent": "No site urgent",
     "quit": "Quit {{app}}",
-    "release": "Vigie {{version}} is available…"
+    "release": "Vigie {{version}} is available"
   },
   "menu": {
     "about": "About {{app}}",
-    "settings": "Settings…",
+    "settings": "Settings",
     "hide": "Hide {{app}}",
     "hideOthers": "Hide Others",
     "showAll": "Show All",
     "quit": "Quit {{app}}",
     "file": "File",
-    "newHost": "New Host…",
+    "newHost": "New Host",
     "newFolder": "New Folder",
     "closeWindow": "Close Window",
     "edit": "Edit",
@@ -785,13 +785,13 @@
       "scan": "Scan",
       "newFolder": "New folder",
       "rename": "Rename",
-      "move": "Move to…",
+      "move": "Move to",
       "color": "Color",
-      "edit": "Edit the connection…",
-      "find": "Find new sites…",
-      "deleteFolder": "Delete the folder…",
-      "deleteHost": "Delete the host…",
-      "deleteSite": "Delete the site…",
+      "edit": "Edit the connection",
+      "find": "Find new sites",
+      "deleteFolder": "Delete the folder",
+      "deleteHost": "Delete the host",
+      "deleteSite": "Delete the site",
       "colors": {
         "none": "None",
         "red": "Red",
@@ -802,10 +802,10 @@
         "magenta": "Magenta",
         "orange": "Orange"
       },
-      "addHost": "Add a host…",
+      "addHost": "Add a host",
       "scanAll": "Scan everything",
-      "export": "Export…",
-      "test": "Test the connection…"
+      "export": "Export",
+      "test": "Test the connection"
     },
     "more": "More actions",
     "dropInto": "Drop to move {{name}} into {{folder}}",
@@ -1000,7 +1000,7 @@
     "upToDateOne": "Up to date",
     "changelog": "Changelog",
     "releaseNotes": "Release notes",
-    "ignore": "Ignore…",
+    "ignore": "Ignore",
     "ignoreNamed": "Ignore the update of {{name}}",
     "restore": "Stop ignoring",
     "restoreNamed": "Stop ignoring the update of {{name}}",
@@ -1043,7 +1043,7 @@
       "info": "Information",
       "ignored": "Ignored"
     },
-    "ignore": "Ignore…",
+    "ignore": "Ignore",
     "ignoreNamed": "Ignore “{{title}}”",
     "restore": "Stop ignoring",
     "restoreNamed": "Stop ignoring “{{title}}”",
@@ -1363,9 +1363,9 @@
     "into": "Into",
     "exportTitle": "Export the site manager",
     "exportDesc": "Folders, hosts and sites with their colors, notes, tags and findings set aside, in a JSON file. The history if you want it.",
-    "exportAction": "Export…",
-    "importAction": "Import…",
-    "sshAction": "Choose…",
+    "exportAction": "Export",
+    "importAction": "Import",
+    "sshAction": "Choose",
     "vigieTitle": "A Vigie file",
     "vigieDesc": "An export of Vigie, from this computer or another one. Only what is new is added; nothing existing is changed.",
     "sshTitle": "SSH configuration",
@@ -1419,7 +1419,7 @@
       "historyHintShort": "Scans with their findings, updates and rollbacks with their steps.",
       "sensitive": "A sensitive file",
       "sensitiveText": "It names your servers, your SSH users and holds your notes. Keep it somewhere safe. Keys and passwords are never in it.",
-      "confirm": "Export…",
+      "confirm": "Export",
       "failed": "Not exported"
     },
     "ssh": {
@@ -1512,7 +1512,7 @@
     "run": "Run the import",
     "running": "Running…",
     "nothingBefore": "Nothing is added before the preview.",
-    "chooseFile": "Other file…",
+    "chooseFile": "Other file",
     "details": "Details",
     "installedAt": "Installed at",
     "destinationNote": "This add-on runs from the command line: vigie {{name}}",
@@ -1597,7 +1597,7 @@
     "computed": "Computed: {{address}}",
     "reset": "Back to the computed address",
     "save": "Save",
-    "menu": "Admin address…"
+    "menu": "Admin address"
   },
   "notes": {
     "title": "Notes",
@@ -1694,9 +1694,9 @@
     "new": "new",
     "menu": {
       "scan": "Scan the sites",
-      "update": "Update the sites…",
-      "rename": "Rename the tag…",
-      "remove": "Remove from every site…"
+      "update": "Update the sites",
+      "rename": "Rename the tag",
+      "remove": "Remove from every site"
     },
     "page": {
       "scan": "Scan the sites",
@@ -1795,7 +1795,7 @@
     "update": "Update",
     "pastDays": "Over {{days}} days",
     "beyond": "Beyond the last {{kept}}",
-    "removeAction": "Remove…",
+    "removeAction": "Remove",
     "updatesTitle": "Updates",
     "copy": "Copy",
     "copied": "Copied",
@@ -1822,7 +1822,7 @@
   "wpCliInstall": {
     "offerTitle": "WP-CLI is missing on this account",
     "offerText": "Vigie can install it in your home folder, {{path}}, without touching your sites: WP-CLI {{version}}, downloaded on this computer and checked before it is sent.",
-    "offerAction": "Install WP-CLI…",
+    "offerAction": "Install WP-CLI",
     "oldTitle": "PHP is too old for WP-CLI",
     "existsTitle": "{{path}} already exists",
     "doneTitle": "WP-CLI is installed",

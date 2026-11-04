@@ -47,7 +47,7 @@ export const Everything: Story = {
     await expect(dialog.getByText("A sensitive file")).toBeInTheDocument();
     await userEvent.click(dialog.getByRole("checkbox", { name: /Include the history/ }));
     await expect(args.onHistory).toHaveBeenCalledWith(true);
-    await userEvent.click(dialog.getByRole("button", { name: "Export…" }));
+    await userEvent.click(dialog.getByRole("button", { name: "Export" }));
     await expect(args.onExport).toHaveBeenCalled();
   },
 };

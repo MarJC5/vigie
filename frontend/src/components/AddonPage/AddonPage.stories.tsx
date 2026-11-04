@@ -43,7 +43,7 @@ export const ASource: Story = {
     await expect(page.getByText("by Someone · Source · version 0.2.0")).toBeInTheDocument();
     const run = page.getByRole("button", { name: "Run the import" });
     await expect(run).toBeDisabled();
-    await userEvent.click(page.getByRole("button", { name: "Other file…" }));
+    await userEvent.click(page.getByRole("button", { name: "Other file" }));
     await expect(args.onChooseFile).toHaveBeenCalledWith("file");
     await userEvent.type(page.getByRole("textbox", { name: "List" }), "/Users/someone/servers.xml");
     await userEvent.click(page.getByRole("checkbox", { name: /Every server/ }));

@@ -67,26 +67,26 @@
     "empty": "Aucun site dans ces éléments.",
     "hint": "⌘-clic ajoute ou retire un élément, ⇧-clic sélectionne une suite, ⌘A tout, Échap revient à un seul.",
     "action": {
-      "tags": "Étiquettes…",
-      "delete": "Supprimer…"
+      "tags": "Étiquettes",
+      "delete": "Supprimer"
     },
     "menu": {
-      "update": "Tout mettre à jour…",
-      "moveHosts_one": "Déplacer l'hébergement…",
-      "moveHosts_many": "Déplacer les {{count}} hébergements…",
-      "moveHosts_other": "Déplacer les {{count}} hébergements…",
-      "moveFolders_one": "Déplacer le dossier…",
-      "moveFolders_many": "Déplacer les {{count}} dossiers…",
-      "moveFolders_other": "Déplacer les {{count}} dossiers…",
-      "moveItems_one": "Déplacer l'élément…",
-      "moveItems_many": "Déplacer les {{count}} éléments…",
-      "moveItems_other": "Déplacer les {{count}} éléments…",
-      "tags_one": "Étiquettes du site…",
-      "tags_many": "Étiquettes des {{count}} sites…",
-      "tags_other": "Étiquettes des {{count}} sites…",
-      "delete_one": "Supprimer l'élément…",
-      "delete_many": "Supprimer les {{count}} éléments…",
-      "delete_other": "Supprimer les {{count}} éléments…"
+      "update": "Tout mettre à jour",
+      "moveHosts_one": "Déplacer l'hébergement",
+      "moveHosts_many": "Déplacer les {{count}} hébergements",
+      "moveHosts_other": "Déplacer les {{count}} hébergements",
+      "moveFolders_one": "Déplacer le dossier",
+      "moveFolders_many": "Déplacer les {{count}} dossiers",
+      "moveFolders_other": "Déplacer les {{count}} dossiers",
+      "moveItems_one": "Déplacer l'élément",
+      "moveItems_many": "Déplacer les {{count}} éléments",
+      "moveItems_other": "Déplacer les {{count}} éléments",
+      "tags_one": "Étiquettes du site",
+      "tags_many": "Étiquettes des {{count}} sites",
+      "tags_other": "Étiquettes des {{count}} sites",
+      "delete_one": "Supprimer l'élément",
+      "delete_many": "Supprimer les {{count}} éléments",
+      "delete_other": "Supprimer les {{count}} éléments"
     },
     "delete": {
       "title_one": "Supprimer {{count}} élément ?",
@@ -595,7 +595,7 @@
     "sourceUnknownCount_other": "{{count}} extensions",
     "show": "Voir",
     "close": "Fermer",
-    "remove": "Retirer de Vigie…",
+    "remove": "Retirer de Vigie",
     "attemptTitle": "Le dernier relevé n'a pas abouti",
     "attemptText": "{{reason}}. Ces résultats datent du relevé du {{date}} à {{time}}.",
     "showPlugins": "Voir les extensions",
@@ -616,7 +616,7 @@
     "debugLogEmpty": "Vide",
     "debugLogWritten": "écrit par WordPress dans {{path}}",
     "debugLogLeft": "resté d'avant : WordPress n'y écrit plus",
-    "testHost": "Tester la connexion…"
+    "testHost": "Tester la connexion"
   },
   "updates": {
     "label": "Mises à jour en attente",
@@ -749,17 +749,17 @@
     "urgent_other": "{{count}} sites urgents",
     "noneUrgent": "Aucun site urgent",
     "quit": "Quitter {{app}}",
-    "release": "Vigie {{version}} est disponible…"
+    "release": "Vigie {{version}} est disponible"
   },
   "menu": {
     "about": "À propos de {{app}}",
-    "settings": "Réglages…",
+    "settings": "Réglages",
     "hide": "Masquer {{app}}",
     "hideOthers": "Masquer les autres",
     "showAll": "Tout afficher",
     "quit": "Quitter {{app}}",
     "file": "Fichier",
-    "newHost": "Nouvel hébergement…",
+    "newHost": "Nouvel hébergement",
     "newFolder": "Nouveau dossier",
     "closeWindow": "Fermer la fenêtre",
     "edit": "Édition",
@@ -857,13 +857,13 @@
       "scan": "Relever",
       "newFolder": "Nouveau dossier",
       "rename": "Renommer",
-      "move": "Déplacer vers…",
+      "move": "Déplacer vers",
       "color": "Couleur",
-      "edit": "Modifier la connexion…",
-      "find": "Chercher de nouveaux sites…",
-      "deleteFolder": "Supprimer le dossier…",
-      "deleteHost": "Supprimer l'hébergement…",
-      "deleteSite": "Supprimer le site…",
+      "edit": "Modifier la connexion",
+      "find": "Chercher de nouveaux sites",
+      "deleteFolder": "Supprimer le dossier",
+      "deleteHost": "Supprimer l'hébergement",
+      "deleteSite": "Supprimer le site",
       "colors": {
         "none": "Aucune",
         "red": "Rouge",
@@ -874,10 +874,10 @@
         "magenta": "Magenta",
         "orange": "Orange"
       },
-      "addHost": "Ajouter un hébergement…",
+      "addHost": "Ajouter un hébergement",
       "scanAll": "Tout relever",
-      "export": "Exporter…",
-      "test": "Tester la connexion…"
+      "export": "Exporter",
+      "test": "Tester la connexion"
     },
     "more": "Plus d'actions",
     "dropInto": "Relâchez pour déplacer {{name}} dans {{folder}}",
@@ -1082,7 +1082,7 @@
     "upToDateOne": "À jour",
     "changelog": "Changelog",
     "releaseNotes": "Notes de version",
-    "ignore": "Ignorer…",
+    "ignore": "Ignorer",
     "ignoreNamed": "Ignorer la mise à jour de « {{name}} »",
     "restore": "Ne plus ignorer",
     "restoreNamed": "Ne plus ignorer la mise à jour de « {{name}} »",
@@ -1129,7 +1129,7 @@
       "info": "Information",
       "ignored": "Ignoré"
     },
-    "ignore": "Ignorer…",
+    "ignore": "Ignorer",
     "ignoreNamed": "Ignorer « {{title}} »",
     "restore": "Ne plus ignorer",
     "restoreNamed": "Ne plus ignorer « {{title}} »",
@@ -1455,9 +1455,9 @@
     "into": "Dans",
     "exportTitle": "Exporter le gestionnaire de sites",
     "exportDesc": "Dossiers, hébergements et sites avec leurs couleurs, notes, étiquettes et constats mis de côté, dans un fichier JSON. L'historique si vous le voulez.",
-    "exportAction": "Exporter…",
-    "importAction": "Importer…",
-    "sshAction": "Choisir…",
+    "exportAction": "Exporter",
+    "importAction": "Importer",
+    "sshAction": "Choisir",
     "vigieTitle": "Un fichier Vigie",
     "vigieDesc": "Un export de Vigie, de cet ordinateur ou d'un autre. Seul ce qui est nouveau est ajouté, rien d'existant n'est modifié.",
     "sshTitle": "Configuration SSH",
@@ -1518,7 +1518,7 @@
       "historyHintShort": "Relevés avec leurs constats, mises à jour et retours en arrière avec leurs étapes.",
       "sensitive": "Un fichier sensible",
       "sensitiveText": "Il nomme vos serveurs, vos utilisateurs SSH et contient vos notes. Gardez-le en lieu sûr. Les clés et les mots de passe n'y sont jamais.",
-      "confirm": "Exporter…",
+      "confirm": "Exporter",
       "failed": "Pas exporté"
     },
     "ssh": {
@@ -1616,7 +1616,7 @@
     "run": "Lancer l'import",
     "running": "En cours…",
     "nothingBefore": "Rien n'est ajouté avant l'aperçu.",
-    "chooseFile": "Autre fichier…",
+    "chooseFile": "Autre fichier",
     "details": "Détails",
     "installedAt": "Installé dans",
     "destinationNote": "Cet add-on se lance en ligne de commande : vigie {{name}}",
@@ -1701,7 +1701,7 @@
     "computed": "Calculée : {{address}}",
     "reset": "Revenir à l'adresse calculée",
     "save": "Enregistrer",
-    "menu": "Adresse d'administration…"
+    "menu": "Adresse d'administration"
   },
   "notes": {
     "title": "Notes",
@@ -1802,9 +1802,9 @@
     "new": "nouvelle",
     "menu": {
       "scan": "Relever les sites",
-      "update": "Mettre à jour les sites…",
-      "rename": "Renommer l'étiquette…",
-      "remove": "Retirer de tous les sites…"
+      "update": "Mettre à jour les sites",
+      "rename": "Renommer l'étiquette",
+      "remove": "Retirer de tous les sites"
     },
     "page": {
       "scan": "Relever les sites",
@@ -1913,7 +1913,7 @@
     "update": "Mise à jour",
     "pastDays": "Plus de {{days}} jours",
     "beyond": "Au-delà des {{kept}} dernières",
-    "removeAction": "Supprimer…",
+    "removeAction": "Supprimer",
     "updatesTitle": "Mises à jour",
     "copy": "Copier",
     "copied": "Copié",
@@ -1945,7 +1945,7 @@
   "wpCliInstall": {
     "offerTitle": "WP-CLI manque sur ce compte",
     "offerText": "Vigie peut l'installer dans votre dossier personnel, {{path}}, sans toucher à vos sites : WP-CLI {{version}}, téléchargé sur cet ordinateur et vérifié avant d'être envoyé.",
-    "offerAction": "Installer WP-CLI…",
+    "offerAction": "Installer WP-CLI",
     "oldTitle": "PHP est trop ancien pour WP-CLI",
     "existsTitle": "{{path}} existe déjà",
     "doneTitle": "WP-CLI est installé",

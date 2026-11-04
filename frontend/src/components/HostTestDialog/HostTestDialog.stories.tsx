@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fn, userEvent, waitFor } from "storybook/test";
+import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 
 import type { HostDetails, TestResult } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { HostTestDialog } from "./HostTestDialog";
@@ -68,10 +68,11 @@ export const InstallWPCLI: Story = {
     onInstalled: fn(),
   },
   play: async ({ canvas, args }) => {
-    const [offer] = await canvas.findAllByRole("button", { name: "Install WP-CLI…" });
+    const [offer] = await canvas.findAllByRole("button", { name: "Install WP-CLI" });
     await userEvent.click(offer!);
-    const [confirm] = await canvas.findAllByRole("button", { name: "Install WP-CLI" });
-    await userEvent.click(confirm!);
+    // The confirmation's button has the offer's name: it is the one in the confirmation.
+    const [question] = await canvas.findAllByRole("dialog", { name: /^Install WP-CLI on / });
+    await userEvent.click(within(question!).getByRole("button", { name: "Install WP-CLI" }));
     await waitFor(() => expect(args.onInstalled).toHaveBeenCalledWith("~/bin/wp"));
     await expect(args.install).toHaveBeenCalledWith(shared);
     const [checks] = canvas.getAllByRole("list", { name: "Checks" });
@@ -86,6 +87,6 @@ export const WithoutTheOffer: Story = {
   play: async ({ canvas }) => {
     const [alert] = await canvas.findAllByRole("alert");
     await expect(alert).toHaveTextContent("WP-CLI was not found on this account");
-    await expect(canvas.queryByRole("button", { name: "Install WP-CLI…" })).toBeNull();
+    await expect(canvas.queryByRole("button", { name: "Install WP-CLI" })).toBeNull();
   },
 };

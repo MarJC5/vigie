@@ -161,7 +161,7 @@ export const History: Story = {
     await expect(panel).toHaveTextContent("Update of 2 items");
     // The backups on the server first (ADR-0033), then the updates.
     await expect(within(panel!).getByRole("heading", { name: "Backups on the server" })).toBeInTheDocument();
-    await userEvent.click(within(panel!).getByRole("button", { name: "Remove…" }));
+    await userEvent.click(within(panel!).getByRole("button", { name: "Remove" }));
     await expect(args.onRemoveBackups).toHaveBeenCalled();
     await userEvent.click(within(panel!).getByRole("button", { name: "Roll back" }));
     await expect(args.onRollback).toHaveBeenCalledWith("op-failed");
@@ -242,7 +242,7 @@ export const NoWPCLI: Story = {
     const [alert] = canvas.getAllByRole("alert");
     await expect(alert).toHaveTextContent("WP-CLI was not found on this account");
     await expect(alert).toHaveTextContent("wp: command not found");
-    await userEvent.click(canvas.getAllByRole("button", { name: "Test the connection…" })[0]!);
+    await userEvent.click(canvas.getAllByRole("button", { name: "Test the connection" })[0]!);
     await expect(args.onTestHost).toHaveBeenCalled();
   },
 };
@@ -291,7 +291,7 @@ export const SiteNoLongerThere: Story = {
     const [alert] = canvas.getAllByRole("alert");
     await expect(alert).toHaveTextContent("No WordPress at this path any more");
     await expect(alert).toHaveTextContent("This does not seem to be a WordPress installation");
-    await userEvent.click(within(alert!).getByRole("button", { name: "Remove from Vigie…" }));
+    await userEvent.click(within(alert!).getByRole("button", { name: "Remove from Vigie" }));
     await expect(args.onRemove).toHaveBeenCalled();
   },
 };
