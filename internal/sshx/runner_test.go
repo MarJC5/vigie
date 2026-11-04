@@ -267,3 +267,129 @@ func TestLimiterFailedCommandLeavesTheConnectionClosed(t *testing.T) {
 		t.Fatalf("after a failure: %v, want to wait for an opening", err)
 	}
 }
+
+// counter is an output that keeps only how much it received, as a copy writing to a file does.
+type counter struct {
+	mu sync.Mutex
+	n  int64
+}
+
+func (c *counter) Write(p []byte) (int, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.n += int64(len(p))
+	return len(p), nil
+}
+
+func (c *counter) count() int64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.n
+}
+
+// A stream's output goes to the writer as it comes, never held in the result (ADR-0041).
+func TestExecRunnerStreamsALargeOutput(t *testing.T) {
+	var out counter
+	res, err := runner(t, 5*time.Second).RunStream(context.Background(), sshx.Target{Alias: "a"}, "big", nil, &out)
+	if err != nil || res.ExitCode != 0 {
+		t.Fatalf("RunStream() = exit %d, %v", res.ExitCode, err)
+	}
+	// The fake prints its arguments first, then the 20 MB.
+	if got := out.count(); got < 20_000_000 || got > 20_001_000 {
+		t.Fatalf("written %d bytes, want 20 MB and the arguments", got)
+	}
+	if len(res.Stdout) != 0 {
+		t.Fatalf("the result holds %d bytes of output, want none", len(res.Stdout))
+	}
+}
+
+// A stream times out on silence, not on its length: output that keeps coming is never cut.
+func TestExecRunnerStreamTimesOutOnSilenceOnly(t *testing.T) {
+	r := runner(t, 300*time.Millisecond)
+	var out counter
+	if _, err := r.RunStream(context.Background(), sshx.Target{Alias: "a"}, "trickle", nil, &out); err != nil {
+		t.Fatalf("output every 100 ms for 800 ms, timeout 300 ms: %v, want no timeout", err)
+	}
+	start := time.Now()
+	_, err := r.RunStream(context.Background(), sshx.Target{Alias: "a"}, "sleep", nil, &out)
+	if !errors.Is(err, sshx.ErrTimeout) {
+		t.Fatalf("silent for 5 s, timeout 300 ms: %v, want ErrTimeout", err)
+	}
+	if time.Since(start) > 3*time.Second {
+		t.Fatalf("silence not cut: took %s", time.Since(start))
+	}
+}
+
+// A stream stops when its context ends, halfway.
+func TestExecRunnerStreamStopsOnCancel(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	var out counter
+	done := make(chan error, 1)
+	go func() {
+		_, err := runner(t, 5*time.Second).RunStream(ctx, sshx.Target{Alias: "a"}, "endless", nil, &out)
+		done <- err
+	}()
+	for out.count() == 0 {
+		time.Sleep(10 * time.Millisecond)
+	}
+	cancel()
+	select {
+	case err := <-done:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("cancelled stream: %v, want context.Canceled", err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("the stream did not stop on cancel")
+	}
+}
+
+// An error after part of the output: what came is written, the exit code and the error output
+// are in the result.
+func TestExecRunnerStreamKeepsTheErrorOutput(t *testing.T) {
+	var out strings.Builder
+	res, err := runner(t, 5*time.Second).RunStream(context.Background(), sshx.Target{Alias: "a"}, "partial", nil, &out)
+	if err != nil {
+		t.Fatalf("a failing remote command is a result, not an error: %v", err)
+	}
+	if res.ExitCode != 2 || !strings.Contains(string(res.Stderr), "file changed as we read it") {
+		t.Fatalf("RunStream() = exit %d, stderr %q", res.ExitCode, res.Stderr)
+	}
+	if !strings.HasSuffix(out.String(), "part of it\n") {
+		t.Fatalf("written %q, want the part that came", out.String())
+	}
+}
+
+// The names a stream reads go on its input, as with RunReader.
+func TestExecRunnerStreamSendsItsInput(t *testing.T) {
+	var out strings.Builder
+	_, err := runner(t, 5*time.Second).RunStream(context.Background(), sshx.Target{Alias: "a"}, "input", strings.NewReader("wp-content/a\x00"), &out)
+	if _, got, _ := strings.Cut(out.String(), "input:\n"); err != nil || got != "wp-content/a\x00" {
+		t.Fatalf("RunStream() read %q, %v", got, err)
+	}
+}
+
+// full is an output that refuses to write past a size, as a full disk does.
+type full struct{ room int }
+
+func (f *full) Write(p []byte) (int, error) {
+	if len(p) > f.room {
+		n := f.room
+		f.room = 0
+		return n, errors.New("no space left on device")
+	}
+	f.room -= len(p)
+	return len(p), nil
+}
+
+// An output that refuses to write stops the stream with its error, not with a result that looks
+// complete.
+func TestExecRunnerStreamFailsWhenTheOutputRefuses(t *testing.T) {
+	start := time.Now()
+	_, err := runner(t, 5*time.Second).RunStream(context.Background(), sshx.Target{Alias: "a"}, "big", nil, &full{room: 1 << 20})
+	if err == nil || !strings.Contains(err.Error(), "no space left on device") {
+		t.Fatalf("RunStream() into a full disk: %v, want its error", err)
+	}
+	if time.Since(start) > 3*time.Second {
+		t.Fatalf("took %s to stop", time.Since(start))
+	}
+}

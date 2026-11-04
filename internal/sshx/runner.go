@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -93,6 +94,106 @@ func (r ExecRunner) RunReader(ctx context.Context, target Target, remote string,
 	}
 	return res, err
 }
+
+// RunStream runs remote on target with what input gives on its standard input (nil: nothing), and
+// writes its output to out as it comes, never holding it: a dump or an archive of a copy
+// (ADR-0041). Its timeout is on silence: it fails when the command writes nothing for Timeout, however
+// long it runs while output keeps coming. The result holds the exit code and the error output, its
+// first 64 KiB.
+func (r ExecRunner) RunStream(ctx context.Context, target Target, remote string, input io.Reader, out io.Writer) (Result, error) {
+	ctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
+	binary := r.SSH
+	if binary == "" {
+		binary = "ssh"
+	}
+	cmd := exec.CommandContext(ctx, binary, Args(target, r.Options, remote)...)
+	cmd.WaitDelay = time.Second
+	written := &lastWrite{w: out}
+	written.touch()
+	stderr := &capped{max: 64 << 10}
+	cmd.Stdout, cmd.Stderr = written, stderr
+	if input != nil {
+		cmd.Stdin = input
+	}
+	// The silence watch: the command is stopped once nothing came for Timeout.
+	stop := make(chan struct{})
+	defer close(stop)
+	go func() {
+		tick := time.NewTicker(silenceTick(r.Timeout))
+		defer tick.Stop()
+		for {
+			select {
+			case <-stop:
+				return
+			case <-tick.C:
+				if time.Since(written.at()) > r.Timeout {
+					cancel(fmt.Errorf("nothing for %s: %w", r.Timeout, ErrTimeout))
+					return
+				}
+			}
+		}
+	}()
+	err := cmd.Run()
+	res := Result{Stderr: stderr.Bytes()}
+	if cause := context.Cause(ctx); cause != nil {
+		return res, cause
+	}
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) {
+		res.ExitCode = exitErr.ExitCode()
+		if res.ExitCode == 255 {
+			return res, &ConnectionError{Failure: Classify(res.Stderr), Message: strings.TrimSpace(string(res.Stderr))}
+		}
+		return res, nil
+	}
+	return res, err
+}
+
+// silenceTick is how often a stream checks its silence: a tenth of its timeout, between 10 ms and a
+// second.
+func silenceTick(timeout time.Duration) time.Duration {
+	return min(max(timeout/10, 10*time.Millisecond), time.Second)
+}
+
+// lastWrite passes what it is given to w and keeps when it last was.
+type lastWrite struct {
+	w    io.Writer
+	mu   sync.Mutex
+	last time.Time
+}
+
+func (l *lastWrite) Write(p []byte) (int, error) {
+	l.touch()
+	return l.w.Write(p)
+}
+
+func (l *lastWrite) touch() {
+	l.mu.Lock()
+	l.last = time.Now()
+	l.mu.Unlock()
+}
+
+func (l *lastWrite) at() time.Time {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.last
+}
+
+// capped keeps the first max bytes written to it and drops the rest.
+type capped struct {
+	max int
+	buf bytes.Buffer
+}
+
+func (c *capped) Write(p []byte) (int, error) {
+	if room := c.max - c.buf.Len(); room > 0 {
+		c.buf.Write(p[:min(room, len(p))])
+	}
+	return len(p), nil
+}
+
+func (c *capped) Bytes() []byte { return c.buf.Bytes() }
 
 // Resolved is the effective configuration ssh uses for an alias of ~/.ssh/config.
 type Resolved struct {

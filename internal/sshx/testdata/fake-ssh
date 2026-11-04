@@ -13,5 +13,11 @@ case "$last" in
 	exit-255) echo "ssh: connect to host: Connection refused" >&2; exit 255 ;;
 	sleep) exec sleep 5 ;;
 	input) echo "input:"; cat ;;
+	# Streams (ADR-0041): a large output, one that trickles longer than the timeout, one cut by
+	# an error after part of it.
+	big) head -c 20000000 /dev/zero; exit 0 ;;
+	trickle) i=0; while [ $i -lt 8 ]; do echo "chunk $i"; sleep 0.1; i=$((i+1)); done; exit 0 ;;
+	partial) echo "part of it"; echo "tar: file changed as we read it" >&2; exit 2 ;;
+	endless) while :; do echo "more"; sleep 0.05; done ;;
 esac
 exit 0
