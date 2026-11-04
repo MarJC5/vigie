@@ -103,6 +103,11 @@ func ParseDatabaseTables(out []byte) ([]Table, error) {
 // dumped whole.
 var tableName = regexp.MustCompile(`^[A-Za-z0-9_$-]+$`)
 
+// DumpableTable tells whether DatabaseDump takes a table by its name.
+func DumpableTable(name string) bool {
+	return tableName.MatchString(name)
+}
+
 // DatabaseDump writes a dump of the database, or of the tables given, to the standard output:
 // InnoDB tables are read in one transaction, without locking the site (ADR-0041).
 func DatabaseDump(tables []string) Command {
