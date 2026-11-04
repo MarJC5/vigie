@@ -365,6 +365,15 @@ export interface CopyFolderView {
 }
 
 /**
+ * CopyPartView is an archive of a copy.
+ */
+export interface CopyPartView {
+    "name": string;
+    "bytes": number;
+    "written": boolean;
+}
+
+/**
  * CopyPreviewView is what the copy dialog shows (mockups 28a to 28c): the size of each content,
  * the folders of wp-content, where the copy goes and how much room is there.
  */
@@ -448,6 +457,12 @@ export interface CopyView {
     "planned": number;
     "bytes": number;
     "complete": boolean;
+
+    /**
+     * Parts are the copy's archives, in the order they are read: those written with their size on
+     * this computer, the others with what they hold before compression.
+     */
+    "parts": CopyPartView[] | null;
 }
 
 /**

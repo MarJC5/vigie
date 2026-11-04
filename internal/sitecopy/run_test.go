@@ -350,3 +350,44 @@ func TestListTheCopiesOfASite(t *testing.T) {
 		t.Errorf("List() of no folder = %+v, %v", none, err)
 	}
 }
+
+// An archive removed by hand from a complete copy: the copy is listed incomplete, and a resume
+// reads that archive again, only it.
+func TestAnArchiveRemovedByHand(t *testing.T) {
+	root := t.TempDir()
+	s := newServer()
+	c := copier(s, 1<<30)
+	p, _ := c.Prepare(context.Background())
+	dir, err := c.Start(context.Background(), job(root), p, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(filepath.Join(dir, "uploads-2.tar.gz")); err != nil {
+		t.Fatal(err)
+	}
+	// Another one cut short: its size is not the one recorded.
+	if err := os.WriteFile(filepath.Join(dir, "themes.tar.gz"), []byte("cut"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	site := sitecopy.SiteFolder(root, "Shared hosting", "boulangerie-exemple.ch")
+	got, _ := sitecopy.List(site)
+	if len(got) != 1 || got[0].Complete || len(got[0].Manifest.Archives) != 4 {
+		t.Fatalf("List() = %+v, want the copy incomplete, 4 archives of 6 there", got)
+	}
+	s.commands = nil
+	if err := c.Resume(context.Background(), dir, nil); err != nil {
+		t.Fatal(err)
+	}
+	var read []string
+	for _, line := range s.commands {
+		if strings.Contains(line, "tar -cf") {
+			read = append(read, line)
+		}
+	}
+	if len(read) != 2 {
+		t.Fatalf("the resume read %d archives, want the 2 missing: %v", len(read), read)
+	}
+	if got, _ := sitecopy.List(site); !got[0].Complete || len(got[0].Manifest.Archives) != 6 {
+		t.Errorf("after the resume: %+v", got[0])
+	}
+}

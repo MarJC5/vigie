@@ -1,7 +1,7 @@
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { BackgroundSettings, CommandView, DatabaseView, LoginItemState, LookupsView, SelfUpdateView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { BackgroundSettings, CommandView, CopySettings, DatabaseView, LoginItemState, LookupsView, SelfUpdateView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { sizeText } from "../../lib/data";
 import { clock, day, keyOf } from "../../lib/findings";
 import { Button } from "../Button/Button";
@@ -52,6 +52,11 @@ export interface SettingsPageProps {
   onCompact: () => void;
   /** The days the backups of an update stay on the server, 0 for no limit (ADR-0033). */
   backupDays?: number;
+  /** The folder of the copies of sites on this computer and the size of their archives (ADR-0041);
+   without them, no section. */
+  copySettings?: CopySettings;
+  onChooseCopyFolder?: () => void;
+  onArchiveSize?: (megabytes: number) => void;
   onBackupDays?: (days: number) => void;
   /** Vigie in the background: kept running, automatic scans, notifications. */
   background: BackgroundSettings;
@@ -101,6 +106,9 @@ export function SettingsPage({
   onCompact,
   backupDays = 30,
   onBackupDays,
+  copySettings,
+  onChooseCopyFolder,
+  onArchiveSize,
   background,
   onBackground,
   loginItem,
@@ -219,6 +227,22 @@ export function SettingsPage({
                 </Button>
               </Row>
             </Section>
+            {copySettings && (
+              <Section title={t("copies.settings.section")}>
+                <Row title={t("copies.settings.folderTitle")} desc={t("copies.settings.folderDesc")} meta={copySettings.folder}>
+                  <Button onClick={onChooseCopyFolder}>{t("copies.settings.choose")}</Button>
+                </Row>
+                <Row title={t("copies.settings.sizeTitle")} desc={t("copies.settings.sizeDesc")}>
+                  <SelectField
+                    label={t("copies.settings.sizeTitle")}
+                    hideLabel
+                    value={String(copySettings.archiveSize)}
+                    options={(copySettings.sizes ?? []).map((mb) => ({ value: String(mb), label: size(mb * 1_000_000) }))}
+                    onChange={(mb) => onArchiveSize?.(Number(mb))}
+                  />
+                </Row>
+              </Section>
+            )}
             <Section title={t("data.servers")}>
               <Row title={t("data.keepTitle")} desc={t("data.keepDesc")}>
                 <SelectField

@@ -115,8 +115,12 @@ func TestACopyFromTheWindow(t *testing.T) {
 	if len(s.Ends) != 1 || s.Ends[0].Problem != nil || !strings.HasPrefix(s.Ends[0].Folder, wantDest) {
 		t.Fatalf("ends %+v", s.Ends)
 	}
+	if dest, err := c.Destination(ctx, site.ID.String()); err != nil || dest != wantDest {
+		t.Errorf("Destination() = %s, %v", dest, err)
+	}
 	list, err := c.List(ctx, site.ID.String())
-	if err != nil || len(list) != 1 || !list[0].Complete || list[0].Archives != 1 || list[0].Content != "database" {
+	if err != nil || len(list) != 1 || !list[0].Complete || list[0].Archives != 1 || list[0].Content != "database" ||
+		len(list[0].Parts) != 1 || list[0].Parts[0].Name != "database.sql.gz" || !list[0].Parts[0].Written {
 		t.Fatalf("List() = %+v, %v", list, err)
 	}
 	mu.Lock()

@@ -123,6 +123,7 @@
     "updates": "Updates",
     "security": "Security",
     "notes": "Notes",
+    "copies": "Copies",
     "history": "History"
   },
   "action": {
@@ -686,7 +687,11 @@
     "and": " and ",
     "wpcli": "Install of WP-CLI on {{path}}",
     "wpcliDone": "WP-CLI {{version}} in {{path}}, checked (SHA-512). Host's command: {{command}}.",
-    "wpcliFailed": "Stopped at the {{step}}: {{message}}"
+    "wpcliFailed": "Stopped at the {{step}}: {{message}}",
+    "copy": "Copy of {{path}}",
+    "copyResumed": "Resume of the copy of {{path}}",
+    "copyLine": "{{content}}: {{archives}}, {{size}}, in {{folder}}",
+    "copyCut": "Cut off: {{message}}"
   },
   "tray": {
     "open": "Open {{app}}",
@@ -1799,6 +1804,72 @@
     "noPlugins": "None but those across the network.",
     "noAdmins": "None.",
     "stateRow": "State"
+  },
+  "copies": {
+    "action": "Copy",
+    "menu": "Copy to this computer",
+    "title": "Copies on this computer",
+    "none": "No copy of this site yet.",
+    "note": "A copy holds the site's personal data (accounts, orders, messages). Vigie does not put it back on the server: the help says how to do it by hand.",
+    "content": {
+      "database": "The database",
+      "databaseDesc": "Posts, pages, settings, accounts and orders.",
+      "content": "The database and wp-content",
+      "contentDesc": "Plus the plugins, themes and media.",
+      "site": "The whole site",
+      "siteDesc": "Plus WordPress and wp-config.php, which holds the database password."
+    },
+    "dialog": {
+      "title": "Copy {{name}} to this computer",
+      "lead": "Vigie reads the site over SSH and writes nothing on the server. The sizes were just read on the server.",
+      "reading": "Reading the sizes on the server…",
+      "folders": "Folders of wp-content",
+      "loose": "Files of wp-content itself",
+      "parts_one": "about {{count}} archive",
+      "parts_other": "about {{count}} archives",
+      "split": "{{parts}} of {{size}} at most · {{total}} to read · {{free}} free on this computer",
+      "unsplit": "{{parts}}, not split: this account has no GNU find or tar · {{total}} to read · {{free}} free on this computer",
+      "noSpace": "Not enough space on this computer: the copy is {{total}}, {{free}} is free. Leave folders out, or copy the database alone.",
+      "confirm": "Copy"
+    },
+    "complete": "Complete",
+    "incomplete": "Incomplete",
+    "running": "Running",
+    "archives_one": "{{count}} archive",
+    "archives_other": "{{count}} archives",
+    "archivesOf": "{{done}} archives of {{count}}",
+    "show": "Show the folder",
+    "resume": "Resume",
+    "remove": "Remove the copy",
+    "stop": "Stop",
+    "part": {
+      "copied": "Copied",
+      "reading": "Reading · {{read}} of {{total}}",
+      "readingDump": "Reading · {{read}}",
+      "waiting": "Waiting",
+      "missing": "Missing"
+    },
+    "runningFoot": "{{read}} read of {{total}} · {{done}} archives of {{count}}",
+    "incompleteFoot_one": "Cut off. Resume fetches the missing archive: the site may have changed since, each archive keeps its time in copy.json.",
+    "incompleteFoot_other": "Cut off. Resume fetches the {{count}} missing archives: the site may have changed since, each archive keeps its time in copy.json.",
+    "removeDialog": {
+      "title": "Remove this copy?",
+      "lead": "It goes to the Trash.",
+      "confirm": "Remove"
+    },
+    "forGood": {
+      "title": "Delete this copy for good?",
+      "lead": "No trash can take it: it will be deleted for good, and cannot be got back.",
+      "confirm": "Delete for good"
+    },
+    "settings": {
+      "section": "Copies on this computer",
+      "folderTitle": "Folder of the copies",
+      "folderDesc": "One copy per site and date, readable by you only. Vigie never removes a copy on its own.",
+      "choose": "Choose",
+      "sizeTitle": "Size of the archives",
+      "sizeDesc": "A larger part of the site is split into several archives: a copy cut off resumes archive by archive. 4 GB at most, the limit of a FAT32 disk."
+    }
   },
   "backups": {
     "title": "Backups on the server",

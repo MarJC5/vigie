@@ -234,10 +234,25 @@ func (c Copier) Resume(ctx context.Context, dir string, progress func(Progress))
 	if err := readJSON(filepath.Join(dir, planName), &archives); err != nil {
 		return err
 	}
+	// An archive removed by hand since, or cut short, is read again.
+	m = OnDisk(dir, m)
 	if len(Missing(archives, m)) == 0 {
 		return ErrComplete
 	}
 	return c.fetch(ctx, dir, archives, m, progress)
+}
+
+// OnDisk is the manifest without the archives it records that are not in the copy's folder any
+// more, or not at their size: removed or cut by hand since, they count as missing.
+func OnDisk(dir string, m Manifest) Manifest {
+	kept := make([]Record, 0, len(m.Archives))
+	for _, r := range m.Archives {
+		if info, err := os.Stat(filepath.Join(dir, r.Name)); err == nil && info.Mode().IsRegular() && info.Size() == r.Bytes {
+			kept = append(kept, r)
+		}
+	}
+	m.Archives = kept
+	return m
 }
 
 // Missing are the archives of a plan that copy.json does not record.
@@ -429,6 +444,16 @@ type Listed struct {
 	Manifest Manifest
 	Planned  int
 	Complete bool
+	// Plan are the archives of the copy, in the order they are read: what each holds before
+	// compression.
+	Plan []Planned
+}
+
+// Planned is an archive of a copy's plan.
+type Planned struct {
+	Name  string
+	Part  Part
+	Bytes int64
 }
 
 // List reads the copies of a site's folder, the newest first; a folder that is not a copy (no
@@ -451,11 +476,16 @@ func List(siteFolder string) ([]Listed, error) {
 		if err != nil {
 			continue
 		}
+		m = OnDisk(dir, m)
 		var plan []Archive
 		if err := readJSON(filepath.Join(dir, planName), &plan); err != nil {
 			continue
 		}
-		copies = append(copies, Listed{Dir: dir, Manifest: m, Planned: len(plan), Complete: len(Missing(plan, m)) == 0})
+		l := Listed{Dir: dir, Manifest: m, Planned: len(plan), Complete: len(Missing(plan, m)) == 0}
+		for _, a := range plan {
+			l.Plan = append(l.Plan, Planned{Name: a.Name, Part: a.Part, Bytes: a.Bytes})
+		}
+		copies = append(copies, l)
 	}
 	slices.SortFunc(copies, func(a, b Listed) int { return b.Manifest.Started.Compare(a.Manifest.Started) })
 	return copies, nil

@@ -2,10 +2,11 @@ import { Browser, Clipboard, Events } from "@wailsio/runtime";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { I18nextProvider } from "react-i18next";
 
-import { VigieDiscovery, VigieMenu, VigieScans, VigieSelfupdate, VigieUpdates, VigieWpcliInstall } from "../bindings/events";
+import { VigieCopies, VigieDiscovery, VigieMenu, VigieScans, VigieSelfupdate, VigieUpdates, VigieWpcliInstall } from "../bindings/events";
 import {
   Addons,
   CommandLink,
+  Copies,
   Data,
   Editor,
   HostWizard,
@@ -19,11 +20,11 @@ import {
   Updates,
   Watch,
 } from "../bindings/github.com/MarJC5/vigie/internal/app";
-import type { BackgroundSettings, CommandView, DatabaseView, Journal, LoginItemState, SelfUpdateView, LookupsView, Node, ScansState, TagView, TreeView, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { BackgroundSettings, CommandView, CopiesState, CopySettings, DatabaseView, Journal, LoginItemState, SelfUpdateView, LookupsView, Node, ScansState, TagView, TreeView, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { ActivityPage } from "./components/ActivityPage/ActivityPage";
 import { AddHostWizard, type WizardApi } from "./components/AddHostWizard/AddHostWizard";
 import { type AddonsApi, AddonsFlow } from "./components/AddonsFlow/AddonsFlow";
-import { AppShell, type EditApi, type SecurityApi, type ShellData } from "./components/AppShell/AppShell";
+import { AppShell, type CopiesApi, type EditApi, type SecurityApi, type ShellData } from "./components/AppShell/AppShell";
 import { ConsentScreen } from "./components/ConsentScreen/ConsentScreen";
 import { type DataApi, DataFlow, type DataNote, type DataTask } from "./components/DataFlow/DataFlow";
 import type { Section } from "./components/NavRail/NavRail";
@@ -61,6 +62,19 @@ const updatesApi: UpdatesApi = {
   Rollback: Updates.Rollback,
   CancelAll: Updates.CancelAll,
   History: Updates.History,
+};
+
+// What copies sites to this computer, from the copies service (ADR-0041).
+const copiesApi: CopiesApi = {
+  Prepare: Copies.Prepare,
+  Start: Copies.Start,
+  Stop: Copies.Stop,
+  Resume: Copies.Resume,
+  Remove: Copies.Remove,
+  DeleteForGood: Copies.DeleteForGood,
+  Show: Copies.Show,
+  List: Copies.List,
+  Destination: Copies.Destination,
 };
 
 // What edits the site manager: the editor, and the wizard's services for a stored host.
@@ -158,6 +172,8 @@ export function App() {
   const [dataNote, setDataNote] = useState<DataNote>();
   const [database, setDatabase] = useState<DatabaseView>();
   const [backupDays, setBackupDays] = useState(30);
+  const [copies, setCopies] = useState<CopiesState>({ running: [], ends: [], completed: 0 });
+  const [copySettings, setCopySettings] = useState<CopySettings>();
   const [compacting, setCompacting] = useState(false);
   // The preview of an import takes the whole window, as the wizard does.
   const [dataWindow, setDataWindow] = useState(false);
@@ -193,9 +209,11 @@ export function App() {
     void LoginItem.State().then(setLoginItem);
     void Scanner.State().then(setScans);
     void Updates.State().then(setUpdates);
+    void Copies.State().then(setCopies);
     void SelfUpdate.State().then(setSelfUpdate);
     const offScans = Events.On(VigieScans, (event) => setScans(event.data));
     const offUpdates = Events.On(VigieUpdates, (event) => setUpdates(event.data));
+    const offCopies = Events.On(VigieCopies, (event) => setCopies(event.data));
     const offSelf = Events.On(VigieSelfupdate, (event) => setSelfUpdate(event.data));
     // A new version in the eye's menu: Settings, About.
     const offAbout = Events.On(VigieMenu, (event) => {
@@ -206,6 +224,7 @@ export function App() {
     return () => {
       offScans();
       offUpdates();
+      offCopies();
       offSelf();
       offAbout();
     };
@@ -232,13 +251,14 @@ export function App() {
   useEffect(() => {
     if (section !== "activity") return;
     void Activity.Journal(journalDays, journalFilter).then(setJournal);
-  }, [section, journalDays, journalFilter, ended]);
+  }, [section, journalDays, journalFilter, ended, copies.completed]);
 
   // The database's size, read when the Data tab opens and after each scan or update.
   useEffect(() => {
     if (section !== "settings" || settingsTab !== "data") return;
     void Data.Database().then(setDatabase);
     void Data.BackupDays().then(setBackupDays);
+    void Data.CopySettings().then(setCopySettings);
   }, [section, settingsTab, ended]);
 
   const compact = async () => {
@@ -383,10 +403,13 @@ export function App() {
                 dataNote={dataNote}
                 database={database}
                 compacting={compacting}
-                busy={(scans.running ?? []).length > 0 || updates.active > 0}
+                busy={(scans.running ?? []).length > 0 || updates.active > 0 || (copies.running ?? []).length > 0}
                 onCompact={() => void compact()}
                 backupDays={backupDays}
                 onBackupDays={(days) => void Data.SetBackupDays(days).then((p) => !p && setBackupDays(days))}
+                copySettings={copySettings}
+                onChooseCopyFolder={() => void Data.ChooseCopyFolder().then(([s, p]) => !p && setCopySettings(s))}
+                onArchiveSize={(mb) => void Data.SetArchiveSize(mb).then((p) => !p && setCopySettings((s) => s && { ...s, archiveSize: mb }))}
                 background={background}
                 onBackground={changeBackground}
                 loginItem={loginItem}
@@ -425,6 +448,8 @@ export function App() {
           onChanged={reload}
           updates={updates}
           updatesApi={updatesApi}
+          copies={copies}
+          copiesApi={copiesApi}
           nextScan={nextScan}
         />
       )}

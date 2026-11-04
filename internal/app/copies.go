@@ -93,6 +93,16 @@ type CopyView struct {
 	Planned  int      `json:"planned"`
 	Bytes    int64    `json:"bytes"`
 	Complete bool     `json:"complete"`
+	// Parts are the copy's archives, in the order they are read: those written with their size on
+	// this computer, the others with what they hold before compression.
+	Parts []CopyPartView `json:"parts"`
+}
+
+// CopyPartView is an archive of a copy.
+type CopyPartView struct {
+	Name    string `json:"name"`
+	Bytes   int64  `json:"bytes"`
+	Written bool   `json:"written"`
 }
 
 // Copies serves the copies of sites to the computer (ADR-0041): their sizes, a copy in the
@@ -428,6 +438,16 @@ func (c *Copies) send() {
 	}
 }
 
+// Destination returns the folder of a site's copies, shown above their list.
+func (c *Copies) Destination(ctx context.Context, siteID string) (string, error) {
+	id, err := uuid.Parse(siteID)
+	if err != nil {
+		return "", errNodeNotFound
+	}
+	folder, _, err := c.siteFolder(ctx, id)
+	return folder, err
+}
+
 // List returns the copies of a site on this computer, the newest first (mockup 28e).
 func (c *Copies) List(ctx context.Context, siteID string) ([]CopyView, error) {
 	id, err := uuid.Parse(siteID)
@@ -449,8 +469,18 @@ func (c *Copies) List(ctx context.Context, siteID string) ([]CopyView, error) {
 		if v.LeftOut == nil {
 			v.LeftOut = []string{}
 		}
+		written := map[string]int64{}
 		for _, r := range l.Manifest.Archives {
 			v.Bytes += r.Bytes
+			written[r.Name] = r.Bytes
+		}
+		v.Parts = []CopyPartView{}
+		for _, p := range l.Plan {
+			b, ok := written[p.Name]
+			if !ok {
+				b = p.Bytes
+			}
+			v.Parts = append(v.Parts, CopyPartView{Name: p.Name, Bytes: b, Written: ok})
 		}
 		views = append(views, v)
 	}

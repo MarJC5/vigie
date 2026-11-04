@@ -2,6 +2,7 @@ import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 
 import type { ActivityEntry, Change, Journal, Node, NoticeView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import { sizeText } from "../../lib/data";
 import { clock } from "../../lib/findings";
 import { Button } from "../Button/Button";
 import { ChangeList } from "../ChangeList/ChangeList";
@@ -85,10 +86,11 @@ const icons: Record<string, IconName> = {
   update: "update",
   rollback: "rollback",
   wpcli: "terminal",
+  copy: "archive",
 };
 
 function Entry({ entry: e, onOpen }: { entry: ActivityEntry; onOpen: (nodeId: string) => void }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const run = e.kind === "run";
   const title = run ? (e.path ? t(`activity.run_${e.by}`, { path: e.path }) : t(`activity.runAll_${e.by}`)) : "";
   const meta = [run ? t("activity.sites", { count: e.sites }) : "", outcome(e) ? t(`activity.${outcome(e)}`) : ""].filter(Boolean);
@@ -105,18 +107,19 @@ function Entry({ entry: e, onOpen }: { entry: ActivityEntry; onOpen: (nodeId: st
         <span className={styles.line}>
           {run ? (
             <span className={styles.what}>{title}</span>
-          ) : e.kind === "wpcli" && !e.wpCli?.hostId ? (
-            // An install for a host that was never added: its name, with nothing to open.
-            <span className={styles.what}>{t("activity.wpcli", { path: e.path })}</span>
+          ) : (e.kind === "wpcli" && !e.wpCli?.hostId) || (e.kind === "copy" && !e.siteId) ? (
+            // An install for a host never added, a copy of a site removed since: the name, nothing to open.
+            <span className={styles.what}>{t(`activity.${textKey(e)}`, { path: e.path })}</span>
           ) : (
             <span className={styles.what}>
-              <Named text={t(`activity.${e.kind}`, { path: mark })} name={e.path} onOpen={() => onOpen(e.wpCli?.hostId || e.siteId)} />
+              <Named text={t(`activity.${textKey(e)}`, { path: mark })} name={e.path} onOpen={() => onOpen(e.wpCli?.hostId || e.siteId)} />
             </span>
           )}
           {meta.length > 0 && <span className={styles.meta}>{meta.join(" · ")}</span>}
         </span>
         {e.summary && <span className={styles.meta}>{e.summary}</span>}
         {e.wpCli && <span className={styles.meta}>{wpCliLine(e, t)}</span>}
+        {e.copy && <span className={styles.meta}>{copyLine(e, t, i18n.language)}</span>}
         {changes.map((c) => (
           <ChangeLine key={`${c.kind}-${c.nodeId}`} change={c} onOpen={onOpen} />
         ))}
@@ -194,6 +197,23 @@ function ChangeLine({ change: c, onOpen }: { change: Change; onOpen: (nodeId: st
 }
 
 // An install of WP-CLI (ADR-0039): what was installed and the host's command, or where it stopped.
+// The text of an entry's title: a resumed copy says it.
+function textKey(e: ActivityEntry): string {
+  return e.kind === "copy" && e.copy?.resumed ? "copyResumed" : e.kind;
+}
+
+// What a copy wrote, where; and why it was cut (ADR-0041).
+function copyLine(e: ActivityEntry, t: TFunction, lang: string): string {
+  const c = e.copy!;
+  const line = t("activity.copyLine", {
+    content: t(`copies.content.${c.content}`),
+    archives: t("copies.archives", { count: c.archives }),
+    size: sizeText(c.bytes, lang),
+    folder: c.folder,
+  });
+  return c.message ? `${line} ${t("activity.copyCut", { message: c.message })}` : line;
+}
+
 function wpCliLine(e: ActivityEntry, t: TFunction): string {
   const i = e.wpCli!;
   if (e.outcome === "completed") return t("activity.wpcliDone", { version: i.version, path: "~/bin/wp", command: i.command });

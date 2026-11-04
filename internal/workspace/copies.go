@@ -186,6 +186,8 @@ func (w *Workspace) ResumeCopy(ctx context.Context, siteID model.ID, dir string,
 	if err != nil {
 		return model.Copy{}, err
 	}
+	// What the resume adds is counted against the archives still there.
+	before = sitecopy.OnDisk(dir, before)
 	record := model.Copy{ID: model.NewID(), SiteID: site.ID, SiteName: site.Name, HostName: host.Name,
 		Content: string(before.Content), Resumed: true, Started: w.deps.Now()}
 	err = c.Resume(ctx, dir, progress)

@@ -23,6 +23,13 @@ export function DeleteForGood(siteID: string, folder: string): $CancellablePromi
 }
 
 /**
+ * Destination returns the folder of a site's copies, shown above their list.
+ */
+export function Destination(siteID: string): $CancellablePromise<string> {
+    return $Call.ByID(2843183734, siteID);
+}
+
+/**
  * List returns the copies of a site on this computer, the newest first (mockup 28e).
  */
 export function List(siteID: string): $CancellablePromise<$models.CopyView[] | null> {

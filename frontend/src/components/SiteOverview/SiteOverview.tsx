@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { BackupsView, FindingView, OperationView, Problem, ScanView, SiteView, TagView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { BackupsView, CopyRunView, CopyView, FindingView, OperationView, Problem, ScanView, SiteView, TagView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { sizeText } from "../../lib/data";
 import { clock, day } from "../../lib/findings";
 import { since } from "../../lib/time";
@@ -21,6 +21,7 @@ import { TabBar } from "../TabBar/TabBar";
 import { TagRow } from "../TagRow/TagRow";
 import { UpdateChoices } from "../UpdateChoices/UpdateChoices";
 import { BackupList } from "../BackupList/BackupList";
+import { CopyList } from "../CopyList/CopyList";
 import { UpdateHistory } from "../UpdateHistory/UpdateHistory";
 import styles from "./SiteOverview.module.css";
 
@@ -45,6 +46,20 @@ export interface SiteOverviewProps {
   backups?: BackupsView;
   /** Asks to remove the backups past the limits. */
   onRemoveBackups?: () => void;
+  /** The site's copies on this computer (ADR-0041), in their own tab, and their folder; without
+   them, no Copies tab. */
+  copies?: CopyView[];
+  copiesFolder?: string;
+  /** The copy of the site running now. */
+  copyRun?: CopyRunView;
+  /** Opens the copy dialog. */
+  onCopySite?: () => void;
+  onShowCopy?: (copy: CopyView) => void;
+  onResumeCopy?: (copy: CopyView) => void;
+  onRemoveCopy?: (copy: CopyView) => void;
+  onStopCopy?: () => void;
+  /** The Copies tab opened: the copies are read again, a copy removed in the Finder gone. */
+  onOpenCopies?: () => void;
   /** Asks to remove the site from Vigie, offered when its folder holds no WordPress any more. */
   onRemove?: () => void;
   /** Tests the connection of the site's host, offered when its WP-CLI command was not found:
@@ -93,6 +108,15 @@ export function SiteOverview({
   history,
   backups,
   onRemoveBackups,
+  copies,
+  copiesFolder,
+  copyRun,
+  onCopySite,
+  onShowCopy,
+  onResumeCopy,
+  onRemoveCopy,
+  onStopCopy,
+  onOpenCopies,
   onRollback,
   onRemove,
   onTestHost,
@@ -183,10 +207,14 @@ export function SiteOverview({
             { id: "updates", label: t("tabs.updates"), count: pending > 0 ? pending : undefined },
             { id: "security", label: t("tabs.security"), count: toLookAt > 0 ? toLookAt : undefined },
             ...(notes !== undefined ? [{ id: "notes", label: t("tabs.notes") }] : []),
+            ...(copies ? [{ id: "copies", label: t("tabs.copies") }] : []),
             ...(history ? [{ id: "history", label: t("tabs.history") }] : []),
           ]}
           value={tab}
-          onChange={setTab}
+          onChange={(id) => {
+            setTab(id);
+            if (id === "copies") onOpenCopies?.();
+          }}
           panelId={panel}
         >
           {updating && onFollow ? (
@@ -200,6 +228,11 @@ export function SiteOverview({
                 {t("update.updateSelected", { count: chosen.size })}
               </Button>
             </>
+          ) : tab === "copies" && onCopySite ? (
+            // The tab's action, as Update on the Updates tab (mockup 28e).
+            <Button variant="primary" icon="archive" onClick={onCopySite} disabled={!!copyRun}>
+              {t("copies.action")}
+            </Button>
           ) : (
             <Button variant="primary" icon="refresh" onClick={onScan} disabled={scanning || updating} aria-busy={scanning || undefined}>
               {scanning ? t("overview.scanning") : t("action.scanNow")}
@@ -208,10 +241,10 @@ export function SiteOverview({
         </TabBar>
       </div>
       <div role="tabpanel" id={panel} aria-labelledby={`${panel}-${tab}`} className={styles.panel}>
-        {scan?.problem && tab !== "history" && (
+        {scan?.problem && tab !== "history" && tab !== "copies" && (
           <ScanNotice code={scan.problem.code} detail={scan.problem.detail} onRemove={onRemove} onTestHost={onTestHost} />
         )}
-        {scan?.attempt?.problem && tab !== "history" && (
+        {scan?.attempt?.problem && tab !== "history" && tab !== "copies" && (
           <AttemptNotice finished={scan.finished} problem={scan.attempt.problem} onRemove={onRemove} onTestHost={onTestHost} />
         )}
         {tab === "overview" && (site.changes ?? []).length > 0 && <SinceBefore site={site} />}
@@ -269,6 +302,17 @@ export function SiteOverview({
           ))}
         {tab === "notes" && notes !== undefined && (
           <NotesPanel notes={notes} name={site.name} onSave={onSaveNotes} onOpen={onOpen} />
+        )}
+        {tab === "copies" && copies && (
+          <CopyList
+            copies={copies}
+            folder={copiesFolder ?? ""}
+            run={copyRun}
+            onShow={onShowCopy}
+            onResume={onResumeCopy}
+            onRemove={onRemoveCopy}
+            onStop={onStopCopy}
+          />
         )}
         {tab === "history" && history && (
           <div className={styles.history}>

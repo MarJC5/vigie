@@ -32,6 +32,7 @@ import (
 func init() {
 	application.RegisterEvent[app.ScansState](app.ScansEvent)
 	application.RegisterEvent[app.UpdatesState](app.UpdatesEvent)
+	application.RegisterEvent[app.CopiesState](app.CopiesEvent)
 	application.RegisterEvent[app.DiscoveryProgress](app.DiscoveryEvent)
 	application.RegisterEvent[app.MenuCommand](app.MenuEvent)
 	application.RegisterEvent[app.SelfUpdateView](app.SelfUpdateEvent)

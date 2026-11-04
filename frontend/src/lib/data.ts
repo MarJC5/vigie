@@ -4,15 +4,11 @@ import type { TFunction } from "i18next";
 import type { ImportItem, Node } from "../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import type { IconName } from "../components/Icon/Icon";
 
-/** A file size, in kilobytes under a megabyte: "340 kB", "3.1 MB". */
+/** A file size, in kilobytes under a megabyte and gigabytes from one: "340 kB", "3.1 MB", "2.18 GB". */
 export function sizeText(bytes: number, lang: string): string {
-  const mega = bytes >= 1_000_000;
-  return new Intl.NumberFormat(lang, {
-    style: "unit",
-    unit: mega ? "megabyte" : "kilobyte",
-    unitDisplay: "short",
-    maximumFractionDigits: mega ? 1 : 0,
-  }).format(Math.max(1, mega ? bytes / 1_000_000 : bytes / 1_000));
+  const [unit, divisor, digits] =
+    bytes >= 1_000_000_000 ? (["gigabyte", 1_000_000_000, 2] as const) : bytes >= 1_000_000 ? (["megabyte", 1_000_000, 1] as const) : (["kilobyte", 1_000, 0] as const);
+  return new Intl.NumberFormat(lang, { style: "unit", unit, unitDisplay: "short", maximumFractionDigits: digits }).format(Math.max(1, bytes / divisor));
 }
 
 /** Counts joined in a sentence: "3 folders, 6 hosts, 11 sites"; the ones at zero are left out

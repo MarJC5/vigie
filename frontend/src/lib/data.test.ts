@@ -14,6 +14,11 @@ describe("data", () => {
     expect(sizeText(20, "en")).toBe("1 kB");
   });
 
+  it("writes sizes in gigabytes from one", () => {
+    expect(sizeText(2_180_000_000, "en")).toBe("2.18 GB");
+    expect(sizeText(2_180_000_000, "fr")).toBe("2,18\u202fGo");
+  });
+
   it("joins the counts that are not zero", () => {
     expect(countsText(t, [["folders", 1], ["hosts", 0], ["sites", 11]])).toBe("1 folder, 11 sites");
     expect(countsText(t, [["folders", 0], ["hosts", 0]])).toBe("0 folders");

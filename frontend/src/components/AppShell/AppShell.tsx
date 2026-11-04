@@ -4,6 +4,9 @@ import { useTranslation } from "react-i18next";
 import type {
   BackupsView,
   BackupView,
+  CopiesState,
+  CopyPreviewView,
+  CopyView,
   CreateResult,
   DeleteResult,
   ExtensionsAcross,
@@ -37,6 +40,8 @@ import { BulkDialog } from "../BulkDialog/BulkDialog";
 import { Button } from "../Button/Button";
 import { DeleteDialog, DeleteManyDialog } from "../DeleteDialog/DeleteDialog";
 import { RemoveBackupsDialog } from "../RemoveBackupsDialog/RemoveBackupsDialog";
+import { type CopyContent, CopyDialog } from "../CopyDialog/CopyDialog";
+import { RemoveCopyDialog } from "../RemoveCopyDialog/RemoveCopyDialog";
 import { EmptyState } from "../EmptyState/EmptyState";
 import { Icon, type IconName } from "../Icon/Icon";
 import { type FindSitesApi, FindSitesDialog } from "../FindSitesDialog/FindSitesDialog";
@@ -72,6 +77,19 @@ export interface ShellData {
   removeOldBackups?(siteId: string): Promise<Problem | null>;
   /** The plugins and themes across the sites of a host or folder; without it, no Plugins tab. */
   extensions?(nodeId: string): Promise<ExtensionsAcross>;
+}
+
+/** The Go service that copies sites to this computer (app.Copies, ADR-0041). */
+export interface CopiesApi {
+  Prepare(siteId: string): Promise<[CopyPreviewView, Problem | null]>;
+  Start(siteId: string, content: string, leftOut: string[]): Promise<Problem | null>;
+  Stop(siteId: string): Promise<void>;
+  Resume(siteId: string, folder: string): Promise<Problem | null>;
+  Remove(siteId: string, folder: string): Promise<Problem | null>;
+  DeleteForGood(siteId: string, folder: string): Promise<Problem | null>;
+  Show(siteId: string, folder: string): Promise<Problem | null>;
+  List(siteId: string): Promise<CopyView[] | null>;
+  Destination(siteId: string): Promise<string>;
 }
 
 /** The Go service that sets findings aside (app.Security). */
@@ -132,6 +150,9 @@ export interface AppShellProps {
   updates?: UpdatesState;
   /** Without it, sites are not updated from the window. */
   updatesApi?: UpdatesApi;
+  /** The copies running and ended; without copiesApi, sites are not copied from the window. */
+  copies?: CopiesState;
+  copiesApi?: CopiesApi;
   /** The section shown: the sites, or the settings page given. */
   section?: Section;
   onSection?: (section: Section) => void;
@@ -165,6 +186,7 @@ export interface AppShellProps {
 
 const idle: ScansState = { running: [], completed: 0 };
 const noUpdates: UpdatesState = { running: [], active: 0, bulks: [], completed: 0, sites: [] };
+const noCopies: CopiesState = { running: [], ends: [], completed: 0 };
 
 /** The update of a site open in the window. */
 interface Flow {
@@ -199,6 +221,8 @@ export function AppShell({
   onChanged,
   updates = noUpdates,
   updatesApi,
+  copies = noCopies,
+  copiesApi,
   section = "sites",
   onSection,
   settingsPage,
@@ -255,6 +279,17 @@ export function AppShell({
   // The backups past the limits a site's History tab asks to remove, confirmed first (ADR-0033).
   const [removing, setRemoving] = useState<{ site: SiteView; backups: BackupView[] } | null>(null);
   const [backupEdits, setBackupEdits] = useState(0);
+  // The copy dialog of a site, its sizes once read; a copy to remove, confirmed first (ADR-0041).
+  const [copying, setCopying] = useState<{ site: Pick<SiteView, "id" | "name">; preview?: CopyPreviewView; problem?: Problem | null } | null>(null);
+  const [removingCopy, setRemovingCopy] = useState<{ site: SiteView; copy: CopyView; forGood: boolean } | null>(null);
+  const [copyEdits, setCopyEdits] = useState(0);
+  const openCopy = (site: Pick<SiteView, "id" | "name">) => {
+    if (!copiesApi) return;
+    setCopying({ site });
+    void copiesApi.Prepare(site.id).then(([preview, problem]) =>
+      setCopying((c) => (c && c.site.id === site.id ? { ...c, preview: problem ? undefined : preview, problem } : c)),
+    );
+  };
   // What the sites of the node in the delete dialog keep on their server.
   const [deleteBackups, setDeleteBackups] = useState<{ id: string; sites: SiteBackupsView[] }>();
   // A node deleted while its server could not be reached: the command that removes its backups.
@@ -493,6 +528,7 @@ export function AppShell({
     if (action === "updateAll" && byId.get(id)) updateAll(byId.get(id)!);
     if (action === "test" && edit) setHostTest({ name: byId.get(id)?.name ?? "", details: () => edit.Host(id), hostId: id });
     if (action === "admin") void data?.site(id).then((site) => setAdmin({ id, own: site.ownAdminUrl, computed: site.computedAdminUrl }));
+    if (action === "copy" && byId.get(id)) openCopy({ id, name: byId.get(id)!.name });
   };
 
   const menuNode = menu && !menu.several && !menu.colors ? byId.get(menu.id) : undefined;
@@ -721,7 +757,12 @@ export function AppShell({
               <Loaded
                 node={selected}
                 data={data}
-                revision={scans.completed + updates.completed + ignores + tagEdits + backupEdits}
+                revision={scans.completed + updates.completed + ignores + tagEdits + backupEdits + copies.completed + copyEdits}
+                copies={copies}
+                copiesApi={copiesApi}
+                onCopySite={copiesApi && openCopy}
+                onRemoveCopy={copiesApi && ((site, copy) => setRemovingCopy({ site, copy, forGood: false }))}
+                onOpenCopies={copiesApi && (() => setCopyEdits((n) => n + 1))}
                 scanning={scanning(selected)}
                 onScan={() => scan(selected.id)}
                 onSelect={select}
@@ -816,7 +857,7 @@ export function AppShell({
       {menu && menuNode && (
         <Menu
           label={t("edit.menu.label", { name: menuNode.name })}
-          entries={menuEntries(menuNode, nodes, t, !!onExport)}
+          entries={menuEntries(menuNode, nodes, t, !!onExport, !!copiesApi)}
           x={menu.x}
           y={menu.y}
           onSelect={(action) => choose(menuNode.id, action)}
@@ -946,6 +987,32 @@ export function AppShell({
             const site = removing.site;
             setRemoving(null);
             void run(() => data.removeOldBackups!(site.id)).then(() => setBackupEdits((n) => n + 1));
+          }}
+        />
+      )}
+      {copying && copiesApi && (
+        <CopyDialog
+          name={copying.site.name}
+          preview={copying.preview}
+          problem={copying.problem}
+          onClose={() => setCopying(null)}
+          onCopy={(content: CopyContent, leftOut: string[]) => copiesApi.Start(copying.site.id, content, leftOut)}
+        />
+      )}
+      {removingCopy && copiesApi && (
+        <RemoveCopyDialog
+          copy={removingCopy.copy}
+          forGood={removingCopy.forGood}
+          onClose={() => setRemovingCopy(null)}
+          onRemove={() => {
+            const { site, copy, forGood } = removingCopy;
+            void (forGood ? copiesApi.DeleteForGood(site.id, copy.folder) : copiesApi.Remove(site.id, copy.folder)).then((p) => {
+              // No trash takes it: the dialog asks again, to delete it for good.
+              if (p?.code === "problem.noTrash" && !forGood) return setRemovingCopy({ site, copy, forGood: true });
+              setRemovingCopy(null);
+              if (p) setProblem(p);
+              setCopyEdits((n) => n + 1);
+            });
           }}
         />
       )}
@@ -1081,7 +1148,7 @@ function selectionEntries(ids: string[], nodes: Node[], t: T): MenuEntry[] {
 }
 
 // The actions on a node, as the menu lists them.
-function menuEntries(node: Node, nodes: Node[], t: T, canExport: boolean): MenuEntry[] {
+function menuEntries(node: Node, nodes: Node[], t: T, canExport: boolean, canCopy = false): MenuEntry[] {
   const item = (id: string, label: string, icon: IconName, extra: Partial<Item> = {}): Item => ({ kind: "item", id, label, icon, ...extra });
   const colors = colorsEntry(t, [node.ownColor]);
   const separator: MenuEntry = { kind: "separator" };
@@ -1099,7 +1166,9 @@ function menuEntries(node: Node, nodes: Node[], t: T, canExport: boolean): MenuE
     ];
   }
   if (node.kind === "site") {
-    return [scan, newFolder, separator, rename, colors, item("admin", t("admin.menu"), "external"), separator, remove("edit.menu.deleteSite")];
+    // Copy to this computer, from any tab (ADR-0041, mockup 28j).
+    const copy = canCopy ? [item("copy", t("copies.menu"), "archive")] : [];
+    return [scan, ...copy, newFolder, separator, rename, colors, item("admin", t("admin.menu"), "external"), separator, remove("edit.menu.deleteSite")];
   }
   const exported = canExport ? [item("export", t("edit.menu.export"), "archive")] : [];
   if (node.kind === "host") {
@@ -1122,6 +1191,11 @@ function Loaded({
   node,
   data,
   revision,
+  copies,
+  copiesApi,
+  onCopySite,
+  onRemoveCopy,
+  onOpenCopies,
   scanning,
   onScan,
   onSelect,
@@ -1153,6 +1227,12 @@ function Loaded({
   node: Node;
   data: ShellData;
   revision: number;
+  /** The copies running and ended, and the service that copies (ADR-0041). */
+  copies?: CopiesState;
+  copiesApi?: CopiesApi;
+  onCopySite?: (site: SiteView) => void;
+  onRemoveCopy?: (site: SiteView, copy: CopyView) => void;
+  onOpenCopies?: () => void;
   scanning: boolean;
   onScan: () => void;
   onSelect: (id: string) => void;
@@ -1188,6 +1268,9 @@ function Loaded({
 }) {
   const { t } = useTranslation();
   const [view, setView] = useState<{ id: string; view: View }>();
+  // The copy of this site running now; its list is read again at each archive done.
+  const copyRun = node.kind === "site" ? copies?.running?.find((r) => r.siteId === node.id) : undefined;
+  const copyStep = copyRun ? `${copyRun.done}/${copyRun.total}` : "";
   // The list across a host's or folder's sites, read again after a scan (revision).
   const extensions = useMemo(
     () => (data.extensions && node.kind !== "site" ? () => data.extensions!(node.id) : undefined),
@@ -1200,8 +1283,14 @@ function Loaded({
     const load = async (): Promise<View> => {
       switch (node.kind) {
         case "site": {
-          const [site, history, backups] = await Promise.all([data.site(node.id), data.history?.(node.id), data.backups?.(node.id)]);
-          return { kind: "site", site, history, backups };
+          const [site, history, backups, copyList, copiesFolder] = await Promise.all([
+            data.site(node.id),
+            data.history?.(node.id),
+            data.backups?.(node.id),
+            copiesApi?.List(node.id),
+            copiesApi?.Destination(node.id),
+          ]);
+          return { kind: "site", site, history, backups, copies: copiesApi ? (copyList ?? []) : undefined, copiesFolder };
         }
         case "host":
           return { kind: "host", host: await data.host(node.id) };
@@ -1222,7 +1311,7 @@ function Loaded({
       current = false;
     };
     // The name too: a rename shows at once.
-  }, [node.id, node.kind, node.name, data, revision]);
+  }, [node.id, node.kind, node.name, data, revision, copiesApi, copyStep]);
 
   // Nothing until the first answer, which comes at once from the local database.
   if (!view || view.id !== node.id) return null;
@@ -1245,6 +1334,15 @@ function Loaded({
         onRollback={onRollback && ((id) => onRollback(site, id))}
         backups={v.backups}
         onRemoveBackups={onRemoveBackups && v.backups && (() => onRemoveBackups(site, (v.backups!.items ?? []).filter((b) => b.expired)))}
+        copies={v.copies}
+        copiesFolder={v.copiesFolder}
+        copyRun={copyRun}
+        onCopySite={onCopySite && (() => onCopySite(site))}
+        onShowCopy={copiesApi && ((copy) => void copiesApi.Show(site.id, copy.folder))}
+        onResumeCopy={copiesApi && ((copy) => void copiesApi.Resume(site.id, copy.folder))}
+        onRemoveCopy={onRemoveCopy && ((copy) => onRemoveCopy(site, copy))}
+        onStopCopy={copiesApi && (() => void copiesApi.Stop(site.id))}
+        onOpenCopies={onOpenCopies}
         onRemove={onRemove}
         onTestHost={onTestHost}
         onCheckFiles={onCheckFiles}
@@ -1378,7 +1476,7 @@ function Selected({
 }
 
 type View =
-  | { kind: "site"; site: SiteView; history?: OperationView[]; backups?: BackupsView }
+  | { kind: "site"; site: SiteView; history?: OperationView[]; backups?: BackupsView; copies?: CopyView[]; copiesFolder?: string }
   | { kind: "host"; host: HostView }
   | { kind: "folder"; rows: SiteRow[] }
   | { kind: "tag"; rows: SiteRow[] }

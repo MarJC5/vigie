@@ -9,6 +9,11 @@ import type {} from "../github.com/wailsapp/wails/v3/internal/eventdata.js";
 import "../github.com/wailsapp/wails/v3/internal/eventcreate.js";
 
 /**
+ * Name of the custom event "vigie:copies".
+ */
+export const VigieCopies = "vigie:copies";
+
+/**
  * Name of the custom event "vigie:discovery".
  */
 export const VigieDiscovery = "vigie:discovery";

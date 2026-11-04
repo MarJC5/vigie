@@ -148,6 +148,7 @@
     "updates": "Mises à jour",
     "security": "Sécurité",
     "notes": "Notes",
+    "copies": "Copies",
     "history": "Historique"
   },
   "action": {
@@ -752,7 +753,11 @@
     "and": " et ",
     "wpcli": "Installation de WP-CLI sur {{path}}",
     "wpcliDone": "WP-CLI {{version}} dans {{path}}, vérifié (SHA-512). Commande de l'hébergement : {{command}}.",
-    "wpcliFailed": "Arrêtée à l'étape {{step}} : {{message}}"
+    "wpcliFailed": "Arrêtée à l'étape {{step}} : {{message}}",
+    "copy": "Copie de {{path}}",
+    "copyResumed": "Reprise de la copie de {{path}}",
+    "copyLine": "{{content}} : {{archives}}, {{size}}, dans {{folder}}",
+    "copyCut": "Coupée : {{message}}"
   },
   "tray": {
     "open": "Ouvrir {{app}}",
@@ -1918,6 +1923,75 @@
     "noPlugins": "Aucune, en dehors de celles de tout le réseau.",
     "noAdmins": "Aucun.",
     "stateRow": "État"
+  },
+  "copies": {
+    "action": "Copier",
+    "menu": "Copier sur cet ordinateur",
+    "title": "Copies sur cet ordinateur",
+    "none": "Aucune copie de ce site pour l'instant.",
+    "note": "Une copie contient les données personnelles du site (comptes, commandes, messages). Vigie ne la remet pas sur le serveur : l'aide explique comment le faire à la main.",
+    "content": {
+      "database": "La base de données",
+      "databaseDesc": "Les articles, pages, réglages, comptes et commandes.",
+      "content": "La base et wp-content",
+      "contentDesc": "Plus les extensions, les thèmes et les médias.",
+      "site": "Le site complet",
+      "siteDesc": "Plus WordPress et wp-config.php, qui contient le mot de passe de la base."
+    },
+    "dialog": {
+      "title": "Copier {{name}} sur cet ordinateur",
+      "lead": "Vigie lit le site par SSH et n'écrit rien sur le serveur. Les tailles viennent d'être lues sur le serveur.",
+      "reading": "Lecture des tailles sur le serveur…",
+      "folders": "Dossiers de wp-content",
+      "loose": "Fichiers de wp-content lui-même",
+      "parts_one": "environ {{count}} archive",
+      "parts_many": "environ {{count}} archives",
+      "parts_other": "environ {{count}} archives",
+      "split": "{{parts}} de {{size}} au plus · {{total}} à lire · {{free}} libres sur cet ordinateur",
+      "unsplit": "{{parts}}, non découpées : ce compte n'a ni GNU find ni GNU tar · {{total}} à lire · {{free}} libres sur cet ordinateur",
+      "noSpace": "Pas assez de place sur cet ordinateur : la copie fait {{total}}, il reste {{free}}. Laissez des dossiers de côté, ou copiez la base seule.",
+      "confirm": "Copier"
+    },
+    "complete": "Complète",
+    "incomplete": "Incomplète",
+    "running": "En cours",
+    "archives_one": "{{count}} archive",
+    "archives_many": "{{count}} archives",
+    "archives_other": "{{count}} archives",
+    "archivesOf": "{{done}} archives sur {{count}}",
+    "show": "Afficher le dossier",
+    "resume": "Reprendre",
+    "remove": "Supprimer la copie",
+    "stop": "Arrêter",
+    "part": {
+      "copied": "Copiée",
+      "reading": "En cours · {{read}} sur {{total}}",
+      "readingDump": "En cours · {{read}}",
+      "waiting": "En attente",
+      "missing": "Manquante"
+    },
+    "runningFoot": "{{read}} lus sur {{total}} · {{done}} archives sur {{count}}",
+    "incompleteFoot_one": "Coupée. Reprendre va chercher l'archive manquante : le site a pu changer depuis, chaque archive garde son heure dans copy.json.",
+    "incompleteFoot_many": "Coupée. Reprendre va chercher les {{count}} archives manquantes : le site a pu changer depuis, chaque archive garde son heure dans copy.json.",
+    "incompleteFoot_other": "Coupée. Reprendre va chercher les {{count}} archives manquantes : le site a pu changer depuis, chaque archive garde son heure dans copy.json.",
+    "removeDialog": {
+      "title": "Supprimer cette copie ?",
+      "lead": "Elle va dans la Corbeille.",
+      "confirm": "Supprimer"
+    },
+    "forGood": {
+      "title": "Supprimer cette copie pour de bon ?",
+      "lead": "Aucune Corbeille ne peut la recevoir : elle sera supprimée pour de bon, sans retour possible.",
+      "confirm": "Supprimer pour de bon"
+    },
+    "settings": {
+      "section": "Copies sur cet ordinateur",
+      "folderTitle": "Dossier des copies",
+      "folderDesc": "Une copie par site et par date, lisible par vous seul. Vigie ne supprime jamais une copie d'elle-même.",
+      "choose": "Choisir",
+      "sizeTitle": "Taille des archives",
+      "sizeDesc": "Une partie du site plus grande est découpée en plusieurs archives : une copie coupée reprend archive par archive. 4 Go au plus, la limite d'un disque FAT32."
+    }
   },
   "backups": {
     "title": "Sauvegardes sur le serveur",

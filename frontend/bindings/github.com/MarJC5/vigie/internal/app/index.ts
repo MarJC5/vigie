@@ -55,6 +55,7 @@ export type {
     CopyEndView,
     CopyEntryView,
     CopyFolderView,
+    CopyPartView,
     CopyPreviewView,
     CopyRunView,
     CopySettings,
