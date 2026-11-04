@@ -14,6 +14,7 @@ import (
 	"github.com/MarJC5/vigie/internal/exchange"
 	"github.com/MarJC5/vigie/internal/hostcheck"
 	"github.com/MarJC5/vigie/internal/model"
+	"github.com/MarJC5/vigie/internal/sitecopy"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/store"
 	"github.com/MarJC5/vigie/internal/update"
@@ -84,6 +85,13 @@ var problemCodes = []struct {
 	{errRunning, "problem.running"},
 	{workspace.ErrBackupDays, "problem.backupDays"},
 	{workspace.ErrCopyFolder, "problem.copyFolder"},
+	{errNoPreview, "problem.copyNoPreview"},
+	{errNotACopy, "problem.notACopy"},
+	{errCopyRunning, "problem.copyRunning"},
+	{sitecopy.ErrNoSpace, "problem.copyNoSpace"},
+	{sitecopy.ErrDump, "problem.copyDump"},
+	{sitecopy.ErrArchive, "problem.copyArchive"},
+	{sitecopy.ErrComplete, "problem.copyComplete"},
 	{workspace.ErrArchiveSize, "problem.archiveSize"},
 	{workspace.ErrRemoveRefused, "problem.backupsNotRemoved"},
 	{workspace.ErrNothingToMove, "problem.nothingToMove"},

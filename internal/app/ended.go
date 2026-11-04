@@ -47,6 +47,10 @@ type RunEnd struct {
 	FailedKind model.ItemKind
 	FailedItem string
 	NotStarted int
+
+	// A copy of a site to the computer (ADR-0041): the archives it wrote; Failed is 1 when it was
+	// cut.
+	Archives int
 }
 
 // Notifies tells whether the end is worth a notification: a run the user started, long enough,
@@ -68,6 +72,12 @@ func EndNotice(e RunEnd, alerts []Alert, label func(key string, vars map[string]
 	n := func(key string, count int) string { return label("notify.end."+key, map[string]any{"count": count}) }
 	var details []string
 	switch {
+	case e.Kind == EndCopy && e.Failed > 0:
+		title = label("notify.end.copyCutTitle", nil)
+		details = append(details, n("archivesCopied", e.Archives))
+	case e.Kind == EndCopy:
+		title = label("notify.end.copyTitle", nil)
+		details = append(details, n("archivesCopied", e.Archives))
 	case e.Kind == EndScan:
 		title = label("notify.end.scanTitle", nil)
 		details = append(details, n("scanned", e.Sites))

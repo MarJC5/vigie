@@ -72,10 +72,11 @@ func TestACopyOfTheDatabase(t *testing.T) {
 		t.Fatalf("PrepareCopy() = %+v", p)
 	}
 	root := t.TempDir()
-	dir, err := ws.CopySite(ctx, site.ID, workspace.CopyRequest{Root: root, Content: sitecopy.DatabaseOnly, Limit: 500 << 20}, p, nil)
+	kept, err := ws.CopySite(ctx, site.ID, workspace.CopyRequest{Root: root, Content: sitecopy.DatabaseOnly, Limit: 500 << 20}, p, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
+	dir := kept.Folder
 	if want := filepath.Join(root, "Shared hosting", "boulangerie-exemple.ch", "2026-11-03 20.41"); dir != want {
 		t.Errorf("folder %s, want %s", dir, want)
 	}
@@ -91,7 +92,7 @@ func TestACopyOfTheDatabase(t *testing.T) {
 		t.Fatalf("journal: %+v, %v", copies, err)
 	}
 	c := copies[0]
-	if c.Outcome != model.CopyCompleted || c.Archives != 1 || c.Bytes != m.Archives[0].Bytes || c.Folder != dir || c.SiteName != site.Name || c.Content != "database" {
+	if c.ID != kept.ID || c.Outcome != model.CopyCompleted || c.Archives != 1 || c.Bytes != m.Archives[0].Bytes || c.Folder != dir || c.SiteName != site.Name || c.Content != "database" {
 		t.Errorf("journal entry %+v", c)
 	}
 }

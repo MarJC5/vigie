@@ -94,6 +94,16 @@ func TestEndNoticeTexts(t *testing.T) {
 			"Mise à jour terminée", "Clients : 5 sites mis à jour, 1 en échec.",
 		},
 		{
+			"a copy of a site", "fr",
+			app.RunEnd{Kind: app.EndCopy, NodeIDs: []string{"s"}, Name: "boulangerie-exemple.ch", Archives: 9}, nil,
+			"Copie terminée", "boulangerie-exemple.ch\u00a0: 9 archives copiées.",
+		},
+		{
+			"a copy of a site cut off", "en",
+			app.RunEnd{Kind: app.EndCopy, NodeIDs: []string{"s"}, Name: "boulangerie-exemple.ch", Archives: 1, Failed: 1}, nil,
+			"Copy cut off", "boulangerie-exemple.ch: 1 archive copied.",
+		},
+		{
 			"an update of several sites, none failed", "en",
 			app.RunEnd{Kind: app.EndUpdate, Several: true, NodeIDs: []string{""}, Updated: 1}, nil,
 			"Update done", "All sites: 1 site updated.",

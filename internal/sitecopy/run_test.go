@@ -323,3 +323,30 @@ func TestDiskFree(t *testing.T) {
 		t.Fatalf("DiskFree() = %d, %v", free, err)
 	}
 }
+
+// The copies of a site, the newest first, a cut one said incomplete; other folders left out.
+func TestListTheCopiesOfASite(t *testing.T) {
+	root := t.TempDir()
+	s := newServer()
+	c := copier(s, 1<<30)
+	p, _ := c.Prepare(context.Background())
+	first, err := c.Start(context.Background(), job(root), p, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.cutAt = "cd '/s/wp-content/uploads'"
+	c.Now = func() time.Time { return time.Date(2026, 11, 4, 9, 0, 0, 0, time.UTC) }
+	second, _ := c.Start(context.Background(), job(root), p, nil)
+	site := sitecopy.SiteFolder(root, "Shared hosting", "boulangerie-exemple.ch")
+	os.Mkdir(filepath.Join(site, "not a copy"), 0o700)
+	got, err := sitecopy.List(site)
+	if err != nil || len(got) != 2 {
+		t.Fatalf("List() = %+v, %v", got, err)
+	}
+	if got[0].Dir != second || got[0].Complete || got[0].Planned != 6 || got[1].Dir != first || !got[1].Complete {
+		t.Errorf("List() = %+v", got)
+	}
+	if none, err := sitecopy.List(filepath.Join(root, "nothing")); err != nil || len(none) != 0 {
+		t.Errorf("List() of no folder = %+v, %v", none, err)
+	}
+}

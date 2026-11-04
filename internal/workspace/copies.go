@@ -152,11 +152,12 @@ func (w *Workspace) PrepareCopy(ctx context.Context, siteID model.ID) (sitecopy.
 }
 
 // CopySite copies a site to the computer, from what PrepareCopy read, and keeps the copy for the
-// journal, done, failed or stopped. It answers the copy's folder, also when it failed halfway.
-func (w *Workspace) CopySite(ctx context.Context, siteID model.ID, req CopyRequest, p sitecopy.Preview, progress func(sitecopy.Progress)) (string, error) {
+// journal, done, failed or stopped. It answers the copy as kept, its folder also when it failed
+// halfway; nothing kept, and no folder, when it was refused before anything was read.
+func (w *Workspace) CopySite(ctx context.Context, siteID model.ID, req CopyRequest, p sitecopy.Preview, progress func(sitecopy.Progress)) (model.Copy, error) {
 	c, site, host, err := w.copier(ctx, siteID)
 	if err != nil {
-		return "", err
+		return model.Copy{}, err
 	}
 	record := model.Copy{ID: model.NewID(), SiteID: site.ID, SiteName: site.Name, HostName: host.Name,
 		Content: string(req.Content), Started: w.deps.Now()}
@@ -169,27 +170,27 @@ func (w *Workspace) CopySite(ctx context.Context, siteID model.ID, req CopyReque
 	dir, err := c.Start(ctx, job, p, progress)
 	if dir == "" {
 		// Refused before anything was read (the disk too small): nothing to tell in the journal.
-		return "", err
+		return model.Copy{}, err
 	}
-	return dir, w.recordCopy(ctx, record, dir, 0, 0, err)
+	return w.recordCopy(ctx, record, dir, 0, 0, err)
 }
 
 // ResumeCopy reads the archives missing of a cut copy of a site, and keeps the resume for the
 // journal.
-func (w *Workspace) ResumeCopy(ctx context.Context, siteID model.ID, dir string, progress func(sitecopy.Progress)) error {
+func (w *Workspace) ResumeCopy(ctx context.Context, siteID model.ID, dir string, progress func(sitecopy.Progress)) (model.Copy, error) {
 	c, site, host, err := w.copier(ctx, siteID)
 	if err != nil {
-		return err
+		return model.Copy{}, err
 	}
 	before, err := sitecopy.ReadManifest(dir)
 	if err != nil {
-		return err
+		return model.Copy{}, err
 	}
 	record := model.Copy{ID: model.NewID(), SiteID: site.ID, SiteName: site.Name, HostName: host.Name,
 		Content: string(before.Content), Resumed: true, Started: w.deps.Now()}
 	err = c.Resume(ctx, dir, progress)
 	if errors.Is(err, sitecopy.ErrComplete) {
-		return err
+		return model.Copy{}, err
 	}
 	var bytes int64
 	for _, r := range before.Archives {
@@ -200,7 +201,7 @@ func (w *Workspace) ResumeCopy(ctx context.Context, siteID model.ID, dir string,
 
 // recordCopy keeps a copy or a resume in the journal: the archives and bytes it wrote, besides
 // those there before it, and how it ended.
-func (w *Workspace) recordCopy(ctx context.Context, record model.Copy, dir string, archivesBefore int, bytesBefore int64, err error) error {
+func (w *Workspace) recordCopy(ctx context.Context, record model.Copy, dir string, archivesBefore int, bytesBefore int64, err error) (model.Copy, error) {
 	record.Folder, record.Finished = dir, w.deps.Now()
 	if m, merr := sitecopy.ReadManifest(dir); merr == nil {
 		record.Archives = len(m.Archives) - archivesBefore
@@ -218,7 +219,7 @@ func (w *Workspace) recordCopy(ctx context.Context, record model.Copy, dir strin
 		record.Outcome, record.Message = model.CopyFailed, err.Error()
 	}
 	if serr := w.db.SaveCopy(context.WithoutCancel(ctx), record); serr != nil && err == nil {
-		return serr
+		return record, serr
 	}
-	return err
+	return record, err
 }

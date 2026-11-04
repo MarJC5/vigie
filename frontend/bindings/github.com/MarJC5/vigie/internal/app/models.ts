@@ -7,7 +7,7 @@
  */
 export interface ActivityEntry {
     /**
-     * "run", "scan", "update", "rollback", "wpcli"
+     * "run", "scan", "update", "rollback", "wpcli", "copy"
      */
     "kind": string;
 
@@ -64,6 +64,12 @@ export interface ActivityEntry {
      * had when it is not stored.
      */
     "wpCli": WPCLIInstallView | null;
+
+    /**
+     * Copy is a copy of a site to the computer, or its resume (ADR-0041); its Path is its site's,
+     * or the host's and site's names when the site is not stored any more.
+     */
+    "copy": CopyEntryView | null;
 }
 
 /**
@@ -317,6 +323,102 @@ export interface CompactResult {
 }
 
 /**
+ * CopiesState is what copies run now, and how the last copy of each site ended; Completed counts
+ * the copies ended since Vigie started, so the window reloads a site's copies when it grows.
+ */
+export interface CopiesState {
+    "running": CopyRunView[] | null;
+    "ends": CopyEndView[] | null;
+    "completed": number;
+}
+
+/**
+ * CopyEndView is how the last copy of a site ended: its folder, if one was made, and its problem,
+ * nil when it completed.
+ */
+export interface CopyEndView {
+    "siteId": string;
+    "folder": string;
+    "cancelled": boolean;
+    "problem": Problem | null;
+}
+
+/**
+ * CopyEntryView is a copy of a site to the computer in the journal: where it went, what it holds,
+ * what this run wrote, and what was said when it was cut.
+ */
+export interface CopyEntryView {
+    "folder": string;
+    "content": string;
+    "resumed": boolean;
+    "archives": number;
+    "bytes": number;
+    "message": string;
+}
+
+/**
+ * CopyFolderView is a folder of wp-content and its size, in the copy dialog.
+ */
+export interface CopyFolderView {
+    "name": string;
+    "bytes": number;
+}
+
+/**
+ * CopyPreviewView is what the copy dialog shows (mockups 28a to 28c): the size of each content,
+ * the folders of wp-content, where the copy goes and how much room is there.
+ */
+export interface CopyPreviewView {
+    "siteId": string;
+    "database": number;
+
+    /**
+     * the database and wp-content
+     */
+    "content": number;
+
+    /**
+     * the database and the whole site folder
+     */
+    "site": number;
+    "folders": CopyFolderView[] | null;
+
+    /**
+     * Split tells that the archives are split by size: the account has GNU find and tar.
+     */
+    "split": boolean;
+
+    /**
+     * the site's folder of copies
+     */
+    "destination": string;
+
+    /**
+     * bytes free there, -1 when unknown
+     */
+    "free": number;
+
+    /**
+     * MB
+     */
+    "archiveSize": number;
+}
+
+/**
+ * CopyRunView is a copy that runs: the archive being read and how far it went.
+ */
+export interface CopyRunView {
+    "siteId": string;
+    "folder": string;
+    "archive": string;
+    "done": number;
+    "total": number;
+    "read": number;
+    "expected": number;
+    "resumed": boolean;
+}
+
+/**
  * CopySettings are the settings of the copies of sites on this computer (ADR-0041): their folder,
  * the size of an archive in megabytes, and the sizes offered.
  */
@@ -324,6 +426,28 @@ export interface CopySettings {
     "folder": string;
     "archiveSize": number;
     "sizes": number[] | null;
+}
+
+/**
+ * CopyView is a copy of a site on this computer, as its History tab lists it (mockup 28e).
+ */
+export interface CopyView {
+    "folder": string;
+
+    /**
+     * RFC 3339
+     */
+    "started": string;
+    "content": string;
+    "leftOut": string[] | null;
+
+    /**
+     * written
+     */
+    "archives": number;
+    "planned": number;
+    "bytes": number;
+    "complete": boolean;
 }
 
 /**

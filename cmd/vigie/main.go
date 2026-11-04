@@ -134,8 +134,9 @@ func openWindow(opts cli.Options) error {
 
 	files := picker{app: func() *application.App { return wails }}
 	updates := app.NewUpdates(ws, emit, scanner)
+	copies := app.NewCopies(ws, emit)
 	data := app.NewData(ws, files, time.Now, func() bool {
-		return len(scanner.State().Running) > 0 || updates.State().Active > 0
+		return len(scanner.State().Running) > 0 || updates.State().Active > 0 || len(copies.State().Running) > 0
 	})
 	// Add-ons are looked for in the PATH and the usual install folders (an app opened from the Finder
 	// does not get the PATH of the user's shell).
@@ -171,11 +172,13 @@ func openWindow(opts cli.Options) error {
 	}
 	docked := newDock()
 	notifier := notifications.New()
-	// Vigie's own update (ADR-0038): its updater exists once the app does; never while scans or
-	// updates run.
+	// Vigie's own update (ADR-0038): its updater exists once the app does; never while scans,
+	// updates or copies run.
 	kind := installKind(runtime.GOOS, buildinfo.Version(), os.Getenv("APPIMAGE"), runningBundle(), homebrewApps())
 	selfUpdate := app.NewSelfUpdate(ws, appUpdater{&wails}, kind, buildinfo.Version(),
-		func() bool { return len(scanner.State().Running) > 0 || updates.State().Active > 0 }, emit, time.Now)
+		func() bool {
+			return len(scanner.State().Running) > 0 || updates.State().Active > 0 || len(copies.State().Running) > 0
+		}, emit, time.Now)
 
 	// The keeper, once made: a second launch brings its window forward.
 	var keep *keeper
@@ -196,6 +199,7 @@ func openWindow(opts cli.Options) error {
 			application.NewService(app.NewHostWizard(ws, emit)),
 			application.NewService(app.NewEditor(ws)),
 			application.NewService(updates),
+			application.NewService(copies),
 			application.NewService(scanner),
 			application.NewService(selfUpdate),
 			application.NewService(app.NewSecurity(ws, time.Now)),
@@ -255,6 +259,7 @@ func openWindow(opts cli.Options) error {
 		},
 	}
 	updates.OnEnded = keep.updated
+	copies.OnEnded = keep.updated
 	keep.start(watching)
 	return wails.Run()
 }

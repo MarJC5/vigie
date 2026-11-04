@@ -31,7 +31,7 @@ type NoticeView struct {
 // ActivityEntry is a line of the journal: a run with what it changed and what Vigie notified, a
 // scan made before runs were recorded, an update or a rollback, an install of WP-CLI.
 type ActivityEntry struct {
-	Kind    string   `json:"kind"`    // "run", "scan", "update", "rollback", "wpcli"
+	Kind    string   `json:"kind"`    // "run", "scan", "update", "rollback", "wpcli", "copy"
 	At      string   `json:"at"`      // when it started, RFC 3339
 	Ended   string   `json:"ended"`   // "" while it runs
 	By      string   `json:"by"`      // a run's: "user", "schedule", "cli"
@@ -48,6 +48,20 @@ type ActivityEntry struct {
 	// WPCLI is an install of WP-CLI's (ADR-0039); its Path is its host's, or the name the host
 	// had when it is not stored.
 	WPCLI *WPCLIInstallView `json:"wpCli"`
+	// Copy is a copy of a site to the computer, or its resume (ADR-0041); its Path is its site's,
+	// or the host's and site's names when the site is not stored any more.
+	Copy *CopyEntryView `json:"copy"`
+}
+
+// CopyEntryView is a copy of a site to the computer in the journal: where it went, what it holds,
+// what this run wrote, and what was said when it was cut.
+type CopyEntryView struct {
+	Folder   string `json:"folder"`
+	Content  string `json:"content"`
+	Resumed  bool   `json:"resumed"`
+	Archives int    `json:"archives"`
+	Bytes    int64  `json:"bytes"`
+	Message  string `json:"message"`
 }
 
 // WPCLIInstallView is an install of WP-CLI on an account: its version, the host's command once
@@ -75,6 +89,7 @@ type activityData interface {
 	JournalScans(ctx context.Context, since time.Time, sites []model.ID) ([]model.Scan, error)
 	OperationsSince(ctx context.Context, since time.Time) ([]model.Operation, error)
 	WPCLIInstalls(ctx context.Context, since time.Time) ([]model.WPCLIInstall, error)
+	Copies(ctx context.Context, since time.Time) ([]model.Copy, error)
 }
 
 // Activity serves the journal to the Activity page: it reads what is stored, and keeps nothing.
@@ -236,6 +251,27 @@ func (a *Activity) Journal(ctx context.Context, days int, nodeID string) (Journa
 		return Journal{}, err
 	}
 	entries = append(entries, installEntries(tree, node, installs)...)
+	copies, err := a.repo.Copies(ctx, since)
+	if err != nil {
+		return Journal{}, err
+	}
+	for _, c := range copies {
+		if !shown(c.SiteID) {
+			continue
+		}
+		e := siteEntry(tree, "copy", c.SiteID, c.Started, c.Finished, string(c.Outcome))
+		if _, ok := tree.Site(c.SiteID); !ok {
+			e.SiteID, e.Path = "", c.HostName+"/"+c.SiteName
+		}
+		e.Copy = &CopyEntryView{Folder: c.Folder, Content: c.Content, Resumed: c.Resumed, Archives: c.Archives, Bytes: c.Bytes, Message: c.Message}
+		// The end of a copy is told under it (ADR-0035).
+		for _, n := range notices {
+			if n.RunID == c.ID {
+				e.Notices = append(e.Notices, NoticeView{Kind: n.Kind, Names: n.Names, Text: n.Text})
+			}
+		}
+		entries = append(entries, e)
+	}
 	// Newest first; RFC 3339 in UTC sorts as time does.
 	slices.SortStableFunc(entries, func(x, y ActivityEntry) int {
 		switch {

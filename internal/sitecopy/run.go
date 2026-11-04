@@ -198,7 +198,7 @@ func (c Copier) Start(ctx context.Context, job Job, p Preview, progress func(Pro
 	for _, a := range archives {
 		need += a.Bytes
 	}
-	site := filepath.Join(job.Root, folderName(job.Host), folderName(job.Site))
+	site := SiteFolder(job.Root, job.Host, job.Site)
 	if err := os.MkdirAll(site, 0o700); err != nil {
 		return "", err
 	}
@@ -415,6 +415,50 @@ func (c *counting) Write(p []byte) (int, error) {
 		c.report(c.n)
 	}
 	return n, err
+}
+
+// SiteFolder is the folder of a site's copies: <root>/<host>/<site>.
+func SiteFolder(root, host, site string) string {
+	return filepath.Join(root, folderName(host), folderName(site))
+}
+
+// Listed is a copy found in a site's folder: its manifest, how many archives its plan has, and
+// whether it holds them all.
+type Listed struct {
+	Dir      string
+	Manifest Manifest
+	Planned  int
+	Complete bool
+}
+
+// List reads the copies of a site's folder, the newest first; a folder that is not a copy (no
+// copy.json) is left out, and a missing site folder is no copy.
+func List(siteFolder string) ([]Listed, error) {
+	entries, err := os.ReadDir(siteFolder)
+	if errors.Is(err, os.ErrNotExist) {
+		return []Listed{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	copies := []Listed{}
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		dir := filepath.Join(siteFolder, e.Name())
+		m, err := ReadManifest(dir)
+		if err != nil {
+			continue
+		}
+		var plan []Archive
+		if err := readJSON(filepath.Join(dir, planName), &plan); err != nil {
+			continue
+		}
+		copies = append(copies, Listed{Dir: dir, Manifest: m, Planned: len(plan), Complete: len(Missing(plan, m)) == 0})
+	}
+	slices.SortFunc(copies, func(a, b Listed) int { return b.Manifest.Started.Compare(a.Manifest.Started) })
+	return copies, nil
 }
 
 // folderName is a host's or site's name as a folder name: no separator, no leading dot.
