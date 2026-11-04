@@ -7,6 +7,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Copies** of a site on this computer, from its new Copies tab, its menu or a selection: the
+  database, the database and `wp-content`, or the whole site, read only on the server. A large
+  part is split into archives (500 MB by default), a copy cut off resumes with only what is
+  missing, and a copy removed goes to the Trash. Settings, Data sets the folder of the copies and
+  the size of the archives. Also `vigie copy` on the command line.
+
 ### Changed
 
 - Buttons and menus no longer end with an ellipsis ("Export", not "Export…"); what is running

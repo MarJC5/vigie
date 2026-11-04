@@ -125,6 +125,21 @@ over a `~/bin/wp` that is already there.
 To remove it: `rm ~/bin/wp` on the account. WP-CLI updates itself with `wp cli update`; Vigie
 does not update it.
 
+## Copies on this computer
+
+A copy of a site (see [copies.md](copies.md)) only reads the server: a script run by
+`wp eval-file` that prints where WordPress keeps its parts, the sizes, the list of the files, and
+the archives read over the SSH connection. Nothing is written in the account.
+
+- **What leaves the server**: the database, and the files you chose, to your computer only.
+  Nothing is sent anywhere else.
+- **What it holds**: the site's personal data (accounts, orders, messages) and, for the whole
+  site, `wp-config.php` with the database password. Each copy's folder is readable by you only
+  (0700, files 0600); the rest is your computer's protection, an encrypted disk (FileVault on
+  macOS) above all.
+- **How long it stays**: until you remove it. Vigie never removes a copy on its own; one removed
+  goes to the Trash.
+
 ## How findings are ranked
 
 **Urgent**:

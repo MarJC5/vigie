@@ -1669,6 +1669,7 @@
       "status": "État des sites",
       "server": "Lu et envoyé",
       "import-export": "Importer, exporter",
+    "copies": "Copies",
       "background": "Arrière-plan"
     },
     "quote": "« {{text}} »",

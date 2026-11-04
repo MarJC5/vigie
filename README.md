@@ -62,6 +62,8 @@ to protect. Vigie takes another route:
 - **Multisite networks** as one site, with the plugins, theme and administrators of each subsite.
 - **Safe updates**, on one site or many: a backup first, then each item, the site checked after
   each one, and a rollback on failure; premium plugins included.
+- **Copies** of a site on your computer: its database, its `wp-content` or the whole site, split
+  into archives, resumed when cut off, read only on the server ([docs/copies.md](docs/copies.md)).
 - **In the background**: in the menu bar once the window is closed, scans at the interval you
   choose, notifications when a site turns urgent or a long run ends, and a journal of everything.
 - **Command line**: `vigie scan`, `vigie update` and more, with JSON output and exit codes for
@@ -100,6 +102,7 @@ vigie tree                              # the site manager, each site with its s
 vigie scan "Clients/Shared hosting"     # a site, a host or a folder; everything without a path
 vigie scan --tag client-dupont --json   # the sites with a tag, as JSON
 vigie update "Clients/Shared hosting"   # preview, then update, after you confirm
+vigie copy "Clients/Shared hosting" --content database   # a copy of each site on this computer
 vigie export -o vigie-export.json       # everything, to move to another computer
 ```
 
@@ -125,6 +128,7 @@ What Vigie reads, asks and sends: [docs/security.md](docs/security.md). To repor
 - [Vigie in the background](docs/background.md)
 - [Data: what Vigie keeps, and its export format](docs/data.md)
 - [Add-ons](docs/addons.md)
+- [Copies of your sites](docs/copies.md)
 - [Releasing Vigie](docs/releasing.md)
 
 Each page is also in French, in [docs/fr](docs/fr).

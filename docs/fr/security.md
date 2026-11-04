@@ -140,6 +140,21 @@ ancien que ce que demande WP-CLI (7.2.24), ni par-dessus un `~/bin/wp` déjà pr
 Pour le retirer : `rm ~/bin/wp` sur le compte. WP-CLI se met à jour avec `wp cli update` ; Vigie
 ne le met pas à jour.
 
+## Copies sur cet ordinateur
+
+Une copie d'un site (voir [copies.md](copies.md)) ne fait que lire le serveur : un script lancé par
+`wp eval-file`, qui dit où WordPress range ses parties, les tailles, la liste des fichiers, et les
+archives lues par la connexion SSH. Rien n'est écrit sur le compte.
+
+- **Ce qui quitte le serveur** : la base, et les fichiers que vous avez choisis, vers votre
+  ordinateur seulement. Rien n'est envoyé ailleurs.
+- **Ce qu'elle contient** : les données personnelles du site (comptes, commandes, messages) et,
+  pour le site complet, `wp-config.php` avec le mot de passe de la base. Le dossier de chaque copie
+  n'est lisible que par vous (0700, fichiers 0600). Le reste relève de la protection de votre
+  ordinateur, avant tout un disque chiffré (FileVault sur macOS).
+- **Combien de temps elle reste** : jusqu'à ce que vous la supprimiez. Vigie ne supprime jamais une
+  copie d'elle-même, et une copie supprimée va dans la Corbeille.
+
 ## Comment les constats sont classés
 
 **Urgent** :

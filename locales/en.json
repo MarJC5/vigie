@@ -1561,6 +1561,7 @@
       "status": "Site status",
       "server": "Read and sent",
       "import-export": "Import, export",
+    "copies": "Copies",
       "background": "Background"
     },
     "quote": "“{{text}}”",
