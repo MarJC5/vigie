@@ -196,7 +196,7 @@
     "sites_other": "{{name}} · {{count}} sites"
   },
   "cli": {
-    "usage": "Usage : vigie [--data-dir <dossier>] [commande]\n\nSans commande, Vigie ouvre sa fenêtre.\n\nCommandes :\n  tree [--tag <étiquette>] [--json] Affiche le gestionnaire de sites avec l'état de chaque site\n  scan [chemin | --tag <étiquette>] [--check-files] [--json]\n                                    Relève un site, un hébergement ou un dossier (tout sans chemin),\n                                    --check-files compare de nouveau les fichiers, même dans la journée\n  discover <hébergement> [--json]   Liste les installations WordPress d'un hébergement (n'ajoute rien)\n  update [chemin | --tag <étiquette>] [--yes] [--json]\n                                    Aperçu, puis mise à jour d'un site, d'un hébergement ou d'un dossier (demande d'abord)\n  export [chemin] [--history] [-o <fichier>] [--json]\n                                    Exporte tout, un dossier ou un hébergement (sur la sortie standard\n                                    sans -o), --history ajoute relevés, mises à jour et retours en arrière\n  import <fichier> [--into <dossier>] [--yes] [--trust-keys] [--json]\n  import --ssh-config [<alias>…] [--into <dossier>] [--yes] [--json]\n                                    Aperçu, puis ajout de ce qui est nouveau d'un export, d'une liste de\n                                    sites CSV ou des alias nommés de ~/.ssh/config, listés si aucun n'est\n                                    nommé (demande d'abord). Les clés d'hôte ne sont gardées qu'une fois\n                                    confirmées, ou avec --trust-keys\n  <add-on> [arguments]              Lance l'add-on vigie-<add-on> trouvé dans votre PATH\n  version                           Affiche la version\n  help                              Affiche cette aide\n\nLes chemins nomment dossiers, hébergements et sites : « Clients/Infomaniak/misits.ch ». --tag <étiquette>\nprend à la place les sites qui portent cette étiquette, où qu'ils soient.\nCode de sortie : 0 tout va bien, 1 à surveiller ou pas entièrement vérifié, 2 urgent, 3 erreur.\nDans un terminal, scan, update et discover montrent leur avancement, une ligne par site, effacé\navant le résultat. Jamais avec --json, ni quand la sortie va dans un fichier ou un programme.\n",
+    "usage": "Usage : vigie [--data-dir <dossier>] [commande]\n\nSans commande, Vigie ouvre sa fenêtre.\n\nCommandes :\n  tree [--tag <étiquette>] [--json] Affiche le gestionnaire de sites avec l'état de chaque site\n  scan [chemin | --tag <étiquette>] [--check-files] [--json]\n                                    Relève un site, un hébergement ou un dossier (tout sans chemin),\n                                    --check-files compare de nouveau les fichiers, même dans la journée\n  discover <hébergement> [--json]   Liste les installations WordPress d'un hébergement (n'ajoute rien)\n  update [chemin | --tag <étiquette>] [--yes] [--json]\n                                    Aperçu, puis mise à jour d'un site, d'un hébergement ou d'un dossier (demande d'abord)\n  copy [chemin | --tag <étiquette>] [--content database|content|site] [--json]\n                                    Copie les sites sur cet ordinateur, dans le dossier des copies\n                                    (lecture seule sur les serveurs). Par défaut : la base et wp-content\n  export [chemin] [--history] [-o <fichier>] [--json]\n                                    Exporte tout, un dossier ou un hébergement (sur la sortie standard\n                                    sans -o), --history ajoute relevés, mises à jour et retours en arrière\n  import <fichier> [--into <dossier>] [--yes] [--trust-keys] [--json]\n  import --ssh-config [<alias>…] [--into <dossier>] [--yes] [--json]\n                                    Aperçu, puis ajout de ce qui est nouveau d'un export, d'une liste de\n                                    sites CSV ou des alias nommés de ~/.ssh/config, listés si aucun n'est\n                                    nommé (demande d'abord). Les clés d'hôte ne sont gardées qu'une fois\n                                    confirmées, ou avec --trust-keys\n  <add-on> [arguments]              Lance l'add-on vigie-<add-on> trouvé dans votre PATH\n  version                           Affiche la version\n  help                              Affiche cette aide\n\nLes chemins nomment dossiers, hébergements et sites : « Clients/Infomaniak/misits.ch ». --tag <étiquette>\nprend à la place les sites qui portent cette étiquette, où qu'ils soient.\nCode de sortie : 0 tout va bien, 1 à surveiller ou pas entièrement vérifié, 2 urgent, 3 erreur.\nDans un terminal, scan, update et discover montrent leur avancement, une ligne par site, effacé\navant le résultat. Jamais avec --json, ni quand la sortie va dans un fichier ou un programme.\n",
     "unknownCommand": "commande inconnue « {{command}} »",
     "unknownOption": "option inconnue « {{option}} »",
     "needsHost": "discover attend le chemin d'un hébergement, par exemple « Clients/Infomaniak »",
@@ -227,6 +227,15 @@
     "truncated_one": "D'autres installations ont été trouvées : seule la première a été vérifiée.",
     "truncated_many": "D'autres installations ont été trouvées : seules les {{count}} premières ont été vérifiées.",
     "truncated_other": "D'autres installations ont été trouvées : seules les {{count}} premières ont été vérifiées.",
+    "copy": {
+      "badContent": "--content vaut database, content ou site, pas {{content}}.",
+      "step": "{{archive}} · {{done}} archives sur {{count}}",
+      "done": "copié : {{archives}}, {{size}}, dans {{folder}}",
+      "failed": "pas copié : {{message}}",
+      "archives_one": "{{count}} archive",
+      "archives_many": "{{count}} archives",
+      "archives_other": "{{count}} archives"
+    },
     "update": {
       "prompt_one": "Mettre à jour {{count}} site ? [o/N] ",
       "prompt_many": "Mettre à jour {{count}} sites ? [o/N] ",
@@ -361,6 +370,9 @@
       "update_one": "Mise à jour : {{done}} sur {{count}} site · {{running}} en cours",
       "update_many": "Mise à jour : {{done}} sur {{count}} sites · {{running}} en cours",
       "update_other": "Mise à jour : {{done}} sur {{count}} sites · {{running}} en cours",
+      "copy_one": "Copie : {{done}} site sur {{count}} · {{running}} en cours",
+      "copy_many": "Copie : {{done}} sites sur {{count}} · {{running}} en cours",
+      "copy_other": "Copie : {{done}} sites sur {{count}} · {{running}} en cours",
       "discover": "Recherche des installations WordPress sur {{host}}"
     }
   },
@@ -676,6 +688,9 @@
       "scanTitle": "Relevé terminé",
       "updateTitle": "Mise à jour terminée",
       "stoppedTitle": "Mise à jour arrêtée",
+      "sitesCopied_one": "{{count}} site copié",
+      "sitesCopied_many": "{{count}} sites copiés",
+      "sitesCopied_other": "{{count}} sites copiés",
       "copyTitle": "Copie terminée",
       "copyCutTitle": "Copie interrompue",
       "archivesCopied_one": "{{count}} archive copiée",

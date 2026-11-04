@@ -170,7 +170,7 @@
     "sites_other": "{{name}} · {{count}} sites"
   },
   "cli": {
-    "usage": "Usage: vigie [--data-dir <dir>] [command]\n\nWithout a command, Vigie opens its window.\n\nCommands:\n  tree [--tag <tag>] [--json]     Print the site manager with each site's status\n  scan [path | --tag <tag>] [--check-files] [--json]\n                                  Scan a site, a host or a folder (everything without a path);\n                                  --check-files compares the files again, even within the day\n  discover <host path> [--json]   List the WordPress installs of a host (adds nothing)\n  update [path | --tag <tag>] [--yes] [--json]\n                                  Preview, then update a site, a host or a folder (asks first)\n  export [path] [--history] [-o <file>] [--json]\n                                  Export everything, a folder or a host (to the standard output\n                                  without -o); --history adds the scans, updates and rollbacks\n  import <file> [--into <folder>] [--yes] [--trust-keys] [--json]\n  import --ssh-config [<alias>…] [--into <folder>] [--yes] [--json]\n                                  Preview, then add what is new from an export, a CSV site list\n                                  or the aliases named of ~/.ssh/config, listed when none is named\n                                  (asks first); host keys are kept only once confirmed, or with\n                                  --trust-keys\n  <add-on> [arguments]            Run the add-on vigie-<add-on> found on your PATH\n  version                         Print the version\n  help                            Print this help\n\nPaths name folders, hosts and sites: \"Clients/Infomaniak/misits.ch\". --tag <tag> takes the\nsites with that tag instead, wherever they are.\nExit status: 0 all good, 1 needs attention or not fully checked, 2 urgent, 3 error.\nIn a terminal, scan, update and discover show their progress, a line per site, erased before\nthe results; never with --json, nor when the output goes to a file or a program.\n",
+    "usage": "Usage: vigie [--data-dir <dir>] [command]\n\nWithout a command, Vigie opens its window.\n\nCommands:\n  tree [--tag <tag>] [--json]     Print the site manager with each site's status\n  scan [path | --tag <tag>] [--check-files] [--json]\n                                  Scan a site, a host or a folder (everything without a path);\n                                  --check-files compares the files again, even within the day\n  discover <host path> [--json]   List the WordPress installs of a host (adds nothing)\n  update [path | --tag <tag>] [--yes] [--json]\n                                  Preview, then update a site, a host or a folder (asks first)\n  copy [path | --tag <tag>] [--content database|content|site] [--json]\n                                    Copies the sites to this computer, in the folder of the copies\n                                    (read only on the servers). By default: the database and wp-content\n  export [path] [--history] [-o <file>] [--json]\n                                  Export everything, a folder or a host (to the standard output\n                                  without -o); --history adds the scans, updates and rollbacks\n  import <file> [--into <folder>] [--yes] [--trust-keys] [--json]\n  import --ssh-config [<alias>…] [--into <folder>] [--yes] [--json]\n                                  Preview, then add what is new from an export, a CSV site list\n                                  or the aliases named of ~/.ssh/config, listed when none is named\n                                  (asks first); host keys are kept only once confirmed, or with\n                                  --trust-keys\n  <add-on> [arguments]            Run the add-on vigie-<add-on> found on your PATH\n  version                         Print the version\n  help                            Print this help\n\nPaths name folders, hosts and sites: \"Clients/Infomaniak/misits.ch\". --tag <tag> takes the\nsites with that tag instead, wherever they are.\nExit status: 0 all good, 1 needs attention or not fully checked, 2 urgent, 3 error.\nIn a terminal, scan, update and discover show their progress, a line per site, erased before\nthe results; never with --json, nor when the output goes to a file or a program.\n",
     "unknownCommand": "unknown command \"{{command}}\"",
     "unknownOption": "unknown option \"{{option}}\"",
     "needsHost": "discover needs the path of a host, for example \"Clients/Infomaniak\"",
@@ -194,6 +194,14 @@
     "notChecked_other": "{{count}} checks not run",
     "truncated_one": "More installs were found: only the first {{count}} was checked.",
     "truncated_other": "More installs were found: only the first {{count}} were checked.",
+    "copy": {
+      "badContent": "--content is database, content or site, not {{content}}.",
+      "step": "{{archive}} · {{done}} of {{count}} archives",
+      "done": "copied: {{archives}}, {{size}}, in {{folder}}",
+      "failed": "not copied: {{message}}",
+      "archives_one": "{{count}} archive",
+      "archives_other": "{{count}} archives"
+    },
     "update": {
       "prompt_one": "Update {{count}} site? [y/N] ",
       "prompt_other": "Update {{count}} sites? [y/N] ",
@@ -320,6 +328,8 @@
       "preview_other": "Reading what {{count}} sites will change · {{done}} of {{count}}",
       "update_one": "Updating: {{done}} of {{count}} site · {{running}} running",
       "update_other": "Updating: {{done}} of {{count}} sites · {{running}} running",
+      "copy_one": "Copying: {{done}} of {{count}} site · {{running}} running",
+      "copy_other": "Copying: {{done}} of {{count}} sites · {{running}} running",
       "discover": "Looking for WordPress installs on {{host}}"
     }
   },
@@ -620,6 +630,8 @@
       "scanTitle": "Scan done",
       "updateTitle": "Update done",
       "stoppedTitle": "Update stopped",
+      "sitesCopied_one": "{{count}} site copied",
+      "sitesCopied_other": "{{count}} sites copied",
       "copyTitle": "Copy done",
       "copyCutTitle": "Copy cut off",
       "archivesCopied_one": "{{count}} archive copied",

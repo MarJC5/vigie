@@ -14,6 +14,7 @@ import (
 	"github.com/MarJC5/vigie/internal/buildinfo"
 	"github.com/MarJC5/vigie/internal/i18n"
 	"github.com/MarJC5/vigie/internal/model"
+	"github.com/MarJC5/vigie/internal/sitecopy"
 	"github.com/MarJC5/vigie/internal/workspace"
 )
 
@@ -96,7 +97,7 @@ func Run(ctx context.Context, opts Options, env Env) int {
 		return exitOK
 	case "export", "import":
 		return runData(ctx, env, name, rest)
-	case "tree", "scan", "discover", "update":
+	case "tree", "scan", "discover", "update", "copy":
 	default:
 		// Not a command of Vigie: an add-on's, when vigie-<name> is on the PATH.
 		if code, ok := runAddOn(env, name, rest); ok {
@@ -116,9 +117,21 @@ func Run(ctx context.Context, opts Options, env Env) int {
 	if name == "scan" {
 		rest, checkFiles = withoutFlag(rest, "--check-files")
 	}
+	// --content is what a copy holds: database, content (with wp-content, the default) or site.
+	content := string(sitecopy.WithContent)
+	if name == "copy" {
+		var err error
+		var given string
+		if rest, given, err = withValue(rest, "--content"); err != nil {
+			return env.fail(env.t("cli.needsValue", map[string]any{"option": "--content"}))
+		}
+		if given != "" {
+			content = given
+		}
+	}
 	// --tag acts on the sites with a tag, wherever they are, in place of a path.
 	tagged := ""
-	if name == "tree" || name == "scan" || name == "update" {
+	if name == "tree" || name == "scan" || name == "update" || name == "copy" {
 		var err error
 		if rest, tagged, err = withValue(rest, "--tag"); err != nil {
 			return env.fail(env.t("cli.needsValue", map[string]any{"option": "--tag"}))
@@ -148,6 +161,8 @@ func Run(ctx context.Context, opts Options, env Env) int {
 		return scanTarget(ctx, env, ws, on, workspace.ScanOptions{CheckFiles: checkFiles, By: model.RunByCLI}, asJSON)
 	case "update":
 		return updateTarget(ctx, env, ws, on, asJSON, yes)
+	case "copy":
+		return copyTarget(ctx, env, ws, on, content, asJSON)
 	}
 	return discoverHost(ctx, env, ws, path, asJSON)
 }

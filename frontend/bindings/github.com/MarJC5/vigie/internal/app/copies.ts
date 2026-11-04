@@ -74,6 +74,15 @@ export function Start(siteID: string, content: string, leftOut: string[] | null)
 }
 
 /**
+ * StartMany copies the sites of the items selected (ADR-0034, ADR-0041 point 8) in the background,
+ * with the content chosen and nothing left out: one site after another on each host. A site whose
+ * copy runs already refuses the whole run.
+ */
+export function StartMany(nodeIDs: string[] | null, content: string): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(1116378509, nodeIDs, content);
+}
+
+/**
  * State returns the copies that run now.
  */
 export function State(): $CancellablePromise<$models.CopiesState> {

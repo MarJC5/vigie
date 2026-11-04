@@ -142,3 +142,32 @@ func TestTheSettingsOfTheCopies(t *testing.T) {
 		t.Errorf("ArchiveSize() after a choice = %d", mb)
 	}
 }
+
+// The sites under a node copied one after the other, each told as it ends; a site whose account
+// does not answer is reported, the others copied.
+func TestCopySeveralSites(t *testing.T) {
+	ctx := context.Background()
+	ws, db, site := copyBench(t, 1<<40)
+	other := model.Site{ID: model.NewID(), HostID: site.HostID, Name: "atelier-exemple.ch", Path: "~/www/atelier", Position: 1}
+	if err := db.SaveSite(ctx, other); err != nil {
+		t.Fatal(err)
+	}
+	if err := ws.SetCopyFolder(ctx, t.TempDir()); err != nil {
+		t.Fatal(err)
+	}
+	var told []string
+	results, err := ws.CopySites(ctx, []model.Node{{Kind: model.KindHost, ID: site.HostID}, {Kind: model.KindSite, ID: site.ID}}, sitecopy.DatabaseOnly,
+		workspace.CopyFollow{OnSite: func(r workspace.SiteCopy) { told = append(told, r.Site.Name) }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 2 || results[0].Site.ID != site.ID || results[0].Err != nil || results[0].Copy.Outcome != model.CopyCompleted {
+		t.Fatalf("results %+v", results)
+	}
+	if results[1].Site.ID != other.ID || results[1].Err == nil {
+		t.Errorf("the site without answers: %+v, want its error", results[1])
+	}
+	if len(told) != 2 {
+		t.Errorf("told %v", told)
+	}
+}

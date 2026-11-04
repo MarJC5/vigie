@@ -72,6 +72,12 @@ func EndNotice(e RunEnd, alerts []Alert, label func(key string, vars map[string]
 	n := func(key string, count int) string { return label("notify.end."+key, map[string]any{"count": count}) }
 	var details []string
 	switch {
+	case e.Kind == EndCopy && e.Several:
+		title = label("notify.end.copyTitle", nil)
+		details = append(details, n("sitesCopied", e.Updated))
+		if e.Failed > 0 {
+			details = append(details, n("sitesFailed", e.Failed))
+		}
 	case e.Kind == EndCopy && e.Failed > 0:
 		title = label("notify.end.copyCutTitle", nil)
 		details = append(details, n("archivesCopied", e.Archives))

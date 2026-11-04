@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strconv"
+	"sync"
 
 	"github.com/MarJC5/vigie/internal/buildinfo"
 	"github.com/MarJC5/vigie/internal/model"
@@ -42,6 +43,10 @@ func (w *Workspace) CopyFolder(ctx context.Context) (string, error) {
 	}
 	if ok && filepath.IsAbs(value) {
 		return value, nil
+	}
+	// Never a folder relative to where Vigie runs: without a home, no copies.
+	if !filepath.IsAbs(w.deps.Home) {
+		return "", ErrCopyFolder
 	}
 	return filepath.Join(w.deps.Home, "Documents", "Vigie"), nil
 }
@@ -224,4 +229,85 @@ func (w *Workspace) recordCopy(ctx context.Context, record model.Copy, dir strin
 		return record, serr
 	}
 	return record, err
+}
+
+// SiteCopy is how the copy of one site of several ended: the copy kept, or why it was not made.
+type SiteCopy struct {
+	Site model.Site
+	Path string
+	Copy model.Copy
+	Err  error
+}
+
+// CopyFollow hears a copy of several sites as it goes: each site's progress, and each site as it
+// ends.
+type CopyFollow struct {
+	OnProgress func(site model.Site, p sitecopy.Progress)
+	OnSite     func(SiteCopy)
+}
+
+// CopySites copies the sites under the nodes given, each once, with the content given and nothing
+// left out (ADR-0041, point 8): one site after another on each host, the hosts at the same time.
+// The results come in the tree's order.
+func (w *Workspace) CopySites(ctx context.Context, nodes []model.Node, content sitecopy.Content, follow CopyFollow) ([]SiteCopy, error) {
+	tree, err := w.db.LoadTree(ctx)
+	if err != nil {
+		return nil, err
+	}
+	root, err := w.CopyFolder(ctx)
+	if err != nil {
+		return nil, err
+	}
+	mb, err := w.ArchiveSize(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var sites []model.Site
+	seen := map[model.ID]bool{}
+	for _, n := range nodes {
+		for _, s := range tree.SitesUnder(n) {
+			if !seen[s.ID] {
+				seen[s.ID] = true
+				sites = append(sites, s)
+			}
+		}
+	}
+	results := make([]SiteCopy, len(sites))
+	byHost := map[model.ID][]int{}
+	var hosts []model.ID
+	for i, s := range sites {
+		if _, ok := byHost[s.HostID]; !ok {
+			hosts = append(hosts, s.HostID)
+		}
+		byHost[s.HostID] = append(byHost[s.HostID], i)
+	}
+	req := CopyRequest{Root: root, Content: content, Limit: int64(mb) << 20}
+	var wg sync.WaitGroup
+	for _, h := range hosts {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for _, i := range byHost[h] {
+				s := sites[i]
+				r := SiteCopy{Site: s, Path: tree.PathOf(model.Node{Kind: model.KindSite, ID: s.ID})}
+				if err := ctx.Err(); err != nil {
+					r.Err = err
+				} else if p, err := w.PrepareCopy(ctx, s.ID); err != nil {
+					r.Err = err
+				} else {
+					var progress func(sitecopy.Progress)
+					if follow.OnProgress != nil {
+						progress = func(pr sitecopy.Progress) { follow.OnProgress(s, pr) }
+					}
+					r.Copy, r.Err = w.CopySite(ctx, s.ID, req, p, progress)
+				}
+				results[i] = r
+				if follow.OnSite != nil {
+					follow.OnSite(r)
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	return results, nil
 }

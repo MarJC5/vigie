@@ -402,6 +402,107 @@ func failedCount(err error) int {
 	return 0
 }
 
+// StartMany copies the sites of the items selected (ADR-0034, ADR-0041 point 8) in the background,
+// with the content chosen and nothing left out: one site after another on each host. A site whose
+// copy runs already refuses the whole run.
+func (c *Copies) StartMany(nodeIDs []string, content string) *Problem {
+	ctx := context.Background()
+	tree, err := c.ws.DB().LoadTree(ctx)
+	if err != nil {
+		return ProblemOf(err)
+	}
+	var nodes []model.Node
+	var sites []model.ID
+	for _, id := range nodeIDs {
+		n, err := nodeByID(tree, id)
+		if err != nil {
+			return ProblemOf(errNodeNotFound)
+		}
+		nodes = append(nodes, n)
+		for _, s := range tree.SitesUnder(n) {
+			sites = append(sites, s.ID)
+		}
+	}
+	if len(sites) == 0 {
+		return ProblemOf(errNodeNotFound)
+	}
+	runCtx, cancel := context.WithCancel(context.Background())
+	c.mu.Lock()
+	for _, id := range sites {
+		if _, busy := c.running[id]; busy {
+			c.mu.Unlock()
+			cancel()
+			return ProblemOf(errCopyRunning)
+		}
+	}
+	// Each site stops the whole run, as Stop does for one.
+	for _, id := range sites {
+		c.cancels[id] = cancel
+	}
+	c.mu.Unlock()
+	go func() {
+		defer cancel()
+		started := time.Now()
+		var last time.Time
+		results, err := c.ws.CopySites(runCtx, nodes, sitecopy.Content(content), workspace.CopyFollow{
+			OnProgress: func(s model.Site, p sitecopy.Progress) {
+				c.mu.Lock()
+				run, ok := c.running[s.ID]
+				if !ok {
+					run = &CopyRunView{SiteID: s.ID.String()}
+					c.running[s.ID] = run
+				}
+				run.Archive, run.Done, run.Total, run.Read, run.Expected = p.Archive, p.Done, p.Total, p.Read, p.Expected
+				c.mu.Unlock()
+				if now := time.Now(); now.Sub(last) >= 100*time.Millisecond || p.Archive == "" {
+					last = now
+					c.send()
+				}
+			},
+			OnSite: func(r workspace.SiteCopy) {
+				c.mu.Lock()
+				delete(c.running, r.Site.ID)
+				delete(c.cancels, r.Site.ID)
+				c.completed++
+				end := CopyEndView{SiteID: r.Site.ID.String(), Folder: r.Copy.Folder, Cancelled: errors.Is(r.Err, context.Canceled)}
+				if r.Err != nil && !end.Cancelled {
+					end.Problem = ProblemOf(r.Err)
+				}
+				c.ends[r.Site.ID] = end
+				c.mu.Unlock()
+				c.send()
+			},
+		})
+		c.mu.Lock()
+		for _, id := range sites {
+			delete(c.cancels, id)
+		}
+		c.mu.Unlock()
+		if err != nil || c.OnEnded == nil {
+			c.send()
+			return
+		}
+		end := RunEnd{Kind: EndCopy, By: model.RunByUser, Several: true, NodeIDs: slices.Clone(nodeIDs), Started: started,
+			Finished: time.Now(), Cancelled: errors.Is(runCtx.Err(), context.Canceled)}
+		if len(nodeIDs) == 1 {
+			end.Name = tree.PathOf(nodes[0])
+		}
+		for _, r := range results {
+			if r.Copy.ID != model.NoID {
+				end.RunID = r.Copy.ID
+			}
+			if r.Err == nil {
+				end.Updated++
+			} else if !errors.Is(r.Err, context.Canceled) {
+				end.Failed++
+			}
+		}
+		c.OnEnded(end)
+		c.send()
+	}()
+	return nil
+}
+
 // Stop stops the copy of a site after the bytes in flight: the archives complete stay.
 func (c *Copies) Stop(siteID string) {
 	id, err := uuid.Parse(siteID)

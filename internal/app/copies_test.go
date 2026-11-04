@@ -207,3 +207,34 @@ func TestRemoveAndShowACopy(t *testing.T) {
 		}
 	}
 }
+
+// The sites of a selection copied in one run, its end told once, for them all.
+func TestCopyASelection(t *testing.T) {
+	ctx := context.Background()
+	c, _, site, _ := copyService(t)
+	var mu sync.Mutex
+	var ends []app.RunEnd
+	c.OnEnded = func(e app.RunEnd) { mu.Lock(); ends = append(ends, e); mu.Unlock() }
+	if p := c.StartMany([]string{site.HostID.String(), site.ID.String()}, "database"); p != nil {
+		t.Fatalf("StartMany() = %+v", p)
+	}
+	waitCopies(t, c, 1)
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		mu.Lock()
+		n := len(ends)
+		mu.Unlock()
+		if n > 0 || time.Now().After(deadline) {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	if len(ends) != 1 || !ends[0].Several || ends[0].Updated != 1 || ends[0].Failed != 0 || ends[0].Kind != app.EndCopy {
+		t.Fatalf("ends %+v, want one end for the run, its site copied once", ends)
+	}
+	if list, _ := c.List(ctx, site.ID.String()); len(list) != 1 {
+		t.Errorf("copies %+v", list)
+	}
+}
