@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"sync"
 
 	"github.com/MarJC5/vigie/internal/sshx"
@@ -22,7 +23,11 @@ type Fake struct {
 	inputs  map[string][]byte // the standard input sent with a remote command, the last one
 }
 
-var _ sshx.Runner = (*Fake)(nil)
+var (
+	_ sshx.Runner       = (*Fake)(nil)
+	_ sshx.StreamRunner = (*Fake)(nil)
+	_ sshx.StreamRunner = sshx.ExecRunner{}
+)
 
 // NewFake returns a fake without recorded results.
 func NewFake() *Fake {
@@ -54,6 +59,27 @@ func (f *Fake) RunInput(ctx context.Context, target sshx.Target, remote string, 
 	f.inputs[remote] = append([]byte(nil), input...)
 	f.mu.Unlock()
 	return f.Run(ctx, target, remote)
+}
+
+// RunStream keeps what it reads on input, writes the recorded output of remote to out, and
+// returns its result without it, as the real stream does.
+func (f *Fake) RunStream(ctx context.Context, target sshx.Target, remote string, input io.Reader, out io.Writer) (sshx.Result, error) {
+	var in []byte
+	if input != nil {
+		var err error
+		if in, err = io.ReadAll(input); err != nil {
+			return sshx.Result{}, err
+		}
+	}
+	res, err := f.RunInput(ctx, target, remote, in)
+	if err != nil {
+		return res, err
+	}
+	if _, err := out.Write(res.Stdout); err != nil {
+		return sshx.Result{}, err
+	}
+	res.Stdout = nil
+	return res, nil
 }
 
 // Input returns the standard input last sent with remote; nil when none was.

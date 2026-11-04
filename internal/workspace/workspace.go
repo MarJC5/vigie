@@ -67,6 +67,9 @@ type Deps struct {
 	// DownloadWPCLI downloads the WP-CLI that Vigie installs, checked (ADR-0039); nil, in tests,
 	// installs none.
 	DownloadWPCLI func(ctx context.Context, progress func(wpcliinstall.Progress)) ([]byte, error)
+	// DiskFree answers the free space of the disk of a folder, for a copy (ADR-0041); nil is the
+	// computer's.
+	DiskFree func(dir string) (uint64, error)
 }
 
 // Workspace holds the database and the means to reach servers.

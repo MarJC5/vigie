@@ -36,6 +36,11 @@ type Runner interface {
 	RunInput(ctx context.Context, target Target, remote string, input []byte) (Result, error)
 }
 
+// StreamRunner runs a command whose output is written as it comes, to a writer (ADR-0041).
+type StreamRunner interface {
+	RunStream(ctx context.Context, target Target, remote string, input io.Reader, out io.Writer) (Result, error)
+}
+
 // ExecRunner runs commands with the system ssh, so ~/.ssh/config and the user's SSH agent apply.
 type ExecRunner struct {
 	SSH     string // path of the ssh binary; "ssh" when empty
