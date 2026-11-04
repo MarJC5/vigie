@@ -156,3 +156,66 @@ export function CopyDialog({ name, preview, problem, onCopy, onClose }: CopyDial
     </Dialog>
   );
 }
+
+export interface CopyManyDialogProps {
+  /** How many sites the selection holds. */
+  count: number;
+  /** Copies them; its problem, when it was refused (a copy of one of them runs). */
+  onCopy: (content: CopyContent) => Promise<Problem | null>;
+  onClose: () => void;
+}
+
+/** The copy of the sites of a selection (ADR-0041 point 8, mockup 28k): the content only, the same
+ for every site; each site reads its own sizes when its copy starts. */
+export function CopyManyDialog({ count, onCopy, onClose }: CopyManyDialogProps) {
+  const { t } = useTranslation();
+  const [content, setContent] = useState<CopyContent>("content");
+  const [refused, setRefused] = useState<Problem | null>(null);
+  const [starting, setStarting] = useState(false);
+  const copy = async () => {
+    setStarting(true);
+    const p = await onCopy(content);
+    setStarting(false);
+    if (p) setRefused(p);
+    else onClose();
+  };
+  return (
+    <Dialog
+      title={t("copies.many.title", { count })}
+      lead={t("copies.many.lead")}
+      wide
+      onClose={onClose}
+      actions={
+        <>
+          <Button variant="outline" onClick={onClose}>
+            {t("edit.cancel")}
+          </Button>
+          <Button variant="primary" onClick={() => void copy()} disabled={starting} aria-busy={starting || undefined}>
+            {t("copies.many.confirm", { count })}
+          </Button>
+        </>
+      }
+    >
+      <div className={styles.body}>
+        <div className={styles.contents}>
+          {(["database", "content", "site"] as const).map((id) => (
+            <ChoiceCard
+              key={id}
+              title={t(`copies.content.${id}`)}
+              text={t(`copies.content.${id}Desc`)}
+              selected={content === id}
+              onSelect={() => setContent(id)}
+            />
+          ))}
+        </div>
+        {refused ? (
+          <Notice text={t(refused.code, { message: refused.detail })} />
+        ) : (
+          <div className={styles.summary}>
+            <span>{t("copies.many.summary")}</span>
+          </div>
+        )}
+      </div>
+    </Dialog>
+  );
+}

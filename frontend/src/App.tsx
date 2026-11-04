@@ -75,6 +75,7 @@ const copiesApi: CopiesApi = {
   Show: Copies.Show,
   List: Copies.List,
   Destination: Copies.Destination,
+  StartMany: Copies.StartMany,
 };
 
 // What edits the site manager: the editor, and the wizard's services for a stored host.

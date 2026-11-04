@@ -40,7 +40,7 @@ import { BulkDialog } from "../BulkDialog/BulkDialog";
 import { Button } from "../Button/Button";
 import { DeleteDialog, DeleteManyDialog } from "../DeleteDialog/DeleteDialog";
 import { RemoveBackupsDialog } from "../RemoveBackupsDialog/RemoveBackupsDialog";
-import { type CopyContent, CopyDialog } from "../CopyDialog/CopyDialog";
+import { type CopyContent, CopyDialog, CopyManyDialog } from "../CopyDialog/CopyDialog";
 import { RemoveCopyDialog } from "../RemoveCopyDialog/RemoveCopyDialog";
 import { EmptyState } from "../EmptyState/EmptyState";
 import { Icon, type IconName } from "../Icon/Icon";
@@ -90,6 +90,7 @@ export interface CopiesApi {
   Show(siteId: string, folder: string): Promise<Problem | null>;
   List(siteId: string): Promise<CopyView[] | null>;
   Destination(siteId: string): Promise<string>;
+  StartMany(nodeIds: string[], content: string): Promise<Problem | null>;
 }
 
 /** The Go service that sets findings aside (app.Security). */
@@ -283,6 +284,8 @@ export function AppShell({
   const [copying, setCopying] = useState<{ site: Pick<SiteView, "id" | "name">; preview?: CopyPreviewView; problem?: Problem | null } | null>(null);
   const [removingCopy, setRemovingCopy] = useState<{ site: SiteView; copy: CopyView; forGood: boolean } | null>(null);
   const [copyEdits, setCopyEdits] = useState(0);
+  // The items of a selection whose sites are copied (mockup 28k).
+  const [copyingMany, setCopyingMany] = useState<string[] | null>(null);
   const openCopy = (site: Pick<SiteView, "id" | "name">) => {
     if (!copiesApi) return;
     setCopying({ site });
@@ -513,6 +516,7 @@ export function AppShell({
     if (action === "scan") scanMany(chosen);
     if (action === "updateAll") updateMany(chosen);
     if (action === "move" || action === "delete" || action === "tags") setMany({ kind: action, ids: chosen });
+    if (action === "copy" && copiesApi) setCopyingMany(chosen);
   };
 
   const choose = (id: string, action: string) => {
@@ -742,6 +746,7 @@ export function AppShell({
                   setMenu({ id: "", x: point.x - (rect?.left ?? 0), y: point.y - (rect?.top ?? 0), colors: true });
                 },
                 onTags: () => chooseMany("tags"),
+                onCopy: copiesApi ? () => chooseMany("copy") : undefined,
                 onDelete: () => chooseMany("delete"),
               })}
               {...(updatesApi && {
@@ -843,7 +848,7 @@ export function AppShell({
       {edit && menu && (menu.several || menu.colors) && (
         <Menu
           label={t("selection.title", { count: chosen.length })}
-          entries={menu.colors ? [colorsEntry(t, chosen.map((id) => byId.get(id)?.ownColor))] : selectionEntries(chosen, nodes, t)}
+          entries={menu.colors ? [colorsEntry(t, chosen.map((id) => byId.get(id)?.ownColor))] : selectionEntries(chosen, nodes, t, !!copiesApi)}
           x={menu.x}
           y={menu.y}
           onSelect={chooseMany}
@@ -999,6 +1004,13 @@ export function AppShell({
           onCopy={(content: CopyContent, leftOut: string[]) => copiesApi.Start(copying.site.id, content, leftOut)}
         />
       )}
+      {copyingMany && copiesApi && (
+        <CopyManyDialog
+          count={sitesOf(copyingMany, nodes).length}
+          onClose={() => setCopyingMany(null)}
+          onCopy={(content: CopyContent) => copiesApi.StartMany(copyingMany, content)}
+        />
+      )}
       {removingCopy && copiesApi && (
         <RemoveCopyDialog
           copy={removingCopy.copy}
@@ -1129,7 +1141,7 @@ function colorsEntry(t: T, own: (string | undefined)[]): MenuEntry {
 }
 
 // The actions on several items selected (ADR-0034), each saying what it covers.
-function selectionEntries(ids: string[], nodes: Node[], t: T): MenuEntry[] {
+function selectionEntries(ids: string[], nodes: Node[], t: T, canCopy = false): MenuEntry[] {
   const sites = sitesOf(ids, nodes).length;
   const moved = nodes.filter((n) => ids.includes(n.id) && (n.kind === "folder" || n.kind === "host"));
   const moveKey = carriedKey(moved.map((n) => n.kind)).replace("manager.drag", "selection.menu.move");
@@ -1142,6 +1154,7 @@ function selectionEntries(ids: string[], nodes: Node[], t: T): MenuEntry[] {
     item("move", t(moveKey, { count: moved.length || ids.length }), "move", { disabled: moved.length === 0 }),
     colorsEntry(t, nodes.filter((n) => ids.includes(n.id)).map((n) => n.ownColor)),
     item("tags", t("selection.menu.tags", { count: sites }), "tag", { disabled: sites === 0 }),
+    ...(canCopy ? [item("copy", t("copies.menu"), "archive", { disabled: sites === 0 })] : []),
     { kind: "separator" },
     item("delete", t("selection.menu.delete", { count: ids.length }), "trash", { danger: true, shortcut: "⌘⌫", keyshortcuts: "Meta+Backspace" }),
   ];

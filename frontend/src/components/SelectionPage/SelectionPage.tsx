@@ -25,6 +25,8 @@ export interface SelectionPageProps {
   /** Opens the colors under the point given. */
   onColor?: (point: { x: number; y: number }) => void;
   onTags?: () => void;
+  /** Copies the sites to this computer (ADR-0041, point 8). */
+  onCopy?: () => void;
   onDelete?: () => void;
   onSelect: (siteId: string) => void;
   onSiteMenu?: (siteId: string, point: { x: number; y: number }) => void;
@@ -47,6 +49,7 @@ export function SelectionPage({
   onMove,
   onColor,
   onTags,
+  onCopy,
   onDelete,
   onSelect,
   onSiteMenu,
@@ -105,6 +108,11 @@ export function SelectionPage({
         {onTags && rows.length > 0 && (
           <Button icon="tag" onClick={onTags}>
             {t("selection.action.tags")}
+          </Button>
+        )}
+        {onCopy && rows.length > 0 && (
+          <Button icon="archive" onClick={onCopy}>
+            {t("selection.action.copy")}
           </Button>
         )}
         {onDelete && (

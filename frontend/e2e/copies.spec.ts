@@ -39,3 +39,15 @@ test("the site's menu offers Copy to this computer, from any tab", async ({ page
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Cancel" }).click();
 });
+
+test("the items of a selection offer Copy, the content only", async ({ page }) => {
+  await page.goto(seeded);
+  const tree = page.getByRole("tree", { name: "Site manager" });
+  await tree.getByRole("treeitem", { name: /boulangerie-exemple\.ch/ }).click();
+  await tree.getByRole("treeitem", { name: /atelier-exemple\.ch/ }).click({ modifiers: ["ControlOrMeta"] });
+  await page.getByRole("button", { name: "Copy", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Copy 2 sites to this computer" });
+  await expect(dialog.getByRole("button", { name: "Copy the 2 sites" })).toBeEnabled();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toHaveCount(0);
+});

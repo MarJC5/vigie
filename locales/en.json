@@ -54,6 +54,7 @@
     "hint": "⌘-click adds or removes an item, ⇧-click selects a range, ⌘A all, Escape goes back to one.",
     "action": {
       "tags": "Tags",
+      "copy": "Copy",
       "delete": "Delete"
     },
     "menu": {
@@ -1864,6 +1865,14 @@
     "runningFoot": "{{read}} read of {{total}} · {{done}} archives of {{count}}",
     "incompleteFoot_one": "Cut off. Resume fetches the missing archive: the site may have changed since, each archive keeps its time in copy.json.",
     "incompleteFoot_other": "Cut off. Resume fetches the {{count}} missing archives: the site may have changed since, each archive keeps its time in copy.json.",
+    "many": {
+      "title_one": "Copy {{count}} site to this computer",
+      "title_other": "Copy {{count}} sites to this computer",
+      "lead": "Vigie reads each site over SSH and writes nothing on the servers. One site after another on each host, no folder left out.",
+      "summary": "One copy per site, in the folder of the copies. A site without room or that does not answer is reported, the others are copied.",
+      "confirm_one": "Copy the site",
+      "confirm_other": "Copy the {{count}} sites"
+    },
     "removeDialog": {
       "title": "Remove this copy?",
       "lead": "It goes to the Trash.",

@@ -68,6 +68,7 @@
     "hint": "⌘-clic ajoute ou retire un élément, ⇧-clic sélectionne une suite, ⌘A tout, Échap revient à un seul.",
     "action": {
       "tags": "Étiquettes",
+      "copy": "Copier",
       "delete": "Supprimer"
     },
     "menu": {
@@ -1989,6 +1990,16 @@
     "incompleteFoot_one": "Coupée. Reprendre va chercher l'archive manquante : le site a pu changer depuis, chaque archive garde son heure dans copy.json.",
     "incompleteFoot_many": "Coupée. Reprendre va chercher les {{count}} archives manquantes : le site a pu changer depuis, chaque archive garde son heure dans copy.json.",
     "incompleteFoot_other": "Coupée. Reprendre va chercher les {{count}} archives manquantes : le site a pu changer depuis, chaque archive garde son heure dans copy.json.",
+    "many": {
+      "title_one": "Copier {{count}} site sur cet ordinateur",
+      "title_many": "Copier {{count}} sites sur cet ordinateur",
+      "title_other": "Copier {{count}} sites sur cet ordinateur",
+      "lead": "Vigie lit chaque site par SSH et n'écrit rien sur les serveurs. Un site après l'autre sur chaque hébergement, sans dossier laissé de côté.",
+      "summary": "Une copie par site, dans le dossier des copies. Un site qui manque de place ou ne répond pas est signalé, les autres sont copiés.",
+      "confirm_one": "Copier le site",
+      "confirm_many": "Copier les {{count}} sites",
+      "confirm_other": "Copier les {{count}} sites"
+    },
     "removeDialog": {
       "title": "Supprimer cette copie ?",
       "lead": "Elle va dans la Corbeille.",
