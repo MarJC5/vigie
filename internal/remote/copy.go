@@ -148,6 +148,35 @@ func ArchiveFiles(dir string) (string, error) {
 	return "cd " + q + " && tar -cf - --ignore-failed-read --no-recursion --null -T -", err
 }
 
+// ArchiveFolder writes a tar archive of a whole folder, the folders skip left out (each inside
+// dir), to its standard output: the copy of an account without GNU find or GNU tar, whose parts are
+// not split. Its options are those GNU and BusyBox tar both take.
+func ArchiveFolder(dir string, skip []string) (string, error) {
+	if err := folder(dir); err != nil {
+		return "", err
+	}
+	q, err := quoted(dir)
+	if err != nil {
+		return "", err
+	}
+	cmd := "cd " + q + " && tar -cf -"
+	for _, s := range skip {
+		if err := folder(s); err != nil {
+			return "", err
+		}
+		rel, ok := strings.CutPrefix(s, dir+"/")
+		if !ok {
+			return "", fmt.Errorf("%q outside %q: %w", s, dir, ErrBadPath)
+		}
+		e, err := quoted("--exclude=./" + rel)
+		if err != nil {
+			return "", err
+		}
+		cmd += " " + e
+	}
+	return cmd + " .", nil
+}
+
 // DumpCompressed compresses on the fly the dump that the WP-CLI command wp writes to its standard
 // output. A pipe answers gzip's exit status, not the dump's: the dump's is written on the standard
 // error, read by ParseDumpExit.

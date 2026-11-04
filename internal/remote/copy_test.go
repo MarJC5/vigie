@@ -26,6 +26,9 @@ func TestCopyCommandLines(t *testing.T) {
 		{"files but", func() (string, error) {
 			return remote.ListFiles("/home/u/www/site/wp-content", []string{"/home/u/www/site/wp-content/uploads", "/home/u/www/site/wp-content/cache"})
 		}, "find '/home/u/www/site/wp-content' '(' -path '/home/u/www/site/wp-content/uploads' -o -path '/home/u/www/site/wp-content/cache' ')' -prune -o -type f -printf '%s %P\\0'"},
+		{"folder", func() (string, error) {
+			return remote.ArchiveFolder("/home/u/www/site/wp-content", []string{"/home/u/www/site/wp-content/uploads", "/home/u/www/site/wp-content/a b"})
+		}, "cd '/home/u/www/site/wp-content' && tar -cf - '--exclude=./uploads' '--exclude=./a b' ."},
 		{"archive", func() (string, error) { return remote.ArchiveFiles("/home/u/www/site/wp-content/uploads") },
 			"cd '/home/u/www/site/wp-content/uploads' && tar -cf - --ignore-failed-read --no-recursion --null -T -"},
 	}
