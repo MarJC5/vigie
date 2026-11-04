@@ -402,6 +402,7 @@
     "copyDump": "The database dump failed or came incomplete.",
     "copyArchive": "The archive failed on the server.",
     "copyComplete": "This copy is complete: nothing to resume.",
+    "noTrash": "No trash can take this copy: it can only be deleted for good.",
     "backupsNotRemoved": "The server did not remove the backups: {{message}}",
     "nothingToMove": "Only folders and hosts are moved: sites stay under their hosts.",
     "notAFolder": "Sites can only be imported into a folder.",

@@ -14,6 +14,7 @@ import (
 
 	"github.com/MarJC5/vigie/internal/model"
 	"github.com/MarJC5/vigie/internal/sitecopy"
+	"github.com/MarJC5/vigie/internal/trash"
 	"github.com/MarJC5/vigie/internal/workspace"
 )
 
@@ -101,6 +102,10 @@ type Copies struct {
 	emit func(name string, data any)
 	// OnEnded, when set, hears how each copy ended (ADR-0035).
 	OnEnded func(RunEnd)
+	// Trash moves a copy to the system's trash, trash.ErrNoTrash when none takes it; Reveal shows a
+	// copy's folder in the file manager (ADR-0041, point 7). Both are the system's, set by main.
+	Trash  func(path string) error
+	Reveal func(path string) error
 
 	mu        sync.Mutex
 	previews  map[model.ID]sitecopy.Preview
@@ -228,18 +233,97 @@ func (c *Copies) Start(siteID, content string, leftOut []string) *Problem {
 	return nil
 }
 
-// Resume reads the archives missing of a cut copy of a site, in the background.
-func (c *Copies) Resume(siteID, folder string) *Problem {
+// copyOf checks that folder is one of the site's copies: a folder of its copies' folder that holds
+// a copy.json.
+func (c *Copies) copyOf(siteID, folder string) (model.ID, error) {
 	id, err := uuid.Parse(siteID)
 	if err != nil {
-		return ProblemOf(errNodeNotFound)
+		return model.NoID, errNodeNotFound
 	}
 	site, _, err := c.siteFolder(context.Background(), id)
 	if err != nil {
-		return ProblemOf(err)
+		return model.NoID, err
 	}
 	if filepath.Dir(folder) != site || !strings.HasPrefix(folder, site+string(filepath.Separator)) {
-		return ProblemOf(errNotACopy)
+		return model.NoID, errNotACopy
+	}
+	if _, err := sitecopy.ReadManifest(folder); err != nil {
+		return model.NoID, errNotACopy
+	}
+	return id, nil
+}
+
+// copyRunsIn tells whether a copy or a resume of the site runs in folder.
+func (c *Copies) copyRunsIn(id model.ID, folder string) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	run, ok := c.running[id]
+	return ok && (run.Folder == folder || run.Folder == "")
+}
+
+// Remove moves a copy of a site to the trash (mockup 28i); without a trash to take it, the problem
+// says so, and the window offers DeleteForGood.
+func (c *Copies) Remove(siteID, folder string) *Problem {
+	id, err := c.copyOf(siteID, folder)
+	if err != nil {
+		return ProblemOf(err)
+	}
+	if c.copyRunsIn(id, folder) {
+		return ProblemOf(errCopyRunning)
+	}
+	if c.Trash == nil {
+		return ProblemOf(trash.ErrNoTrash)
+	}
+	if err := c.Trash(folder); err != nil {
+		if errors.Is(err, trash.ErrNoTrash) {
+			return ProblemOf(trash.ErrNoTrash)
+		}
+		return ProblemOf(err)
+	}
+	c.changed()
+	return nil
+}
+
+// DeleteForGood deletes a copy of a site that no trash takes, once the user confirmed it again.
+func (c *Copies) DeleteForGood(siteID, folder string) *Problem {
+	id, err := c.copyOf(siteID, folder)
+	if err != nil {
+		return ProblemOf(err)
+	}
+	if c.copyRunsIn(id, folder) {
+		return ProblemOf(errCopyRunning)
+	}
+	if err := os.RemoveAll(folder); err != nil {
+		return ProblemOf(err)
+	}
+	c.changed()
+	return nil
+}
+
+// Show shows a copy's folder in the file manager: the Finder on macOS.
+func (c *Copies) Show(siteID, folder string) *Problem {
+	if _, err := c.copyOf(siteID, folder); err != nil {
+		return ProblemOf(err)
+	}
+	if c.Reveal == nil {
+		return nil
+	}
+	return ProblemOf(c.Reveal(folder))
+}
+
+// changed tells the window that a site's copies changed: they are listed again.
+func (c *Copies) changed() {
+	c.mu.Lock()
+	c.completed++
+	c.mu.Unlock()
+	c.send()
+}
+
+// Resume reads the archives missing of a cut copy of a site, in the background.
+func (c *Copies) Resume(siteID, folder string) *Problem {
+	id, err := c.copyOf(siteID, folder)
+	if err != nil {
+		return ProblemOf(err)
 	}
 	c.mu.Lock()
 	if _, busy := c.running[id]; busy {

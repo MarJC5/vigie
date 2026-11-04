@@ -443,6 +443,7 @@
     "copyDump": "L'export de la base a échoué ou est arrivé incomplet.",
     "copyArchive": "L'archive a échoué sur le serveur.",
     "copyComplete": "Cette copie est complète : rien à reprendre.",
+    "noTrash": "Aucune Corbeille ne peut recevoir cette copie : elle peut seulement être supprimée pour de bon.",
     "backupsNotRemoved": "Le serveur n'a pas supprimé les sauvegardes : {{message}}",
     "nothingToMove": "Seuls les dossiers et les hébergements se déplacent : les sites restent sous leur hébergement.",
     "notAFolder": "Les sites ne s'importent que dans un dossier.",

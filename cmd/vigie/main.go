@@ -260,6 +260,7 @@ func openWindow(opts cli.Options) error {
 	}
 	updates.OnEnded = keep.updated
 	copies.OnEnded = keep.updated
+	copies.Trash, copies.Reveal = toTrash, reveal
 	keep.start(watching)
 	return wails.Run()
 }

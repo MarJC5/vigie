@@ -16,6 +16,13 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 import * as $models from "./models.js";
 
 /**
+ * DeleteForGood deletes a copy of a site that no trash takes, once the user confirmed it again.
+ */
+export function DeleteForGood(siteID: string, folder: string): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(2001975421, siteID, folder);
+}
+
+/**
  * List returns the copies of a site on this computer, the newest first (mockup 28e).
  */
 export function List(siteID: string): $CancellablePromise<$models.CopyView[] | null> {
@@ -30,10 +37,25 @@ export function Prepare(siteID: string): $CancellablePromise<[$models.CopyPrevie
 }
 
 /**
+ * Remove moves a copy of a site to the trash (mockup 28i); without a trash to take it, the problem
+ * says so, and the window offers DeleteForGood.
+ */
+export function Remove(siteID: string, folder: string): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(3912005366, siteID, folder);
+}
+
+/**
  * Resume reads the archives missing of a cut copy of a site, in the background.
  */
 export function Resume(siteID: string, folder: string): $CancellablePromise<$models.Problem | null> {
     return $Call.ByID(2199374589, siteID, folder);
+}
+
+/**
+ * Show shows a copy's folder in the file manager: the Finder on macOS.
+ */
+export function Show(siteID: string, folder: string): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(3283777127, siteID, folder);
 }
 
 /**

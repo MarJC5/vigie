@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"errors"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -16,6 +18,7 @@ import (
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/sshx/sshxtest"
 	"github.com/MarJC5/vigie/internal/store"
+	"github.com/MarJC5/vigie/internal/trash"
 	"github.com/MarJC5/vigie/internal/workspace"
 	"github.com/MarJC5/vigie/internal/wpcli"
 )
@@ -143,6 +146,60 @@ func TestResumeOnlyACopyOfTheSite(t *testing.T) {
 	for _, folder := range []string{"/etc", filepath.Join(home, "Documents", "Vigie", "Shared hosting"), filepath.Join(home, "Documents", "Vigie", "Shared hosting", "boulangerie-exemple.ch", "..", "x")} {
 		if p := c.Resume(site.ID.String(), folder); code(p) != "problem.notACopy" {
 			t.Errorf("Resume(%s) = %+v", folder, p)
+		}
+	}
+}
+
+// A copy removed goes to the trash; without a trash, the problem says so and it can be deleted for
+// good; the folder is shown; none of it for a folder that is not one of the site's copies.
+func TestRemoveAndShowACopy(t *testing.T) {
+	ctx := context.Background()
+	c, _, site, _ := copyService(t)
+	var trashed, shown []string
+	noTrash := false
+	c.Trash = func(p string) error {
+		if noTrash {
+			return trash.ErrNoTrash
+		}
+		trashed = append(trashed, p)
+		return os.RemoveAll(p)
+	}
+	c.Reveal = func(p string) error { shown = append(shown, p); return nil }
+	copyOnce := func() string {
+		t.Helper()
+		if _, p := c.Prepare(ctx, site.ID.String()); p != nil {
+			t.Fatal(p)
+		}
+		before := c.State().Completed
+		if p := c.Start(site.ID.String(), "database", nil); p != nil {
+			t.Fatal(p)
+		}
+		return waitCopies(t, c, before+1).Ends[0].Folder
+	}
+	first := copyOnce()
+	if p := c.Show(site.ID.String(), first); p != nil || len(shown) != 1 || shown[0] != first {
+		t.Fatalf("Show() = %+v, shown %v", p, shown)
+	}
+	if p := c.Remove(site.ID.String(), first); p != nil || len(trashed) != 1 {
+		t.Fatalf("Remove() = %+v, trashed %v", p, trashed)
+	}
+	if list, _ := c.List(ctx, site.ID.String()); len(list) != 0 {
+		t.Errorf("listed after the removal: %+v", list)
+	}
+	second := copyOnce()
+	noTrash = true
+	if p := c.Remove(site.ID.String(), second); code(p) != "problem.noTrash" {
+		t.Fatalf("Remove() without a trash = %+v", p)
+	}
+	if p := c.DeleteForGood(site.ID.String(), second); p != nil {
+		t.Fatalf("DeleteForGood() = %+v", p)
+	}
+	if _, err := os.Stat(second); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("still there: %v", err)
+	}
+	for _, f := range []string{"/etc", first + "x"} {
+		if p := c.DeleteForGood(site.ID.String(), f); code(p) != "problem.notACopy" {
+			t.Errorf("DeleteForGood(%s) = %+v", f, p)
 		}
 	}
 }

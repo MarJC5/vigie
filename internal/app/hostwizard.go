@@ -17,6 +17,7 @@ import (
 	"github.com/MarJC5/vigie/internal/sitecopy"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/store"
+	"github.com/MarJC5/vigie/internal/trash"
 	"github.com/MarJC5/vigie/internal/update"
 	"github.com/MarJC5/vigie/internal/workspace"
 	"github.com/MarJC5/vigie/internal/wpcli"
@@ -92,6 +93,7 @@ var problemCodes = []struct {
 	{sitecopy.ErrDump, "problem.copyDump"},
 	{sitecopy.ErrArchive, "problem.copyArchive"},
 	{sitecopy.ErrComplete, "problem.copyComplete"},
+	{trash.ErrNoTrash, "problem.noTrash"},
 	{workspace.ErrArchiveSize, "problem.archiveSize"},
 	{workspace.ErrRemoveRefused, "problem.backupsNotRemoved"},
 	{workspace.ErrNothingToMove, "problem.nothingToMove"},
