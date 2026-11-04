@@ -210,6 +210,45 @@ func (d *Data) BackupDays(ctx context.Context) (int, error) {
 	return d.ws.BackupDays(ctx)
 }
 
+// CopySettings are the settings of the copies of sites on this computer (ADR-0041): their folder,
+// the size of an archive in megabytes, and the sizes offered.
+type CopySettings struct {
+	Folder      string `json:"folder"`
+	ArchiveSize int    `json:"archiveSize"`
+	Sizes       []int  `json:"sizes"`
+}
+
+// CopySettings returns the settings of the copies.
+func (d *Data) CopySettings(ctx context.Context) (CopySettings, error) {
+	folder, err := d.ws.CopyFolder(ctx)
+	if err != nil {
+		return CopySettings{}, err
+	}
+	size, err := d.ws.ArchiveSize(ctx)
+	return CopySettings{Folder: folder, ArchiveSize: size, Sizes: workspace.ArchiveSizes}, err
+}
+
+// ChooseCopyFolder asks for the folder of the copies with the system's dialog, and keeps it; a
+// cancel changes nothing.
+func (d *Data) ChooseCopyFolder(ctx context.Context) (CopySettings, *Problem) {
+	dir, err := d.pick.ChooseFolder()
+	if err != nil {
+		return CopySettings{}, ProblemOf(err)
+	}
+	if dir != "" {
+		if err := d.ws.SetCopyFolder(ctx, dir); err != nil {
+			return CopySettings{}, ProblemOf(err)
+		}
+	}
+	s, err := d.CopySettings(ctx)
+	return s, ProblemOf(err)
+}
+
+// SetArchiveSize sets the size of an archive, in megabytes, one of the sizes offered.
+func (d *Data) SetArchiveSize(ctx context.Context, mb int) *Problem {
+	return ProblemOf(d.ws.SetArchiveSize(ctx, mb))
+}
+
 // SetBackupDays sets the days the backups of an update stay on the server: 7, 30 or 90, 0 for no
 // limit.
 func (d *Data) SetBackupDays(ctx context.Context, days int) *Problem {

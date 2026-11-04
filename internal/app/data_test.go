@@ -31,6 +31,10 @@ func (p *picker) SaveFile(name string) (string, error) {
 	return p.save, nil
 }
 
+func (p *picker) ChooseFolder() (string, error) {
+	return p.open, nil
+}
+
 func (p *picker) OpenFile(kind string) (string, error) {
 	p.kind = kind
 	return p.open, nil

@@ -8,6 +8,7 @@ import (
 
 	"github.com/MarJC5/vigie/internal/app"
 	"github.com/MarJC5/vigie/internal/model"
+	"github.com/MarJC5/vigie/internal/workspace"
 )
 
 // A site's History tab shows its backups as the latest scan read them, those the limits remove
@@ -74,5 +75,28 @@ func TestEditSeveral(t *testing.T) {
 	s, _ := tree.Site(uuid.MustParse(ids["site"]))
 	if h.FolderID != model.NoID || h.Color != model.ColorGreen || s.Color != model.ColorGreen || len(s.Tags) != 1 {
 		t.Errorf("host %+v, site %+v; want the host at the root, both green, the site tagged", h, s)
+	}
+}
+
+// The settings of the copies: their defaults, the folder chosen in the dialog, a cancel, the size
+// refused (ADR-0041).
+func TestTheSettingsOfTheCopies(t *testing.T) {
+	ctx := context.Background()
+	pick := &picker{}
+	d, _, _ := emptyData(t, pick, workspace.Deps{Home: "/Users/u"})
+	s, err := d.CopySettings(ctx)
+	if err != nil || s.Folder != "/Users/u/Documents/Vigie" || s.ArchiveSize != 500 || len(s.Sizes) != 6 {
+		t.Fatalf("CopySettings() = %+v, %v", s, err)
+	}
+	pick.open = "/Volumes/Disk/Copies"
+	if s, p := d.ChooseCopyFolder(ctx); p != nil || s.Folder != "/Volumes/Disk/Copies" {
+		t.Fatalf("ChooseCopyFolder() = %+v, %+v", s, p)
+	}
+	pick.open = ""
+	if s, p := d.ChooseCopyFolder(ctx); p != nil || s.Folder != "/Volumes/Disk/Copies" {
+		t.Errorf("cancelled: %+v, %+v; want the folder kept", s, p)
+	}
+	if p := d.SetArchiveSize(ctx, 3); code(p) != "problem.archiveSize" {
+		t.Errorf("SetArchiveSize(3) = %+v", p)
 	}
 }

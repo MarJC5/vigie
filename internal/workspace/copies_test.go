@@ -108,3 +108,36 @@ func TestACopyRefusedForTheDisk(t *testing.T) {
 		t.Errorf("journal: %+v", copies)
 	}
 }
+
+// The folder of the copies and the size of the archives: their defaults, refused values, stored.
+func TestTheSettingsOfTheCopies(t *testing.T) {
+	ctx := context.Background()
+	db := emptyDB(t)
+	ws := workspace.New(db, workspace.Deps{Home: "/Users/u", Now: time.Now})
+	if dir, err := ws.CopyFolder(ctx); err != nil || dir != "/Users/u/Documents/Vigie" {
+		t.Fatalf("CopyFolder() = %s, %v", dir, err)
+	}
+	if mb, err := ws.ArchiveSize(ctx); err != nil || mb != 500 {
+		t.Fatalf("ArchiveSize() = %d, %v", mb, err)
+	}
+	for _, bad := range []string{"", "copies", "/Users/u/../x"} {
+		if err := ws.SetCopyFolder(ctx, bad); !errors.Is(err, workspace.ErrCopyFolder) {
+			t.Errorf("SetCopyFolder(%q) = %v", bad, err)
+		}
+	}
+	if err := ws.SetArchiveSize(ctx, 5000); !errors.Is(err, workspace.ErrArchiveSize) {
+		t.Errorf("SetArchiveSize(5000) = %v", err)
+	}
+	if err := ws.SetCopyFolder(ctx, "/Volumes/Disk/Copies"); err != nil {
+		t.Fatal(err)
+	}
+	if err := ws.SetArchiveSize(ctx, 2000); err != nil {
+		t.Fatal(err)
+	}
+	if dir, _ := ws.CopyFolder(ctx); dir != "/Volumes/Disk/Copies" {
+		t.Errorf("CopyFolder() after a choice = %s", dir)
+	}
+	if mb, _ := ws.ArchiveSize(ctx); mb != 2000 {
+		t.Errorf("ArchiveSize() after a choice = %d", mb)
+	}
+}

@@ -19,6 +19,12 @@ func (p picker) SaveFile(name string) (string, error) {
 		PromptForSingleSelection()
 }
 
+// ChooseFolder asks for the folder of the copies (ADR-0041); "" when cancelled.
+func (p picker) ChooseFolder() (string, error) {
+	return p.app().Dialog.OpenFile().CanChooseFiles(false).CanChooseDirectories(true).CanCreateDirectories(true).
+		PromptForSingleSelection()
+}
+
 // OpenFile asks for an export, a CSV site list, or any file an add-on reads; "" when cancelled.
 func (p picker) OpenFile(kind string) (string, error) {
 	dialog := p.app().Dialog.OpenFile().CanChooseFiles(true).CanChooseDirectories(false)

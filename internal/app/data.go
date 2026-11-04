@@ -41,6 +41,8 @@ type FilePicker interface {
 	SaveFile(name string) (string, error)
 	// OpenFile asks for a file of a kind (FileVigie, FileCSV).
 	OpenFile(kind string) (string, error)
+	// ChooseFolder asks for a folder, which can be made in the dialog; "" when cancelled.
+	ChooseFolder() (string, error)
 }
 
 // Data serves the Data tab of the settings: export the site manager, import an export, a CSV

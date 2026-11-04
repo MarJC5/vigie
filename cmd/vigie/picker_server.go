@@ -37,6 +37,15 @@ func (p picker) SaveFile(name string) (string, error) {
 	return filepath.Join(dir, name), nil
 }
 
+// ChooseFolder answers the folder copies under VIGIE_E2E_FILES.
+func (p picker) ChooseFolder() (string, error) {
+	dir, err := testFiles()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "copies"), nil
+}
+
 func (p picker) OpenFile(kind string) (string, error) {
 	dir, err := testFiles()
 	if err != nil {

@@ -393,6 +393,8 @@
     "noImport": "No import is being previewed: choose the file again.",
     "running": "Scans or updates are running: wait for them to end before compacting the database.",
     "backupDays": "Backups are kept 7, 30 or 90 days, or with no limit.",
+    "copyFolder": "The folder of the copies must be a full path.",
+    "archiveSize": "Archives are 100 MB to 4 GB.",
     "backupsNotRemoved": "The server did not remove the backups: {{message}}",
     "nothingToMove": "Only folders and hosts are moved: sites stay under their hosts.",
     "notAFolder": "Sites can only be imported into a folder.",

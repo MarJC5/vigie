@@ -434,6 +434,8 @@
     "noImport": "Aucun import n'est en aperçu : choisissez de nouveau le fichier.",
     "running": "Des relevés ou des mises à jour sont en cours : attendez leur fin pour compacter la base.",
     "backupDays": "Les sauvegardes sont gardées 7, 30 ou 90 jours, ou sans limite.",
+    "copyFolder": "Le dossier des copies doit être un chemin complet.",
+    "archiveSize": "Les archives font de 100 Mo à 4 Go.",
     "backupsNotRemoved": "Le serveur n'a pas supprimé les sauvegardes : {{message}}",
     "nothingToMove": "Seuls les dossiers et les hébergements se déplacent : les sites restent sous leur hébergement.",
     "notAFolder": "Les sites ne s'importent que dans un dossier.",

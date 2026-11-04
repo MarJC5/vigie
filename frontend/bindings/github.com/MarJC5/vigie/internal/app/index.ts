@@ -49,6 +49,7 @@ export type {
     ChoiceView,
     CommandView,
     CompactResult,
+    CopySettings,
     CreateResult,
     DatabaseView,
     DebugLogView,

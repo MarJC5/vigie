@@ -317,6 +317,16 @@ export interface CompactResult {
 }
 
 /**
+ * CopySettings are the settings of the copies of sites on this computer (ADR-0041): their folder,
+ * the size of an archive in megabytes, and the sizes offered.
+ */
+export interface CopySettings {
+    "folder": string;
+    "archiveSize": number;
+    "sizes": number[] | null;
+}
+
+/**
  * CreateResult is the answer of CreateFolder.
  */
 export interface CreateResult {

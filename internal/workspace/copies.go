@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"path/filepath"
+	"slices"
+	"strconv"
 
 	"github.com/MarJC5/vigie/internal/buildinfo"
 	"github.com/MarJC5/vigie/internal/model"
@@ -12,6 +15,65 @@ import (
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/wpcli"
 )
+
+// The settings of the copies (ADR-0041, points 3 and 5).
+var (
+	// ErrCopyFolder refuses a folder of the copies that is not an absolute path.
+	ErrCopyFolder = errors.New("the folder of the copies must be an absolute path")
+	// ErrArchiveSize refuses a size of the archives that the settings do not offer.
+	ErrArchiveSize = errors.New("archives are 100 MB to 4 GB")
+)
+
+// ArchiveSizes are the sizes of an archive offered, in megabytes: 4 GB at most, the largest file a
+// FAT32 disk takes.
+var ArchiveSizes = []int{100, 250, 500, 1000, 2000, 4000}
+
+const (
+	copyFolderSetting  = "copies.folder"
+	archiveSizeSetting = "copies.archive_mb"
+	defaultArchiveSize = 500
+)
+
+// CopyFolder returns the folder of the copies: ~/Documents/Vigie until the user chose another.
+func (w *Workspace) CopyFolder(ctx context.Context) (string, error) {
+	value, ok, err := w.db.Setting(ctx, copyFolderSetting)
+	if err != nil {
+		return "", err
+	}
+	if ok && filepath.IsAbs(value) {
+		return value, nil
+	}
+	return filepath.Join(w.deps.Home, "Documents", "Vigie"), nil
+}
+
+// SetCopyFolder sets the folder of the copies.
+func (w *Workspace) SetCopyFolder(ctx context.Context, dir string) error {
+	if !filepath.IsAbs(dir) || filepath.Clean(dir) != dir {
+		return ErrCopyFolder
+	}
+	return w.db.SetSetting(ctx, copyFolderSetting, dir)
+}
+
+// ArchiveSize returns the size of an archive, in megabytes: 500 until the user chose another.
+func (w *Workspace) ArchiveSize(ctx context.Context) (int, error) {
+	value, ok, err := w.db.Setting(ctx, archiveSizeSetting)
+	if err != nil || !ok {
+		return defaultArchiveSize, err
+	}
+	mb, err := strconv.Atoi(value)
+	if err != nil || !slices.Contains(ArchiveSizes, mb) {
+		return defaultArchiveSize, nil
+	}
+	return mb, nil
+}
+
+// SetArchiveSize sets the size of an archive, one of ArchiveSizes.
+func (w *Workspace) SetArchiveSize(ctx context.Context, mb int) error {
+	if !slices.Contains(ArchiveSizes, mb) {
+		return ErrArchiveSize
+	}
+	return w.db.SetSetting(ctx, archiveSizeSetting, strconv.Itoa(mb))
+}
 
 // errNoStream is returned when the workspace's runner cannot stream an output (a test's).
 var errNoStream = errors.New("the runner cannot stream a command's output")

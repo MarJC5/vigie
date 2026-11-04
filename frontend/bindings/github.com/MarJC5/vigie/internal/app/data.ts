@@ -38,6 +38,14 @@ export function CancelImport(): $CancellablePromise<void> {
 }
 
 /**
+ * ChooseCopyFolder asks for the folder of the copies with the system's dialog, and keeps it; a
+ * cancel changes nothing.
+ */
+export function ChooseCopyFolder(): $CancellablePromise<[$models.CopySettings, $models.Problem | null]> {
+    return $Call.ByID(2093758193);
+}
+
+/**
  * ChooseImport asks for a file of a kind (FileVigie, FileCSV), reads it, and previews its import
  * at the top of the site manager.
  */
@@ -51,6 +59,13 @@ export function ChooseImport(kind: string): $CancellablePromise<$models.ImportPr
  */
 export function Compact(): $CancellablePromise<$models.CompactResult> {
     return $Call.ByID(3333837770);
+}
+
+/**
+ * CopySettings returns the settings of the copies.
+ */
+export function CopySettings(): $CancellablePromise<$models.CopySettings> {
+    return $Call.ByID(3739846077);
 }
 
 /**
@@ -94,6 +109,13 @@ export function PreviewImport(intoID: string): $CancellablePromise<$models.Impor
  */
 export function SSHConfig(): $CancellablePromise<$models.SSHConfigView> {
     return $Call.ByID(2573305487);
+}
+
+/**
+ * SetArchiveSize sets the size of an archive, in megabytes, one of the sizes offered.
+ */
+export function SetArchiveSize(mb: number): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(348728902, mb);
 }
 
 /**
