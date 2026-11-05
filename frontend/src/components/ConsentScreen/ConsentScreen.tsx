@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "../Button/Button";
 import { Icon } from "../Icon/Icon";
 import { LookupTable } from "../LookupTable/LookupTable";
+import { Notice } from "../Notice/Notice";
 import styles from "./ConsentScreen.module.css";
 
 export interface ConsentScreenProps {
@@ -40,13 +41,7 @@ export function ConsentScreen({ destinations, onAgree, onNotNow }: ConsentScreen
               setOn(changed);
             }}
           />
-          <div className={styles.never}>
-            <Icon name="lock" />
-            <span className={styles.neverText}>
-              <span className={styles.neverTitle}>{t("lookups.neverTitle")}</span>
-              <span>{t("lookups.neverText")}</span>
-            </span>
-          </div>
+          <Notice tone="neutral" icon="lock" role="note" title={t("lookups.neverTitle")} text={t("lookups.neverText")} />
         </div>
       </main>
       <div className={styles.bar}>

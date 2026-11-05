@@ -6,7 +6,6 @@ import { Button } from "../Button/Button";
 import { Checkbox } from "../Checkbox/Checkbox";
 import { ChoiceCard } from "../ChoiceCard/ChoiceCard";
 import { Dialog } from "../Dialog/Dialog";
-import { Icon } from "../Icon/Icon";
 import { Notice } from "../Notice/Notice";
 import { SelectField } from "../SelectField/SelectField";
 import styles from "./ExportDialog.module.css";
@@ -89,13 +88,7 @@ export function ExportDialog({ nodes, nodeId, onNode, history, onHistory, summar
         checked={history}
         onChange={onHistory}
       />
-      <div className={styles.sensitive}>
-        <Icon name="lock" />
-        <span className={styles.text}>
-          <span className={styles.sensitiveTitle}>{t("data.export.sensitive")}</span>
-          <span>{t("data.export.sensitiveText")}</span>
-        </span>
-      </div>
+      <Notice tone="neutral" icon="lock" role="note" title={t("data.export.sensitive")} text={t("data.export.sensitiveText")} />
     </Dialog>
   );
 }

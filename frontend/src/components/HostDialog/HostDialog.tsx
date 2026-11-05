@@ -14,7 +14,6 @@ import { Checkbox } from "../Checkbox/Checkbox";
 import { Column, Columns } from "../Columns/Columns";
 import { Dialog } from "../Dialog/Dialog";
 import { Fingerprint } from "../Fingerprint/Fingerprint";
-import { Icon } from "../Icon/Icon";
 import { LinkButton } from "../LinkButton/LinkButton";
 import { Notice } from "../Notice/Notice";
 import { TextField } from "../TextField/TextField";
@@ -270,10 +269,7 @@ export function HostDialog({ api, hostId, sites, onClose, onSaved, onTest }: Hos
         </Column>
       </Columns>
       {moved && (
-        <p role="status" className={styles.warning}>
-          <Icon name="warning" />
-          <span>{t("edit.host.addressChanged", { host: address })}</span>
-        </p>
+        <Notice tone="warn" role="status" text={t("edit.host.addressChanged", { host: address })} />
       )}
       {notice}
     </Dialog>

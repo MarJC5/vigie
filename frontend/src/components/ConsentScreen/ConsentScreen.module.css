@@ -65,27 +65,6 @@
   text-wrap: pretty;
 }
 
-.never {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--vg-space-3);
-  padding: 14px 18px;
-  border-radius: var(--vg-radius-panel);
-  background: var(--vg-surface-row);
-  color: var(--vg-text-muted);
-}
-
-.neverText {
-  display: flex;
-  flex-direction: column;
-  gap: var(--vg-space-1);
-}
-
-.neverTitle {
-  font-weight: var(--vg-weight-strong);
-  color: var(--vg-text);
-}
-
 .bar {
   height: 72px;
   flex: none;

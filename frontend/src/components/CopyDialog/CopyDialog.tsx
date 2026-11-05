@@ -146,10 +146,14 @@ export function CopyDialog({ name, preview, problem, onCopy, onClose }: CopyDial
           {refused ? (
             <Notice text={t(refused.code, { message: refused.detail })} />
           ) : (
-            <div className={noSpace ? styles.summaryNoSpace : styles.summary} role={noSpace ? "alert" : undefined}>
-              <span>{summary}</span>
-              <span className={styles.destination}>{preview.destination}</span>
-            </div>
+            noSpace ? (
+              <Notice text={summary ?? ""} detail={preview.destination} />
+            ) : (
+              <div className={styles.summary}>
+                <span>{summary}</span>
+                <span className={styles.destination}>{preview.destination}</span>
+              </div>
+            )
           )}
         </div>
       )}

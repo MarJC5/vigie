@@ -26,31 +26,3 @@
   gap: 10px;
 }
 
-.text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  flex: 1;
-}
-
-/* Neutral: no colored edge, the icon in gray. */
-.sensitive {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--vg-space-3);
-  padding: 14px 18px;
-  border-radius: var(--vg-radius-panel);
-  background: var(--vg-surface-row);
-  color: var(--vg-text-muted);
-}
-
-.sensitive > svg {
-  flex: none;
-  margin-top: 2px;
-}
-
-.sensitiveTitle {
-  font-weight: var(--vg-weight-strong);
-  color: var(--vg-text);
-}

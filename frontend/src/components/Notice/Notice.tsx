@@ -14,8 +14,9 @@ export interface NoticeProps {
   tone?: "danger" | "warn" | "neutral" | "ok";
   /** The icon of a neutral notice. */
   icon?: IconName;
-  /** alert (default) is announced at once; note is read in its place. */
-  role?: "alert" | "note";
+  /** alert (default) is announced at once; status politely, for what changes as one types; note is
+   read in its place. */
+  role?: "alert" | "status" | "note";
 }
 
 /** A problem that stops a step, announced at once, with what to do and an action to try again. */
