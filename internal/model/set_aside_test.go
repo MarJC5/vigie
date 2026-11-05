@@ -21,7 +21,10 @@ func TestSetAsideHoldsWhileItsVersionIsOffered(t *testing.T) {
 		"offered, but PHP is too old now": {[]model.ScanItem{plugin("6.8.10", model.UpdateUnavailable, "6.9.0")}, true},
 		"a newer version offered":         {[]model.ScanItem{plugin("6.8.10", model.UpdateAvailable, "6.9.1")}, false},
 		"updated elsewhere":               {[]model.ScanItem{plugin("6.9.0", model.UpdateNone, "")}, false},
-		"removed":                         {nil, false},
+		// A premium plugin offers its update itself: a scan does not see it, and keeps the set-aside.
+		"no update seen by the scan": {[]model.ScanItem{plugin("6.8.10", model.UpdateNone, "")}, true},
+		"its update not known":       {[]model.ScanItem{plugin("6.8.10", model.UpdateUnknown, "")}, true},
+		"removed":                    {nil, false},
 		"a theme of the same slug": {[]model.ScanItem{{Kind: model.ItemTheme, Slug: "acf-pro", Version: "6.8.10",
 			Update: model.UpdateAvailable, UpdateVersion: "6.9.0"}}, false},
 	} {

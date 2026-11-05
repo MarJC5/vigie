@@ -31,12 +31,16 @@ func (s SetAside) Validate() error {
 	return nil
 }
 
-// Holds tells whether a scan's items still offer the version set aside: a newer version offered,
-// the item updated elsewhere or removed end the set-aside.
+// Holds tells whether a set-aside still stands after a scan: another version offered, the version
+// set aside installed (updated elsewhere), or the item removed end it. A scan that sees no update
+// keeps it: a premium plugin offers its update itself, which a scan does not run.
 func (s SetAside) Holds(items []ScanItem) bool {
 	for _, it := range items {
 		if it.Kind == s.Kind && it.Slug == s.Slug {
-			return it.UpdateVersion == s.Version
+			if it.Version == s.Version {
+				return false
+			}
+			return it.UpdateVersion == "" || it.UpdateVersion == s.Version
 		}
 	}
 	return false
