@@ -52,10 +52,11 @@ func (db *DB) StartOperation(ctx context.Context, op model.Operation) error {
 				return err
 			}
 		}
-		_, err = tx.ExecContext(ctx, `INSERT INTO operations (id, site_id, kind, started_at, outcome, summary, backup_dir, pid)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		_, err = tx.ExecContext(ctx, `INSERT INTO operations (id, site_id, kind, started_at, outcome, summary, backup_dir, pid,
+				of_operation, automatic)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			op.ID.String(), op.SiteID.String(), string(op.Kind), timeText(op.Started), string(model.OperationRunning),
-			op.Summary, op.BackupDir, op.PID)
+			op.Summary, op.BackupDir, op.PID, optionalID(op.OfOperation), op.Automatic)
 		return err
 	})
 }
@@ -130,7 +131,8 @@ func (db *DB) FinishOperation(ctx context.Context, id model.ID, outcome model.Op
 
 // Operations returns the operations of a site with their steps, the newest first.
 func (db *DB) Operations(ctx context.Context, siteID model.ID) ([]model.Operation, error) {
-	rows, err := db.sql.QueryContext(ctx, `SELECT id, kind, started_at, finished_at, outcome, summary, backup_dir, pid
+	rows, err := db.sql.QueryContext(ctx, `SELECT id, kind, started_at, finished_at, outcome, summary, backup_dir, pid,
+			of_operation, automatic
 		FROM operations WHERE site_id = ? ORDER BY id DESC`, siteID.String())
 	if err != nil {
 		return nil, err
@@ -140,8 +142,12 @@ func (db *DB) Operations(ctx context.Context, siteID model.ID) ([]model.Operatio
 	index := map[string]int{}
 	for rows.Next() {
 		op := model.Operation{SiteID: siteID}
-		var id, started, finished string
-		if err := rows.Scan(&id, &op.Kind, &started, &finished, &op.Outcome, &op.Summary, &op.BackupDir, &op.PID); err != nil {
+		var id, started, finished, of string
+		if err := rows.Scan(&id, &op.Kind, &started, &finished, &op.Outcome, &op.Summary, &op.BackupDir, &op.PID,
+			&of, &op.Automatic); err != nil {
+			return nil, err
+		}
+		if op.OfOperation, err = parseOptionalID(of); err != nil {
 			return nil, err
 		}
 		if op.ID, err = uuid.Parse(id); err != nil {
@@ -165,7 +171,8 @@ func (db *DB) Operations(ctx context.Context, siteID model.ID) ([]model.Operatio
 // OperationsSince returns the operations started since a time, of every site, the oldest first,
 // with their steps.
 func (db *DB) OperationsSince(ctx context.Context, since time.Time) ([]model.Operation, error) {
-	rows, err := db.sql.QueryContext(ctx, `SELECT id, site_id, kind, started_at, finished_at, outcome, summary, backup_dir, pid
+	rows, err := db.sql.QueryContext(ctx, `SELECT id, site_id, kind, started_at, finished_at, outcome, summary, backup_dir, pid,
+			of_operation, automatic
 		FROM operations WHERE started_at >= ? ORDER BY started_at, id`, timeText(since))
 	if err != nil {
 		return nil, err
@@ -175,8 +182,12 @@ func (db *DB) OperationsSince(ctx context.Context, since time.Time) ([]model.Ope
 	index := map[string]int{}
 	for rows.Next() {
 		var op model.Operation
-		var id, site, started, finished string
-		if err := rows.Scan(&id, &site, &op.Kind, &started, &finished, &op.Outcome, &op.Summary, &op.BackupDir, &op.PID); err != nil {
+		var id, site, started, finished, of string
+		if err := rows.Scan(&id, &site, &op.Kind, &started, &finished, &op.Outcome, &op.Summary, &op.BackupDir, &op.PID,
+			&of, &op.Automatic); err != nil {
+			return nil, err
+		}
+		if op.OfOperation, err = parseOptionalID(of); err != nil {
 			return nil, err
 		}
 		if op.ID, err = uuid.Parse(id); err != nil {

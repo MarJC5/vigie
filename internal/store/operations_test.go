@@ -3,10 +3,12 @@ package store_test
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"os"
 	"os/exec"
 	"reflect"
 	"testing"
+	"testing/fstest"
 	"time"
 
 	"github.com/MarJC5/vigie/internal/model"
@@ -110,5 +112,70 @@ func TestOperationsGoWithTheirSite(t *testing.T) {
 	}
 	if ops, err := db.Operations(ctx, site.ID); err != nil || len(ops) != 0 {
 		t.Errorf("operations of a deleted site = %v, %v", ops, err)
+	}
+}
+
+// A rollback Vigie started on its own says so, and names the update it came from (ADR-0042).
+func TestRollbackOnItsOwnNamesItsUpdate(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	site, _ := withSites(t, db)
+	upd := running(site, t0, os.Getpid())
+	must(t, db.StartOperation(ctx, upd))
+	must(t, db.FinishOperation(ctx, upd.ID, model.OperationCompleted, t0.Add(time.Minute), "2 of 3, 1 rolled back"))
+	back := running(site, t0.Add(20*time.Second), os.Getpid())
+	back.Kind, back.OfOperation, back.Automatic = model.OperationRollback, upd.ID, true
+	must(t, db.StartOperation(ctx, back))
+	must(t, db.FinishOperation(ctx, back.ID, model.OperationCompleted, t0.Add(29*time.Second), "plugin acf-pro back to 6.8.10"))
+
+	ops, err := db.Operations(ctx, site.ID)
+	must(t, err)
+	since, err := db.OperationsSince(ctx, t0)
+	must(t, err)
+	for name, list := range map[string][]model.Operation{"Operations": ops, "OperationsSince": since} {
+		if len(list) != 2 {
+			t.Fatalf("%s() = %d operations, want 2", name, len(list))
+		}
+		for _, op := range list {
+			switch op.ID {
+			case upd.ID:
+				if op.OfOperation != model.NoID || op.Automatic {
+					t.Errorf("%s: the update = of %v, automatic %v; want none", name, op.OfOperation, op.Automatic)
+				}
+			case back.ID:
+				if op.OfOperation != upd.ID || !op.Automatic {
+					t.Errorf("%s: the rollback = of %v, automatic %v; want %v, true", name, op.OfOperation, op.Automatic, upd.ID)
+				}
+			}
+		}
+	}
+}
+
+// An operation stored before migration 0017 reads back as an update of its own, by the user.
+func TestOperationsBeforeTheRollbackOnItsOwn(t *testing.T) {
+	ctx := context.Background()
+	all := store.Migrations()
+	before := fstest.MapFS{}
+	entries, err := fs.ReadDir(all, ".")
+	must(t, err)
+	for _, e := range entries {
+		if e.Name() < "0017" {
+			data, err := fs.ReadFile(all, e.Name())
+			must(t, err)
+			before[e.Name()] = &fstest.MapFile{Data: data}
+		}
+	}
+	db, _ := openTemp(t)
+	must(t, db.Migrate(ctx, before, "0.1.1"))
+	site, _ := withSites(t, db)
+	op := running(site, t0, 0)
+	_, err = db.SQL().ExecContext(ctx, `INSERT INTO operations (id, site_id, kind, started_at, finished_at, outcome)
+		VALUES (?, ?, 'rollback', ?, ?, 'completed')`, op.ID.String(), site.ID.String(), t0.Format(time.RFC3339), t0.Format(time.RFC3339))
+	must(t, err)
+	must(t, db.Migrate(ctx, all, "dev"))
+	ops, err := db.Operations(ctx, site.ID)
+	must(t, err)
+	if len(ops) != 1 || ops[0].OfOperation != model.NoID || ops[0].Automatic {
+		t.Errorf("Operations() = %+v, want one rollback by the user", ops)
 	}
 }

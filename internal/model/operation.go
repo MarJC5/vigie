@@ -34,6 +34,10 @@ type Operation struct {
 	Summary   string
 	BackupDir string // the folder of its backups on the server
 	PID       int    // the process running it, to tell a running operation from an interrupted one
+	// OfOperation is the update a rollback undoes, when known; zero otherwise.
+	OfOperation ID
+	// Automatic tells a rollback Vigie started on its own after a failed check (ADR-0042).
+	Automatic bool
 	Steps     []OperationStep
 }
 
