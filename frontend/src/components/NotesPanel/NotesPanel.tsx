@@ -1,9 +1,11 @@
-import { useId, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { Problem } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { Button } from "../Button/Button";
+import { FieldNote } from "../FieldNote/FieldNote";
 import { Markdown } from "../Markdown/Markdown";
+import { TextArea } from "../TextArea/TextArea";
 import styles from "./NotesPanel.module.css";
 
 /** The most characters notes hold, as the Go side checks (model.MaxNotes). */
@@ -25,7 +27,6 @@ export interface NotesPanelProps {
 /** Markdown notes, read as a document and edited in place (ADR-0023, point 2). */
 export function NotesPanel({ notes, name, title, onSave, onOpen }: NotesPanelProps) {
   const { t, i18n } = useTranslation();
-  const field = useId();
   const [draft, setDraft] = useState<string>();
   const [problem, setProblem] = useState<Problem | null>(null);
   const [saving, setSaving] = useState(false);
@@ -59,22 +60,24 @@ export function NotesPanel({ notes, name, title, onSave, onOpen }: NotesPanelPro
       </div>
       {editing ? (
         <div className={styles.edit}>
-          <textarea
-            id={field}
-            className={styles.text}
-            aria-label={t("notes.label", { name })}
-            aria-invalid={problem || length > maxNotes ? true : undefined}
+          <TextArea
+            label={t("notes.label", { name })}
+            hideLabel
+            variant="notes"
+            invalid={!!problem || length > maxNotes}
             value={draft}
             autoFocus
             spellCheck
-            onChange={(event) => {
-              setDraft(event.target.value);
+            onChange={(value) => {
+              setDraft(value);
               setProblem(null);
             }}
           />
           <div className={styles.footer}>
-            <span className={styles.hint} aria-live="polite">
-              {problem ? t(problem.code) : t("notes.hint")}
+            <span className={styles.status}>
+              <FieldNote error={!!problem} announce="polite">
+                {problem ? t(problem.code) : t("notes.hint")}
+              </FieldNote>
             </span>
             <span className={styles.count} data-over={length > maxNotes || undefined}>
               {t("notes.count", { count: number.format(length), max: number.format(maxNotes) })}

@@ -22,36 +22,3 @@
   gap: var(--vg-space-2);
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.label {
-  font-size: var(--vg-text-small);
-  font-weight: var(--vg-weight-strong);
-  color: var(--vg-text-muted);
-}
-
-.input {
-  box-sizing: border-box;
-  width: 100%;
-  padding: var(--vg-space-2) var(--vg-space-3);
-  border: 0;
-  border-radius: var(--vg-radius-control);
-  background: var(--vg-field);
-  color: var(--vg-text);
-  font: var(--vg-text-body) var(--vg-font);
-  resize: none;
-}
-
-.input:focus-visible {
-  outline: 2px solid var(--vg-focus);
-  outline-offset: 1px;
-}
-
-.problem {
-  font-size: var(--vg-text-caption);
-  color: var(--vg-text);
-}

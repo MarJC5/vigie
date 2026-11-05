@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { FindingView, Problem } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
@@ -6,6 +6,7 @@ import { findingText } from "../../lib/findings";
 import { Button } from "../Button/Button";
 import { ChoiceCard } from "../ChoiceCard/ChoiceCard";
 import { Dialog } from "../Dialog/Dialog";
+import { TextArea } from "../TextArea/TextArea";
 import styles from "./IgnoreDialog.module.css";
 
 export interface IgnoreDialogProps {
@@ -27,7 +28,6 @@ const versioned = (f: FindingView) => f.version !== "" && /^(core|php|plugin:|th
  a reason. */
 export function IgnoreDialog({ finding, update, site, onIgnore, onClose, problem }: IgnoreDialogProps) {
   const { t, i18n } = useTranslation();
-  const id = useId();
   // An update offered waits for a newer one; a finding, for another version of its subject.
   const version = update ? update.to : finding!.version;
   const canWait = update ? true : versioned(finding!);
@@ -72,25 +72,14 @@ export function IgnoreDialog({ finding, update, site, onIgnore, onClose, problem
           />
         </div>
       </fieldset>
-      <div className={styles.field}>
-        <label htmlFor={`${id}-reason`} className={styles.label}>
-          {forever ? t("security.dialog.reason") : t("security.dialog.reasonOptional")}
-        </label>
-        <textarea
-          id={`${id}-reason`}
-          rows={2}
-          value={reason}
-          required={forever}
-          aria-describedby={problem ? `${id}-problem` : undefined}
-          className={styles.input}
-          onChange={(event) => setReason(event.target.value)}
-        />
-        {problem && (
-          <span id={`${id}-problem`} role="alert" className={styles.problem}>
-            {t(problem.code, { message: problem.detail })}
-          </span>
-        )}
-      </div>
+      <TextArea
+        label={forever ? t("security.dialog.reason") : t("security.dialog.reasonOptional")}
+        value={reason}
+        required={forever}
+        error={problem ? t(problem.code, { message: problem.detail }) : undefined}
+        alert
+        onChange={setReason}
+      />
     </Dialog>
   );
 }

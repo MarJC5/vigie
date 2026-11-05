@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import type { Problem, TagView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { tagChoices } from "../../lib/tags";
+import { FieldNote } from "../FieldNote/FieldNote";
 import { Icon } from "../Icon/Icon";
 import styles from "./TagRow.module.css";
 
@@ -135,9 +136,9 @@ export function TagRow({ tags, used, onSave, onOpenTag }: TagRowProps) {
                   onBlur={() => close(false)}
                 />
               </span>
-              <span className={styles.hint} data-problem={problem ? true : undefined} aria-live="polite">
+              <FieldNote error={!!problem} announce="polite">
                 {problem ? t(problem.code) : t("tags.hint")}
-              </span>
+              </FieldNote>
               {choices.length > 0 && (
                 <ul id={`${id}-choices`} role="listbox" aria-label={t("tags.choices")} className={styles.choices}>
                   {choices.map((c, i) => (

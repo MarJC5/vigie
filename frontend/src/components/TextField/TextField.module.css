@@ -34,17 +34,3 @@
 .input[aria-invalid="true"] {
   box-shadow: inset 0 0 0 1px var(--vg-status-danger);
 }
-
-.hint,
-.error {
-  min-height: 17px;
-  font-size: var(--vg-text-caption);
-}
-
-.hint {
-  color: var(--vg-text-muted);
-}
-
-.error {
-  color: var(--vg-text);
-}

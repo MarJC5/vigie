@@ -1,5 +1,6 @@
 import { type InputHTMLAttributes, useId } from "react";
 
+import { FieldNote } from "../FieldNote/FieldNote";
 import styles from "./TextField.module.css";
 
 export interface TextFieldProps {
@@ -41,9 +42,9 @@ export function TextField({ label, value, onChange, hint, error, placeholder, in
       />
       {/* Only when there is something to say: an empty line would space the fields unevenly. */}
       {note && (
-        <span id={`${id}-note`} className={error ? styles.error : styles.hint}>
+        <FieldNote id={`${id}-note`} error={!!error}>
           {note}
-        </span>
+        </FieldNote>
       )}
     </div>
   );

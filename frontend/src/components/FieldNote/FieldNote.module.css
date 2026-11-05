@@ -1,0 +1,13 @@
+.hint,
+.error {
+  font-size: var(--vg-text-caption);
+}
+
+.hint {
+  color: var(--vg-text-muted);
+}
+
+/* The text's color, not red: the red edge is the field's, the note says why. */
+.error {
+  color: var(--vg-text);
+}

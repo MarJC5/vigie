@@ -5,6 +5,7 @@ import type { Node, Problem } from "../../../bindings/github.com/MarJC5/vigie/in
 import { fold } from "../../lib/text";
 import { Button } from "../Button/Button";
 import { Dialog } from "../Dialog/Dialog";
+import { FieldNote } from "../FieldNote/FieldNote";
 import { ItemList } from "../ItemList/ItemList";
 import { TextField } from "../TextField/TextField";
 import styles from "./TagManyDialog.module.css";
@@ -73,9 +74,9 @@ export function TagManyDialog({ sites, onTag, onClose }: TagManyDialogProps) {
       </form>
       {/* Under the row, so that the button stays level with the field. */}
       {problem && (
-        <p role="alert" className={styles.problem}>
+        <FieldNote error announce="alert">
           {t(problem.code, { message: problem.detail })}
-        </p>
+        </FieldNote>
       )}
       {listed.length === 0 ? (
         <p className={styles.none}>{t("selection.tags.none")}</p>

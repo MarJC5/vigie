@@ -129,15 +129,7 @@ button.name:hover {
   box-shadow: inset 0 0 0 1px var(--vg-status-danger);
 }
 
-.hint {
-  color: var(--vg-text-muted);
-  font-size: var(--vg-text-caption);
-}
-
 /* A refusal in the text's color: the danger red is under 4.5:1 at this size. */
-.hint[data-problem] {
-  color: var(--vg-text);
-}
 
 /* The tags offered: a list as the window's menus. */
 .choices {

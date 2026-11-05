@@ -16,8 +16,3 @@
 }
 
 /* As a field's error. */
-.problem {
-  margin: 0;
-  font-size: var(--vg-text-caption);
-  color: var(--vg-text);
-}

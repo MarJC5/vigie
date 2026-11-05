@@ -32,26 +32,6 @@
 }
 
 /* The Markdown source, in the system's monospace, across the page. */
-.text {
-  min-height: 300px;
-  box-sizing: border-box;
-  padding: var(--vg-space-3) var(--vg-space-4);
-  border: 0;
-  border-radius: var(--vg-radius-control);
-  background: var(--vg-field);
-  color: var(--vg-text);
-  font: 13px / 1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
-  resize: vertical;
-}
-
-.text:focus-visible {
-  outline: 2px solid var(--vg-focus);
-  outline-offset: 1px;
-}
-
-.text[aria-invalid="true"] {
-  box-shadow: inset 0 0 0 1px var(--vg-status-danger);
-}
 
 .footer {
   display: flex;
@@ -59,11 +39,10 @@
   gap: var(--vg-space-2);
 }
 
-.hint {
+/* The hint or the refusal, beside the count and the buttons. */
+.status {
   flex: 1;
   min-width: 0;
-  font-size: var(--vg-text-caption);
-  color: var(--vg-text-muted);
 }
 
 .count {
