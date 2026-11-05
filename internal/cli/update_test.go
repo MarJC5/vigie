@@ -24,7 +24,11 @@ type fakeUpdates struct {
 	mu       sync.Mutex
 	previews map[string]update.Preview
 	failed   map[string]bool
-	runs     []string
+	// rolls names the sites whose akismet breaks the site and rolls back on its own; cannotRoll
+	// those whose rollback fails too (ADR-0042). The rollbacks go in db, as the updater stores them.
+	rolls, cannotRoll map[string]bool
+	db                *store.DB
+	runs              []string
 }
 
 func (f *fakeUpdates) Preview(_ context.Context, job update.Job) (update.Preview, error) {
@@ -40,6 +44,31 @@ func (f *fakeUpdates) Run(_ context.Context, job update.Job, _ update.Preview, _
 		op.Outcome = model.OperationFailed
 		op.Steps = []model.OperationStep{{Step: model.StepCheck, ItemKind: model.ItemPlugin, Slug: "fixture-breaks", Outcome: model.StepFailed,
 			Message: "http://shop.example.test/ shows the critical error page of WordPress (status 500)"}}
+	}
+	if rolls, fails := f.rolls[job.Site.Name], f.cannotRoll[job.Site.Name]; (rolls || fails) && job.AutoRollback {
+		op.Steps = []model.OperationStep{
+			{Step: model.StepUpdate, ItemKind: model.ItemPlugin, Slug: "akismet", VersionBefore: "5.3", VersionAfter: "5.7.2", Outcome: model.StepDone},
+			{Step: model.StepCheck, ItemKind: model.ItemPlugin, Slug: "akismet", Outcome: model.StepFailed,
+				Message: "http://shop.example.test/ shows the critical error page of WordPress (status 500)"},
+		}
+		back := model.Operation{ID: model.NewID(), SiteID: job.Site.ID, Kind: model.OperationRollback, Started: time.Now(),
+			OfOperation: op.ID, Automatic: true}
+		ctx := context.Background()
+		if err := f.db.StartOperation(ctx, back); err != nil {
+			return op, err
+		}
+		restore := model.OperationStep{Step: model.StepRestoreFiles, ItemKind: model.ItemPlugin, Slug: "akismet",
+			VersionBefore: "5.7.2", VersionAfter: "5.3", Started: time.Now(), Outcome: model.StepDone}
+		if err := f.db.SaveOperationStep(ctx, back.ID, restore); err != nil {
+			return op, err
+		}
+		outcome := model.OperationCompleted
+		if fails {
+			outcome, op.Outcome = model.OperationFailed, model.OperationFailed
+		}
+		if err := f.db.FinishOperation(ctx, back.ID, outcome, time.Now(), "plugin akismet back to 5.3"); err != nil {
+			return op, err
+		}
 	}
 	return op, nil
 }
@@ -77,6 +106,7 @@ func updateEnv(t *testing.T, f *fakeUpdates) func(context.Context) (*workspace.W
 		// The scan after an update answers as the plain site of the bench.
 		wpclitest.Replay(t, fake, "plain", site.Path, "wp")
 	}
+	f.db = db
 	ws := workspace.New(db, workspace.Deps{Runner: fake, Now: time.Now, Updates: func(func(model.Operation, model.OperationStep)) workspace.Updates { return f }})
 	return func(context.Context) (*workspace.Workspace, error) { return ws, nil }
 }
@@ -95,7 +125,8 @@ func runUpdate(t *testing.T, f *fakeUpdates, lang, input string, args ...string)
 }
 
 func newFake() *fakeUpdates {
-	return &fakeUpdates{previews: map[string]update.Preview{"shop.example.test": akismet, "blog.example.test": akismet}, failed: map[string]bool{}}
+	return &fakeUpdates{previews: map[string]update.Preview{"shop.example.test": akismet, "blog.example.test": akismet}, failed: map[string]bool{},
+		rolls: map[string]bool{}, cannotRoll: map[string]bool{}}
 }
 
 // The preview first; nothing changes without a yes.
@@ -222,6 +253,113 @@ func TestUpdateLeavesTheIgnoredUpdatesOut(t *testing.T) {
 	var out bytes.Buffer
 	code := cli.Run(ctx, opts, cli.Env{In: strings.NewReader(""), Out: &out, Err: &out, Lang: "en", Texts: texts(t), Open: open})
 	for _, want := range []string{"plugin akismet 5.3 → 5.7.2 (ignored, left out)", "Shop/blog.example.test\n  nothing to update"} {
+		if !strings.Contains(out.String(), want) {
+			t.Errorf("output lacks %q:\n%s", want, out.String())
+		}
+	}
+	if code != 0 || len(f.runs) != 1 || f.runs[0] != "shop.example.test" {
+		t.Errorf("exit %d, runs %v; want shop.example.test only", code, f.runs)
+	}
+}
+
+// A plugin that broke a site and went back on its own: the site is updated, its line says which
+// version went back and why, and so does --json (ADR-0042).
+func TestUpdateWithAPluginRolledBackOnItsOwn(t *testing.T) {
+	f := newFake()
+	f.rolls["shop.example.test"] = true
+	code, out, _ := runUpdate(t, f, "fr", "", "Shop", "--yes")
+	want := "mis à jour, akismet 5.7.2 revenu en arrière tout seul\u00a0: http://shop.example.test/ shows the critical error page of WordPress (status 500)"
+	if code != 0 || !strings.Contains(out, "Shop/shop.example.test  "+want) {
+		t.Fatalf("exit %d, want 0 and %q\n%s", code, want, out)
+	}
+
+	f = newFake()
+	f.rolls["shop.example.test"] = true
+	_, out, _ = runUpdate(t, f, "en", "", "Shop", "--json", "--yes")
+	var got []struct {
+		Path       string `json:"path"`
+		Outcome    string `json:"outcome"`
+		FailedStep string `json:"failedStep"`
+		RolledBack []struct {
+			Kind, Slug, Version, BackTo, Reason string
+		} `json:"rolledBack"`
+	}
+	if err := json.Unmarshal([]byte(out), &got); err != nil {
+		t.Fatalf("%v\n%s", err, out)
+	}
+	shop := got[0]
+	if shop.Outcome != "updated" || shop.FailedStep != "" || len(shop.RolledBack) != 1 ||
+		shop.RolledBack[0].Slug != "akismet" || shop.RolledBack[0].Version != "5.7.2" || shop.RolledBack[0].BackTo != "5.3" ||
+		!strings.Contains(shop.RolledBack[0].Reason, "status 500") {
+		t.Errorf("shop = %+v", shop)
+	}
+}
+
+// A rollback on its own that fails stops the site, and says so.
+func TestUpdateWhoseRollbackOnItsOwnFailed(t *testing.T) {
+	f := newFake()
+	f.cannotRoll["shop.example.test"] = true
+	code, out, _ := runUpdate(t, f, "en", "", "Shop", "--yes")
+	if code != 3 || !strings.Contains(out, "rollback of akismet failed") || !strings.Contains(out, "History tab") {
+		t.Fatalf("exit %d, want 3\n%s", code, out)
+	}
+}
+
+// The setting off, nothing rolls back on its own: the site fails as before.
+func TestUpdateWithoutTheRollbackOnItsOwn(t *testing.T) {
+	ctx := context.Background()
+	f := newFake()
+	f.rolls["shop.example.test"] = true
+	open := updateEnv(t, f)
+	ws, err := open(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := ws.SetAutoRollback(ctx, false); err != nil {
+		t.Fatal(err)
+	}
+	opts, err := cli.Parse([]string{"update", "Shop", "--yes"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	code := cli.Run(ctx, opts, cli.Env{In: strings.NewReader(""), Out: &out, Err: &out, Lang: "en", Texts: texts(t), Open: open})
+	if code != 0 || strings.Contains(out.String(), "rolled back") {
+		t.Errorf("exit %d\n%s", code, out.String())
+	}
+}
+
+// A version set aside on a site is listed, said left out, and not installed (ADR-0042, point 5).
+func TestUpdateLeavesTheVersionsSetAsideOut(t *testing.T) {
+	ctx := context.Background()
+	f := newFake()
+	f.previews["blog.example.test"] = update.Preview{DumpTool: true, Plugins: akismet.Plugins}
+	open := updateEnv(t, f)
+	ws, err := open(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tree, err := ws.DB().LoadTree(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{"Shop/shop.example.test", "Shop/blog.example.test"} {
+		n, err := tree.Resolve(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := ws.DB().SaveSetAside(ctx, model.SetAside{SiteID: n.ID, Kind: model.ItemPlugin, Slug: "akismet", Version: "5.7.2",
+			OperationID: model.NewID(), Created: time.Now()}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	opts, err := cli.Parse([]string{"update", "Shop", "--yes"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	code := cli.Run(ctx, opts, cli.Env{In: strings.NewReader(""), Out: &out, Err: &out, Lang: "en", Texts: texts(t), Open: open})
+	for _, want := range []string{"plugin akismet 5.3 → 5.7.2 (rolled back before, left out)", "Shop/blog.example.test\n  nothing to update"} {
 		if !strings.Contains(out.String(), want) {
 			t.Errorf("output lacks %q:\n%s", want, out.String())
 		}

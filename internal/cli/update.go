@@ -21,7 +21,17 @@ type updateItemJSON struct {
 	Language string `json:"language,omitempty"`
 	From     string `json:"from,omitempty"`
 	To       string `json:"to,omitempty"`
-	Ignored  bool   `json:"ignored,omitempty"` // left out: the site ignores this update
+	Ignored  bool   `json:"ignored,omitempty"`  // left out: the site ignores this update
+	SetAside bool   `json:"setAside,omitempty"` // left out: this version rolled back before (ADR-0042)
+}
+
+// rolledBackJSON is an item that broke the site and went back on its own (ADR-0042).
+type rolledBackJSON struct {
+	Kind    string `json:"kind"`
+	Slug    string `json:"slug"`
+	Version string `json:"version"` // the version that broke the site
+	BackTo  string `json:"backTo"`
+	Reason  string `json:"reason"` // the check that failed
 }
 
 type updateJSON struct {
@@ -32,6 +42,7 @@ type updateJSON struct {
 	Operation  string           `json:"operation,omitempty"`
 	BackupDir  string           `json:"backupDir,omitempty"`
 	FailedStep string           `json:"failedStep,omitempty"`
+	RolledBack []rolledBackJSON `json:"rolledBack,omitempty"`
 }
 
 // updateTarget previews the updates of the sites of the target, asks, then updates them.
@@ -65,8 +76,8 @@ func updateTarget(ctx context.Context, env Env, ws *workspace.Workspace, on targ
 		switch {
 		case p.Err != nil:
 			results[p.Site.ID] = workspace.SiteUpdate{Site: p.Site, Path: p.Path, Outcome: workspace.SiteRefused, Err: p.Err}
-		// Nothing offered, or only updates the site ignores.
-		case p.Preview.Pending() == len(p.Ignored):
+		// Nothing offered, or only updates the site ignores or set aside.
+		case p.Preview.Pending() == len(p.Ignored)+len(p.SetAside):
 			results[p.Site.ID] = workspace.SiteUpdate{Site: p.Site, Path: p.Path, Outcome: workspace.SiteNothing}
 		case !p.Preview.DumpTool:
 			results[p.Site.ID] = workspace.SiteUpdate{Site: p.Site, Path: p.Path, Outcome: workspace.SiteRefused, Err: wpcli.ErrNoDumpTool}
@@ -172,8 +183,11 @@ func itemLines(env Env, sp workspace.SitePreview) []string {
 	var lines []string
 	// An update the site ignores is listed, said left out.
 	add := func(it update.Item, line string) {
-		if sp.IsIgnored(it) {
+		switch {
+		case sp.IsIgnored(it):
 			line += " " + env.t("cli.update.ignored", nil)
+		case sp.IsSetAside(it):
+			line += " " + env.t("cli.update.setAside", nil)
 		}
 		lines = append(lines, line)
 	}
@@ -204,10 +218,19 @@ func itemLines(env Env, sp workspace.SitePreview) []string {
 func outcomeText(env Env, r workspace.SiteUpdate) string {
 	switch r.Outcome {
 	case workspace.SiteUpdated:
-		return env.t("cli.update.updated", nil)
+		parts := []string{env.t("cli.update.updated", nil)}
+		for _, b := range rolledBack(r) {
+			parts = append(parts, env.t("cli.update.rolledBack", map[string]any{"slug": b.Slug, "version": b.Version, "reason": b.Reason}))
+		}
+		return strings.Join(parts, ", ")
 	case workspace.SiteFailed:
-		return env.t("cli.update.failed", map[string]any{"message": failedStep(r.Operation).Message}) + " " +
-			env.t("cli.update.rollbackHint", nil)
+		text := env.t("cli.update.failed", map[string]any{"message": failedStep(r.Operation).Message})
+		for _, back := range r.Rollbacks {
+			if st := restoreStep(back); back.Outcome != model.OperationCompleted && st.Slug != "" {
+				text += ", " + env.t("cli.update.rollbackFailed", map[string]any{"slug": st.Slug})
+			}
+		}
+		return text + ". " + env.t("cli.update.rollbackHint", nil)
 	case workspace.SiteRefused:
 		return env.t("cli.update.cannot", map[string]any{"reason": reason(env, r)})
 	case workspace.SiteNothing:
@@ -223,6 +246,36 @@ func reason(env Env, r workspace.SiteUpdate) string {
 		return env.t("cli.update.noDumpTool", nil)
 	}
 	return explain(env, r.Path, r.Err)
+}
+
+// restoreStep is the step of a rollback that put an item back; zero without one.
+func restoreStep(back model.Operation) model.OperationStep {
+	for _, st := range back.Steps {
+		if st.Step == model.StepRestoreFiles {
+			return st
+		}
+	}
+	return model.OperationStep{}
+}
+
+// rolledBack lists the items of a site's update that went back on their own and passed, each with
+// the check that failed after its update.
+func rolledBack(r workspace.SiteUpdate) []rolledBackJSON {
+	var out []rolledBackJSON
+	for _, back := range r.Rollbacks {
+		st := restoreStep(back)
+		if back.Outcome != model.OperationCompleted || st.Slug == "" {
+			continue
+		}
+		b := rolledBackJSON{Kind: string(st.ItemKind), Slug: st.Slug, Version: st.VersionBefore, BackTo: st.VersionAfter}
+		for _, c := range r.Operation.Steps {
+			if c.Step == model.StepCheck && c.Outcome == model.StepFailed && c.ItemKind == st.ItemKind && c.Slug == st.Slug {
+				b.Reason = c.Message
+			}
+		}
+		out = append(out, b)
+	}
+	return out
 }
 
 // failedStep is the last step that failed in an operation.
@@ -268,15 +321,19 @@ func updatesJSON(previews []workspace.SitePreview, results map[model.ID]workspac
 		}
 		if r.Operation.ID != model.NoID {
 			u.Operation, u.BackupDir = r.Operation.ID.String(), r.Operation.BackupDir
-			u.FailedStep = failedStep(r.Operation).Message
+			if r.Outcome != workspace.SiteUpdated {
+				u.FailedStep = failedStep(r.Operation).Message
+			}
 		}
+		u.RolledBack = rolledBack(r)
 		out[i] = u
 	}
 	return out
 }
 
 func itemJSON(p workspace.SitePreview, it update.Item) updateItemJSON {
-	return updateItemJSON{Kind: string(it.Kind), Slug: it.Slug, Language: it.Language, From: it.From, To: it.To, Ignored: p.IsIgnored(it)}
+	return updateItemJSON{Kind: string(it.Kind), Slug: it.Slug, Language: it.Language, From: it.From, To: it.To,
+		Ignored: p.IsIgnored(it), SetAside: p.IsSetAside(it)}
 }
 
 // stepText is a step of an update as the window says it: "akismet 5.3 → 5.7.2", "Database backup".
@@ -295,7 +352,8 @@ func stepText(env Env, st model.OperationStep) string {
 	case st.Step == model.StepBackupFiles:
 		return env.t("update.step.backup-files", map[string]any{"item": item})
 	case st.Step == model.StepRestoreFiles:
-		return env.t("update.step.restore-files", map[string]any{"item": item, "version": st.VersionBefore})
+		// The version it goes back to: VersionBefore is the one that broke the site.
+		return env.t("update.step.restore-files", map[string]any{"item": item, "version": st.VersionAfter})
 	}
 	return env.t("update.step."+string(st.Step), nil)
 }
