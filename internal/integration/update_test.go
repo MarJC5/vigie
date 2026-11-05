@@ -9,16 +9,19 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/MarJC5/vigie/internal/httpcheck"
 	"github.com/MarJC5/vigie/internal/model"
+	"github.com/MarJC5/vigie/internal/remote"
 	"github.com/MarJC5/vigie/internal/scan"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/store"
 	"github.com/MarJC5/vigie/internal/update"
+	"github.com/MarJC5/vigie/internal/workspace"
 	"github.com/MarJC5/vigie/internal/wpcli"
 )
 
@@ -120,6 +123,99 @@ func TestBreakingUpdateRolledBackOverSSH(t *testing.T) {
 	}
 	if status, _ := getSite(t, "updates.example.test", "/"); status != http.StatusOK {
 		t.Errorf("home page after the rollback: %d", status)
+	}
+}
+
+// A plugin whose new version breaks the site goes back on its own, and the run goes on with the
+// next plugin (ADR-0042, points 1 and 3). The setting off, TestBreakingUpdateRolledBackOverSSH
+// above is the run as before: stopped, the rollback offered.
+func TestBreakingPluginRolledBackOnItsOwnOverSSH(t *testing.T) {
+	ctx := context.Background()
+	u, job, db := updateBench(t, "vigie")
+	job.AutoRollback = true
+	preview, err := u.Preview(ctx, job)
+	if err != nil {
+		t.Fatal(err)
+	}
+	op, err := u.Run(ctx, job, preview, update.Selection{Plugins: []string{"fixture-breaks", "fixture-pro"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { restorePlugin(t, op, "fixture-pro") })
+	if op.Outcome != model.OperationCompleted || op.Summary != "1 of 2, 1 rolled back" {
+		t.Fatalf("run = %q, %q, steps %+v", op.Outcome, op.Summary, op.Steps)
+	}
+	if v := pluginVersion(t, "fixture-breaks"); v != "1.0.0" {
+		t.Errorf("fixture-breaks %s, want 1.0.0 back", v)
+	}
+	if v := pluginVersion(t, "fixture-pro"); v != "1.1.0" {
+		t.Errorf("fixture-pro %s, want 1.1.0: the run goes on after the rollback", v)
+	}
+	if status, _ := getSite(t, "updates.example.test", "/"); status != http.StatusOK {
+		t.Errorf("home page after the run: %d", status)
+	}
+	ops, err := db.Operations(ctx, job.Site.ID)
+	if err != nil || len(ops) != 2 {
+		t.Fatalf("operations = %+v, %v; want the update and its rollback", ops, err)
+	}
+	back := ops[0]
+	if back.Kind != model.OperationRollback || !back.Automatic || back.OfOperation != op.ID || back.Outcome != model.OperationCompleted {
+		t.Errorf("rollback = %+v", back)
+	}
+}
+
+// restorePlugin puts a plugin back as an update found it, from the update's archive, and empties
+// debug.log, for the next tests.
+func restorePlugin(t *testing.T, op model.Operation, slug string) {
+	t.Helper()
+	for _, st := range op.Steps {
+		if st.Step != model.StepBackupFiles || st.Slug != slug {
+			continue
+		}
+		line, err := remote.Restore(op.BackupDir+"/plugin-"+slug+".tar.gz", st.Message)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if res, err := runAs(context.Background(), "sh", "-c", line+" && : > sites/updates/wp-content/debug.log"); err != nil || res.exit != 0 {
+			t.Errorf("restore %s: %v %s", slug, err, res.stderr)
+		}
+	}
+}
+
+// Through the workspace, as the window runs it: the version rolled back is set aside, kept by the
+// scan after the update (the plugin offers its update itself, which a scan does not see), and the
+// next Update all leaves it out (ADR-0042, point 5).
+func TestVersionRolledBackSetAsideOverSSH(t *testing.T) {
+	ctx := context.Background()
+	u, job, db := updateBench(t, "vigie")
+	a := sshAccess(t)
+	host := model.Host{ID: job.Site.HostID, Name: "Bench", Hostname: a.host, Port: a.port, User: "vigie", KeyPath: a.key}
+	if err := db.SaveHost(ctx, host); err != nil {
+		t.Fatal(err)
+	}
+	ws := workspace.New(db, workspace.Deps{Runner: u.Runner, Now: time.Now, Checker: u.Checker})
+	node := model.Node{Kind: model.KindSite, ID: job.Site.ID}
+	previews, err := ws.PreviewNode(ctx, node)
+	if err != nil || len(previews) != 1 || previews[0].Err != nil {
+		t.Fatalf("PreviewNode() = %+v, %v", previews, err)
+	}
+	results := ws.UpdateSites(ctx, []workspace.Planned{{SitePreview: previews[0], Selection: update.Selection{Plugins: []string{"fixture-breaks"}}}}, workspace.Follow{})
+	if r := results[0]; r.Outcome != workspace.SiteUpdated || len(r.Rollbacks) != 1 {
+		t.Fatalf("result = %s, %d rollbacks, steps %+v", r.Outcome, len(r.Rollbacks), r.Operation.Steps)
+	}
+	asides, err := db.SetAsides(ctx, job.Site.ID)
+	if err != nil || len(asides) != 1 || asides[0].Slug != "fixture-breaks" || asides[0].Version != "2.0.0" {
+		t.Fatalf("set-asides after the update and its scan = %+v, %v", asides, err)
+	}
+	again, err := ws.PreviewNode(ctx, node)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sel := again[0].Bulk(); slices.Contains(sel.Plugins, "fixture-breaks") || !slices.Contains(sel.Plugins, "fixture-pro") {
+		t.Errorf("Update all would take %v: fixture-breaks left out, fixture-pro kept", sel.Plugins)
+	}
+	if res, err := runAs(ctx, "sh", "-c", ": > sites/updates/wp-content/debug.log"); err != nil || res.exit != 0 {
+		t.Errorf("empty debug.log: %v %s", err, res.stderr)
 	}
 }
 
