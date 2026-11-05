@@ -7,6 +7,7 @@ import { fold } from "../../lib/text";
 import { wordPressOrgAddress } from "../ExtensionList/ExtensionList";
 import { ExternalLink } from "../ExternalLink/ExternalLink";
 import { Icon } from "../Icon/Icon";
+import { LinkButton } from "../LinkButton/LinkButton";
 import { SearchField } from "../SearchField/SearchField";
 import { StatusDot } from "../StatusDot/StatusDot";
 import styles from "./ExtensionsOverview.module.css";
@@ -123,9 +124,7 @@ export function ExtensionsOverview({ across, onSelect, onOpen }: ExtensionsOverv
                     <tr key={s.id} className={styles.site}>
                       <td />
                       <td>
-                        <button type="button" className={styles.siteName} onClick={() => onSelect(s.id)}>
-                          {s.name}
-                        </button>
+                        <LinkButton onClick={() => onSelect(s.id)}>{s.name}</LinkButton>
                       </td>
                       <td />
                       <td className={styles.number}>{s.version}</td>

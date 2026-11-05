@@ -31,26 +31,6 @@
   box-shadow: inset 0 1px 0 var(--vg-border);
 }
 
-.name {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--vg-text);
-  font: var(--vg-weight-strong) var(--vg-text-body) var(--vg-font);
-  text-align: left;
-  cursor: pointer;
-}
-
-.name:hover {
-  text-decoration: underline;
-}
-
-.name:focus-visible {
-  outline: 2px solid var(--vg-focus);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-
 .muted {
   color: var(--vg-text-muted);
 }

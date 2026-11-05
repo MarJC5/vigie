@@ -15,6 +15,7 @@ import { Column, Columns } from "../Columns/Columns";
 import { Dialog } from "../Dialog/Dialog";
 import { Fingerprint } from "../Fingerprint/Fingerprint";
 import { Icon } from "../Icon/Icon";
+import { LinkButton } from "../LinkButton/LinkButton";
 import { Notice } from "../Notice/Notice";
 import { TextField } from "../TextField/TextField";
 import styles from "./HostDialog.module.css";
@@ -210,9 +211,9 @@ export function HostDialog({ api, hostId, sites, onClose, onSaved, onTest }: Hos
       actions={
         <>
           {onTest && (
-            <Button variant="text" className={styles.test} icon="ok" onClick={() => onTest(details(), set("wpCli"))}>
+            <LinkButton className={styles.test} icon="ok" onClick={() => onTest(details(), set("wpCli"))}>
               {t("edit.host.test")}
-            </Button>
+            </LinkButton>
           )}
           <Button variant="outline" onClick={onClose}>
             {t("edit.cancel")}

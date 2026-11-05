@@ -4,9 +4,9 @@ import { Icon, type IconName } from "../Icon/Icon";
 import styles from "./Button.module.css";
 
 export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
-  /** primary: the main action; danger: a main action that removes; outline: secondary; text: an
-   inline action; icon: icon only. */
-  variant?: "primary" | "danger" | "outline" | "text" | "icon";
+  /** primary: the main action; danger: a main action that removes; outline: secondary; icon: icon
+   only. An action that reads as a link is a LinkButton. */
+  variant?: "primary" | "danger" | "outline" | "icon";
   icon?: IconName;
   trailingIcon?: IconName;
   /** Accessible name; required for the icon variant, which shows no text. */

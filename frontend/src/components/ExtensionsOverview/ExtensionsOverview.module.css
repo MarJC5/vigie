@@ -94,8 +94,7 @@
   background: var(--vg-surface-hover);
 }
 
-.toggle:focus-visible,
-.siteName:focus-visible {
+.toggle:focus-visible {
   outline: 2px solid var(--vg-focus);
   outline-offset: 2px;
   border-radius: 2px;
@@ -141,19 +140,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.siteName {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--vg-accent-text);
-  font: var(--vg-weight-strong) var(--vg-text-small) var(--vg-font);
-  cursor: pointer;
-}
-
-.siteName:hover {
-  text-decoration: underline;
 }
 
 .hidden {

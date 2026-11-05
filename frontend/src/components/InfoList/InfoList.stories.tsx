@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
 
-import { Button } from "../Button/Button";
+import { LinkButton } from "../LinkButton/LinkButton";
 import { StatusDot } from "../StatusDot/StatusDot";
 import { InfoList, InfoRow } from "./InfoList";
 
@@ -17,7 +17,7 @@ export const SiteOverview: Story = {
           7.1.3 <StatusDot status="ok" withLabel />
         </InfoRow>
         <InfoRow label="PHP (web · CLI)">8.4.27 · 8.4.27</InfoRow>
-        <InfoRow label="Plugins" action={<Button variant="text">Update</Button>}>
+        <InfoRow label="Plugins" action={<LinkButton>Update</LinkButton>}>
           12 · 2 updates
         </InfoRow>
         <InfoRow label="Path on the server">~/sites/atelier-exemple.ch</InfoRow>

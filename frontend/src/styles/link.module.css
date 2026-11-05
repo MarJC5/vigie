@@ -1,0 +1,54 @@
+/* The skin of everything that reads as a link: ExternalLink (an <a> that leaves the window) and
+   LinkButton (a <button> that stays in it). One look, ADR-0004. */
+.link {
+  color: var(--vg-accent-text);
+  font-family: inherit;
+  font-size: var(--vg-text-small);
+  font-weight: var(--vg-weight-strong);
+  line-height: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.link[data-tone="text"] {
+  color: var(--vg-text);
+}
+
+.link[data-size="body"] {
+  font-size: var(--vg-text-body);
+}
+
+/* In running text: the size and weight of the text around it, underlined so that it stands apart
+   whatever the text's color (WCAG 1.4.1). */
+.link[data-size="inline"] {
+  font-size: inherit;
+  font-weight: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+/* The shortcuts of a site: muted, the text's color on hover, never underlined. */
+.link[data-tone="quiet"] {
+  color: var(--vg-text-muted);
+  font-weight: var(--vg-weight-regular);
+}
+
+.link[data-tone="quiet"]:hover:not(:disabled) {
+  color: var(--vg-text);
+  text-decoration: none;
+}
+
+.link:disabled {
+  color: var(--vg-text-muted);
+  cursor: default;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}

@@ -118,14 +118,6 @@
   color: var(--vg-text);
 }
 
-
-
-.findingLink:focus-visible {
-  outline: 2px solid var(--vg-focus);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-
 .slug {
   font-size: var(--vg-text-caption);
   color: var(--vg-text-muted);
@@ -153,19 +145,6 @@
   min-width: 0;
 }
 
-.findingLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--vg-accent-text);
-  font: var(--vg-weight-strong) var(--vg-text-small) var(--vg-font);
-  cursor: pointer;
-}
-
 .ellipsis {
   min-width: 0;
   overflow: hidden;
@@ -180,25 +159,6 @@
 
 .table[data-network] th:nth-child(3) {
   width: 16%;
-}
-
-.where {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--vg-text);
-  font: inherit;
-  cursor: pointer;
-}
-
-.where:focus-visible,
-.siteLink:focus-visible {
-  outline: 2px solid var(--vg-focus);
-  outline-offset: 2px;
-  border-radius: 2px;
 }
 
 /* The subsites a plugin or theme is active on, under its line. */
@@ -217,11 +177,3 @@
   list-style: none;
 }
 
-.siteLink {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--vg-accent-text);
-  font: var(--vg-weight-strong) var(--vg-text-small) var(--vg-font);
-  cursor: pointer;
-}

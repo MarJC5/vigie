@@ -58,16 +58,6 @@
   background: var(--vg-control-hover);
 }
 
-.text {
-  height: auto;
-  padding: 0 var(--vg-space-1);
-  color: var(--vg-accent-text);
-}
-
-.text:hover:not(:disabled) {
-  text-decoration: underline;
-}
-
 .icon {
   width: var(--vg-control-height);
   padding: 0;
@@ -82,7 +72,6 @@
 }
 
 .outline:disabled,
-.text:disabled,
 .icon:disabled {
   color: var(--vg-text-muted);
 }

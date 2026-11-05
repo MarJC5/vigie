@@ -39,6 +39,7 @@ import { BackupsLeftDialog } from "../BackupsLeftDialog/BackupsLeftDialog";
 import { BulkDialog } from "../BulkDialog/BulkDialog";
 import { Button } from "../Button/Button";
 import { DeleteDialog, DeleteManyDialog } from "../DeleteDialog/DeleteDialog";
+import { LinkButton } from "../LinkButton/LinkButton";
 import { RemoveBackupsDialog } from "../RemoveBackupsDialog/RemoveBackupsDialog";
 import { type CopyContent, CopyDialog, CopyManyDialog } from "../CopyDialog/CopyDialog";
 import { RemoveCopyDialog } from "../RemoveCopyDialog/RemoveCopyDialog";
@@ -564,9 +565,9 @@ export function AppShell({
           <StatusDot status="unknown" label={t("manager.updating", { count: busySites.size })} />
           <span className={styles.running}>{t("manager.updating", { count: busySites.size })}</span>
           {updatesApi && (
-            <Button variant="text" onClick={() => void updatesApi.CancelAll()}>
+            <LinkButton onClick={() => void updatesApi.CancelAll()}>
               {t("manager.stopAll")}
-            </Button>
+            </LinkButton>
           )}
         </>
       );
@@ -577,9 +578,9 @@ export function AppShell({
           <StatusDot status="unknown" label={t("manager.running", { count: left })} />
           <span className={styles.running}>{t("manager.running", { count: left })}</span>
           {onStopAll && (
-            <Button variant="text" onClick={onStopAll}>
+            <LinkButton onClick={onStopAll}>
               {t("manager.stopAll")}
-            </Button>
+            </LinkButton>
           )}
         </>
       );

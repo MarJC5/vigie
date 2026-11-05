@@ -6,6 +6,7 @@ import { findingText } from "../../lib/findings";
 import { activation, labelsOf } from "../../lib/subsites";
 import { ignoredText } from "../../lib/updates";
 import { Icon } from "../Icon/Icon";
+import { LinkButton } from "../LinkButton/LinkButton";
 import { StatusDot } from "../StatusDot/StatusDot";
 import { ExternalLink } from "../ExternalLink/ExternalLink";
 import styles from "./ExtensionList.module.css";
@@ -110,10 +111,10 @@ export function ExtensionList({ extensions, onFinding, onOpen, subsites, onOpenS
                       </td>
                       {where?.kind === "some" ? (
                         <td>
-                          <button type="button" className={styles.where} aria-expanded={opened === key} onClick={() => setOpened(opened === key ? undefined : key)}>
+                          <LinkButton tone="text" size="body" aria-expanded={opened === key} onClick={() => setOpened(opened === key ? undefined : key)}>
                             <Icon name={opened === key ? "caretDown" : "caretRight"} size={11} />
                             {t("subsite.activation.some", { count: where.sites.length })}
-                          </button>
+                          </LinkButton>
                         </td>
                       ) : where ? (
                         <td className={where.kind === "nowhere" ? styles.muted : undefined}>{t(`subsite.activation.${where.kind}`)}</td>
@@ -141,10 +142,10 @@ export function ExtensionList({ extensions, onFinding, onOpen, subsites, onOpenS
                       <td className={styles.muted}>{e.autoUpdate ? t("ext.auto") : ""}</td>
                       <td className={styles.finding}>
                         {e.worst ? (
-                          <button type="button" className={styles.findingLink} onClick={onFinding} title={findingText(e.worst, t, i18n.language).title}>
+                          <LinkButton onClick={onFinding} title={findingText(e.worst, t, i18n.language).title}>
                             <StatusDot status={e.worst.level === "urgent" ? "danger" : "warn"} />
                             <span className={styles.ellipsis}>{findingText(e.worst, t, i18n.language).title}</span>
-                          </button>
+                          </LinkButton>
                         ) : (
                           !e.onWordPressOrg &&
                           e.kind === "plugin" &&
@@ -160,9 +161,7 @@ export function ExtensionList({ extensions, onFinding, onOpen, subsites, onOpenS
                             {where.sites.map((id) => (
                               <li key={id}>
                                 {onOpenSubsite ? (
-                                  <button type="button" className={styles.siteLink} onClick={() => onOpenSubsite(id)}>
-                                    {labelOf(id)}
-                                  </button>
+                                  <LinkButton onClick={() => onOpenSubsite(id)}>{labelOf(id)}</LinkButton>
                                 ) : (
                                   labelOf(id)
                                 )}

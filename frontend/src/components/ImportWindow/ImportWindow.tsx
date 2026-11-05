@@ -6,6 +6,7 @@ import { clock, day } from "../../lib/findings";
 import { Button } from "../Button/Button";
 import { CheckboxControl } from "../Checkbox/Checkbox";
 import { Icon } from "../Icon/Icon";
+import { LinkButton } from "../LinkButton/LinkButton";
 import { Notice } from "../Notice/Notice";
 import { SelectField } from "../SelectField/SelectField";
 import styles from "./ImportWindow.module.css";
@@ -133,9 +134,9 @@ export function ImportWindow({ preview, nodes, onInto, keep, onKeep, onConfirm, 
         </div>
       </main>
       <div className={styles.bar}>
-        <Button variant="text" onClick={onClose}>
+        <LinkButton onClick={onClose}>
           {t("action.cancel")}
-        </Button>
+        </LinkButton>
         <span className={styles.later}>{preview.added ? t("data.preview.nothingYet") : t("data.preview.nothingNew")}</span>
         <span className={styles.actions}>
           <Button variant="primary" disabled={busy || preview.added === 0} aria-busy={busy} onClick={onConfirm}>

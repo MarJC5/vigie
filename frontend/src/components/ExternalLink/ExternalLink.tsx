@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import skin from "../../styles/link.module.css";
 import { Icon } from "../Icon/Icon";
 import styles from "./ExternalLink.module.css";
 
@@ -15,14 +16,15 @@ export interface ExternalLinkProps {
 }
 
 /** A link that leaves the window: its text, then the external icon, which never shrinks and stays
- * at the end of the last line when the text wraps. The one way the window shows such a link. */
+ * at the end of the last line when the text wraps. The one way the window shows such a link; its
+ * skin is LinkButton's (styles/link.module.css). */
 export function ExternalLink({ href, onOpen, children, tone = "accent", size = "small" }: ExternalLinkProps) {
   return (
     <a
       href={href}
       target="_blank"
       rel="noreferrer"
-      className={styles.link}
+      className={skin.link}
       data-tone={tone}
       data-size={size}
       onClick={(event) => {

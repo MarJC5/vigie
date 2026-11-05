@@ -7,6 +7,7 @@ import { clock, day, keyOf } from "../../lib/findings";
 import { Button } from "../Button/Button";
 import { CommandLine } from "../CommandLine/CommandLine";
 import { Icon } from "../Icon/Icon";
+import { LinkButton } from "../LinkButton/LinkButton";
 import { SelectField } from "../SelectField/SelectField";
 import { Switch } from "../Switch/Switch";
 import { TabBar } from "../TabBar/TabBar";
@@ -222,9 +223,9 @@ export function SettingsPage({
                 </span>
               ) : (
                 onCheckCommand && (
-                  <Button variant="text" onClick={onCheckCommand}>
+                  <LinkButton onClick={onCheckCommand}>
                     {t("settings.cli.checkAgain")}
-                  </Button>
+                  </LinkButton>
                 )
               )}
             </Row>

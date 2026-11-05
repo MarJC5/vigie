@@ -1,4 +1,5 @@
-import { Icon, type IconName } from "../Icon/Icon";
+import type { IconName } from "../Icon/Icon";
+import { LinkButton } from "../LinkButton/LinkButton";
 import styles from "./QuickLinks.module.css";
 
 export interface QuickLink {
@@ -20,10 +21,9 @@ export function QuickLinks({ label, links }: QuickLinksProps) {
       {/* By position: a link may change its label and icon ("Copied") and keeps its focus. */}
       {links.map((link, index) => (
         <li key={index} className={styles.item}>
-          <button type="button" className={styles.link} onClick={link.onClick}>
-            <Icon name={link.icon} size={14} />
+          <LinkButton tone="quiet" icon={link.icon} onClick={link.onClick}>
             {link.label}
-          </button>
+          </LinkButton>
         </li>
       ))}
     </ul>

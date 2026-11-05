@@ -2,10 +2,10 @@ import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
 import { type Choice, type ChoiceGroup, ignoredText, itemName, setAsideText } from "../../lib/updates";
-import { Button } from "../Button/Button";
 import { CheckboxControl } from "../Checkbox/Checkbox";
 import { ExternalLink } from "../ExternalLink/ExternalLink";
 import { Icon } from "../Icon/Icon";
+import { LinkButton } from "../LinkButton/LinkButton";
 import styles from "./UpdateChoices.module.css";
 
 export interface UpdateChoicesProps {
@@ -115,15 +115,15 @@ function ChoiceRow({ choice, name, checked, onChange, onIgnore, onRestore, onOpe
         )}
         {choice.ignore
           ? onRestore && (
-              <Button variant="text" label={t("update.restoreNamed", { name })} onClick={() => onRestore(choice)}>
+              <LinkButton label={t("update.restoreNamed", { name })} onClick={() => onRestore(choice)}>
                 {t("update.restore")}
-              </Button>
+              </LinkButton>
             )
           : onIgnore &&
             choice.ignoreKey && (
-              <Button variant="text" icon="eyeSlash" label={t("update.ignoreNamed", { name })} onClick={() => onIgnore(choice)}>
+              <LinkButton icon="eyeSlash" label={t("update.ignoreNamed", { name })} onClick={() => onIgnore(choice)}>
                 {t("update.ignore")}
-              </Button>
+              </LinkButton>
             )}
       </span>
     </div>

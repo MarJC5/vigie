@@ -2,10 +2,10 @@ import { useTranslation } from "react-i18next";
 
 import type { SiteView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { since } from "../../lib/time";
-import { Button } from "../Button/Button";
 import { DetailHeader } from "../DetailHeader/DetailHeader";
 import { ExtensionList } from "../ExtensionList/ExtensionList";
 import { InfoAside, InfoList, InfoRow } from "../InfoList/InfoList";
+import { LinkButton } from "../LinkButton/LinkButton";
 import { Notice } from "../Notice/Notice";
 import { type QuickLink, QuickLinks } from "../QuickLinks/QuickLinks";
 import { FindingRows } from "../SecurityPanel/SecurityPanel";
@@ -55,9 +55,9 @@ export function SubsitePage({ site, blogId, onNetwork, onOpen, now }: SubsitePag
           <>
             <p className={styles.of}>
               {t("subsite.of")}
-              <Button variant="text" onClick={onNetwork}>
+              <LinkButton onClick={onNetwork}>
                 {site.name}
-              </Button>
+              </LinkButton>
             </p>
             <QuickLinks label={t("site.links")} links={links} />
           </>

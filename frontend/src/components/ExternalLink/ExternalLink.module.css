@@ -1,39 +1,3 @@
-/* Inline, so that a long text wraps and the icon follows its last word. */
-.link {
-  color: var(--vg-accent-text);
-  font-size: var(--vg-text-small);
-  font-weight: var(--vg-weight-strong);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.link[data-tone="text"] {
-  color: var(--vg-text);
-}
-
-.link[data-size="body"] {
-  font-size: var(--vg-text-body);
-}
-
-/* In running text: the size and weight of the text around it, underlined so that it stands apart
-   whatever the text's color (WCAG 1.4.1). */
-.link[data-size="inline"] {
-  font-size: inherit;
-  font-weight: inherit;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.link:hover {
-  text-decoration: underline;
-}
-
-.link:focus-visible {
-  outline: 2px solid var(--vg-focus);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-
 /* Always 13 px, kept with the word before it, a little below the middle of the line. */
 .icon {
   display: inline-block;

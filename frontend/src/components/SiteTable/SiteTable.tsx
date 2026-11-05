@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { Icon } from "../Icon/Icon";
+import { LinkButton } from "../LinkButton/LinkButton";
 import { type Status, StatusDot } from "../StatusDot/StatusDot";
 import styles from "./SiteTable.module.css";
 
@@ -89,9 +90,9 @@ export function SiteTable({ label, columns, notScanned, rows, onSelect, onMenu }
               }
             >
               <td>
-                <button type="button" className={styles.name} onClick={() => onSelect(row.id)}>
+                <LinkButton tone="text" size="body" onClick={() => onSelect(row.id)}>
                   {row.name}
-                </button>
+                </LinkButton>
               </td>
               {columns.where && <td className={styles.muted}>{row.where}</td>}
               <td>{row.status ? <StatusDot status={row.status as Status} withLabel /> : <span className={styles.muted}>{notScanned}</span>}</td>

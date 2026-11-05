@@ -7,6 +7,7 @@ import { Button } from "../Button/Button";
 import { Dialog } from "../Dialog/Dialog";
 import { FieldNote } from "../FieldNote/FieldNote";
 import { ItemList } from "../ItemList/ItemList";
+import { LinkButton } from "../LinkButton/LinkButton";
 import { TextField } from "../TextField/TextField";
 import styles from "./TagManyDialog.module.css";
 
@@ -88,9 +89,9 @@ export function TagManyDialog({ sites, onTag, onClose }: TagManyDialogProps) {
             name: g.name,
             note: g.count === total ? t("selection.tags.onAll", { count: total }) : t("selection.tags.onSome", { n: g.count, total }),
             action: (
-              <Button variant="text" label={t("selection.tags.removeLabel", { tag: g.name })} onClick={() => void tag(g.name, false)}>
+              <LinkButton label={t("selection.tags.removeLabel", { tag: g.name })} onClick={() => void tag(g.name, false)}>
                 {t("selection.tags.remove")}
-              </Button>
+              </LinkButton>
             ),
           }))}
         />

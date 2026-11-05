@@ -6,6 +6,7 @@ import { clock, day, findingText, type Group, groupOf, groupsOf, ignoreText } fr
 import { labelsOf } from "../../lib/subsites";
 import { Button } from "../Button/Button";
 import { Icon } from "../Icon/Icon";
+import { LinkButton } from "../LinkButton/LinkButton";
 import { type Status, StatusDot } from "../StatusDot/StatusDot";
 import { ExternalLink } from "../ExternalLink/ExternalLink";
 import styles from "./SecurityPanel.module.css";
@@ -159,14 +160,14 @@ function Row({
       </span>
       <span className={styles.action}>
         {canIgnore && (
-          <Button variant="text" icon="eyeSlash" label={t("security.ignoreNamed", { title: text.title })} onClick={() => onIgnore(finding)}>
+          <LinkButton icon="eyeSlash" label={t("security.ignoreNamed", { title: text.title })} onClick={() => onIgnore(finding)}>
             {t("security.ignore")}
-          </Button>
+          </LinkButton>
         )}
         {onRestore && finding.ignore && (
-          <Button variant="text" label={t("security.restoreNamed", { title: text.title })} onClick={() => onRestore(finding)}>
+          <LinkButton label={t("security.restoreNamed", { title: text.title })} onClick={() => onRestore(finding)}>
             {t("security.restore")}
-          </Button>
+          </LinkButton>
         )}
       </span>
     </li>

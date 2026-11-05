@@ -12,6 +12,7 @@ import { DetailHeader } from "../DetailHeader/DetailHeader";
 import { Dialog } from "../Dialog/Dialog";
 import { ExtensionList } from "../ExtensionList/ExtensionList";
 import { InfoAside, InfoList, InfoRow } from "../InfoList/InfoList";
+import { LinkButton } from "../LinkButton/LinkButton";
 import { NotesPanel } from "../NotesPanel/NotesPanel";
 import { Notice } from "../Notice/Notice";
 import { type QuickLink, QuickLinks } from "../QuickLinks/QuickLinks";
@@ -362,18 +363,18 @@ function Overview({ site, onExtensions }: { site: SiteView; onExtensions: () => 
             <StatusDot status={scan.pending.plugins > 0 || !scan.checked.plugins ? "warn" : "ok"} />
             <span className={styles.unknownLine}>
               {installed(t, "plugins", scan.plugins, scan.pending.plugins, scan.checked.plugins)}
-              <Button variant="text" label={t("overview.showPlugins")} onClick={onExtensions}>
+              <LinkButton label={t("overview.showPlugins")} onClick={onExtensions}>
                 {t("overview.show")}
-              </Button>
+              </LinkButton>
             </span>
           </InfoRow>
           <InfoRow label={t("overview.themes")}>
             <StatusDot status={scan.pending.themes > 0 || !scan.checked.themes ? "warn" : "ok"} />
             <span className={styles.unknownLine}>
               {installed(t, "themes", scan.themes, scan.pending.themes, scan.checked.themes)}
-              <Button variant="text" label={t("overview.showThemes")} onClick={onExtensions}>
+              <LinkButton label={t("overview.showThemes")} onClick={onExtensions}>
                 {t("overview.show")}
-              </Button>
+              </LinkButton>
             </span>
           </InfoRow>
           <InfoRow label={t("overview.translations")}>
@@ -481,9 +482,9 @@ function SourceUnknown({ names }: { names: string[] }) {
   return (
     <span className={styles.unknownLine}>
       {t("overview.sourceUnknownCount", { count: names.length })}
-      <Button variant="text" aria-haspopup="dialog" onClick={() => setOpen(true)}>
+      <LinkButton aria-haspopup="dialog" onClick={() => setOpen(true)}>
         {t("overview.show")}
-      </Button>
+      </LinkButton>
       {open && (
         <Dialog
           title={t("overview.sourceUnknown")}

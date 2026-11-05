@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
 
 import { Button } from "../Button/Button";
+import { LinkButton } from "../LinkButton/LinkButton";
 import { EmptyState } from "./EmptyState";
 
 const meta = {
@@ -12,7 +13,7 @@ const meta = {
     children: (
       <>
         <Button variant="primary" icon="plus">Add a host</Button>
-        <Button variant="text">Import a site list</Button>
+        <LinkButton>Import a site list</LinkButton>
       </>
     ),
   },

@@ -23,7 +23,6 @@ export const Danger: Story = { args: { variant: "danger", children: "Delete the 
 
 export const Outline: Story = { args: { variant: "outline", children: "wp-admin", trailingIcon: "external" } };
 
-export const Text: Story = { args: { variant: "text", children: "Details", trailingIcon: "external" } };
 
 export const IconOnly: Story = {
   args: { variant: "icon", icon: "search", label: "Search", children: undefined },

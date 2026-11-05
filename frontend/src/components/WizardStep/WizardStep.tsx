@@ -1,6 +1,7 @@
 import { type ReactNode, useId } from "react";
 
 import { Button } from "../Button/Button";
+import { LinkButton } from "../LinkButton/LinkButton";
 import { ProgressBar, type ProgressProps } from "../Progress/Progress";
 import { Stepper } from "../Stepper/Stepper";
 import styles from "./WizardStep.module.css";
@@ -76,9 +77,9 @@ export function WizardStep({
         )}
         <div className={styles.side}>
           {back && (
-            <Button variant="text" onClick={back.onClick} disabled={back.disabled}>
+            <LinkButton onClick={back.onClick} disabled={back.disabled}>
               {back.label}
-            </Button>
+            </LinkButton>
           )}
         </div>
         <Stepper label={stepsLabel} steps={steps} current={current} doneLabel={doneLabel} />

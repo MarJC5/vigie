@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { Problem } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { Button } from "../Button/Button";
 import { Dialog } from "../Dialog/Dialog";
+import { LinkButton } from "../LinkButton/LinkButton";
 import { TextField } from "../TextField/TextField";
 import styles from "./AdminAddressDialog.module.css";
 
@@ -35,9 +36,9 @@ export function AdminAddressDialog({ own, computed, onSave, onClose }: AdminAddr
       actions={
         <>
           {own && (
-            <Button variant="text" className={styles.reset} onClick={() => void save("")}>
+            <LinkButton className={styles.reset} onClick={() => void save("")}>
               {t("admin.reset")}
-            </Button>
+            </LinkButton>
           )}
           <Button onClick={onClose}>{t("action.cancel")}</Button>
           <Button variant="primary" onClick={() => void save(address.trim() === computed ? "" : address)}>

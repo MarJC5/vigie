@@ -9,6 +9,7 @@ import { Button } from "../Button/Button";
 import { Counts } from "../Counts/Counts";
 import { DetailHeader } from "../DetailHeader/DetailHeader";
 import { ExtensionsOverview } from "../ExtensionsOverview/ExtensionsOverview";
+import { LinkButton } from "../LinkButton/LinkButton";
 import { NotesPanel } from "../NotesPanel/NotesPanel";
 import { SiteTable } from "../SiteTable/SiteTable";
 import { TabBar } from "../TabBar/TabBar";
@@ -203,9 +204,9 @@ export function SitesList({ label, rows, where = false, empty, onSelect, onSiteM
         onSelect={rows.length > 1 ? setFilter : undefined}
       >
         {filter !== undefined && (
-          <Button variant="text" onClick={() => setFilter(undefined)}>
+          <LinkButton onClick={() => setFilter(undefined)}>
             {t("host.showAll")}
-          </Button>
+          </LinkButton>
         )}
       </Counts>
       {rows.length === 0 ? (

@@ -7,6 +7,7 @@ import { clock } from "../../lib/findings";
 import { Button } from "../Button/Button";
 import { ChangeList } from "../ChangeList/ChangeList";
 import { Icon, type IconName } from "../Icon/Icon";
+import { LinkButton } from "../LinkButton/LinkButton";
 import { SelectField } from "../SelectField/SelectField";
 import { StatusDot } from "../StatusDot/StatusDot";
 import styles from "./ActivityPage.module.css";
@@ -131,9 +132,7 @@ function Entry({ entry: e, onOpen }: { entry: ActivityEntry; onOpen: (nodeId: st
         {/* What changed on each site since its previous complete scan (ADR-0027). */}
         {sites.map((s) => (
           <span key={s.siteId} className={styles.site}>
-            <button type="button" className={styles.name} onClick={() => onOpen(s.siteId)}>
-              {s.name}
-            </button>
+            <LinkButton onClick={() => onOpen(s.siteId)}>{s.name}</LinkButton>
             <ChangeList changes={s.changes ?? []} label={t("activity.changesOf", { name: s.name })} />
           </span>
         ))}
@@ -182,9 +181,9 @@ function Named({ text, name, onOpen }: { text: string; name: string; onOpen: () 
   return (
     <span>
       {before}
-      <button type="button" className={styles.name} onClick={onOpen}>
+      <LinkButton size="inline" onClick={onOpen}>
         {name}
-      </button>
+      </LinkButton>
       {after}
     </span>
   );
