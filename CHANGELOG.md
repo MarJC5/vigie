@@ -24,6 +24,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Buttons and menus no longer end with an ellipsis ("Export", not "Export…"); what is running
   keeps it ("Scanning…").
+- One look for every field, the same in every engine: checkboxes and radios are drawn by Vigie (a
+  white check on the accent), Ignore and Export choose with cards, the reason of an ignore and the
+  notes of a site share one text area, and the fields in a row (rename in the tree, name a site
+  found, add a tag) share one. Every button that reads as a link, every filter and every banner
+  has one look, and icons come in six sizes.
 
 ## [0.1.1] - 2026-11-03
 
