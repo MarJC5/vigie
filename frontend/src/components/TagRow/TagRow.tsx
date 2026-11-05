@@ -5,6 +5,7 @@ import type { Problem, TagView } from "../../../bindings/github.com/MarJC5/vigie
 import { tagChoices } from "../../lib/tags";
 import { FieldNote } from "../FieldNote/FieldNote";
 import { Icon } from "../Icon/Icon";
+import { InlineField } from "../InlineField/InlineField";
 import styles from "./TagRow.module.css";
 
 export interface TagRowProps {
@@ -114,21 +115,20 @@ export function TagRow({ tags, used, onSave, onOpenTag }: TagRowProps) {
           ) : (
             <li className={styles.adding}>
               <span className={styles.field}>
-                <Icon name="tag" size={12} />
-                <input
-                  className={styles.input}
+                <InlineField
+                  icon="tag"
                   role="combobox"
-                  aria-label={t("tags.field")}
+                  label={t("tags.field")}
                   aria-expanded={choices.length > 0}
                   aria-controls={`${id}-choices`}
                   aria-autocomplete="list"
                   aria-activedescendant={choices.length > 0 ? `${id}-${active}` : undefined}
-                  aria-invalid={problem ? true : undefined}
+                  invalid={!!problem}
                   value={typed}
                   maxLength={80}
                   autoFocus
-                  onChange={(event) => {
-                    setTyped(event.target.value);
+                  onChange={(value) => {
+                    setTyped(value);
                     setActive(0);
                     setProblem(null);
                   }}

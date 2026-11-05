@@ -2,6 +2,7 @@ import { type CSSProperties, type DragEvent, type KeyboardEvent, type MouseEvent
 import { useTranslation } from "react-i18next";
 
 import { Icon } from "../Icon/Icon";
+import { InlineField } from "../InlineField/InlineField";
 import { type Status, StatusDot } from "../StatusDot/StatusDot";
 import styles from "./TreeNode.module.css";
 
@@ -166,22 +167,16 @@ function RenameField({ label, name, onRename, onCancel }: { label?: string; name
   // An unchanged name is no rename.
   const keep = (value: string) => end(() => (value.trim() === name ? onCancel?.() : onRename?.(value)));
   return (
-    <input
-      type="text"
-      aria-label={label}
+    <InlineField
+      label={label ?? name}
       defaultValue={name}
-      className={styles.field}
       autoFocus
-      spellCheck={false}
       onFocus={(event) => event.target.select()}
       onClick={(event) => event.stopPropagation()}
-      onKeyDown={(event) => {
-        // The field keeps its keys: the tree does not move or select while typing.
-        event.stopPropagation();
-        const value = event.currentTarget.value;
-        if (event.key === "Enter") keep(value);
-        if (event.key === "Escape") end(() => onCancel?.());
-      }}
+      // The field keeps its keys: the tree does not move or select while typing.
+      onKeyDown={(event) => event.stopPropagation()}
+      onCommit={keep}
+      onCancel={() => end(() => onCancel?.())}
       onBlur={(event) => keep(event.target.value)}
     />
   );

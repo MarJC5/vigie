@@ -39,26 +39,9 @@
   width: 36px;
 }
 
-.name {
-  width: 100%;
-  height: var(--vg-control-height);
-  box-sizing: border-box;
-  padding: 0 10px;
-  border: 0;
-  border-radius: var(--vg-radius-control);
-  box-shadow: inset 0 0 0 1px var(--vg-border);
-  background: transparent;
-  color: var(--vg-text);
-  font: var(--vg-weight-strong) var(--vg-text-body) var(--vg-font);
-}
-
-.name:focus-visible {
-  outline: 2px solid var(--vg-focus);
-  outline-offset: 1px;
-}
-
+/* Level with the text of a field in the same column. */
 .fixed {
-  padding: 0 10px;
+  padding: 0 8px;
   font-weight: var(--vg-weight-strong);
 }
 

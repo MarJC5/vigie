@@ -1,4 +1,5 @@
 import { Checkbox } from "../Checkbox/Checkbox";
+import { InlineField } from "../InlineField/InlineField";
 import { StatusDot } from "../StatusDot/StatusDot";
 import styles from "./InstallList.module.css";
 
@@ -54,14 +55,7 @@ export function InstallList({ label, columns, addLabel, items, onToggle, onRenam
             </td>
             <td>
               {item.selectable ? (
-                <input
-                  type="text"
-                  aria-label={`${columns.name} ${item.path}`}
-                  value={item.name}
-                  spellCheck={false}
-                  className={styles.name}
-                  onChange={(event) => onRename(item.path, event.target.value)}
-                />
+                <InlineField label={`${columns.name} ${item.path}`} value={item.name} onChange={(value) => onRename(item.path, value)} />
               ) : (
                 <span className={styles.fixed}>{item.name}</span>
               )}

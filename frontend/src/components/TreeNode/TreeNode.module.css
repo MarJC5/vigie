@@ -62,24 +62,6 @@
   box-shadow: inset 0 0 0 2px var(--vg-accent);
 }
 
-.field {
-  flex: 1;
-  min-width: 0;
-  height: 24px;
-  box-sizing: border-box;
-  padding: 0 6px;
-  border: 0;
-  border-radius: 4px;
-  background: var(--vg-surface-main);
-  box-shadow: 0 0 0 2px var(--vg-focus);
-  color: var(--vg-text);
-  font: var(--vg-weight-strong) var(--vg-text-body) / 1 var(--vg-font);
-}
-
-.field:focus {
-  outline: none;
-}
-
 .node:focus-visible {
   outline: 2px solid var(--vg-focus);
   outline-offset: -2px;
