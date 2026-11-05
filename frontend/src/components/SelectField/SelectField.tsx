@@ -29,7 +29,7 @@ export function SelectField({ label, value, options, onChange, hideLabel = false
           ))}
         </select>
         <span className={styles.caret} aria-hidden="true">
-          <Icon name="caretDown" size={14} />
+          <Icon name="caretDown" size="xs" />
         </span>
       </span>
     </div>

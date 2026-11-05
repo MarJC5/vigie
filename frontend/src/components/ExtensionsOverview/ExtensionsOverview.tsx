@@ -81,7 +81,7 @@ export function ExtensionsOverview({ across, onSelect, onOpen }: ExtensionsOverv
                       aria-label={t("ext.across.sitesOf", { name: e.title || e.slug })}
                       onClick={() => toggle(key)}
                     >
-                      <Icon name={opened ? "caretDown" : "caretRight"} size={12} />
+                      <Icon name={opened ? "caretDown" : "caretRight"} size="xs" />
                     </button>
                   </td>
                   <td>

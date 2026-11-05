@@ -90,7 +90,7 @@ export function ExportDialog({ nodes, nodeId, onNode, history, onHistory, summar
         onChange={onHistory}
       />
       <div className={styles.sensitive}>
-        <Icon name="lock" size={18} />
+        <Icon name="lock" />
         <span className={styles.text}>
           <span className={styles.sensitiveTitle}>{t("data.export.sensitive")}</span>
           <span>{t("data.export.sensitiveText")}</span>

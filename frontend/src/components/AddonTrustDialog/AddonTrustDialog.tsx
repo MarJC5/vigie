@@ -23,7 +23,7 @@ export function AddonTrustDialog({ onClose }: AddonTrustDialogProps) {
       }
     >
       <span className={styles.icon}>
-        <Icon name="lock" size={24} />
+        <Icon name="lock" size="lg" />
       </span>
       {(["trust1", "trust2", "trust3"] as const).map((key) => (
         <p key={key} className={styles.text}>

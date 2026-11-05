@@ -65,7 +65,7 @@ export function UpdateHistory({ operations, names, onRollback, busy = false }: U
           <li key={op.id} className={styles.operation} data-open={expanded || undefined}>
             <button type="button" className={styles.head} aria-expanded={expanded} aria-controls={panel} onClick={() => toggle(op.id)}>
               <span className={styles.caret}>
-                <Icon name={expanded ? "caretDown" : "caretRight"} size={14} />
+                <Icon name={expanded ? "caretDown" : "caretRight"} size="xs" />
               </span>
               <span className={styles.when}>{when.format(new Date(op.started))}</span>
               <span className={styles.summary}>{operationSummary(t, op, names)}</span>

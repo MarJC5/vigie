@@ -121,17 +121,17 @@ export function TreeNode({
             onToggle?.();
           }}
         >
-          <Icon name={expanded ? "caretDown" : "caretRight"} size={12} />
+          <Icon name={expanded ? "caretDown" : "caretRight"} size="xs" />
         </span>
       )}
       {kind === "host" && (
         <span className={styles.tile}>
-          <Icon name="host" size={14} />
+          <Icon name="host" size="sm" />
         </span>
       )}
       {kind === "tag" && (
         <span className={styles.tagIcon}>
-          <Icon name="tag" size={14} />
+          <Icon name="tag" size="sm" />
         </span>
       )}
       {status && (

@@ -217,7 +217,7 @@ export function SettingsPage({
               {command.linked ? (
                 <span className={styles.installed}>
                   <span className={styles.installedIcon}>
-                    <Icon name="check" size={14} />
+                    <Icon name="check" size="sm" />
                   </span>
                   {t("settings.cli.installed")}
                 </span>

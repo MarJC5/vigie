@@ -52,7 +52,7 @@ export function SecurityPanel({ scan, onCheckFiles, scanning = false, onIgnore, 
         <span>{summary.length > 0 ? summary.join(" · ") : t("security.summary.none")}</span>
         <span className={styles.files}>
           <span className={styles.filesText}>
-            <Icon name="shield" size={14} />
+            <Icon name="shield" size="sm" />
             {scan.filesChecked
               ? t("security.filesChecked", { date: day(scan.filesChecked), time: clock(scan.filesChecked) })
               : t("security.filesNever")}
@@ -132,7 +132,7 @@ function Row({
         {shape ? (
           <StatusDot status={shape} label={t(`security.level.${group}`)} />
         ) : (
-          <Icon name={group === "ignored" ? "eyeSlash" : "ok"} size={16} label={t(`security.level.${group}`)} />
+          <Icon name={group === "ignored" ? "eyeSlash" : "ok"} label={t(`security.level.${group}`)} />
         )}
       </span>
       <span className={styles.text}>

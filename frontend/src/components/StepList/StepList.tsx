@@ -40,7 +40,7 @@ export function StepList({ label, rows, stateLabels, ended = false }: StepListPr
       {rows.map((row) => (
         <li key={row.key} className={styles.step} data-state={row.state} aria-current={row.state === "running" ? "step" : undefined}>
           <span className={styles.icon}>
-            <Icon name={icons[row.state]} size={18} label={stateLabels[row.state]} />
+            <Icon name={icons[row.state]} label={stateLabels[row.state]} />
           </span>
           <span className={styles.label}>{row.label}</span>
           <span className={styles.detail} data-selectable>

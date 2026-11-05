@@ -36,7 +36,7 @@ export function AddonCard({ addon, tab, onOpen, onLink }: AddonCardProps) {
             </Button>
           ) : addon.installed ? (
             <span className={styles.note}>
-              <Icon name="ok" size={14} />
+              <Icon name="ok" size="sm" />
               {t("addons.installedNote")}
             </span>
           ) : (

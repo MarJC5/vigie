@@ -16,7 +16,7 @@ export function AddonImage({ image, size = "card" }: AddonImageProps) {
   if (image) return <img src={image} alt="" className={styles.image} data-size={size} />;
   return (
     <div className={styles.fallback} data-size={size}>
-      <Icon name="puzzle" size={size === "hero" ? 48 : 40} />
+      <Icon name="puzzle" size="xl" />
       <span className={styles.label}>{t("addons.defaultImage")}</span>
     </div>
   );

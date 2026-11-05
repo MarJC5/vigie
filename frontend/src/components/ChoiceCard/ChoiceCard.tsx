@@ -15,7 +15,7 @@ export function ChoiceCard({ title, text, selected, onSelect, disabled = false }
     <button type="button" aria-pressed={selected} disabled={disabled} className={styles.card} onClick={onSelect}>
       {selected && (
         <span className={styles.corner} aria-hidden="true">
-          <Icon name="check" size={12} />
+          <Icon name="check" size="xs" />
         </span>
       )}
       <span className={styles.title}>{title}</span>

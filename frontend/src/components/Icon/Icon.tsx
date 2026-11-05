@@ -98,19 +98,26 @@ const icons = {
 export type IconName = keyof typeof icons;
 export const iconNames = Object.keys(icons) as IconName[];
 
+/** Six sizes, each with its role (ADR-0004): xs carets, the cross of a tag, an icon in 12 px text;
+ * sm beside 13 or 14 px text; md the start of a row, a menu, a Notice, a step; nav the navigation
+ * rail; lg the header of a page or a dialog; xl an empty state, a full screen. */
+export const iconSizes = { xs: 12, sm: 14, md: 16, nav: 22, lg: 28, xl: 40 } as const;
+export type IconSize = keyof typeof iconSizes;
+
 export interface IconProps {
   name: IconName;
-  /** Pixels: 16 in lists, 20 to 22 in the navigation rail. */
-  size?: number;
+  /** One of the six names, never a number of pixels. */
+  size?: IconSize;
   /** When set, the icon carries meaning and is announced; otherwise it is decorative. */
   label?: string;
 }
 
-export function Icon({ name, size = 16, label }: IconProps) {
+export function Icon({ name, size = "md", label }: IconProps) {
   const Glyph = icons[name];
+  const px = iconSizes[size];
   return label ? (
-    <Glyph size={size} weight="regular" role="img" aria-label={label} />
+    <Glyph size={px} weight="regular" role="img" aria-label={label} />
   ) : (
-    <Glyph size={size} weight="regular" aria-hidden="true" />
+    <Glyph size={px} weight="regular" aria-hidden="true" />
   );
 }

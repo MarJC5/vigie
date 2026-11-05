@@ -44,7 +44,7 @@ export function NavRail({ current, onAddHost, inert, onNavigate }: NavRailProps)
             if (onNavigate && reachable.includes(id)) onNavigate(id);
           }}
         >
-          <Icon name={icon} size={22} />
+          <Icon name={icon} size="nav" />
         </a>
       ))}
       <span className={styles.spacer} />
@@ -55,7 +55,7 @@ export function NavRail({ current, onAddHost, inert, onNavigate }: NavRailProps)
         disabled={!onAddHost}
         onClick={onAddHost}
       >
-        <Icon name="plus" size={20} />
+        <Icon name="plus" size="nav" />
       </button>
     </nav>
   );

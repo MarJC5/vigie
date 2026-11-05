@@ -19,7 +19,7 @@ export function ItemList({ items, label }: { items: ListedItem[]; label?: string
     <ul className={styles.items} aria-label={label}>
       {items.map((item) => (
         <li key={item.key} className={styles.item}>
-          <Icon name={item.icon} size={14} />
+          <Icon name={item.icon} size="sm" />
           <span className={styles.name}>{item.name}</span>
           {item.note && <span className={styles.note}>{item.note}</span>}
           {item.action && <span className={styles.action}>{item.action}</span>}

@@ -25,7 +25,7 @@ export function DetailHeader({ title, icon, subtitle, meta, children, actions, l
       <div className={styles.line}>
         {icon && (
           <span className={styles.icon}>
-            <Icon name={icon} size={28} />
+            <Icon name={icon} size="lg" />
           </span>
         )}
         <h1 className={styles.title} title={title}>
@@ -34,7 +34,7 @@ export function DetailHeader({ title, icon, subtitle, meta, children, actions, l
         {children}
         {meta && (
           <span className={styles.meta}>
-            <Icon name="activity" size={14} />
+            <Icon name="activity" size="sm" />
             {meta}
           </span>
         )}

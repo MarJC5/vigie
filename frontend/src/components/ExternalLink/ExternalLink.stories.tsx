@@ -31,7 +31,7 @@ export const LongNameInAColumn: Story = {
   play: async ({ canvasElement }) => {
     for (const svg of canvasElement.querySelectorAll("a svg")) {
       const box = svg.getBoundingClientRect();
-      await expect([Math.round(box.width), Math.round(box.height)]).toEqual([13, 13]);
+      await expect([Math.round(box.width), Math.round(box.height)]).toEqual([14, 14]); // the size sm
       // Never alone on its line: on the line of the last word.
       const word = svg.closest("a")!.querySelector("span")!.getBoundingClientRect();
       await expect(Math.abs(box.top + box.height / 2 - (word.top + word.height / 2))).toBeLessThan(word.height / 2);

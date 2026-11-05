@@ -19,7 +19,7 @@ export function Stepper({ label, steps, current, doneLabel }: StepperProps) {
         return (
           <li key={step} className={styles.step} data-state={state} aria-current={state === "current" ? "step" : undefined}>
             <span className={styles.badge} aria-hidden="true">
-              {state === "done" ? <Icon name="check" size={12} /> : index + 1}
+              {state === "done" ? <Icon name="check" size="xs" /> : index + 1}
             </span>
             {step}
             {state === "done" && <span className={styles.hidden}>{doneLabel}</span>}

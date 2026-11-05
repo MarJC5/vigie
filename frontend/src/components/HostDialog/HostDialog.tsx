@@ -271,7 +271,7 @@ export function HostDialog({ api, hostId, sites, onClose, onSaved, onTest }: Hos
       </Columns>
       {moved && (
         <p role="status" className={styles.warning}>
-          <Icon name="warning" size={16} />
+          <Icon name="warning" />
           <span>{t("edit.host.addressChanged", { host: address })}</span>
         </p>
       )}

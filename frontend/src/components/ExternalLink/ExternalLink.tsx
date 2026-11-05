@@ -42,7 +42,7 @@ export function ExternalLink({ href, onOpen, children, tone = "accent", size = "
 function glued(children: ReactNode): ReactNode {
   const icon = (
     <span className={styles.icon} aria-hidden="true">
-      <Icon name="external" size={13} />
+      <Icon name="external" size="sm" />
     </span>
   );
   if (typeof children !== "string") {

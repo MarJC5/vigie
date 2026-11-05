@@ -107,7 +107,7 @@ function Entry({ entry: e, onOpen }: { entry: ActivityEntry; onOpen: (nodeId: st
     <li className={styles.entry}>
       <span className={styles.time}>{clock(e.at)}</span>
       <span className={styles.icon}>
-        <Icon name={icons[run ? e.by : e.kind] ?? "refresh"} size={16} />
+        <Icon name={icons[run ? e.by : e.kind] ?? "refresh"} />
       </span>
       <span className={styles.body}>
         <span className={styles.line}>
@@ -138,7 +138,7 @@ function Entry({ entry: e, onOpen }: { entry: ActivityEntry; onOpen: (nodeId: st
         ))}
         {noticeLines(notices, t).map((line) => (
           <span key={line} className={styles.notice}>
-            <Icon name="bell" size={12} />
+            <Icon name="bell" size="xs" />
             {line}
           </span>
         ))}

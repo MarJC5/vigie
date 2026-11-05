@@ -68,7 +68,7 @@ export function BulkDialog({ name, count, previews, onConfirm, onClose }: BulkDi
             const idle = ignored > 0 ? "eyeSlash" : aside > 0 ? "rollback" : "ok";
             return (
               <li key={p.siteId} className={styles.site} data-ready={!why || undefined}>
-                <Icon name={why ? (count === 0 && !p.problem ? idle : "lock") : "update"} size={14} />
+                <Icon name={why ? (count === 0 && !p.problem ? idle : "lock") : "update"} size="sm" />
                 <span className={styles.name}>{p.name}</span>
                 <span className={styles.note}>{why || items}</span>
               </li>

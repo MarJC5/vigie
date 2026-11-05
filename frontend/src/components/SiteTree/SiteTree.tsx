@@ -369,7 +369,7 @@ export function SiteTree({
       {carried.length > 1 && (
         <span ref={dragLabel} className={styles.dragLabel} aria-hidden="true">
           <span className={styles.dragIcon}>
-            <Icon name={carriedKinds.has("host") ? "host" : "folder"} size={14} />
+            <Icon name={carriedKinds.has("host") ? "host" : "folder"} size="sm" />
           </span>
           {carriedText}
         </span>

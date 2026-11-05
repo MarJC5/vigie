@@ -26,13 +26,13 @@ export function Button({ variant = "outline", icon, trailingIcon, label, childre
     >
       {busy ? (
         <span className={styles.spinner}>
-          <Icon name="spinner" size={16} />
+          <Icon name="spinner" />
         </span>
       ) : (
-        icon && <Icon name={icon} size={16} />
+        icon && <Icon name={icon} />
       )}
       {children}
-      {trailingIcon && <Icon name={trailingIcon} size={14} />}
+      {trailingIcon && <Icon name={trailingIcon} size="sm" />}
     </button>
   );
 }

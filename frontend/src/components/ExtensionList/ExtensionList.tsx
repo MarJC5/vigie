@@ -110,7 +110,7 @@ export function ExtensionList({ extensions, onFinding, onOpen, subsites, onOpenS
                       {where?.kind === "some" ? (
                         <td>
                           <LinkButton tone="text" size="body" aria-expanded={opened === key} onClick={() => setOpened(opened === key ? undefined : key)}>
-                            <Icon name={opened === key ? "caretDown" : "caretRight"} size={11} />
+                            <Icon name={opened === key ? "caretDown" : "caretRight"} size="xs" />
                             {t("subsite.activation.some", { count: where.sites.length })}
                           </LinkButton>
                         </td>
@@ -123,7 +123,7 @@ export function ExtensionList({ extensions, onFinding, onOpen, subsites, onOpenS
                         {e.update === "available" && e.ignore ? (
                           // Ignored (ADR-0026): said, in gray, without the mark of an update waiting.
                           <span className={`${styles.update} ${styles.muted}`} title={ignoredText(e.ignore, t)}>
-                            <Icon name="eyeSlash" size={14} />
+                            <Icon name="eyeSlash" size="sm" />
                             {t("ext.to", { version: e.updateVersion })} · {t("ext.ignored")}
                           </span>
                         ) : e.update === "available" ? (

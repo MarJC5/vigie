@@ -114,7 +114,7 @@ export function Menu({ label, entries, x, y, onSelect, onColor, onClose }: MenuP
         if (entry.kind === "colors") {
           return (
             <div key={i} role="group" aria-label={entry.label} className={styles.colors}>
-              <Icon name="palette" size={16} />
+              <Icon name="palette" />
               {colors.map((c) => (
                 <button
                   key={c}
@@ -144,7 +144,7 @@ export function Menu({ label, entries, x, y, onSelect, onColor, onClose }: MenuP
             onClick={() => !entry.disabled && onSelect(entry.id)}
           >
             <span className={entry.danger ? styles.danger : styles.icon}>
-              <Icon name={entry.icon} size={16} />
+              <Icon name={entry.icon} />
             </span>
             <span className={styles.label}>{entry.label}</span>
             {entry.shortcut && (

@@ -49,7 +49,7 @@ export function AddonPage({ addon, values, onValue, onChooseFile, onRun, running
         }}
       >
         <span className={styles.backIcon}>
-          <Icon name="caretRight" size={13} />
+          <Icon name="caretRight" size="xs" />
         </span>
         {t("addons.title")}
       </a>

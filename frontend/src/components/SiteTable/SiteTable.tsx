@@ -59,7 +59,7 @@ export function SiteTable({ label, columns, notScanned, rows, onSelect, onMenu }
           onClick={() => setSort({ key, direction: current === 0 ? firstDirection[key] : current === 1 ? -1 : 1 })}
         >
           {text}
-          {current !== 0 && <Icon name={current === firstDirection[key] ? "caretDown" : "caretUp"} size={11} />}
+          {current !== 0 && <Icon name={current === firstDirection[key] ? "caretDown" : "caretUp"} size="xs" />}
         </button>
       </th>
     );

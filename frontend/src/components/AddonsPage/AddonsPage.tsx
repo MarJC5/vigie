@@ -43,7 +43,7 @@ export function AddonsPage({ view, tab, onTab, onOpen, onLink }: AddonsPageProps
             }}
           >
             {t("addons.write")}
-            <Icon name="external" size={13} />
+            <Icon name="external" size="sm" />
           </a>
         </span>
       </div>
@@ -59,7 +59,7 @@ export function AddonsPage({ view, tab, onTab, onOpen, onLink }: AddonsPageProps
         {view && addons.length === 0 && tab === "installed" && (
           <div className={styles.empty}>
             <span className={styles.emptyIcon}>
-              <Icon name="puzzle" size={30} />
+              <Icon name="puzzle" size="xl" />
             </span>
             <h2 className={styles.emptyTitle}>{t("addons.emptyTitle")}</h2>
             <p className={styles.note}>{t("addons.emptyText")}</p>

@@ -26,7 +26,7 @@ export function ConsentScreen({ destinations, onAgree, onNotNow }: ConsentScreen
         <div className={styles.content}>
           <div className={styles.heading}>
             <span className={styles.icon}>
-              <Icon name="shield" size={36} />
+              <Icon name="shield" size="xl" />
             </span>
             <h1 className={styles.title}>{t("consent.title")}</h1>
             <p className={styles.lead}>{t("consent.lead")}</p>
@@ -41,7 +41,7 @@ export function ConsentScreen({ destinations, onAgree, onNotNow }: ConsentScreen
             }}
           />
           <div className={styles.never}>
-            <Icon name="lock" size={18} />
+            <Icon name="lock" />
             <span className={styles.neverText}>
               <span className={styles.neverTitle}>{t("lookups.neverTitle")}</span>
               <span>{t("lookups.neverText")}</span>

@@ -29,7 +29,7 @@ export function LinkButton({ tone = "accent", size = "small", icon, label, child
       data-size={size}
       className={[skin.link, styles.button, className].filter(Boolean).join(" ")}
     >
-      {icon && <Icon name={icon} size={14} />}
+      {icon && <Icon name={icon} size="sm" />}
       {children}
     </button>
   );

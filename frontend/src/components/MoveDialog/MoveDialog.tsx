@@ -73,7 +73,7 @@ export function MoveDialog({ items, staying = [], nodes, onMove, onClose }: Move
             return (
               <label key={d.id || "root"} className={styles.row} style={{ paddingLeft: 12 + d.depth * 22 }} data-current={current || undefined}>
                 <RadioControl name="destination" checked={choice === d.id} disabled={current} onChange={() => setChoice(d.id)} />
-                <Icon name="folder" size={16} />
+                <Icon name="folder" />
                 <span className={styles.name}>{d.name}</span>
                 {current && <span className={styles.note}>{t("edit.move.current")}</span>}
               </label>

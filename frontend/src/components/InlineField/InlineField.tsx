@@ -43,7 +43,7 @@ export function InlineField({ label, onChange, onCommit, onCancel, invalid = fal
   return (
     <span className={styles.withIcon}>
       <span className={styles.icon} aria-hidden="true">
-        <Icon name={icon} size={12} />
+        <Icon name={icon} size="xs" />
       </span>
       {field}
     </span>

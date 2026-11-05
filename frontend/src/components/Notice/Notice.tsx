@@ -23,7 +23,7 @@ export function Notice({ title, text, detail, action, tone = "danger", role = "a
   return (
     <div role={role} className={styles.notice} data-tone={tone}>
       <span className={styles.icon} aria-hidden="true">
-        <Icon name={tone === "neutral" ? icon : tone === "ok" ? "ok" : tone === "warn" ? "warning" : "failed"} size={16} />
+        <Icon name={tone === "neutral" ? icon : tone === "ok" ? "ok" : tone === "warn" ? "warning" : "failed"} />
       </span>
       <span className={styles.body}>
         {title && <span className={styles.title}>{title}</span>}

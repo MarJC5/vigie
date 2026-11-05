@@ -1,4 +1,4 @@
-/* Always 13 px, kept with the word before it, a little below the middle of the line. */
+/* Always sm (14 px), kept with the word before it, a little below the middle of the line. */
 .icon {
   display: inline-block;
   margin-left: 4px;

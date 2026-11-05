@@ -75,7 +75,7 @@ export function ImportWindow({ preview, nodes, onInto, keep, onKeep, onConfirm, 
                       <ul className={styles.list}>
                         {groups[g].map((item, i) => (
                           <li key={`${item.kind}-${item.path}-${item.line}-${i}`} className={styles.item} data-muted={g !== "added" || undefined}>
-                            <Icon name={itemIcon(item)} size={16} />
+                            <Icon name={itemIcon(item)} />
                             <span className={styles.itemText}>
                               <span className={styles.name}>{itemName(t, item)}</span>
                               <span className={styles.detail} data-selectable={item.kind === "line" || undefined}>

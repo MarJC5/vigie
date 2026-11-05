@@ -84,7 +84,7 @@ export function TagRow({ tags, used, onSave, onOpenTag }: TagRowProps) {
       <ul className={styles.tags} aria-label={t("tags.label")}>
         {tags.map((tag) => (
           <li key={tag} className={styles.tag}>
-            <Icon name="tag" size={12} />
+            <Icon name="tag" size="xs" />
             {onOpenTag ? (
               <button type="button" className={styles.name} onClick={() => onOpenTag(tag)}>
                 {tag}
@@ -99,7 +99,7 @@ export function TagRow({ tags, used, onSave, onOpenTag }: TagRowProps) {
                 aria-label={t("tags.remove", { tag })}
                 onClick={() => void save(tags.filter((x) => x !== tag))}
               >
-                <Icon name="close" size={11} />
+                <Icon name="close" size="xs" />
               </button>
             )}
           </li>
@@ -108,7 +108,7 @@ export function TagRow({ tags, used, onSave, onOpenTag }: TagRowProps) {
           (typed === null ? (
             <li>
               <button ref={addButton} type="button" className={styles.add} onClick={() => setTyped("")}>
-                <Icon name="plus" size={12} />
+                <Icon name="plus" size="xs" />
                 {t("tags.add")}
               </button>
             </li>
@@ -153,7 +153,7 @@ export function TagRow({ tags, used, onSave, onOpenTag }: TagRowProps) {
                       onMouseEnter={() => setActive(i)}
                       onClick={() => void add(c.name)}
                     >
-                      <Icon name={c.isNew ? "plus" : "tag"} size={14} />
+                      <Icon name={c.isNew ? "plus" : "tag"} size="sm" />
                       <span className={styles.choiceName}>{c.isNew ? t("tags.create", { tag: c.name }) : c.name}</span>
                       <span className={styles.choiceNote}>{c.isNew ? t("tags.new") : t("tags.sites", { count: c.sites })}</span>
                     </li>

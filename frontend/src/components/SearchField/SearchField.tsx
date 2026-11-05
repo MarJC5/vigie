@@ -23,7 +23,7 @@ export function SearchField({ label, value, onChange, onClose, ref, autoFocus }:
   };
   return (
     <span className={styles.field}>
-      <Icon name="search" size={14} />
+      <Icon name="search" size="sm" />
       <input
         ref={ref}
         type="search"
