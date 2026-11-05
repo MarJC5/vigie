@@ -188,19 +188,6 @@
   color: var(--vg-text-muted);
 }
 
-.box {
-  width: 16px;
-  height: 16px;
-  flex: none;
-  margin: 2px 0 0;
-  accent-color: var(--vg-accent);
-}
-
-.box:focus-visible {
-  outline: 2px solid var(--vg-focus);
-  outline-offset: 2px;
-}
-
 .fingerprint {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: var(--vg-text-caption);

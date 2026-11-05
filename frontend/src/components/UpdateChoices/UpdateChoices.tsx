@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { type Choice, type ChoiceGroup, ignoredText, itemName, setAsideText } from "../../lib/updates";
 import { Button } from "../Button/Button";
+import { CheckboxControl } from "../Checkbox/Checkbox";
 import { ExternalLink } from "../ExternalLink/ExternalLink";
 import { Icon } from "../Icon/Icon";
 import styles from "./UpdateChoices.module.css";
@@ -97,7 +98,7 @@ function ChoiceRow({ choice, name, checked, onChange, onIgnore, onRestore, onOpe
       {/* The label lays out in the row's grid: a click on the name ticks the box. */}
       <label className={styles.pick}>
         <span className={styles.mark}>
-          <input type="checkbox" className={styles.box} checked={checked} onChange={(event) => onChange(event.target.checked)} />
+          <CheckboxControl checked={checked} onChange={onChange} />
         </span>
         <span className={styles.nameCell}>
           <span className={styles.name}>{name}</span>

@@ -35,18 +35,6 @@
   cursor: default;
 }
 
-.box {
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  accent-color: var(--vg-accent);
-}
-
-.box:focus-visible {
-  outline: 2px solid var(--vg-focus);
-  outline-offset: 2px;
-}
-
 .alias {
   font-weight: var(--vg-weight-strong);
   overflow-wrap: anywhere;

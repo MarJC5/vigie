@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { Node, Problem, SSHConfigView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { folderOptions } from "../../lib/data";
 import { Button } from "../Button/Button";
+import { CheckboxControl } from "../Checkbox/Checkbox";
 import { Dialog } from "../Dialog/Dialog";
 import { Notice } from "../Notice/Notice";
 import { SelectField } from "../SelectField/SelectField";
@@ -62,12 +63,10 @@ export function SSHConfigDialog({ config, nodes, into, onInto, chosen, onToggle,
             const offered = !h.present && !h.error;
             return (
               <label key={h.alias} className={styles.row} data-off={offered ? undefined : true}>
-                <input
-                  type="checkbox"
-                  className={styles.box}
+                <CheckboxControl
                   checked={offered && chosen.has(h.alias)}
                   disabled={!offered}
-                  onChange={(event) => onToggle(h.alias, event.target.checked)}
+                  onChange={(checked) => onToggle(h.alias, checked)}
                 />
                 <span className={styles.alias}>{h.alias}</span>
                 <span className={styles.account} data-selectable>

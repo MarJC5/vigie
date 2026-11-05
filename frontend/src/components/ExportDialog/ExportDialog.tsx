@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { ExportSummary, Node, Problem } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { countsText, exportOptions, sizeText } from "../../lib/data";
 import { Button } from "../Button/Button";
+import { Checkbox } from "../Checkbox/Checkbox";
 import { Dialog } from "../Dialog/Dialog";
 import { Icon } from "../Icon/Icon";
 import { Notice } from "../Notice/Notice";
@@ -89,17 +90,16 @@ export function ExportDialog({ nodes, nodeId, onNode, history, onHistory, summar
           )}
         </label>
       </fieldset>
-      <label className={styles.check}>
-        <input type="checkbox" className={styles.box} checked={history} onChange={(event) => onHistory(event.target.checked)} />
-        <span className={styles.text}>
-          <span className={styles.title}>{t("data.export.history")}</span>
-          <span className={styles.hint}>
-            {summary
-              ? t("data.export.historyHint", { size: sizeText(summary.historyBytes, i18n.language) })
-              : t("data.export.historyHintShort")}
-          </span>
-        </span>
-      </label>
+      <Checkbox
+        label={t("data.export.history")}
+        note={
+          summary
+            ? t("data.export.historyHint", { size: sizeText(summary.historyBytes, i18n.language) })
+            : t("data.export.historyHintShort")
+        }
+        checked={history}
+        onChange={onHistory}
+      />
       <div className={styles.sensitive}>
         <Icon name="lock" size={18} />
         <span className={styles.text}>

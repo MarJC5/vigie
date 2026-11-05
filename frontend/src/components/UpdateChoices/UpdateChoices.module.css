@@ -75,18 +75,6 @@
   justify-content: center;
 }
 
-.box {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  accent-color: var(--vg-accent);
-}
-
-.box:focus-visible {
-  outline: 2px solid var(--vg-focus);
-  outline-offset: 2px;
-}
-
 .name {
   font-weight: var(--vg-weight-strong);
   min-width: 0;

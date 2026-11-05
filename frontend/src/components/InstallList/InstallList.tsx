@@ -1,3 +1,4 @@
+import { Checkbox } from "../Checkbox/Checkbox";
 import { StatusDot } from "../StatusDot/StatusDot";
 import styles from "./InstallList.module.css";
 
@@ -43,11 +44,10 @@ export function InstallList({ label, columns, addLabel, items, onToggle, onRenam
           <tr key={item.path} data-selectable={item.selectable} data-problem={item.problem || undefined}>
             <td className={styles.check}>
               {item.selectable && (
-                <input
-                  type="checkbox"
-                  aria-label={`${addLabel} ${item.name}`}
+                <Checkbox
+                  label={`${addLabel} ${item.name}`}
+                  hideLabel
                   checked={item.checked}
-                  className={styles.box}
                   onChange={() => onToggle(item.path)}
                 />
               )}

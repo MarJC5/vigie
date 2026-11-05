@@ -164,6 +164,10 @@
 }
 
 :root {
+	/* The check of a ticked Checkbox, white in both themes (owner's choice, 2026-11-05). The ticked
+	   state is said by the box filled in the accent; the check repeats it. */
+	--vg-check-mark: #ffffff;
+
 	/* Type: Instrument Sans, two weights; tabular figures for versions */
 	--vg-font: "Instrument Sans Variable", "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--vg-weight-regular: 400;

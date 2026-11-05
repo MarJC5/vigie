@@ -39,13 +39,6 @@
   width: 36px;
 }
 
-.box {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  accent-color: var(--vg-accent);
-}
-
 .name {
   width: 100%;
   height: var(--vg-control-height);

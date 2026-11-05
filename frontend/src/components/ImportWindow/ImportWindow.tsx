@@ -4,6 +4,7 @@ import type { ImportPreview, Node, Problem } from "../../../bindings/github.com/
 import { type ImportGroup, folderOptions, groupsOf, itemDetail, itemIcon, itemName } from "../../lib/data";
 import { clock, day } from "../../lib/findings";
 import { Button } from "../Button/Button";
+import { CheckboxControl } from "../Checkbox/Checkbox";
 import { Icon } from "../Icon/Icon";
 import { Notice } from "../Notice/Notice";
 import { SelectField } from "../SelectField/SelectField";
@@ -112,12 +113,7 @@ export function ImportWindow({ preview, nodes, onInto, keep, onKeep, onConfirm, 
                         </div>
                       ) : (
                         <label key={k.hostId + k.fingerprint} className={styles.key}>
-                          <input
-                            type="checkbox"
-                            className={styles.box}
-                            checked={keep.has(k.hostId)}
-                            onChange={(event) => onKeep(k.hostId, event.target.checked)}
-                          />
+                          <CheckboxControl checked={keep.has(k.hostId)} onChange={(checked) => onKeep(k.hostId, checked)} />
                           <span className={styles.itemText}>
                             <span className={styles.name}>
                               {k.host} · {k.server}
