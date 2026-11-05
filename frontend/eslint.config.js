@@ -21,4 +21,22 @@ export default tseslint.config(
     plugins: { i18next },
     rules: { "i18next/no-literal-string": "error" },
   },
+  {
+    // One component per field (ADR-0004, amendment of 2026-11-05): a view never draws its own.
+    files: ["src/**/*.tsx"],
+    ignores: [
+      "src/components/{Checkbox,Radio,TextField,TextArea,InlineField,SelectField,SearchField}/*.tsx",
+      "src/**/*.stories.tsx",
+      "src/**/*.test.tsx",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "JSXOpeningElement[name.name=/^(input|select|textarea)$/]",
+          message: "A field is drawn by its component: Checkbox, Radio, TextField, TextArea, InlineField, SelectField or SearchField.",
+        },
+      ],
+    },
+  },
 );
