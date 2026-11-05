@@ -5,6 +5,7 @@ import type { ExtensionView, SubsiteView } from "../../../bindings/github.com/Ma
 import { findingText } from "../../lib/findings";
 import { activation, labelsOf } from "../../lib/subsites";
 import { ignoredText } from "../../lib/updates";
+import { FilterPad } from "../FilterPad/FilterPad";
 import { Icon } from "../Icon/Icon";
 import { LinkButton } from "../LinkButton/LinkButton";
 import { StatusDot } from "../StatusDot/StatusDot";
@@ -63,10 +64,7 @@ export function ExtensionList({ extensions, onFinding, onOpen, subsites, onOpenS
       {!compact && (
         <div role="group" aria-label={t("ext.filter")} className={styles.filters}>
           {(["all", "active", "inactive", "update"] as const).map((f) => (
-            <button key={f} type="button" className={styles.filter} aria-pressed={filter === f} onClick={() => setFilter(f)}>
-              {t(`ext.filters.${f}`)}
-              <span className={styles.count}>{extensions.filter(keeps[f]).length}</span>
-            </button>
+            <FilterPad key={f} label={t(`ext.filters.${f}`)} count={extensions.filter(keeps[f]).length} pressed={filter === f} onSelect={() => setFilter(f)} />
           ))}
         </div>
       )}

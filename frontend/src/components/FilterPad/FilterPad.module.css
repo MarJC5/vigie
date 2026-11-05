@@ -1,0 +1,58 @@
+.pad {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px var(--vg-space-3);
+  border: 0;
+  border-radius: var(--vg-radius-control);
+  background: transparent;
+  color: var(--vg-text);
+  font: var(--vg-text-small) var(--vg-font);
+  text-align: left;
+}
+
+button.pad {
+  cursor: pointer;
+}
+
+button.pad:hover {
+  background: var(--vg-surface-hover);
+}
+
+/* The chosen one: the selection's ground, in bold. */
+button.pad[aria-pressed="true"] {
+  background: var(--vg-surface-selected);
+  font-weight: var(--vg-weight-strong);
+}
+
+button.pad:focus-visible {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 2px;
+}
+
+.count {
+  color: var(--vg-text-muted);
+  font-weight: var(--vg-weight-regular);
+  font-variant-numeric: tabular-nums;
+}
+
+/* In a column: a small label above the value. */
+.pad[data-layout="column"] {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.label {
+  font-weight: var(--vg-weight-strong);
+  color: var(--vg-text-muted);
+}
+
+.value {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vg-space-2);
+  font-size: var(--vg-text-title);
+  font-weight: var(--vg-weight-strong);
+  font-variant-numeric: tabular-nums;
+}

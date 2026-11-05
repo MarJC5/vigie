@@ -12,38 +12,6 @@
   gap: var(--vg-space-1);
 }
 
-.filter {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px var(--vg-space-3);
-  border: 0;
-  border-radius: var(--vg-radius-control);
-  background: transparent;
-  color: var(--vg-text);
-  font: var(--vg-text-small) var(--vg-font);
-  cursor: pointer;
-}
-
-.filter:hover {
-  background: var(--vg-surface-hover);
-}
-
-.filter[aria-pressed="true"] {
-  background: var(--vg-surface-selected);
-  font-weight: var(--vg-weight-strong);
-}
-
-.filter:focus-visible {
-  outline: 2px solid var(--vg-focus);
-  outline-offset: 2px;
-}
-
-.count {
-  color: var(--vg-text-muted);
-  font-variant-numeric: tabular-nums;
-}
-
 .empty {
   margin: 0;
   color: var(--vg-text-muted);
