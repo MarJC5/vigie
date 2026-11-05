@@ -7,6 +7,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-05
+
 ### Added
 
 - **Copies** of a site on this computer, from its new Copies tab, its menu or a selection: the
@@ -29,6 +31,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   notes of a site share one text area, and the fields in a row (rename in the tree, name a site
   found, add a tag) share one. Every button that reads as a link, every filter and every banner
   has one look, and icons come in six sizes.
+
+### Fixed
+
+- The Homebrew cask states the macOS it needs (Monterey or later) in the form Homebrew asks for.
 
 ## [0.1.1] - 2026-11-03
 
@@ -106,6 +112,7 @@ The first release.
 - The window loads only what Vigie embeds: a strict Content Security Policy refuses any script,
   style, font, image or connection from elsewhere.
 
-[Unreleased]: https://github.com/MarJC5/vigie/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/MarJC5/vigie/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/MarJC5/vigie/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/MarJC5/vigie/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/MarJC5/vigie/releases/tag/v0.1.0
