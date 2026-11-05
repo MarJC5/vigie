@@ -25,6 +25,19 @@ func TestRunEndNotifiesLongRunsOfTheUser(t *testing.T) {
 		{"automatic", func(e app.RunEnd) app.RunEnd { e.By = model.RunBySchedule; return e }, false},
 		{"command line", func(e app.RunEnd) app.RunEnd { e.By = model.RunByCLI; return e }, false},
 		{"stopped", func(e app.RunEnd) app.RunEnd { e.Cancelled = true; return e }, false},
+		// An item rolled back on its own, or a rollback that failed, is always said (ADR-0042).
+		{"5 s, an item rolled back", func(e app.RunEnd) app.RunEnd {
+			e.Kind, e.Finished, e.RolledBack = app.EndUpdate, start.Add(5*time.Second), 1
+			return e
+		}, true},
+		{"5 s, a rollback failed", func(e app.RunEnd) app.RunEnd {
+			e.Kind, e.Finished, e.Failed, e.RollbackFailed = app.EndUpdate, start.Add(5*time.Second), 1, true
+			return e
+		}, true},
+		{"stopped, an item rolled back", func(e app.RunEnd) app.RunEnd {
+			e.Kind, e.Finished, e.RolledBack, e.Cancelled = app.EndUpdate, start.Add(5*time.Second), 1, true
+			return e
+		}, false},
 	}
 	for _, c := range cases {
 		if got := c.end(long).Notifies(); got != c.want {
@@ -107,6 +120,32 @@ func TestEndNoticeTexts(t *testing.T) {
 			"a copy of a site cut off", "en",
 			app.RunEnd{Kind: app.EndCopy, NodeIDs: []string{"s"}, Name: "boulangerie-exemple.ch", Archives: 1, Failed: 1}, nil,
 			"Copy cut off", "boulangerie-exemple.ch: 1 archive copied.",
+		},
+		{
+			"an update of a site, an item rolled back", "fr",
+			app.RunEnd{Kind: app.EndUpdate, NodeIDs: []string{"s"}, Name: "boulangerie-exemple.ch", Items: 1, RolledBack: 1, RolledBackItem: "ACF PRO"}, nil,
+			"Mise à jour terminée", "boulangerie-exemple.ch : 1 élément mis à jour, ACF PRO revenu en arrière.",
+		},
+		{
+			"an update of a site, its only item rolled back", "en",
+			app.RunEnd{Kind: app.EndUpdate, NodeIDs: []string{"s"}, Name: "atelier-exemple.ch", RolledBack: 1, RolledBackItem: "Elementor"}, nil,
+			"Update done", "atelier-exemple.ch: Elementor rolled back.",
+		},
+		{
+			"an update of a site, two items rolled back", "fr",
+			app.RunEnd{Kind: app.EndUpdate, NodeIDs: []string{"s"}, Name: "boulangerie-exemple.ch", Items: 3, RolledBack: 2}, nil,
+			"Mise à jour terminée", "boulangerie-exemple.ch : 3 éléments mis à jour, 2 éléments revenus en arrière.",
+		},
+		{
+			"an update of a site whose rollback failed", "fr",
+			app.RunEnd{Kind: app.EndUpdate, NodeIDs: []string{"s"}, Name: "cave-exemple.ch", Failed: 1, FailedKind: model.ItemPlugin,
+				FailedItem: "ACF PRO", RollbackFailed: true, NotStarted: 1}, nil,
+			"Mise à jour arrêtée", "cave-exemple.ch : retour en arrière en échec pour ACF PRO, 1 élément non lancé.",
+		},
+		{
+			"an update of several sites, an item rolled back", "fr",
+			app.RunEnd{Kind: app.EndUpdate, Several: true, NodeIDs: []string{"h"}, Name: "Shared hosting", Updated: 4, RolledBack: 1}, nil,
+			"Mise à jour terminée", "Shared hosting : 4 sites mis à jour, 1 élément revenu en arrière.",
 		},
 		{
 			"an update of several sites, none failed", "en",

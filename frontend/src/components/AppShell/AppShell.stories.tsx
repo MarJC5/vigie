@@ -188,8 +188,8 @@ export const UpdateAllShowsItsOwnSummary: Story = {
     updates: {
       running: [], active: 0, completed: 2, sites: [],
       bulks: [
-        { nodeIds: ["shared"], sites: [{ siteId: "boulangerie", path: "Clients/Shared hosting/boulangerie-exemple.ch", outcome: "updated", detail: "", operationId: "op-1" }] },
-        { nodeIds: ["vps"], sites: [{ siteId: "vps-site", path: "Personal/Managed VPS/vps-only.example.test", outcome: "updated", detail: "", operationId: "op-2" }] },
+        { nodeIds: ["shared"], sites: [{ siteId: "boulangerie", path: "Clients/Shared hosting/boulangerie-exemple.ch", outcome: "updated", detail: "", operationId: "op-1" , rolledBack: [] }] },
+        { nodeIds: ["vps"], sites: [{ siteId: "vps-site", path: "Personal/Managed VPS/vps-only.example.test", outcome: "updated", detail: "", operationId: "op-2" , rolledBack: [] }] },
       ],
     },
   },

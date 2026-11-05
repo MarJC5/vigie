@@ -62,6 +62,8 @@ const operation = (o: Partial<OperationView>): OperationView => ({
   summary: "",
   backupDir,
   steps: [],
+  ofOperation: "",
+  automatic: false,
   rollback: null,
   ...o,
 });
@@ -154,15 +156,16 @@ export const historyToRollBack: OperationView[] = [failed, completed];
 
 /** A host updated: one site updated, one failed, the others not started. */
 export const bulk: SiteResultView[] = [
-  { siteId: "a", path: "Clients/Shared hosting/atelier-exemple.ch", outcome: "updated", detail: "", operationId: "op-a" },
+  { siteId: "a", path: "Clients/Shared hosting/atelier-exemple.ch", outcome: "updated", detail: "", operationId: "op-a", rolledBack: [] },
   {
     siteId: "outdated",
     path: "Clients/Shared hosting/boulangerie-exemple.ch",
     outcome: "failed",
     detail: "http://boulangerie-exemple.ch/ answers 500 (critical-error)",
     operationId: "op-failed",
+    rolledBack: [],
   },
-  { siteId: "c", path: "Clients/Shared hosting/cabinet-exemple.ch", outcome: "not-started", detail: "", operationId: "" },
-  { siteId: "d", path: "Clients/Shared hosting/reseau-ecoles.ch", outcome: "not-started", detail: "", operationId: "" },
-  { siteId: "e", path: "Clients/Shared hosting/vieux-site.ch", outcome: "refused", detail: "problem.noDumpTool", operationId: "" },
+  { siteId: "c", path: "Clients/Shared hosting/cabinet-exemple.ch", outcome: "not-started", detail: "", operationId: "", rolledBack: [] },
+  { siteId: "d", path: "Clients/Shared hosting/reseau-ecoles.ch", outcome: "not-started", detail: "", operationId: "", rolledBack: [] },
+  { siteId: "e", path: "Clients/Shared hosting/vieux-site.ch", outcome: "refused", detail: "problem.noDumpTool", operationId: "", rolledBack: [] },
 ];

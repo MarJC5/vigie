@@ -31,16 +31,18 @@ type NoticeView struct {
 // ActivityEntry is a line of the journal: a run with what it changed and what Vigie notified, a
 // scan made before runs were recorded, an update or a rollback, an install of WP-CLI.
 type ActivityEntry struct {
-	Kind    string   `json:"kind"`    // "run", "scan", "update", "rollback", "wpcli", "copy"
-	At      string   `json:"at"`      // when it started, RFC 3339
-	Ended   string   `json:"ended"`   // "" while it runs
-	By      string   `json:"by"`      // a run's: "user", "schedule", "cli"
-	Path    string   `json:"path"`    // a run's node ("" for everything), else its site's path
-	SiteID  string   `json:"siteId"`  // a scan's or an operation's site
-	Sites   int      `json:"sites"`   // a run's
-	Outcome string   `json:"outcome"` // as stored: a run's, a scan's or an operation's
-	Summary string   `json:"summary"` // an operation's
-	Changes []Change `json:"changes"`
+	Kind    string `json:"kind"`    // "run", "scan", "update", "rollback", "wpcli", "copy"
+	At      string `json:"at"`      // when it started, RFC 3339
+	Ended   string `json:"ended"`   // "" while it runs
+	By      string `json:"by"`      // a run's: "user", "schedule", "cli"
+	Path    string `json:"path"`    // a run's node ("" for everything), else its site's path
+	SiteID  string `json:"siteId"`  // a scan's or an operation's site
+	Sites   int    `json:"sites"`   // a run's
+	Outcome string `json:"outcome"` // as stored: a run's, a scan's or an operation's
+	Summary string `json:"summary"` // an operation's
+	// Automatic: a rollback Vigie ran on its own after a failed check (ADR-0042).
+	Automatic bool     `json:"automatic"`
+	Changes   []Change `json:"changes"`
 	// SiteChanges are what changed on each site since its previous complete scan (ADR-0027): a
 	// run's, or a scan's without a run.
 	SiteChanges []SiteChangesView `json:"siteChanges"`
@@ -236,7 +238,7 @@ func (a *Activity) Journal(ctx context.Context, days int, nodeID string) (Journa
 	for _, op := range ops {
 		if !op.Started.Before(since) && shown(op.SiteID) {
 			e := siteEntry(tree, string(op.Kind), op.SiteID, op.Started, op.Finished, string(op.Outcome))
-			e.Summary = op.Summary
+			e.Summary, e.Automatic = op.Summary, op.Automatic
 			// The end of an update is told under its last operation (ADR-0035).
 			for _, n := range notices {
 				if n.RunID == op.ID {

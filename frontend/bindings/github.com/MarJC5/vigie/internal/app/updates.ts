@@ -16,6 +16,13 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 import * as $models from "./models.js";
 
 /**
+ * AutoRollback tells whether plugins and themes that break a site roll back on their own.
+ */
+export function AutoRollback(): $CancellablePromise<boolean> {
+    return $Call.ByID(2445414922);
+}
+
+/**
  * Backups returns a site's backups on the server, as its latest scan read them.
  */
 export function Backups(siteID: string): $CancellablePromise<$models.BackupsView> {
@@ -30,8 +37,8 @@ export function CancelAll(): $CancellablePromise<void> {
 }
 
 /**
- * History lists the updates and rollbacks of a site, the newest first; the newest says what a
- * rollback would undo, when it can.
+ * History lists the updates and rollbacks of a site, the newest first; the latest update says what
+ * a rollback would undo, when it can.
  */
 export function History(siteID: string): $CancellablePromise<$models.OperationView[] | null> {
     return $Call.ByID(4037352331, siteID);
@@ -65,6 +72,13 @@ export function RemoveOldBackups(siteID: string): $CancellablePromise<$models.Pr
  */
 export function Rollback(siteID: string, operationID: string): $CancellablePromise<$models.Problem | null> {
     return $Call.ByID(3222631065, siteID, operationID);
+}
+
+/**
+ * SetAutoRollback turns the rollback on its own on or off (Settings, General).
+ */
+export function SetAutoRollback(on: boolean): $CancellablePromise<$models.Problem | null> {
+    return $Call.ByID(449425848, on);
 }
 
 /**

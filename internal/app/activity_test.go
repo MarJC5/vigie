@@ -177,3 +177,41 @@ func TestTheJournalTellsTheInstallsOfWPCLI(t *testing.T) {
 		}
 	}
 }
+
+// A rollback Vigie ran on its own shows in the journal as an entry of its own, said automatic,
+// beside the update it came from (ADR-0042, point 6).
+func TestJournalTellsARollbackOnItsOwn(t *testing.T) {
+	ctx := context.Background()
+	db := repository(t)
+	now := time.Date(2026, 11, 4, 14, 13, 0, 0, time.UTC)
+	host := model.Host{ID: model.NewID(), Name: "Shared hosting", Alias: "shared"}
+	site := model.Site{ID: model.NewID(), HostID: host.ID, Name: "boulangerie-exemple.ch", Path: "~/sites/b"}
+	if err := db.SaveHost(ctx, host); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SaveSite(ctx, site); err != nil {
+		t.Fatal(err)
+	}
+	upd := model.Operation{ID: model.NewID(), SiteID: site.ID, Kind: model.OperationUpdate, Started: now.Add(-time.Minute), PID: 1}
+	back := model.Operation{ID: model.NewID(), SiteID: site.ID, Kind: model.OperationRollback, Started: now.Add(-40 * time.Second), PID: 1,
+		OfOperation: upd.ID, Automatic: true}
+	for _, op := range []model.Operation{upd, back} {
+		if err := db.StartOperation(ctx, op); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.FinishOperation(ctx, back.ID, model.OperationCompleted, now.Add(-30*time.Second), "plugin acf-pro back to 6.8.10"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.FinishOperation(ctx, upd.ID, model.OperationCompleted, now, "1 of 2, 1 rolled back"); err != nil {
+		t.Fatal(err)
+	}
+	journal, err := app.NewActivity(db, func() time.Time { return now }).Journal(ctx, 7, "")
+	if err != nil || len(journal.Entries) != 2 {
+		t.Fatalf("Journal() = %+v, %v", journal, err)
+	}
+	first, second := journal.Entries[0], journal.Entries[1]
+	if first.Kind != "rollback" || !first.Automatic || second.Kind != "update" || second.Automatic {
+		t.Errorf("entries = %+v / %+v", first, second)
+	}
+}

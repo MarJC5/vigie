@@ -18,7 +18,8 @@ import (
 )
 
 // fakeUpdater records its operations in the database and reports two steps per site; a site
-// named in fail breaks on its check.
+// named in fail breaks on its check, and one named "rolls <name>" breaks and rolls back on its own
+// when the run allows it (ADR-0042).
 type fakeUpdater struct {
 	db     *store.DB
 	onStep func(model.Operation, model.OperationStep)
@@ -34,7 +35,66 @@ func (f fakeUpdater) Preview(_ context.Context, job update.Job) (update.Preview,
 }
 
 func (f fakeUpdater) Run(ctx context.Context, job update.Job, _ update.Preview, _ update.Selection) (model.Operation, error) {
-	return f.operation(ctx, job, model.OperationUpdate, f.fail[job.Site.Name])
+	if f.fail["rolls "+job.Site.Name] && job.AutoRollback {
+		return f.rollsBack(ctx, job, true)
+	}
+	if f.fail["cannot roll "+job.Site.Name] && job.AutoRollback {
+		return f.rollsBack(ctx, job, false)
+	}
+	return f.operation(ctx, job, model.OperationUpdate, f.fail[job.Site.Name] || f.fail["rolls "+job.Site.Name])
+}
+
+// rollsBack records an update whose plugin broke the site and went back on its own: the update
+// completes, its rollback is an operation of its own linked to it.
+func (f fakeUpdater) rollsBack(ctx context.Context, job update.Job, passes bool) (model.Operation, error) {
+	now := time.Now()
+	op := model.Operation{ID: model.NewID(), SiteID: job.Site.ID, Kind: model.OperationUpdate, Started: now, Outcome: model.OperationRunning,
+		BackupDir: ".vigie/backups/" + job.Site.ID.String() + "/20261104-141203", PID: 1}
+	if err := f.db.StartOperation(ctx, op); err != nil {
+		return op, err
+	}
+	record := func(o *model.Operation, st model.OperationStep) error {
+		st.Position, st.Started, st.Finished = len(o.Steps), now, now
+		if err := f.db.SaveOperationStep(ctx, o.ID, st); err != nil {
+			return err
+		}
+		o.Steps = append(o.Steps, st)
+		f.onStep(*o, st)
+		return nil
+	}
+	for _, st := range []model.OperationStep{
+		{Step: model.StepUpdate, ItemKind: model.ItemPlugin, Slug: "akismet", VersionBefore: "5.3", VersionAfter: "5.7.2", Outcome: model.StepDone},
+		{Step: model.StepCheck, ItemKind: model.ItemPlugin, Slug: "akismet", Outcome: model.StepFailed, Message: "http://a1/ answers 500 (server-error)"},
+	} {
+		if err := record(&op, st); err != nil {
+			return op, err
+		}
+	}
+	back := model.Operation{ID: model.NewID(), SiteID: job.Site.ID, Kind: model.OperationRollback, Started: now, Outcome: model.OperationRunning,
+		BackupDir: op.BackupDir, PID: 1, OfOperation: op.ID, Automatic: true}
+	if err := f.db.StartOperation(ctx, back); err != nil {
+		return op, err
+	}
+	for _, st := range []model.OperationStep{
+		{Step: model.StepRestoreFiles, ItemKind: model.ItemPlugin, Slug: "akismet", VersionBefore: "5.7.2", VersionAfter: "5.3", Outcome: model.StepDone},
+		{Step: model.StepCheck, ItemKind: model.ItemPlugin, Slug: "akismet", Outcome: model.StepDone},
+	} {
+		if !passes && st.Step == model.StepCheck {
+			st.Outcome, st.Message = model.StepFailed, "http://a1/ answers 500 (server-error)"
+		}
+		if err := record(&back, st); err != nil {
+			return op, err
+		}
+	}
+	backOutcome, outcome, summary := model.OperationCompleted, model.OperationCompleted, "0 of 1, 1 rolled back"
+	if !passes {
+		backOutcome, outcome, summary = model.OperationFailed, model.OperationFailed, "0 of 1"
+	}
+	if err := f.db.FinishOperation(ctx, back.ID, backOutcome, now, "plugin akismet back to 5.3"); err != nil {
+		return op, err
+	}
+	op.Outcome, op.Finished = outcome, now
+	return op, f.db.FinishOperation(ctx, op.ID, op.Outcome, now, summary)
 }
 
 func (f fakeUpdater) Rollback(ctx context.Context, job update.Job, _ model.Operation) (model.Operation, error) {
@@ -352,4 +412,102 @@ func TestEachBulkSummaryKeepsWhatItCovered(t *testing.T) {
 		t.Fatalf("while a2 updates again: %+v, want the host's summary alone", started.Bulks)
 	}
 	ev.done(t, state.Completed+1)
+}
+
+// Plugins and themes roll back on their own unless the user turns it off in Settings (ADR-0042).
+func TestTheRollbackOnItsOwnSetting(t *testing.T) {
+	ctx := context.Background()
+	u, _, _ := updatesService(t, nil, nil)
+	if on, err := u.AutoRollback(ctx); err != nil || !on {
+		t.Fatalf("AutoRollback() = %v, %v; want on by default", on, err)
+	}
+	if p := u.SetAutoRollback(ctx, false); p != nil {
+		t.Fatal(p)
+	}
+	if on, err := u.AutoRollback(ctx); err != nil || on {
+		t.Fatalf("AutoRollback() = %v, %v; want off", on, err)
+	}
+}
+
+// An item that broke a site and went back on its own: the end says so, the history shows the
+// update then the rollback, linked, and offers nothing more (ADR-0042, points 3 and 6).
+func TestAnItemRolledBackOnItsOwn(t *testing.T) {
+	u, ev, ids := updatesService(t, map[string]bool{"rolls a1": true}, nil)
+	if _, err := u.Preview(context.Background(), ids["a1"]); err != nil {
+		t.Fatal(err)
+	}
+	ended := make(chan app.RunEnd, 1)
+	u.OnEnded = func(e app.RunEnd) { ended <- e }
+	if p := u.Update(ids["a1"], app.SelectionView{Plugins: []string{"akismet"}}); p != nil {
+		t.Fatal(p)
+	}
+	ev.done(t, 1)
+	end := <-ended
+	if end.Failed != 0 || end.Items != 0 || end.RolledBack != 1 || end.RolledBackItem != "Akismet Anti-spam: Spam Protection" || end.RollbackFailed {
+		t.Fatalf("end = %+v", end)
+	}
+	history, err := u.History(context.Background(), ids["a1"])
+	if err != nil || len(history) != 2 {
+		t.Fatalf("History() = %+v, %v", history, err)
+	}
+	back, upd := history[0], history[1]
+	if back.Kind != "rollback" || !back.Automatic || back.OfOperation != upd.ID || upd.Kind != "update" || upd.Automatic || upd.OfOperation != "" {
+		t.Errorf("history = %+v / %+v", back, upd)
+	}
+	if back.Rollback != nil {
+		t.Errorf("a rollback is offered after the item went back on its own: %+v", back.Rollback)
+	}
+}
+
+// Update all says, site by site, what went back on its own; the end counts it.
+func TestUpdateAllWithAnItemRolledBack(t *testing.T) {
+	u, ev, ids := updatesService(t, map[string]bool{"rolls a1": true}, nil)
+	if _, err := u.Preview(context.Background(), ids["host"]); err != nil {
+		t.Fatal(err)
+	}
+	ended := make(chan app.RunEnd, 1)
+	u.OnEnded = func(e app.RunEnd) { ended <- e }
+	if p := u.UpdateAll(ids["host"]); p != nil {
+		t.Fatal(p)
+	}
+	state := ev.done(t, 2)
+	if end := <-ended; !end.Several || end.Updated != 2 || end.Failed != 0 || end.RolledBack != 1 {
+		t.Fatalf("end = %+v", end)
+	}
+	var a1 app.SiteResultView
+	for _, r := range state.Bulks[0].Sites {
+		if r.Path == "A/a1" {
+			a1 = r
+		}
+	}
+	want := []app.RolledBackView{{Kind: "plugin", Slug: "akismet", Version: "5.7.2", BackTo: "5.3", Reason: "http://a1/ answers 500 (server-error)"}}
+	if a1.Outcome != "updated" || !slices.Equal(a1.RolledBack, want) {
+		t.Fatalf("a1 = %+v", a1)
+	}
+}
+
+// A rollback on its own that fails stops the site: the end says it, and the rollback stays offered.
+func TestARollbackOnItsOwnThatFails(t *testing.T) {
+	u, ev, ids := updatesService(t, map[string]bool{"cannot roll a1": true}, nil)
+	if _, err := u.Preview(context.Background(), ids["a1"]); err != nil {
+		t.Fatal(err)
+	}
+	ended := make(chan app.RunEnd, 1)
+	u.OnEnded = func(e app.RunEnd) { ended <- e }
+	if p := u.Update(ids["a1"], app.SelectionView{Plugins: []string{"akismet"}}); p != nil {
+		t.Fatal(p)
+	}
+	ev.done(t, 1)
+	end := <-ended
+	if end.Failed != 1 || !end.RollbackFailed || end.RolledBack != 0 || end.FailedItem != "Akismet Anti-spam: Spam Protection" || end.NotStarted != 0 {
+		t.Fatalf("end = %+v", end)
+	}
+	history, err := u.History(context.Background(), ids["a1"])
+	if err != nil || len(history) != 2 || history[0].Kind != "rollback" || history[0].Outcome != "failed" {
+		t.Fatalf("History() = %+v, %v", history, err)
+	}
+	// The update still offers its rollback, to try it again.
+	if history[0].Rollback != nil || history[1].Rollback == nil || history[1].Rollback.Slug != "akismet" {
+		t.Errorf("offered: rollback %+v, update %+v", history[0].Rollback, history[1].Rollback)
+	}
 }

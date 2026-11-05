@@ -175,6 +175,15 @@ type UpdateView struct {
 	// with the others.
 	Key    string      `json:"key"`
 	Ignore *IgnoreView `json:"ignore"` // nil unless ignored
+	// SetAside: this version went back on its own after it broke the site (ADR-0042); Update all
+	// leaves it out until a newer one. Nil otherwise.
+	SetAside *SetAsideView `json:"setAside"`
+}
+
+// SetAsideView is when and why a version was set aside: the check that failed after its update.
+type SetAsideView struct {
+	Created string `json:"created"` // RFC 3339
+	Reason  string `json:"reason"`
 }
 
 // SiteRow is a line of the table of a host or folder.
@@ -291,6 +300,17 @@ func extensionViews(items []model.ScanItem, findings []FindingView) []ExtensionV
 	return views
 }
 
+// markSetAside marks the updates offered to the very version set aside on the site.
+func markSetAside(updates []UpdateView, asides []model.SetAside) {
+	for i, u := range updates {
+		for _, a := range asides {
+			if string(a.Kind) == u.Kind && a.Slug == u.Slug && a.Version == u.UpdateVersion {
+				updates[i].SetAside = &SetAsideView{Created: rfc3339(a.Created), Reason: a.Reason}
+			}
+		}
+	}
+}
+
 // ignoreView is why and until when a finding or an update is set aside; nil when it is not.
 func ignoreView(i *model.Ignore) *IgnoreView {
 	if i == nil {
@@ -385,6 +405,11 @@ func (s *SiteManager) SiteDetail(ctx context.Context, siteID string) (SiteView, 
 	if scanned {
 		view.Subsites = subsiteViews(site, &scan)
 		view.Scan = scanView(scan)
+		asides, err := s.repo.SetAsides(ctx, id)
+		if err != nil {
+			return SiteView{}, err
+		}
+		markSetAside(view.Scan.Updates, asides)
 		if err := s.changes(ctx, &view, scan); err != nil {
 			return SiteView{}, err
 		}

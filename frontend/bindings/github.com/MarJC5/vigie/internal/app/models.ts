@@ -50,6 +50,11 @@ export interface ActivityEntry {
      * an operation's
      */
     "summary": string;
+
+    /**
+     * Automatic: a rollback Vigie ran on its own after a failed check (ADR-0042).
+     */
+    "automatic": boolean;
     "changes": Change[] | null;
 
     /**
@@ -1120,6 +1125,16 @@ export interface OperationView {
     "steps": StepView[] | null;
 
     /**
+     * OfOperation is the update a rollback undoes, when known; "" otherwise.
+     */
+    "ofOperation": string;
+
+    /**
+     * Automatic: a rollback Vigie ran on its own after a failed check (ADR-0042).
+     */
+    "automatic": boolean;
+
+    /**
      * Rollback is what a rollback would undo, on the latest operation only; nil otherwise.
      */
     "rollback": UpdateItemView | null;
@@ -1163,6 +1178,18 @@ export interface PendingView {
 export interface Problem {
     "code": string;
     "detail": string;
+}
+
+/**
+ * RolledBackView is an item that went back on its own: the version that broke the site, the one
+ * it went back to, and the check that failed.
+ */
+export interface RolledBackView {
+    "kind": string;
+    "slug": string;
+    "version": string;
+    "backTo": string;
+    "reason": string;
 }
 
 /**
@@ -1351,6 +1378,17 @@ export interface SelfUpdateView {
 }
 
 /**
+ * SetAsideView is when and why a version was set aside: the check that failed after its update.
+ */
+export interface SetAsideView {
+    /**
+     * RFC 3339
+     */
+    "created": string;
+    "reason": string;
+}
+
+/**
  * SettingView is something a run asks for.
  */
 export interface SettingView {
@@ -1440,6 +1478,11 @@ export interface SiteResultView {
      */
     "detail": string;
     "operationId": string;
+
+    /**
+     * RolledBack are the items that broke the site and went back on their own (ADR-0042).
+     */
+    "rolledBack": RolledBackView[] | null;
 }
 
 /**
@@ -1689,6 +1732,12 @@ export interface UpdateView {
      * nil unless ignored
      */
     "ignore": IgnoreView | null;
+
+    /**
+     * SetAside: this version went back on its own after it broke the site (ADR-0042); Update all
+     * leaves it out until a newer one. Nil otherwise.
+     */
+    "setAside": SetAsideView | null;
 }
 
 /**

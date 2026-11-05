@@ -48,15 +48,23 @@ type RunEnd struct {
 	FailedItem string
 	NotStarted int
 
+	// The items that broke a site and went back on their own (ADR-0042): how many, over every
+	// site; for one site and one item, its title. RollbackFailed: the rollback of FailedItem failed.
+	RolledBack     int
+	RolledBackItem string
+	RollbackFailed bool
+
 	// A copy of a site to the computer (ADR-0041): the archives it wrote; Failed is 1 when it was
 	// cut.
 	Archives int
 }
 
-// Notifies tells whether the end is worth a notification: a run the user started, long enough,
-// not stopped.
+// Notifies tells whether the end is worth a notification: a run the user started, not stopped,
+// long enough, or with an item that went back on its own or a rollback that failed, which are
+// always said (ADR-0042, point 6).
 func (e RunEnd) Notifies() bool {
-	return e.By == model.RunByUser && !e.Cancelled && e.Finished.Sub(e.Started) >= LongRun
+	said := e.RolledBack > 0 || e.RollbackFailed
+	return e.By == model.RunByUser && !e.Cancelled && (said || e.Finished.Sub(e.Started) >= LongRun)
 }
 
 // EndText is what the notification of a run's end says: its title and body, and the line the
@@ -96,6 +104,9 @@ func EndNotice(e RunEnd, alerts []Alert, label func(key string, vars map[string]
 	case e.Several:
 		title = label("notify.end.updateTitle", nil)
 		details = append(details, n("sitesUpdated", e.Updated))
+		if e.RolledBack > 0 {
+			details = append(details, n("rolledBack", e.RolledBack))
+		}
 		if e.Failed > 0 {
 			details = append(details, n("sitesFailed", e.Failed))
 		}
@@ -110,13 +121,25 @@ func EndNotice(e RunEnd, alerts []Alert, label func(key string, vars map[string]
 		case item == "":
 			item = label("notify.end.step", nil)
 		}
-		details = append(details, label("notify.end.itemFailed", map[string]any{"item": item}))
+		failed := "notify.end.itemFailed"
+		if e.RollbackFailed {
+			failed = "notify.end.rollbackFailed"
+		}
+		details = append(details, label(failed, map[string]any{"item": item}))
 		if e.NotStarted > 0 {
 			details = append(details, n("notStarted", e.NotStarted))
 		}
 	default:
 		title = label("notify.end.updateTitle", nil)
-		details = append(details, n("itemsUpdated", e.Items))
+		if e.Items > 0 || e.RolledBack == 0 {
+			details = append(details, n("itemsUpdated", e.Items))
+		}
+		switch {
+		case e.RolledBack == 1 && e.RolledBackItem != "":
+			details = append(details, label("notify.end.itemRolledBack", map[string]any{"item": e.RolledBackItem}))
+		case e.RolledBack > 0:
+			details = append(details, n("rolledBack", e.RolledBack))
+		}
 	}
 	what := e.Name
 	switch {

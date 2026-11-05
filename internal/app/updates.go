@@ -81,6 +81,10 @@ type OperationView struct {
 	Summary   string     `json:"summary"`
 	BackupDir string     `json:"backupDir"`
 	Steps     []StepView `json:"steps"`
+	// OfOperation is the update a rollback undoes, when known; "" otherwise.
+	OfOperation string `json:"ofOperation"`
+	// Automatic: a rollback Vigie ran on its own after a failed check (ADR-0042).
+	Automatic bool `json:"automatic"`
 	// Rollback is what a rollback would undo, on the latest operation only; nil otherwise.
 	Rollback *UpdateItemView `json:"rollback"`
 }
@@ -92,6 +96,18 @@ type SiteResultView struct {
 	Outcome     string `json:"outcome"` // updated, failed, refused, nothing, not-started, cancelled
 	Detail      string `json:"detail"`  // the step that failed, or why it was refused
 	OperationID string `json:"operationId"`
+	// RolledBack are the items that broke the site and went back on their own (ADR-0042).
+	RolledBack []RolledBackView `json:"rolledBack"`
+}
+
+// RolledBackView is an item that went back on its own: the version that broke the site, the one
+// it went back to, and the check that failed.
+type RolledBackView struct {
+	Kind    string `json:"kind"`
+	Slug    string `json:"slug"`
+	Version string `json:"version"`
+	BackTo  string `json:"backTo"`
+	Reason  string `json:"reason"`
 }
 
 // BulkView is how an update of several sites ended: the items it covered, as the window asked for
@@ -372,6 +388,11 @@ func (u *Updates) updatedEnd(end RunEnd, planned []workspace.Planned, results []
 		case workspace.SiteFailed:
 			end.Failed++
 		}
+		for _, back := range r.Rollbacks {
+			if back.Outcome == model.OperationCompleted {
+				end.RolledBack++
+			}
+		}
 	}
 	if end.Several || len(results) != 1 {
 		return end
@@ -381,24 +402,45 @@ func (u *Updates) updatedEnd(end RunEnd, planned []workspace.Planned, results []
 		kind model.ItemKind
 		slug string
 	}
+	// The items that went back on their own, and the one whose rollback failed.
+	rolled, failedBack := map[item]bool{}, map[item]bool{}
+	for _, back := range results[0].Rollbacks {
+		for _, st := range back.Steps {
+			if st.Step == model.StepRestoreFiles {
+				if back.Outcome == model.OperationCompleted {
+					rolled[item{st.ItemKind, st.Slug}] = true
+				} else {
+					failedBack[item{st.ItemKind, st.Slug}] = true
+				}
+			}
+		}
+	}
 	var failed *item
 	for _, st := range op.Steps {
-		if st.Outcome == model.StepFailed {
-			failed = &item{st.ItemKind, st.Slug}
-			end.FailedKind, end.FailedItem = st.ItemKind, st.Slug
+		if it := (item{st.ItemKind, st.Slug}); st.Outcome == model.StepFailed && !rolled[it] {
+			failed = &it
+			end.FailedKind, end.FailedItem, end.RollbackFailed = st.ItemKind, st.Slug, failedBack[it]
 			break
 		}
 	}
 	done := map[item]bool{}
 	for _, st := range op.Steps {
 		it := item{st.ItemKind, st.Slug}
-		if st.Step == model.StepUpdate && st.Outcome == model.StepDone && st.ItemKind != "" && (failed == nil || it != *failed) {
+		if st.Step == model.StepUpdate && st.Outcome == model.StepDone && st.ItemKind != "" && (failed == nil || it != *failed) && !rolled[it] {
 			done[it] = true
 		}
 	}
 	end.Items = len(done)
+	if len(rolled) == 1 {
+		for it := range rolled {
+			end.RolledBackItem = u.itemTitle(op.SiteID, it.kind, it.slug)
+			if end.RolledBackItem == "" {
+				end.RolledBackItem = it.slug
+			}
+		}
+	}
 	if failed != nil {
-		end.NotStarted = max(0, plannedItems(planned[0])-end.Items-1)
+		end.NotStarted = max(0, plannedItems(planned[0])-end.Items-len(rolled)-1)
 		if failed.kind == model.ItemCore || failed.kind == model.ItemLanguage {
 			end.FailedItem = ""
 		} else if title := u.itemTitle(op.SiteID, failed.kind, failed.slug); title != "" {
@@ -504,8 +546,8 @@ func (u *Updates) State() UpdatesState {
 	return state
 }
 
-// History lists the updates and rollbacks of a site, the newest first; the newest says what a
-// rollback would undo, when it can.
+// History lists the updates and rollbacks of a site, the newest first; the latest update says what
+// a rollback would undo, when it can.
 func (u *Updates) History(ctx context.Context, siteID string) ([]OperationView, error) {
 	id, err := uuid.Parse(siteID)
 	if err != nil {
@@ -519,10 +561,16 @@ func (u *Updates) History(ctx context.Context, siteID string) ([]OperationView, 
 	for i, op := range ops {
 		views[i] = operationView(op)
 	}
-	if len(ops) > 0 {
-		if item, ok := update.RollbackOf(ops[0]); ok {
+	// The latest update offers its rollback, unless a rollback after it passed: one of its own
+	// (ADR-0042), or one stored before the rollbacks named their update.
+	if i := slices.IndexFunc(ops, func(op model.Operation) bool { return op.Kind == model.OperationUpdate }); i >= 0 {
+		undone := slices.ContainsFunc(ops[:i], func(later model.Operation) bool {
+			return later.Kind == model.OperationRollback && later.Outcome == model.OperationCompleted &&
+				(later.OfOperation == model.NoID || later.OfOperation == ops[i].ID)
+		})
+		if item, ok := update.RollbackOf(ops[i]); ok && !undone {
 			v := itemView(workspace.SitePreview{}, item)
-			views[0].Rollback = &v
+			views[i].Rollback = &v
 		}
 	}
 	return views, nil
@@ -549,12 +597,25 @@ func (u *Updates) step(op model.Operation, st model.OperationStep) {
 	u.send()
 }
 
-// ended takes a site's operation out of the running ones.
+// ended takes a site's operation out of the running ones, with the rollbacks it ran on its own.
 func (u *Updates) ended(r workspace.SiteUpdate) {
+	for _, back := range r.Rollbacks {
+		u.finish(back.ID)
+	}
 	if r.Operation.ID != model.NoID {
 		u.finish(r.Operation.ID)
 	}
 	u.send()
+}
+
+// AutoRollback tells whether plugins and themes that break a site roll back on their own.
+func (u *Updates) AutoRollback(ctx context.Context) (bool, error) {
+	return u.ws.AutoRollback(ctx)
+}
+
+// SetAutoRollback turns the rollback on its own on or off (Settings, General).
+func (u *Updates) SetAutoRollback(ctx context.Context, on bool) *Problem {
+	return ProblemOf(u.ws.SetAutoRollback(ctx, on))
 }
 
 func (u *Updates) finish(id model.ID) {
@@ -575,7 +636,10 @@ func operationView(op model.Operation) OperationView {
 	v := OperationView{
 		ID: op.ID.String(), SiteID: op.SiteID.String(), Kind: string(op.Kind), Started: timeText(op.Started),
 		Finished: timeText(op.Finished), Outcome: string(op.Outcome), Summary: op.Summary, BackupDir: op.BackupDir,
-		Steps: make([]StepView, len(op.Steps)),
+		Steps: make([]StepView, len(op.Steps)), Automatic: op.Automatic,
+	}
+	if op.OfOperation != model.NoID {
+		v.OfOperation = op.OfOperation.String()
 	}
 	for i, st := range op.Steps {
 		v.Steps[i] = stepView(st)
@@ -592,13 +656,28 @@ func stepView(st model.OperationStep) StepView {
 }
 
 func resultView(r workspace.SiteUpdate) SiteResultView {
-	v := SiteResultView{SiteID: r.Site.ID.String(), Path: r.Path, Outcome: string(r.Outcome)}
+	v := SiteResultView{SiteID: r.Site.ID.String(), Path: r.Path, Outcome: string(r.Outcome), RolledBack: []RolledBackView{}}
+	for _, back := range r.Rollbacks {
+		i := slices.IndexFunc(back.Steps, func(st model.OperationStep) bool { return st.Step == model.StepRestoreFiles })
+		if back.Outcome != model.OperationCompleted || i < 0 {
+			continue
+		}
+		restored := back.Steps[i]
+		rv := RolledBackView{Kind: string(restored.ItemKind), Slug: restored.Slug, Version: restored.VersionBefore, BackTo: restored.VersionAfter}
+		for _, st := range r.Operation.Steps {
+			if st.Step == model.StepCheck && st.Outcome == model.StepFailed && st.ItemKind == restored.ItemKind && st.Slug == restored.Slug {
+				rv.Reason = st.Message
+			}
+		}
+		v.RolledBack = append(v.RolledBack, rv)
+	}
 	if r.Err != nil {
 		if p := ProblemOf(r.Err); p != nil {
 			v.Detail = p.Code
 		}
 	}
-	for i := len(r.Operation.Steps) - 1; i >= 0; i-- {
+	// A site updated has no detail: an item that went back on its own is in RolledBack.
+	for i := len(r.Operation.Steps) - 1; i >= 0 && r.Outcome != workspace.SiteUpdated; i-- {
 		if r.Operation.Steps[i].Outcome == model.StepFailed {
 			v.Detail = r.Operation.Steps[i].Message
 			break

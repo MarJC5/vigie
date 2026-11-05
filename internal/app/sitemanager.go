@@ -46,6 +46,7 @@ type siteData interface {
 	store.Repository
 	store.ScanRepository
 	Operations(ctx context.Context, siteID model.ID) ([]model.Operation, error)
+	SetAsides(ctx context.Context, siteID model.ID) ([]model.SetAside, error)
 }
 
 // SiteManager serves the site manager to the interface.
