@@ -33,8 +33,19 @@ and no new `PHP Fatal error` may appear in `debug.log` (when WordPress keeps one
 4xx answers pass. The first check comes 3 seconds after the item, then one each second for 3
 seconds, so PHP's OPcache serves the new code.
 
-The update **stops at the first failure**: the next items are not started. Stopping a run from the
-window or with Ctrl-C lets the current item end; an item is never left halfway.
+A **plugin or theme that fails its check goes back on its own**: its folder is put back from its
+archive, the site is checked again, and the update goes on with the next items. The version that
+broke the site is **set aside** on that site: **Update all**, a selection and `vigie update` leave
+it out, and say so, until a newer version is offered or you tick it in the Updates tab. The update
+window, the summary of an Update all, the end notification (even for a short run), the site's
+History and the Activity journal all say what went back. Vigie never puts WordPress itself back on
+its own: its rollback restores the database too (see below). **Settings, General, Roll back on its
+own** turns this off.
+
+Otherwise the update **stops at the first failure**: the next items are not started. So it does
+for WordPress, for a rollback on its own that fails, and with the setting off. Stopping a run from
+the window or with Ctrl-C lets the current item end; an item, and its rollback, are never left
+halfway.
 
 ## What Vigie writes on the server
 
@@ -79,7 +90,10 @@ confirmation. The history of the updates stays in Vigie's own database, on your 
 
 ## Rolling back
 
-A rollback is offered on the latest update of a site, when it failed:
+A plugin or theme that broke the site went back on its own already (see above), as an operation
+of its own in the site's History, above its update. The rollback below is offered on the latest
+update of a site, when it failed: WordPress, a rollback on its own that failed (to try it again),
+or a run with the setting off.
 
 - **A plugin or theme**: its folder is removed, then put back from its archive; the site is checked
   again. The database is not touched: a plugin that changed its tables during the update keeps

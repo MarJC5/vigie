@@ -39,9 +39,20 @@ apparaître dans `debug.log` (quand WordPress en tient un). Les redirections et 
 passent. La première vérification a lieu 3 secondes après l'élément, puis une chaque seconde
 pendant 3 secondes, le temps que l'OPcache de PHP serve le nouveau code.
 
-La mise à jour **s'arrête au premier échec** : les éléments suivants ne sont pas commencés. Arrêter
-depuis la fenêtre ou avec Ctrl-C laisse finir l'élément en cours : un élément n'est jamais laissé à
-moitié.
+Une **extension ou un thème qui rate sa vérification revient en arrière tout seul** : son dossier
+est remis depuis son archive, le site est vérifié à nouveau, et la mise à jour continue avec les
+éléments suivants. La version qui a cassé le site est **mise de côté** sur ce site : **Tout mettre
+à jour**, une sélection et `vigie update` la laissent de côté, et le disent, jusqu'à ce qu'une
+version plus récente soit proposée ou que vous la cochiez dans l'onglet Mises à jour. La fenêtre de
+mise à jour, le bilan d'un Tout mettre à jour, la notification de fin (même pour une exécution
+courte), l'onglet Historique du site et le journal d'Activité disent ce qui est revenu en arrière.
+Vigie ne remet jamais WordPress lui-même tout seul : son retour restaure aussi la base de données
+(voir plus bas). **Réglages, Général, Retour en arrière automatique** coupe ce comportement.
+
+Sinon la mise à jour **s'arrête au premier échec** : les éléments suivants ne sont pas commencés.
+C'est le cas pour WordPress, pour un retour en arrière automatique qui échoue, et avec le réglage
+coupé. Arrêter depuis la fenêtre ou avec Ctrl-C laisse finir l'élément en cours : un élément, et
+son retour en arrière, ne sont jamais laissés à moitié.
 
 ## Ce que Vigie écrit sur le serveur
 
@@ -88,7 +99,10 @@ reste dans la base de Vigie, sur votre ordinateur.
 
 ## Revenir en arrière
 
-Un retour en arrière est proposé sur la dernière mise à jour d'un site, quand elle a échoué :
+Une extension ou un thème qui a cassé le site est déjà revenu tout seul (voir plus haut), comme
+une opération à part dans l'onglet Historique, au-dessus de sa mise à jour. Le retour ci-dessous
+est proposé sur la dernière mise à jour d'un site, quand elle a échoué : WordPress, un retour
+automatique qui a échoué (pour le réessayer), ou une exécution avec le réglage coupé.
 
 - **Une extension ou un thème** : son dossier est supprimé, puis remis depuis son archive, et le
   site est vérifié à nouveau. La base de données n'est pas touchée : une extension qui a modifié ses

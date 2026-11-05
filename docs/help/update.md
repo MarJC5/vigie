@@ -10,7 +10,9 @@ of a host or folder.
 3. Start the update. Vigie backs up the database and the folders concerned, updates one item at a
    time, and **checks the site** after each.
 
-At the first problem, the update stops: the next items are not started.
+A plugin or theme that breaks the site goes **back on its own**, and the update goes on. Its
+version is **set aside**: **Update all** leaves it out until a newer one. For WordPress, the update
+stops at the first problem.
 
 For every site of a host or folder, open it and choose **Update all**: a preview by site, then
 each site is updated as above.

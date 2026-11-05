@@ -75,7 +75,9 @@ ce qu'un add-on répond.
 
 **Jamais dans un export** : les clés privées, les mots de passe, les réglages de cet ordinateur
 (langue, votre accord pour les recherches qui en partent), les réponses que Vigie garde des
-services extérieurs.
+services extérieurs. Pas encore dans le format, gardés sur cet ordinateur : les versions mises de
+côté après un retour en arrière automatique, et la mise à jour qu'un tel retour a défaite (un
+retour importé se lit comme lancé par vous).
 
 **Sensible** : un export nomme vos serveurs, vos utilisateurs SSH et contient vos notes. Vigie
 l'écrit lisible par vous seul (`0600`), par un fichier temporaire renommé à la fin : un export

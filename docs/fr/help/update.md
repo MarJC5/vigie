@@ -10,7 +10,8 @@ les sites d'un hébergement ou d'un dossier.
 3. Lancez la mise à jour. Vigie sauvegarde la base de données et les dossiers concernés, met à
    jour un élément à la fois, et **vérifie le site** après chacun.
 
-Au premier problème, la mise à jour s'arrête : les éléments suivants ne sont pas lancés.
+Une extension ou un thème qui casse le site **revient en arrière tout seul**, puis la mise à jour
+continue. Sa version est **mise de côté** jusqu'à une plus récente. WordPress, lui, arrête tout.
 
 Pour tous les sites d'un hébergement ou d'un dossier, ouvrez-le et choisissez **Tout mettre à
 jour** : un aperçu par site, puis chaque site est mis à jour comme ci-dessus.

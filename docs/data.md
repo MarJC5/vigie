@@ -72,7 +72,9 @@ format. An add-on in another language reads the JSON Schema. See [addons.md](add
   their steps.
 
 **Never in an export**: private keys, passwords, the settings of this computer (language, your
-consent to lookups from it), the answers Vigie keeps from outside services.
+consent to lookups from it), the answers Vigie keeps from outside services. Not in the format yet,
+kept on this computer: the versions set aside after a rollback on its own, and which update such a
+rollback undid (an imported rollback reads as one you started).
 
 **Sensitive**: an export names your servers, your SSH users and holds your notes. Vigie writes it
 readable by you only (`0600`), through a temporary file renamed at the end, so an interrupted

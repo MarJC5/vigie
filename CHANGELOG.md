@@ -14,6 +14,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   part is split into archives (500 MB by default), a copy cut off resumes with only what is
   missing, and a copy removed goes to the Trash. Settings, Data sets the folder of the copies and
   the size of the archives. Also `vigie copy` on the command line.
+- **Rollback on its own**: a plugin or theme whose check fails after its update goes back to its
+  version before, and the update goes on with the next items. The version is set aside on the site:
+  Update all and `vigie update` leave it out until a newer one is offered. The update window, the
+  summary of an Update all, the end notification, the History tab and the journal say it.
+  WordPress itself still waits for your choice. On by default, in Settings, General.
 
 ### Changed
 
