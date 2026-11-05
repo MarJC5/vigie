@@ -23,6 +23,8 @@ export default defineConfig({
         // Every story is a component test, in the engines the app runs on.
         extends: true,
         plugins: [storybookTest({ configDir: path.join(dirname, ".storybook") })],
+        // The tests render every story in both themes (.storybook/preview.tsx).
+        define: { "import.meta.env.STORYBOOK_BOTH_THEMES": JSON.stringify("1") },
         test: {
           name: "storybook",
           browser: {
