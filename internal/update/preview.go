@@ -27,6 +27,9 @@ type Job struct {
 	// Siblings are the other sites of this Vigie on the account, whose backups the limits apply to
 	// at the end of an update too.
 	Siblings []model.ID
+	// AutoRollback puts back on its own a plugin or theme whose check fails, then goes on with the
+	// next items (ADR-0042); off, the run stops there and the rollback is offered.
+	AutoRollback bool
 }
 
 // Updater previews and runs updates.

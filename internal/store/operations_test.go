@@ -179,3 +179,29 @@ func TestOperationsBeforeTheRollbackOnItsOwn(t *testing.T) {
 		t.Errorf("Operations() = %+v, want one rollback by the user", ops)
 	}
 }
+
+// The update a rollback on its own comes from still runs: that rollback starts, nothing else does.
+func TestRollbackOnItsOwnStartsWhileItsUpdateRuns(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	site, _ := withSites(t, db)
+	upd := running(site, t0, os.Getpid())
+	must(t, db.StartOperation(ctx, upd))
+
+	byUser := running(site, t0.Add(time.Second), os.Getpid())
+	byUser.Kind, byUser.OfOperation = model.OperationRollback, upd.ID
+	if err := db.StartOperation(ctx, byUser); !errors.Is(err, store.ErrBusy) {
+		t.Errorf("a rollback by the user during the update: %v, want ErrBusy", err)
+	}
+	other := running(site, t0.Add(time.Second), os.Getpid())
+	other.Kind, other.OfOperation, other.Automatic = model.OperationRollback, model.NewID(), true
+	if err := db.StartOperation(ctx, other); !errors.Is(err, store.ErrBusy) {
+		t.Errorf("a rollback of another update: %v, want ErrBusy", err)
+	}
+	back := running(site, t0.Add(time.Second), os.Getpid())
+	back.Kind, back.OfOperation, back.Automatic = model.OperationRollback, upd.ID, true
+	must(t, db.StartOperation(ctx, back))
+	if ops, err := db.Operations(ctx, site.ID); err != nil || len(ops) != 2 || ops[1].Outcome != model.OperationRunning {
+		t.Errorf("Operations() = %+v, %v; the update keeps running", ops, err)
+	}
+}

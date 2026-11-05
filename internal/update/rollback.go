@@ -55,18 +55,30 @@ func (u Updater) Rollback(ctx context.Context, job Job, failed model.Operation) 
 	if !ok {
 		return model.Operation{}, ErrNothingToRollBack
 	}
+	folder := archivedFolder(failed, item)
+	if folder == "" {
+		return model.Operation{}, fmt.Errorf("no archive of %s: %w", item.Slug, ErrNothingToRollBack)
+	}
+	return u.rollback(ctx, job, item, folder, failed, false)
+}
+
+// archivedFolder is the folder of an item as its archive was taken in an update; "" without one.
+func archivedFolder(op model.Operation, item Item) string {
 	folder := ""
-	for _, st := range failed.Steps {
+	for _, st := range op.Steps {
 		if st.Step == model.StepBackupFiles && st.ItemKind == item.Kind && st.Slug == item.Slug && st.Outcome == model.StepDone {
 			folder = st.Message
 		}
 	}
-	if folder == "" {
-		return model.Operation{}, fmt.Errorf("no archive of %s: %w", item.Slug, ErrNothingToRollBack)
-	}
+	return folder
+}
+
+// rollback runs the rollback of an item of an update, recorded as an operation of its own linked
+// to it; automatic when Vigie started it after a failed check (ADR-0042).
+func (u Updater) rollback(ctx context.Context, job Job, item Item, folder string, of model.Operation, automatic bool) (model.Operation, error) {
 	op := model.Operation{
 		ID: model.NewID(), SiteID: job.Site.ID, Kind: model.OperationRollback, Started: u.Now(),
-		Outcome: model.OperationRunning, BackupDir: failed.BackupDir, PID: u.PID,
+		Outcome: model.OperationRunning, BackupDir: of.BackupDir, PID: u.PID, OfOperation: of.ID, Automatic: automatic,
 	}
 	if err := u.Store.StartOperation(ctx, op); err != nil {
 		return op, err

@@ -43,6 +43,10 @@ func (db *DB) StartOperation(ctx context.Context, op model.Operation) error {
 			return err
 		}
 		for id, pid := range stale {
+			// The update a rollback on its own comes from runs on, waiting for it (ADR-0042).
+			if op.Automatic && id == optionalID(op.OfOperation) {
+				continue
+			}
 			if processAlive(pid) {
 				return ErrBusy
 			}

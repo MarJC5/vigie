@@ -118,26 +118,59 @@ func (r *run) update(ctx context.Context, items []Item, languages []Item, withLa
 	if !r.backups(ctx, items) {
 		return model.OperationFailed, fmt.Sprintf("0 of %d", len(items))
 	}
-	done := 0
+	done, rolled := 0, 0
+	summary := func() string {
+		if rolled > 0 {
+			return fmt.Sprintf("%d of %d, %d rolled back", done, len(items), rolled)
+		}
+		return fmt.Sprintf("%d of %d", done, len(items))
+	}
 	for _, it := range items {
 		if ctx.Err() != nil {
-			return model.OperationCancelled, fmt.Sprintf("%d of %d", done, len(items))
+			return model.OperationCancelled, summary()
 		}
-		// An item is never left halfway: a cancel waits for its end.
-		if !r.item(context.WithoutCancel(ctx), it) {
-			return model.OperationFailed, fmt.Sprintf("%d of %d", done, len(items))
+		// An item is never left halfway, nor its rollback: a cancel waits for their end.
+		work := context.WithoutCancel(ctx)
+		if r.item(work, it) {
+			done++
+			continue
 		}
-		done++
+		if !r.s.job.AutoRollback || !r.brokeTheSite(it) || !r.rollBack(work, it) {
+			return model.OperationFailed, summary()
+		}
+		rolled++
 	}
 	if withLanguages && len(languages) > 0 {
 		if ctx.Err() != nil {
-			return model.OperationCancelled, fmt.Sprintf("%d of %d", done, len(items))
+			return model.OperationCancelled, summary()
 		}
 		if !r.translations(context.WithoutCancel(ctx)) {
-			return model.OperationFailed, fmt.Sprintf("%d of %d", done, len(items))
+			return model.OperationFailed, summary()
 		}
 	}
-	return model.OperationCompleted, fmt.Sprintf("%d of %d", done, len(items))
+	return model.OperationCompleted, summary()
+}
+
+// brokeTheSite tells whether the item just updated is a plugin or theme that installed and failed
+// its check: what rolls back on its own (ADR-0042). WordPress never does, nor an item WordPress
+// could not install, which kept its old version.
+func (r *run) brokeTheSite(it Item) bool {
+	if it.Kind != model.ItemPlugin && it.Kind != model.ItemTheme || len(r.op.Steps) == 0 {
+		return false
+	}
+	last := r.op.Steps[len(r.op.Steps)-1]
+	return last.Step == model.StepCheck && last.Outcome == model.StepFailed && last.ItemKind == it.Kind && last.Slug == it.Slug
+}
+
+// rollBack puts an item that broke the site back on its own, as an operation of its own linked to
+// the update; true when the site passes its checks again.
+func (r *run) rollBack(ctx context.Context, it Item) bool {
+	folder := archivedFolder(*r.op, it)
+	if folder == "" {
+		return false
+	}
+	back, err := r.s.u.rollback(ctx, r.s.job, it, folder, *r.op, true)
+	return err == nil && back.Outcome == model.OperationCompleted
 }
 
 // prepare reads the site's folder and where its PHP errors go.
