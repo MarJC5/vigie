@@ -6,12 +6,13 @@ export interface ChoiceCardProps {
   text: string;
   selected: boolean;
   onSelect: () => void;
+  disabled?: boolean;
 }
 
 /** One of several exclusive choices, as a card; the chosen one has a check in a corner. */
-export function ChoiceCard({ title, text, selected, onSelect }: ChoiceCardProps) {
+export function ChoiceCard({ title, text, selected, onSelect, disabled = false }: ChoiceCardProps) {
   return (
-    <button type="button" aria-pressed={selected} className={styles.card} onClick={onSelect}>
+    <button type="button" aria-pressed={selected} disabled={disabled} className={styles.card} onClick={onSelect}>
       {selected && (
         <span className={styles.corner} aria-hidden="true">
           <Icon name="check" size={12} />

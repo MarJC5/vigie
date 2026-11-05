@@ -55,7 +55,7 @@ export const Everything: Story = {
 export const AFolderOrAHost: Story = {
   play: async ({ canvasElement, args }) => {
     const dialog = within(canvasElement.querySelector<HTMLElement>("[data-theme=light] [role=dialog]")!);
-    await userEvent.click(dialog.getByRole("radio", { name: /A folder or a host/ }));
+    await userEvent.click(dialog.getByRole("button", { name: /A folder or a host/ }));
     await expect(args.onNode).toHaveBeenCalledWith("clients");
     await userEvent.selectOptions(dialog.getByRole("combobox", { name: "A folder or a host" }), "shared");
     await expect(args.onNode).toHaveBeenLastCalledWith("shared");

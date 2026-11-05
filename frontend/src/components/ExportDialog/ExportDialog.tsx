@@ -1,10 +1,10 @@
-import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { ExportSummary, Node, Problem } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { countsText, exportOptions, sizeText } from "../../lib/data";
 import { Button } from "../Button/Button";
 import { Checkbox } from "../Checkbox/Checkbox";
+import { ChoiceCard } from "../ChoiceCard/ChoiceCard";
 import { Dialog } from "../Dialog/Dialog";
 import { Icon } from "../Icon/Icon";
 import { Notice } from "../Notice/Notice";
@@ -32,7 +32,6 @@ export interface ExportDialogProps {
 /** Export the site manager, or a folder or host of it, with or without the history. */
 export function ExportDialog({ nodes, nodeId, onNode, history, onHistory, summary, onExport, onClose, busy = false, problem }: ExportDialogProps) {
   const { t, i18n } = useTranslation();
-  const group = useId();
   const options = exportOptions(nodes);
   const counts =
     summary &&
@@ -63,32 +62,22 @@ export function ExportDialog({ nodes, nodeId, onNode, history, onHistory, summar
       {problem && <Notice title={t("data.export.failed")} text={t(problem.code, { message: problem.detail })} />}
       <fieldset className={styles.group}>
         <legend className={styles.legend}>{t("data.export.what")}</legend>
-        <label className={styles.choice} data-selected={all || undefined}>
-          <input type="radio" name={group} className={styles.radio} checked={all} onChange={() => onNode("")} />
-          <span className={styles.text}>
-            <span className={styles.title}>{t("data.export.all")}</span>
-            {all && counts && <span className={styles.hint}>{counts}</span>}
-          </span>
-        </label>
-        <label className={styles.choice} data-selected={!all || undefined}>
-          <input
-            type="radio"
-            name={group}
-            className={styles.radio}
-            checked={!all}
-            disabled={options.length === 0}
-            onChange={() => onNode(options[0]?.value ?? "")}
+        <div className={styles.cards}>
+          <ChoiceCard
+            title={t("data.export.all")}
+            text={all && counts ? counts : t("data.export.allHint")}
+            selected={all}
+            onSelect={() => onNode("")}
           />
-          <span className={styles.text}>
-            <span className={styles.title}>{t("data.export.node")}</span>
-            {!all && counts && <span className={styles.hint}>{counts}</span>}
-          </span>
-          {!all && (
-            <span className={styles.select}>
-              <SelectField label={t("data.export.node")} hideLabel value={nodeId} options={options} onChange={onNode} />
-            </span>
-          )}
-        </label>
+          <ChoiceCard
+            title={t("data.export.node")}
+            text={!all && counts ? counts : t("data.export.nodeHint")}
+            selected={!all}
+            disabled={options.length === 0}
+            onSelect={() => all && onNode(options[0]?.value ?? "")}
+          />
+        </div>
+        {!all && <SelectField label={t("data.export.node")} hideLabel value={nodeId} options={options} onChange={onNode} />}
       </fieldset>
       <Checkbox
         label={t("data.export.history")}

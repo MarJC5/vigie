@@ -32,7 +32,7 @@ test("the Security tab lists the findings by group, the ignored one last", async
 test("a finding is set aside with a reason, then put back", async () => {
   await panel().getByRole("button", { name: "Ignore “Files can be edited from the dashboard”" }).click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("radio", { name: /Permanently/ })).toBeChecked();
+  await expect(dialog.getByRole("button", { name: /Permanently/ })).toHaveAttribute("aria-pressed", "true");
   await expect(dialog.getByRole("button", { name: "Ignore" })).toBeDisabled();
   await dialog.getByRole("textbox", { name: "Reason" }).fill("Edited through deployments only");
   await dialog.getByRole("button", { name: "Ignore" }).click();
@@ -75,7 +75,7 @@ test("an update is ignored with a reason, then put back", async () => {
 
   await panel().getByRole("button", { name: "Ignore the update of Akismet Anti-spam" }).click();
   const dialog = page.getByRole("dialog", { name: "Ignore the update of Akismet Anti-spam?" });
-  await dialog.getByRole("radio", { name: /Permanently/ }).check();
+  await dialog.getByRole("button", { name: /Permanently/ }).click();
   await dialog.getByRole("textbox").fill("The theme uses its internal API");
   await dialog.getByRole("button", { name: "Ignore" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);

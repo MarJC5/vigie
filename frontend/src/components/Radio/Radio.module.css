@@ -1,0 +1,64 @@
+.row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.row[data-disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* The native radio, unseen but in place: it takes the clicks, the focus and the arrow keys. */
+.control {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+/* The dot Vigie draws: the Checkbox's ground and edge when off, a ring of the accent when on. */
+.dot {
+  width: 18px;
+  height: 18px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  background: var(--vg-field);
+  box-shadow: inset 0 0 0 1.5px var(--vg-border-strong);
+  pointer-events: none;
+}
+
+.input:checked + .dot {
+  background: var(--vg-check-mark);
+  box-shadow: inset 0 0 0 5px var(--vg-accent);
+}
+
+.input:focus-visible + .dot {
+  outline: 2px solid var(--vg-focus);
+  outline-offset: 2px;
+}
+
+/* High contrast (Windows): the system's colors, so that the dot and its choice stay visible. */
+@media (forced-colors: active) {
+  .dot {
+    border: 1.5px solid CanvasText;
+    box-shadow: none;
+  }
+
+  .input:checked + .dot {
+    border: 5px solid Highlight;
+    background: HighlightText;
+  }
+}

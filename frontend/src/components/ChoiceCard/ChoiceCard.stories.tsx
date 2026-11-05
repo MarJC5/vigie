@@ -44,3 +44,13 @@ export const ChooseOne: Story = {
     await expect(host).toHaveAttribute("aria-pressed", "false");
   },
 };
+
+export const Disabled: Story = {
+  args: { title: "A folder or a host", text: "Chosen in the list next.", selected: false, disabled: true },
+  play: async ({ canvas, args }) => {
+    const [card] = canvas.getAllByRole("button", { name: /A folder or a host/ });
+    await expect(card).toBeDisabled();
+    await userEvent.click(card!);
+    await expect(args.onSelect).not.toHaveBeenCalled();
+  },
+};

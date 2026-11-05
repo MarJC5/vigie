@@ -16,8 +16,13 @@
   transition: background-color var(--vg-duration-hover) var(--vg-ease), box-shadow var(--vg-duration-hover) var(--vg-ease);
 }
 
-.card:hover {
+.card:hover:not(:disabled) {
   background: var(--vg-surface-hover);
+}
+
+.card:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .card[aria-pressed="true"] {
@@ -42,7 +47,7 @@
   padding: 4px;
   box-sizing: border-box;
   background: linear-gradient(to bottom left, var(--vg-accent) 50%, transparent 50%);
-  color: var(--vg-text-on-accent);
+  color: var(--vg-check-mark);
 }
 
 .title {

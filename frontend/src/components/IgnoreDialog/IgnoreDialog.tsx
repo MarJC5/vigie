@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { FindingView, Problem } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { findingText } from "../../lib/findings";
 import { Button } from "../Button/Button";
+import { ChoiceCard } from "../ChoiceCard/ChoiceCard";
 import { Dialog } from "../Dialog/Dialog";
 import styles from "./IgnoreDialog.module.css";
 
@@ -54,22 +55,22 @@ export function IgnoreDialog({ finding, update, site, onIgnore, onClose, problem
     >
       <fieldset className={styles.group}>
         <legend className={styles.legend}>{t("security.dialog.how")}</legend>
-        {canWait && (
-          <label className={styles.choice}>
-            <input type="radio" name={`${id}-how`} checked={!forever} onChange={() => setForever(false)} className={styles.radio} />
-            <span className={styles.choiceText}>
-              <span className={styles.choiceTitle}>{update ? t("update.ignoreDialog.untilNext") : t("security.dialog.untilNext", { name })}</span>
-              <span className={styles.hint}>{t(update ? "update.ignoreDialog.untilNextHint" : "security.dialog.untilNextHint", { version })}</span>
-            </span>
-          </label>
-        )}
-        <label className={styles.choice}>
-          <input type="radio" name={`${id}-how`} checked={forever} onChange={() => setForever(true)} className={styles.radio} />
-          <span className={styles.choiceText}>
-            <span className={styles.choiceTitle}>{t("security.dialog.forever")}</span>
-            <span className={styles.hint}>{t("security.dialog.foreverHint")}</span>
-          </span>
-        </label>
+        <div className={styles.cards}>
+          {canWait && (
+            <ChoiceCard
+              title={update ? t("update.ignoreDialog.untilNext") : t("security.dialog.untilNext", { name })}
+              text={t(update ? "update.ignoreDialog.untilNextHint" : "security.dialog.untilNextHint", { version })}
+              selected={!forever}
+              onSelect={() => setForever(false)}
+            />
+          )}
+          <ChoiceCard
+            title={t("security.dialog.forever")}
+            text={t("security.dialog.foreverHint")}
+            selected={forever}
+            onSelect={() => setForever(true)}
+          />
+        </div>
       </fieldset>
       <div className={styles.field}>
         <label htmlFor={`${id}-reason`} className={styles.label}>

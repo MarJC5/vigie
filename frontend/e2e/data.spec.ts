@@ -36,7 +36,7 @@ test("Export in the menu of a host chooses that host", async () => {
   await tree(seeded).getByRole("treeitem", { name: /Shared hosting/ }).click({ button: "right" });
   await seeded.getByRole("menuitem", { name: "Export" }).click();
   const dialog = seeded.getByRole("dialog", { name: "Export the site manager" });
-  await expect(dialog.getByRole("radio", { name: /A folder or a host/ })).toBeChecked();
+  await expect(dialog.getByRole("button", { name: /A folder or a host/ })).toHaveAttribute("aria-pressed", "true");
   await expect(dialog.getByRole("combobox", { name: "A folder or a host" })).toHaveValue(/.+/);
   await expect(dialog).toContainText("1 host, 3 sites");
   await dialog.getByRole("button", { name: "Cancel" }).click();
@@ -47,7 +47,7 @@ test("everything is exported with its history, to a file readable by its owner o
   await dataTab(seeded);
   await seeded.getByRole("tabpanel").getByRole("button", { name: "Export" }).click();
   const dialog = seeded.getByRole("dialog", { name: "Export the site manager" });
-  await expect(dialog.getByRole("radio", { name: /Everything/ })).toBeChecked();
+  await expect(dialog.getByRole("button", { name: /Everything/ })).toHaveAttribute("aria-pressed", "true");
   await expect(dialog).toContainText("A sensitive file");
   await dialog.getByRole("checkbox", { name: /Include the history/ }).check();
   await dialog.getByRole("button", { name: "Export" }).click();

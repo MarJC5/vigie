@@ -16,7 +16,7 @@ type Story = StoryObj<typeof meta>;
 export const UntilTheNextVersion: Story = {
   play: async ({ canvasElement, args }) => {
     const dialog = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark] [role=dialog]")!);
-    await expect(dialog.getByRole("radio", { name: /Until the next version of Contact Form 7/ })).toBeChecked();
+    await expect(dialog.getByRole("button", { name: /Until the next version of Contact Form 7/ })).toHaveAttribute("aria-pressed", "true");
     await userEvent.click(dialog.getByRole("button", { name: "Ignore" }));
     await expect(args.onIgnore).toHaveBeenCalledWith("6.0.4", "");
   },
@@ -26,7 +26,7 @@ export const UntilTheNextVersion: Story = {
 export const Permanently: Story = {
   play: async ({ canvasElement, args }) => {
     const dialog = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark] [role=dialog]")!);
-    await userEvent.click(dialog.getByRole("radio", { name: /Permanently/ }));
+    await userEvent.click(dialog.getByRole("button", { name: /Permanently/ }));
     const ignore = dialog.getByRole("button", { name: "Ignore" });
     await expect(ignore).toBeDisabled();
     await userEvent.type(dialog.getByRole("textbox", { name: "Reason" }), "  Form disabled until the end of the year ");
@@ -40,8 +40,8 @@ export const ASetting: Story = {
   args: { finding: fileEditing },
   play: async ({ canvasElement }) => {
     const dialog = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark] [role=dialog]")!);
-    await expect(dialog.getAllByRole("radio")).toHaveLength(1);
-    await expect(dialog.getByRole("radio", { name: /Permanently/ })).toBeChecked();
+    await expect(dialog.getAllByRole("button").filter((b) => b.hasAttribute("aria-pressed"))).toHaveLength(1);
+    await expect(dialog.getByRole("button", { name: /Permanently/ })).toHaveAttribute("aria-pressed", "true");
   },
 };
 

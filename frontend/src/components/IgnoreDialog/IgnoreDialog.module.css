@@ -15,38 +15,11 @@
   color: var(--vg-text-muted);
 }
 
-.choice {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--vg-space-3);
-  padding: var(--vg-space-3) var(--vg-space-4);
-  border-radius: var(--vg-radius-control);
-  box-shadow: inset 0 0 0 1px var(--vg-border);
-  cursor: pointer;
-}
-
-.choice:has(:checked) {
-  box-shadow: inset 0 0 0 2px var(--vg-accent);
-}
-
-.radio {
-  margin: 2px 0 0;
-  accent-color: var(--vg-accent);
-}
-
-.choiceText {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.choiceTitle {
-  font-weight: var(--vg-weight-strong);
-}
-
-.hint {
-  font-size: var(--vg-text-small);
-  color: var(--vg-text-muted);
+/* The choices side by side, under the heading. */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--vg-space-2);
 }
 
 .field {

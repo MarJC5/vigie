@@ -6,6 +6,7 @@ import { carriedKey } from "../../lib/selection";
 import { Button } from "../Button/Button";
 import { Dialog } from "../Dialog/Dialog";
 import { Icon } from "../Icon/Icon";
+import { RadioControl } from "../Radio/Radio";
 import styles from "./MoveDialog.module.css";
 
 export interface MoveDialogProps {
@@ -71,14 +72,7 @@ export function MoveDialog({ items, staying = [], nodes, onMove, onClose }: Move
             const current = items.every((n) => n.parentId === d.id);
             return (
               <label key={d.id || "root"} className={styles.row} style={{ paddingLeft: 12 + d.depth * 22 }} data-current={current || undefined}>
-                <input
-                  type="radio"
-                  name="destination"
-                  className={styles.radio}
-                  checked={choice === d.id}
-                  disabled={current}
-                  onChange={() => setChoice(d.id)}
-                />
+                <RadioControl name="destination" checked={choice === d.id} disabled={current} onChange={() => setChoice(d.id)} />
                 <Icon name="folder" size={16} />
                 <span className={styles.name}>{d.name}</span>
                 {current && <span className={styles.note}>{t("edit.move.current")}</span>}
