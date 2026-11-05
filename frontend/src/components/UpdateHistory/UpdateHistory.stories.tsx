@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent } from "storybook/test";
 
 import { outdatedSite } from "../../fixtures/scans";
-import { historyRolledBack, historyToRollBack } from "../../fixtures/updates";
+import { historyAuto, historyRolledBack, historyToRollBack } from "../../fixtures/updates";
 import { namesOf } from "../../lib/updates";
 import { UpdateHistory } from "./UpdateHistory";
 
@@ -52,5 +52,19 @@ export const Empty: Story = {
   args: { operations: [] },
   play: async ({ canvas }) => {
     await expect(canvas.getAllByText("No update yet.")).toHaveLength(2);
+  },
+};
+
+// ADR-0042: the rollback Vigie ran on its own, above the update it came from, which is open.
+export const RolledBackOnItsOwn: Story = {
+  args: { operations: historyAuto },
+  play: async ({ canvas }) => {
+    const [first] = canvas.getAllByRole("button", { expanded: false });
+    await expect(first).toHaveTextContent("WooCommerce back to 9.8.1, on its own");
+    const [update] = canvas.getAllByRole("button", { expanded: true });
+    await expect(update).toHaveTextContent("Done, 1 item rolled back");
+    const [list] = canvas.getAllByRole("list", { name: "History of updates" });
+    await expect(list).toHaveTextContent("an operation of its own, above");
+    await expect(canvas.queryAllByRole("button", { name: "Roll back" })).toHaveLength(0);
   },
 };

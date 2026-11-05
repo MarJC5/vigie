@@ -358,3 +358,16 @@ export const LookupsWithGitHub: Story = {
     await expect(args.onDestination).toHaveBeenCalledWith("github", false);
   },
 };
+
+// Updates of the sites (ADR-0042): plugins and themes roll back on their own, on by default.
+export const RollbackOnItsOwn: Story = {
+  args: { tab: "general", autoRollback: true, onAutoRollback: fn() },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByRole("heading", { name: "Updates of the sites" })).toBeInTheDocument();
+    const toggle = page.getByRole("switch", { name: "Roll back on its own" });
+    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    await userEvent.click(toggle);
+    await expect(args.onAutoRollback).toHaveBeenCalledWith(false);
+  },
+};

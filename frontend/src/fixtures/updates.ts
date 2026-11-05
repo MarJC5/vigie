@@ -10,15 +10,15 @@ export const preview: SitePreviewView = {
   siteId: "outdated",
   name: "boulangerie-exemple.ch",
   path: "Clients/Shared hosting/boulangerie-exemple.ch",
-  core: { kind: "core", slug: "", language: "", from: "7.1.3", to: "7.1.4", ignored: false },
+  core: { kind: "core", slug: "", language: "", from: "7.1.3", to: "7.1.4", ignored: false, setAside: false },
   plugins: [
-    { kind: "plugin", slug: "akismet", language: "", from: "5.3", to: "5.7.2", ignored: false },
-    { kind: "plugin", slug: "woocommerce", language: "", from: "9.8.1", to: "10.2.0", ignored: false },
+    { kind: "plugin", slug: "akismet", language: "", from: "5.3", to: "5.7.2", ignored: false, setAside: false },
+    { kind: "plugin", slug: "woocommerce", language: "", from: "9.8.1", to: "10.2.0", ignored: false, setAside: false },
   ],
   themes: [],
   languages: [
-    { kind: "language", slug: "", language: "fr_FR", from: "", to: "", ignored: false },
-    { kind: "language", slug: "akismet", language: "fr_FR", from: "", to: "", ignored: false },
+    { kind: "language", slug: "", language: "fr_FR", from: "", to: "", ignored: false, setAside: false },
+    { kind: "language", slug: "akismet", language: "fr_FR", from: "", to: "", ignored: false, setAside: false },
   ],
   dumpTool: true,
   problem: null,
@@ -96,7 +96,7 @@ export const failed = operation({
         "new fatal error in debug.log: PHP Fatal error:  Uncaught Error: Call to undefined function wc_get_page_id() in wp-content/themes/boulangerie/functions.php:42",
     }),
   ],
-  rollback: { kind: "plugin", slug: "woocommerce", language: "", from: "9.8.1", to: "10.2.0", ignored: false },
+  rollback: { kind: "plugin", slug: "woocommerce", language: "", from: "9.8.1", to: "10.2.0", ignored: false, setAside: false },
 });
 
 /** The rollback of WooCommerce after the failure. */
@@ -168,4 +168,93 @@ export const bulk: SiteResultView[] = [
   { siteId: "c", path: "Clients/Shared hosting/cabinet-exemple.ch", outcome: "not-started", detail: "", operationId: "", rolledBack: [] },
   { siteId: "d", path: "Clients/Shared hosting/reseau-ecoles.ch", outcome: "not-started", detail: "", operationId: "", rolledBack: [] },
   { siteId: "e", path: "Clients/Shared hosting/vieux-site.ch", outcome: "refused", detail: "problem.noDumpTool", operationId: "", rolledBack: [] },
+];
+
+/** The update of ADR-0042: WooCommerce breaks the site and goes back on its own, then the run
+ goes on with the translations. */
+export const autoRunning = operation({
+  id: "op-auto",
+  steps: [
+    ...failed.steps!,
+    step(7, "52", -1, { itemKind: "language", slug: "core" }),
+  ],
+});
+
+/** The rollback of WooCommerce Vigie ran on its own, linked to its update. */
+export const autoRolledBack = operation({
+  id: "op-auto-back",
+  kind: "rollback",
+  started: "2026-10-29T14:12:38Z",
+  finished: "2026-10-29T14:12:51Z",
+  outcome: "completed",
+  summary: "plugin woocommerce back to 9.8.1",
+  ofOperation: "op-auto",
+  automatic: true,
+  steps: [
+    step(0, "38", 4, { step: "restore-files", itemKind: "plugin", slug: "woocommerce", versionBefore: "10.2.0", versionAfter: "9.8.1" }),
+    step(1, "42", 9, { step: "check", itemKind: "plugin", slug: "woocommerce" }),
+  ],
+});
+
+/** The same update once over: Akismet updated, WooCommerce back, the translations updated. */
+export const autoDone = operation({
+  id: "op-auto",
+  finished: "2026-10-29T14:13:20Z",
+  outcome: "completed",
+  summary: "1 of 2, 1 rolled back",
+  steps: [
+    ...failed.steps!,
+    step(7, "52", 8, { itemKind: "language", slug: "core" }),
+    step(8, "56", 2, { itemKind: "language", slug: "plugin" }),
+    step(9, "58", 2, { itemKind: "language", slug: "theme" }),
+  ],
+});
+
+/** The rollback on its own that failed: the site still breaks once WooCommerce is back. */
+export const autoRollbackFailed = operation({
+  ...autoRolledBack,
+  outcome: "failed",
+  steps: [
+    autoRolledBack.steps![0]!,
+    step(1, "42", 9, {
+      step: "check",
+      itemKind: "plugin",
+      slug: "woocommerce",
+      outcome: "failed",
+      message: "http://boulangerie-exemple.ch/ shows the critical error page of WordPress (status 500)",
+    }),
+  ],
+});
+
+/** Its update, stopped there, the rollback still offered to try again. */
+export const autoStopped = operation({
+  ...failed,
+  id: "op-auto",
+  summary: "1 of 2",
+});
+
+/** The history after it: the rollback on its own above the update it came from. */
+export const historyAuto: OperationView[] = [autoRolledBack, autoDone, completed];
+
+/** A host updated, an item gone back on its own on one site: every site up. */
+export const bulkAuto: SiteResultView[] = [
+  { siteId: "a", path: "Clients/Shared hosting/atelier-exemple.ch", outcome: "updated", detail: "", operationId: "op-a", rolledBack: [] },
+  {
+    siteId: "outdated",
+    path: "Clients/Shared hosting/boulangerie-exemple.ch",
+    outcome: "updated",
+    detail: "",
+    operationId: "op-auto",
+    rolledBack: [
+      {
+        kind: "plugin",
+        slug: "woocommerce",
+        version: "10.2.0",
+        backTo: "9.8.1",
+        reason: "http://boulangerie-exemple.ch/ shows the critical error page of WordPress (status 500)",
+      },
+    ],
+  },
+  { siteId: "c", path: "Clients/Shared hosting/cave-exemple.ch", outcome: "updated", detail: "", operationId: "op-c", rolledBack: [] },
+  { siteId: "d", path: "Clients/Shared hosting/reseau-ecoles.ch", outcome: "updated", detail: "", operationId: "op-d", rolledBack: [] },
 ];

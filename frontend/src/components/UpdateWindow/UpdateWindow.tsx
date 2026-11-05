@@ -6,7 +6,7 @@ import type {
   SitePreviewView,
   UpdateItemView,
 } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
-import { backupPath, canStart, failedStep, itemName, itemsDone, rescanRow, restoredStep, rowText, runRows } from "../../lib/updates";
+import { backupPath, canStart, failedStep, itemName, itemsDone, rescanRow, restoredStep, rolledBackBy, rowText, runRows } from "../../lib/updates";
 import { Notice } from "../Notice/Notice";
 import { RunSteps } from "../RunSteps/RunSteps";
 import { UpdatePreview } from "../UpdatePreview/UpdatePreview";
@@ -28,6 +28,8 @@ export interface UpdateWindowProps {
   onOpen?: (href: string) => void;
   /** The update, then its rollback, as they run and once ended; null before the update starts. */
   operation: OperationView | null;
+  /** The rollbacks Vigie ran on its own during the update (ADR-0042), as they run and once ended. */
+  rollbacks?: OperationView[];
   /** The update or rollback was asked for and Vigie has not reported its first step yet. */
   starting?: boolean;
   /** The run asked for, or followed, is a rollback. */
@@ -52,6 +54,7 @@ export function UpdateWindow({
   known,
   onOpen,
   operation,
+  rollbacks = [],
   starting = false,
   rollingBack = false,
   stopping = false,
@@ -104,12 +107,29 @@ export function UpdateWindow({
     );
   }
 
-  const recorded = runRows(operation, rollback ? [] : planned);
+  const recorded = runRows(operation, rollback ? [] : planned, rollbacks);
   // While it runs, the list ends with the scan that closes every run.
   const rows = running && operation ? [...recorded, rescanRow(recorded)] : recorded;
   // Every item planned is checked after its update, the translations once at the end.
   const total = planned.filter((it) => it.kind !== "language").length + (planned.some((it) => it.kind === "language") ? 1 : 0);
   const done = Math.min(itemsDone(operation), total);
+  // The items gone back on their own (ADR-0042): each said in a notice, counted in the progress.
+  const gone = operation && !rollback ? rolledBackBy(operation, rollbacks) : [];
+  const goneNotices = gone.map((b) => {
+    const item = itemName(t, b.kind, b.slug, names);
+    return (
+      <Notice
+        key={`${b.kind}:${b.slug}`}
+        tone="warn"
+        role="note"
+        title={t("update.run.rolledBackTitle", { item, version: b.version, backTo: b.backTo })}
+        text={t(running ? "update.run.rolledBackText" : "update.result.rolledBackText", { item, version: b.version })}
+        detail={running ? undefined : b.reason || undefined}
+      />
+    );
+  });
+  const progressText =
+    t("update.run.progress", { count: done, done, total }) + (gone.length > 0 ? `, ${t("update.run.rolledBack", { count: gone.length })}` : "");
   const list = <RunSteps label={t("update.run.stepsLabel")} rows={rows} names={names} ended={ended} />;
 
   if (running) {
@@ -138,9 +158,10 @@ export function UpdateWindow({
         progress={
           rollback
             ? { label: t("update.run.rollingBack") }
-            : { label: t("update.run.progress", { count: done, done, total }), value: done, max: total }
+            : { label: progressText, value: Math.min(done + gone.length, total), max: total }
         }
       >
+        {goneNotices}
         {list}
       </WizardStep>
     );
@@ -165,8 +186,32 @@ export function UpdateWindow({
       if (failed) notice = <Notice title={rowText(t, { key: "", state: "failed", step: failed }, names, true).label} text={failed.message} />;
     }
   } else if (op.outcome === "completed") {
-    title = t("update.result.doneTitle", { name });
+    title =
+      gone.length > 0
+        ? t("update.result.doneExceptTitle", { name, items: gone.map((b) => itemName(t, b.kind, b.slug, names)).join(", ") })
+        : t("update.result.doneTitle", { name });
     lead = t("update.result.doneLead");
+  } else if (op.outcome === "failed" && rollbacks.some((b) => b.outcome === "failed")) {
+    // A rollback on its own that failed: the site is not as it was, its backup stays, and the
+    // rollback is offered to try again.
+    const backFailed = rollbacks.find((b) => b.outcome === "failed")!;
+    const restored = restoredStep(backFailed);
+    title = t("update.result.rollbackFailedTitle");
+    lead = `${t("update.result.rollbackFailedLead")} ${backupPath(op.backupDir)}`;
+    notice = (
+      <Notice
+        title={t("update.result.rollbackOnItsOwnFailedTitle", {
+          item: restored ? itemName(t, restored.itemKind, restored.slug, names) : "",
+          backTo: restored?.versionAfter ?? "",
+        })}
+        text={t("update.result.rollbackOnItsOwnFailedText")}
+        detail={failedStep(backFailed)?.message}
+      />
+    );
+    if (op.rollback) {
+      back = { label: t("update.result.keep"), onClick: onClose };
+      primary = { label: t("update.result.rollback"), onClick: () => onRollback(op.id) };
+    }
   } else if (op.outcome === "failed") {
     title = t("update.result.failedTitle");
     lead = t("update.result.failedLead");
@@ -179,7 +224,7 @@ export function UpdateWindow({
     const explain = !offered
       ? t("update.result.nothingToRollBack")
       : offered.kind === "core"
-        ? t("update.result.rollbackCore")
+        ? `${t("update.result.rollbackCore")} ${t("update.result.rollbackCoreNever")}`
         : t("update.result.rollbackFiles", { item: itemName(t, offered.kind, offered.slug, names) });
     notice = <Notice title={what} text={explain} detail={failed?.message} />;
     if (offered) {
@@ -210,6 +255,7 @@ export function UpdateWindow({
     >
       {refused}
       {notice}
+      {goneNotices}
       {list}
     </WizardStep>
   );

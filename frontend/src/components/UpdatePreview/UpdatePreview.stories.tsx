@@ -55,7 +55,7 @@ export const CannotLoad: Story = {
 };
 
 // Each change with its changelog; an ignored update not chosen is left out, and said (ADR-0026).
-const held = { ...preview, plugins: preview.plugins!.map((it) => (it.slug === "woocommerce" ? { ...it, ignored: true } : it)) };
+const held = { ...preview, plugins: preview.plugins!.map((it) => (it.slug === "woocommerce" ? { ...it, ignored: true, setAside: false } : it)) };
 
 export const Changelogs: Story = {
   args: {

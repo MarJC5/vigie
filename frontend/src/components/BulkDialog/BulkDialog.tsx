@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 
 import type { SitePreviewView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
-import { ignoredOf, pendingOf } from "../../lib/updates";
+import { ignoredOf, pendingOf, setAsideOf } from "../../lib/updates";
 import { Button } from "../Button/Button";
 import { Dialog } from "../Dialog/Dialog";
 import { Icon } from "../Icon/Icon";
@@ -45,19 +45,30 @@ export function BulkDialog({ name, count, previews, onConfirm, onClose }: BulkDi
         <ul aria-label={t("update.bulkDialog.sites")} className={styles.sites}>
           {previews.map((p) => {
             const count = pendingOf(p);
-            // The updates the site ignores are left out (ADR-0026), and said.
+            // The updates the site ignores (ADR-0026) and the versions set aside (ADR-0042) are left
+            // out, and said.
             const ignored = ignoredOf(p).length;
+            const aside = setAsideOf(p).length;
             const why = p.problem
               ? t(p.problem.code, { message: p.problem.detail })
               : !p.dumpTool
                 ? t("problem.noDumpTool")
                 : count === 0
-                  ? t(ignored > 0 ? "update.bulkDialog.onlyIgnored" : "update.bulkDialog.nothing", { count: ignored })
+                  ? ignored > 0
+                    ? t("update.bulkDialog.onlyIgnored", { count: ignored })
+                    : aside > 0
+                      ? t("update.bulkDialog.onlySetAside", { count: aside })
+                      : t("update.bulkDialog.nothing")
                   : "";
-            const items = [t("update.bulkDialog.items", { count }), ...(ignored > 0 ? [t("update.bulkDialog.ignoredLeft", { count: ignored })] : [])].join(" · ");
+            const items = [
+              t("update.bulkDialog.items", { count }),
+              ...(ignored > 0 ? [t("update.bulkDialog.ignoredLeft", { count: ignored })] : []),
+              ...(aside > 0 ? [t("update.bulkDialog.setAsideLeft", { count: aside })] : []),
+            ].join(" · ");
+            const idle = ignored > 0 ? "eyeSlash" : aside > 0 ? "rollback" : "ok";
             return (
               <li key={p.siteId} className={styles.site} data-ready={!why || undefined}>
-                <Icon name={why ? (count === 0 && !p.problem ? (ignored > 0 ? "eyeSlash" : "ok") : "lock") : "update"} size={14} />
+                <Icon name={why ? (count === 0 && !p.problem ? idle : "lock") : "update"} size={14} />
                 <span className={styles.name}>{p.name}</span>
                 <span className={styles.note}>{why || items}</span>
               </li>

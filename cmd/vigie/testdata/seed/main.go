@@ -90,7 +90,66 @@ func seed(ctx context.Context, dir, lang string, empty, network bool, scale, day
 			return err
 		}
 	}
-	return history(ctx, db, sites[1].ID)
+	if err := history(ctx, db, sites[1].ID); err != nil {
+		return err
+	}
+	return rolledBackOnItsOwn(ctx, db, sites[0].ID)
+}
+
+// rolledBackOnItsOwn stores, three days ago on the site up to date, an update whose Elementor broke
+// the site and went back on its own, the update going on with Akismet (ADR-0042).
+func rolledBackOnItsOwn(ctx context.Context, db *store.DB, site model.ID) error {
+	at := time.Now().Add(-3 * 24 * time.Hour)
+	step := func(secs int, kind model.StepKind, slug, before, after string) model.OperationStep {
+		var item model.ItemKind
+		if slug != "" {
+			item = model.ItemPlugin
+		}
+		start := at.Add(time.Duration(secs) * time.Second)
+		return model.OperationStep{Step: kind, ItemKind: item, Slug: slug, VersionBefore: before, VersionAfter: after,
+			Started: start, Finished: start.Add(2 * time.Second), Outcome: model.StepDone}
+	}
+	broke := step(8, model.StepCheck, "elementor", "", "")
+	broke.Outcome, broke.Message = model.StepFailed, "http://atelier-exemple.ch/ answers 500 (critical-error)"
+	upd := model.Operation{ID: model.NewID(), SiteID: site, Kind: model.OperationUpdate, Started: at, Finished: at.Add(40 * time.Second),
+		Outcome: model.OperationCompleted, Summary: "1 of 2, 1 rolled back", PID: os.Getpid(),
+		BackupDir: "~/.vigie/backups/" + site.String() + "/" + at.UTC().Format("20060102-150405")}
+	back := model.Operation{ID: model.NewID(), SiteID: site, Kind: model.OperationRollback, Started: at.Add(10 * time.Second),
+		Finished: at.Add(20 * time.Second), Outcome: model.OperationCompleted, Summary: "plugin elementor back to 3.25.1", PID: os.Getpid(),
+		BackupDir: upd.BackupDir, OfOperation: upd.ID, Automatic: true}
+	runs := []struct {
+		op    model.Operation
+		steps []model.OperationStep
+	}{
+		{upd, []model.OperationStep{
+			step(0, model.StepBackupDatabase, "", "", ""),
+			step(2, model.StepBackupFiles, "elementor", "", ""),
+			step(4, model.StepBackupFiles, "akismet", "", ""),
+			step(6, model.StepUpdate, "elementor", "3.25.1", "3.26.0"),
+			broke,
+			step(22, model.StepUpdate, "akismet", "5.3", "5.7.2"),
+			step(24, model.StepCheck, "akismet", "", ""),
+		}},
+		{back, []model.OperationStep{
+			step(10, model.StepRestoreFiles, "elementor", "3.26.0", "3.25.1"),
+			step(12, model.StepCheck, "elementor", "", ""),
+		}},
+	}
+	for _, r := range runs {
+		if err := db.StartOperation(ctx, r.op); err != nil {
+			return err
+		}
+		for i, st := range r.steps {
+			st.Position = i
+			if err := db.SaveOperationStep(ctx, r.op.ID, st); err != nil {
+				return err
+			}
+		}
+		if err := db.FinishOperation(ctx, r.op.ID, r.op.Outcome, r.op.Finished, r.op.Summary); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // history stores two updates of the site with updates pending: a week ago, one that went well;

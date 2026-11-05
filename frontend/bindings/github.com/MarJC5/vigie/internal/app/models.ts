@@ -1696,6 +1696,12 @@ export interface UpdateItemView {
      * update takes it when chosen.
      */
     "ignored": boolean;
+
+    /**
+     * SetAside: this version went back on its own before (ADR-0042); "Update all" leaves it out,
+     * the site's own update takes it when chosen.
+     */
+    "setAside": boolean;
 }
 
 /**

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"uuid"
 
 	"github.com/MarJC5/vigie/internal/app"
 	"github.com/MarJC5/vigie/internal/model"
@@ -188,6 +189,13 @@ func (e *updateEvents) done(t *testing.T, n int) app.UpdatesState {
 // updatesService stores host A with sites a1, a2 and broken, behind the fake updater.
 func updatesService(t *testing.T, fail map[string]bool, gate chan struct{}) (*app.Updates, *updateEvents, map[string]string) {
 	t.Helper()
+	u, ev, ids, _ := updatesServiceAndStore(t, fail, gate)
+	return u, ev, ids
+}
+
+// updatesServiceAndStore is updatesService with its database.
+func updatesServiceAndStore(t *testing.T, fail map[string]bool, gate chan struct{}) (*app.Updates, *updateEvents, map[string]string, *store.DB) {
+	t.Helper()
 	ctx := context.Background()
 	db := repository(t)
 	host := model.Host{ID: model.NewID(), Name: "A", Alias: "a"}
@@ -209,7 +217,7 @@ func updatesService(t *testing.T, fail map[string]bool, gate chan struct{}) (*ap
 			return fakeUpdater{db: db, onStep: onStep, fail: fail, gate: gate}
 		}})
 	ev := &updateEvents{sent: make(chan struct{}, 200)}
-	return app.NewUpdates(ws, ev.emit, nil), ev, ids
+	return app.NewUpdates(ws, ev.emit, nil), ev, ids, db
 }
 
 func TestPreviewAHost(t *testing.T) {
@@ -509,5 +517,23 @@ func TestARollbackOnItsOwnThatFails(t *testing.T) {
 	// The update still offers its rollback, to try it again.
 	if history[0].Rollback != nil || history[1].Rollback == nil || history[1].Rollback.Slug != "akismet" {
 		t.Errorf("offered: rollback %+v, update %+v", history[0].Rollback, history[1].Rollback)
+	}
+}
+
+// A version set aside on a site says so in the preview, for the Update all dialog (ADR-0042).
+func TestPreviewSaysWhatIsSetAside(t *testing.T) {
+	ctx := context.Background()
+	u, _, ids, db := updatesServiceAndStore(t, nil, nil)
+	site := uuid.MustParse(ids["a1"])
+	if err := db.SaveSetAside(ctx, model.SetAside{SiteID: site, Kind: model.ItemPlugin, Slug: "akismet", Version: "5.7.2",
+		OperationID: model.NewID(), Created: time.Now()}); err != nil {
+		t.Fatal(err)
+	}
+	previews, err := u.Preview(ctx, ids["host"])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !previews[0].Plugins[0].SetAside || previews[1].Plugins[0].SetAside {
+		t.Errorf("set aside: a1 %+v, a2 %+v", previews[0].Plugins[0], previews[1].Plugins[0])
 	}
 }

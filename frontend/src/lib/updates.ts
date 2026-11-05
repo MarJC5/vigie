@@ -2,6 +2,7 @@
 import type {
   IgnoreView,
   OperationView,
+  SetAsideView,
   SelectionView,
   SitePreviewView,
   SiteResultView,
@@ -53,13 +54,16 @@ export interface Choice {
   ignoreKey: string;
   /** Why and until when it is ignored; null when it counts. */
   ignore: IgnoreView | null;
+  /** When and why this version went back on its own (ADR-0042); null otherwise. */
+  setAside: SetAsideView | null;
   /** Where its changes are read, when wordpress.org has them. */
   changelog?: string;
 }
 
-/** The ignored updates go in a group of their own, after the others, unticked. */
+/** The versions set aside, then the ignored updates, go in groups of their own, after the others,
+ unticked. */
 export interface ChoiceGroup {
-  kind: ItemKind | "ignored";
+  kind: ItemKind | "setAside" | "ignored";
   choices: Choice[];
 }
 
@@ -80,11 +84,13 @@ export function choicesOf(updates: UpdateView[]): ChoiceGroup[] {
     of: [],
     ignoreKey: u.key,
     ignore: u.ignore,
+    setAside: u.ignore ? null : u.setAside,
     changelog: u.update === "available" ? changelogOf({ kind: u.kind, slug: u.slug, to: u.updateVersion, onWordPressOrg: u.onWordPressOrg }) : undefined,
   });
   const ignored = updates.filter((u) => u.ignore);
+  const setAside = updates.filter((u) => u.setAside && !u.ignore);
   const groups: ChoiceGroup[] = kinds.map((kind) => {
-    const of = updates.filter((u) => u.kind === kind && !u.ignore);
+    const of = updates.filter((u) => u.kind === kind && !u.ignore && !u.setAside);
     if (kind !== "language") return { kind, choices: of.map(choice) };
     const offered = of.filter((u) => u.update === "available");
     if (offered.length === 0) return { kind, choices: [] };
@@ -103,16 +109,26 @@ export function choicesOf(updates: UpdateView[]): ChoiceGroup[] {
           of: unique(offered.map((u) => u.slug)),
           ignoreKey: "",
           ignore: null,
+          setAside: null,
         },
       ],
     };
   });
+  if (setAside.length > 0) groups.push({ kind: "setAside", choices: setAside.map(choice) });
   return ignored.length > 0 ? [...groups, { kind: "ignored", choices: ignored.map(choice) }] : groups;
 }
 
-/** The keys of every item offered, chosen when the tab opens; an ignored update only on purpose. */
+/** The keys of every item offered, chosen when the tab opens; an ignored update or a version set
+ aside only on purpose. */
 export function offeredKeys(groups: ChoiceGroup[]): Set<string> {
-  return new Set(groups.filter((g) => g.kind !== "ignored").flatMap((g) => g.choices.filter((c) => c.offered).map((c) => c.key)));
+  return new Set(
+    groups.filter((g) => g.kind !== "ignored" && g.kind !== "setAside").flatMap((g) => g.choices.filter((c) => c.offered).map((c) => c.key)),
+  );
+}
+
+/** When a version went back on its own, and that Update all leaves it out until a newer one. */
+export function setAsideText(setAside: SetAsideView, t: (key: string, vars?: Record<string, unknown>) => string): string {
+  return t("update.setAsideSince", { date: day(setAside.created) });
 }
 
 /** How long an update is ignored, and why. */
@@ -154,11 +170,17 @@ export function plannedItems(preview: SitePreviewView, sel: SelectionView): Upda
   return items;
 }
 
-/** How many items "Update all" takes from a preview, the ignored ones aside; the translations
- count as one. */
+/** How many items "Update all" takes from a preview, the ignored ones and the versions set aside
+ aside; the translations count as one. */
 export function pendingOf(p: SitePreviewView): number {
-  const counted = (list: UpdateItemView[] | null | undefined) => (list ?? []).filter((it) => !it.ignored).length;
-  return (p.core && !p.core.ignored ? 1 : 0) + counted(p.plugins) + counted(p.themes) + ((p.languages ?? []).length > 0 ? 1 : 0);
+  const takes = (it: UpdateItemView) => !it.ignored && !it.setAside;
+  const counted = (list: UpdateItemView[] | null | undefined) => (list ?? []).filter(takes).length;
+  return (p.core && takes(p.core) ? 1 : 0) + counted(p.plugins) + counted(p.themes) + ((p.languages ?? []).length > 0 ? 1 : 0);
+}
+
+/** The versions of a preview set aside on the site (ADR-0042), which "Update all" leaves out. */
+export function setAsideOf(p: SitePreviewView): UpdateItemView[] {
+  return [...(p.core ? [p.core] : []), ...(p.plugins ?? []), ...(p.themes ?? [])].filter((it) => it.setAside && !it.ignored);
 }
 
 /** The updates of a preview the site ignores, which "Update all" leaves out. */
@@ -180,6 +202,8 @@ export interface RunRow {
   step?: StepView;
   item?: UpdateItemView;
   rescan?: boolean;
+  /** A step of a rollback Vigie ran on its own (ADR-0042), shown after the check that failed. */
+  auto?: boolean;
 }
 
 /** The last row of a run going on: once every step is over, Vigie removes the older backups and
@@ -189,10 +213,20 @@ export function rescanRow(rows: RunRow[]): RunRow {
   return { key: "rescan", state: over ? "running" : "waiting", rescan: true };
 }
 
-/** The rows of a run: its steps so far, then the planned items it has not reached. */
-export function runRows(op: OperationView | null, planned: UpdateItemView[]): RunRow[] {
+/** The rows of a run: its steps so far, each rollback Vigie ran on its own after the check that
+ failed, then the planned items it has not reached. */
+export function runRows(op: OperationView | null, planned: UpdateItemView[], rollbacks: OperationView[] = []): RunRow[] {
   const steps = op?.steps ?? [];
-  const rows: RunRow[] = steps.map((step) => ({ key: `step-${step.position}`, state: stateOf(step), step }));
+  const rows: RunRow[] = [];
+  for (const step of steps) {
+    rows.push({ key: `step-${step.position}`, state: stateOf(step), step });
+    if (step.step !== "check" || step.outcome !== "failed") continue;
+    const back = rollbacks.find((b) => {
+      const st = restoredStep(b);
+      return st && st.itemKind === step.itemKind && st.slug === step.slug;
+    });
+    for (const st of back?.steps ?? []) rows.push({ key: `back-${back!.id}-${st.position}`, state: stateOf(st), step: st, auto: true });
+  }
   const reached = (it: UpdateItemView) =>
     steps.some(
       (st) =>
@@ -250,6 +284,36 @@ export function itemsOf(op: OperationView): number {
 /** The step of a rollback that put the item back, which names it and its version. */
 export function restoredStep(op: OperationView): StepView | undefined {
   return (op.steps ?? []).find((st) => st.step === "restore-files");
+}
+
+/** An item gone back on its own: the version that broke the site, the one it went back to, and
+ the check that failed. */
+export interface RolledBack {
+  kind: string;
+  slug: string;
+  version: string;
+  backTo: string;
+  reason: string;
+}
+
+/** The items of an update that went back on their own and passed their checks again. */
+export function rolledBackBy(op: OperationView, rollbacks: OperationView[]): RolledBack[] {
+  return rollbacks.flatMap((back) => {
+    const st = restoredStep(back);
+    if (back.outcome !== "completed" || !st) return [];
+    const check = (op.steps ?? []).find((c) => c.step === "check" && c.outcome === "failed" && c.itemKind === st.itemKind && c.slug === st.slug);
+    return [{ kind: st.itemKind, slug: st.slug, version: st.versionBefore, backTo: st.versionAfter, reason: check?.message ?? "" }];
+  });
+}
+
+/** How many items went back on their own over the sites of a bulk run. */
+export function rolledBackCount(results: SiteResultView[]): number {
+  return results.reduce((n, r) => n + (r.rolledBack ?? []).length, 0);
+}
+
+/** The rollbacks Vigie ran on its own during an update, among operations. */
+export function rollbacksOf(op: OperationView | null, ops: OperationView[]): OperationView[] {
+  return op ? ops.filter((o) => o.kind === "rollback" && o.automatic && o.ofOperation === op.id) : [];
 }
 
 /** A backups folder as the window shows it: Vigie stores it relative to the account's home. */
@@ -326,7 +390,7 @@ export function rowText(t: T, row: RunRow, names: Map<string, string>, ended: bo
       // A check that passed says nothing more than its mark.
       return { label: t("update.step.check"), detail: failure };
     case "restore-files":
-      return { label: t("update.step.restore-files", { item, version: st.versionAfter }), detail: failure };
+      return { label: t("update.step.restore-files", { item, version: st.versionAfter }), detail: failure || (row.auto ? t("update.step.onItsOwn") : "") };
   }
   return { label: t(`update.step.${st.step}`), detail: failure };
 }
@@ -345,7 +409,8 @@ function unique(list: string[]): string[] {
 export function operationSummary(t: T, op: OperationView, names: Map<string, string>): string {
   if (op.kind === "rollback") {
     const st = restoredStep(op);
-    if (st) return t("update.history.rollback", { item: itemName(t, st.itemKind, st.slug, names), version: st.versionAfter });
+    const key = op.automatic ? "update.history.rollbackOnItsOwn" : "update.history.rollback";
+    if (st) return t(key, { item: itemName(t, st.itemKind, st.slug, names), version: st.versionAfter });
   }
   return t("update.history.update", { count: itemsOf(op) });
 }

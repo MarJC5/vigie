@@ -1,7 +1,7 @@
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
-import { type Choice, type ChoiceGroup, ignoredText, itemName } from "../../lib/updates";
+import { type Choice, type ChoiceGroup, ignoredText, itemName, setAsideText } from "../../lib/updates";
 import { Button } from "../Button/Button";
 import { ExternalLink } from "../ExternalLink/ExternalLink";
 import { Icon } from "../Icon/Icon";
@@ -23,7 +23,8 @@ export interface UpdateChoicesProps {
 }
 
 /** The updates of a site by kind, each offered one with a checkbox, its changelog and "Ignore"; a
- kind with none says so; the ignored updates last, unticked, with why. */
+ kind with none says so; the versions set aside (ADR-0042), then the ignored updates, last,
+ unticked, with why. */
 export function UpdateChoices({ groups, chosen, onChange, names, onIgnore, onRestore, onOpen }: UpdateChoicesProps) {
   const { t } = useTranslation();
   const id = useId();
@@ -40,7 +41,7 @@ export function UpdateChoices({ groups, chosen, onChange, names, onIgnore, onRes
         <div role="group" key={group.kind} className={styles.group} aria-labelledby={`${id}-${group.kind}`}>
           <h2 id={`${id}-${group.kind}`} className={styles.heading}>
             {t(`update.group.${group.kind}`)}
-            {group.kind === "ignored" && <span className={styles.count}>{group.choices.length}</span>}
+            {(group.kind === "ignored" || group.kind === "setAside") && <span className={styles.count}>{group.choices.length}</span>}
           </h2>
           {group.choices.length === 0 ? (
             <div className={styles.row} data-muted>
@@ -101,6 +102,7 @@ function ChoiceRow({ choice, name, checked, onChange, onIgnore, onRestore, onOpe
         <span className={styles.nameCell}>
           <span className={styles.name}>{name}</span>
           {choice.ignore && <span className={styles.detail}>{ignoredText(choice.ignore, t)}</span>}
+          {choice.setAside && <span className={styles.detail}>{setAsideText(choice.setAside, t)}</span>}
         </span>
         <span className={styles.change}>{change}</span>
       </label>

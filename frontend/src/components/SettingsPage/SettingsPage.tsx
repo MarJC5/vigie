@@ -61,6 +61,10 @@ export interface SettingsPageProps {
   /** Vigie in the background: kept running, automatic scans, notifications. */
   background: BackgroundSettings;
   onBackground: (b: BackgroundSettings) => void;
+  /** Plugins and themes that break a site roll back on their own (ADR-0042); without it, no
+   section. */
+  autoRollback?: boolean;
+  onAutoRollback?: (on: boolean) => void;
   /** Start at login: the system's state; not offered where the system has none. */
   loginItem: LoginItemState;
   onLoginItem: (on: boolean) => void;
@@ -111,6 +115,8 @@ export function SettingsPage({
   onArchiveSize,
   background,
   onBackground,
+  autoRollback,
+  onAutoRollback,
   loginItem,
   onLoginItem,
   command,
@@ -186,6 +192,13 @@ export function SettingsPage({
             </Row>
             <Row title={t("settings.background.notifyTitle")} desc={t("settings.background.notifyDesc")}>
               <Switch label={t("settings.background.notifyTitle")} on={background.notify} onChange={(notify) => onBackground({ ...background, notify })} />
+            </Row>
+          </Section>
+        )}
+        {tab === "general" && autoRollback !== undefined && onAutoRollback && (
+          <Section title={t("settings.siteUpdates.section")}>
+            <Row title={t("settings.siteUpdates.rollbackTitle")} desc={t("settings.siteUpdates.rollbackDesc")}>
+              <Switch label={t("settings.siteUpdates.rollbackTitle")} on={autoRollback} onChange={onAutoRollback} />
             </Row>
           </Section>
         )}

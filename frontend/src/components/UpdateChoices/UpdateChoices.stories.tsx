@@ -65,3 +65,20 @@ export const Ignored: StoryObj<typeof meta> = {
     await expect(canvas.queryAllByRole("button", { name: /Ignore the update of (fr_FR|Old Gallery)/ })).toHaveLength(0);
   },
 };
+
+// A version gone back on its own (ADR-0042): set aside in a group of its own, unticked, with when;
+// ticking it updates it on purpose.
+const setAside = { created: "2026-11-04T14:12:24Z", reason: "http://boulangerie-exemple.ch/ answers 500" };
+const aside = choicesOf(updates.map((u) => (u.slug === "woocommerce" ? { ...u, setAside } : u)));
+
+export const SetAside: StoryObj<typeof meta> = {
+  args: { groups: aside, chosen: offeredKeys(aside) },
+  play: async ({ canvas, args }) => {
+    const [group] = canvas.getAllByRole("group", { name: /^Set aside/ });
+    await expect(group).toHaveTextContent("Rolled back on its own on 04.11.2026. Left out until a newer version.");
+    const [woo] = canvas.getAllByRole("checkbox", { name: /WooCommerce/ });
+    await expect(woo).not.toBeChecked();
+    await userEvent.click(woo!);
+    await expect(args.onChange).toHaveBeenLastCalledWith(new Set(["core", "plugin:akismet", "languages", "plugin:woocommerce"]));
+  },
+};

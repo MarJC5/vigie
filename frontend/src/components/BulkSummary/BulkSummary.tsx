@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 
 import type { SiteResultView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
-import { type BulkOutcome, bulkCounts } from "../../lib/updates";
+import { type BulkOutcome, bulkCounts, rolledBackCount } from "../../lib/updates";
 import { type Count, Counts } from "../Counts/Counts";
 import { Icon, type IconName } from "../Icon/Icon";
 import { Notice } from "../Notice/Notice";
@@ -27,8 +27,11 @@ const icons: Record<BulkOutcome, IconName> = {
 export function BulkSummary({ results, onOpen }: BulkSummaryProps) {
   const { t } = useTranslation();
   const counts = bulkCounts(results);
+  const rolled = rolledBackCount(results);
   const items: Count[] = [
     { label: t("update.bulk.count.updated"), value: counts.updated },
+    // The items gone back on their own (ADR-0042), counted when there are any.
+    ...(rolled > 0 ? [{ label: t("update.bulk.count.rolledBack"), value: rolled, tone: "warn" as const }] : []),
     { label: t("update.bulk.count.failed"), value: counts.failed, tone: "warn" },
     { label: t("update.bulk.count.not-started"), value: counts["not-started"] },
   ];
@@ -49,6 +52,19 @@ export function BulkSummary({ results, onOpen }: BulkSummaryProps) {
           action={{ label: t("update.bulk.open", { site: siteName(r) }), onClick: () => onOpen(r.siteId) }}
         />
       ))}
+      {results.flatMap((r) =>
+        (r.rolledBack ?? []).map((b) => (
+          <Notice
+            key={`${r.siteId}-${b.kind}:${b.slug}`}
+            tone="warn"
+            role="note"
+            title={t("update.bulk.rolledBackTitle", { item: b.slug, site: siteName(r) })}
+            text={t("update.bulk.rolledBackText", { version: b.version, backTo: b.backTo })}
+            detail={b.reason || undefined}
+            action={{ label: t("update.bulk.open", { site: siteName(r) }), onClick: () => onOpen(r.siteId) }}
+          />
+        )),
+      )}
       <Counts label={t("update.bulk.summary")} items={items} />
       <table aria-label={t("update.bulk.table")} className={styles.table}>
         <thead>
@@ -61,21 +77,24 @@ export function BulkSummary({ results, onOpen }: BulkSummaryProps) {
         <tbody>
           {results.map((r) => {
             const outcome = r.outcome as BulkOutcome;
+            const rolledBack = r.rolledBack ?? [];
             return (
-              <tr key={r.siteId} data-outcome={outcome}>
+              <tr key={r.siteId} data-outcome={outcome} data-rolled-back={rolledBack.length > 0 || undefined}>
                 <td className={styles.site} title={r.path}>
                   {siteName(r)}
                 </td>
                 <td>
                   <span className={styles.result}>
                     <span className={styles.icon}>
-                      <Icon name={icons[outcome] ?? "circle"} />
+                      <Icon name={rolledBack.length > 0 ? "rollback" : (icons[outcome] ?? "circle")} />
                     </span>
                     {t(`update.bulk.outcome.${outcome}`)}
                   </span>
                 </td>
                 <td className={styles.detail} data-selectable>
-                  {detailOf(t, r)}
+                  {rolledBack.length > 0
+                    ? rolledBack.map((b) => t("update.bulk.rolledBackDetail", { item: b.slug, version: b.version, backTo: b.backTo })).join(", ")
+                    : detailOf(t, r)}
                 </td>
               </tr>
             );

@@ -36,3 +36,22 @@ test("an update whose preview cannot be read says so, and starts nothing", async
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("boulangerie-exemple.ch");
   await expect(page.getByRole("complementary", { name: "Site manager" })).not.toContainText("updating");
 });
+
+// ADR-0042: an update whose plugin broke the site and went back on its own, told in the site's
+// history (the rollback above its update) and in the journal.
+test("a rollback on its own shows in the history and the journal", async ({ page }) => {
+  await page.goto(seeded);
+  await page.getByRole("tree", { name: "Site manager" }).getByRole("treeitem", { name: /atelier-exemple\.ch/ }).click();
+  await page.getByRole("tab", { name: "History" }).click();
+  const history = page.getByRole("list", { name: "History of updates" });
+  await expect(history.getByRole("button", { name: /elementor back to 3\.25\.1, on its own/ })).toBeVisible();
+  const update = history.getByRole("button", { expanded: true });
+  await expect(update).toContainText("Done, 1 item rolled back");
+  await expect(history).toContainText("an operation of its own, above");
+  await expect(history.getByRole("button", { name: "Roll back" })).toHaveCount(0);
+
+  await page.getByRole("navigation", { name: "Navigation" }).getByRole("link", { name: "Activity" }).click();
+  await page.getByRole("combobox", { name: "Show" }).selectOption({ label: "Clients/Shared hosting/atelier-exemple.ch" });
+  const rollback = page.getByRole("listitem").filter({ hasText: "Rollback of Clients/Shared hosting/atelier-exemple.ch" });
+  await expect(rollback).toContainText("on its own");
+});

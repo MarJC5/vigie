@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent } from "storybook/test";
 
 import { outdatedSite } from "../../fixtures/scans";
-import { completed, failed, preview, rolledBack, running } from "../../fixtures/updates";
+import { autoDone, autoRolledBack, autoRollbackFailed, autoRunning, autoStopped, completed, failed, preview, rolledBack, running } from "../../fixtures/updates";
 import { namesOf, plannedItems, selectionOf } from "../../lib/updates";
 import { UpdateWindow } from "./UpdateWindow";
 
@@ -143,5 +143,53 @@ export const Done: Story = {
     await expect(canvas.getAllByRole("heading", { level: 1 })[0]).toHaveTextContent("boulangerie-exemple.ch is up to date");
     await userEvent.click(canvas.getAllByRole("button", { name: "Close" }).at(-1)!);
     await expect(args.onClose).toHaveBeenCalled();
+  },
+};
+
+// ADR-0042: WooCommerce broke the site and went back on its own; the run goes on.
+export const RolledBackOnItsOwn: Story = {
+  args: { operation: autoRunning, rollbacks: [autoRolledBack] },
+  play: async ({ canvas }) => {
+    const [note] = canvas.getAllByRole("note");
+    await expect(note).toHaveTextContent("WooCommerce 10.2.0 broke the site: back to 9.8.1 on its own");
+    await expect(note).toHaveTextContent("The update goes on with the next items.");
+    const [list] = canvas.getAllByRole("list", { name: "Steps of the update" });
+    await expect(list).toHaveTextContent("WooCommerce back to 9.8.1");
+    await expect(list).toHaveTextContent("on its own, after the failure above");
+    await expect(canvas.getAllByRole("progressbar", { name: "1 of 3 items updated and checked, 1 rolled back" })[0]).toHaveAttribute("aria-valuenow", "2");
+  },
+};
+
+export const DoneButOneRolledBack: Story = {
+  args: { operation: autoDone, rollbacks: [autoRolledBack] },
+  play: async ({ canvas }) => {
+    await expect(canvas.getAllByRole("heading", { level: 1 })[0]).toHaveTextContent("boulangerie-exemple.ch is up to date, but WooCommerce");
+    const [note] = canvas.getAllByRole("note");
+    await expect(note).toHaveTextContent("Version 10.2.0 is set aside");
+    await expect(note).toHaveTextContent("wc_get_page_id");
+    await expect(canvas.queryAllByRole("button", { name: "Roll back" })).toHaveLength(0);
+  },
+};
+
+export const RollbackOnItsOwnFailed: Story = {
+  args: { operation: autoStopped, rollbacks: [autoRollbackFailed] },
+  play: async ({ canvas, args }) => {
+    await expect(canvas.getAllByRole("heading", { level: 1 })[0]).toHaveTextContent("The rollback failed");
+    const [alert] = canvas.getAllByRole("alert");
+    await expect(alert).toHaveTextContent("WooCommerce is back to 9.8.1, but the site still fails its checks");
+    await expect(alert).toHaveTextContent("status 500");
+    // The rollback stays offered, to try again.
+    await userEvent.click(canvas.getAllByRole("button", { name: "Roll back" })[0]!);
+    await expect(args.onRollback).toHaveBeenCalledWith("op-auto");
+  },
+};
+
+// WordPress never goes back on its own: its rollback stays offered, and says why.
+export const WordPressFailed: Story = {
+  args: { operation: { ...failed, rollback: { kind: "core", slug: "", language: "", from: "7.1.3", to: "7.1.4", ignored: false, setAside: false } } },
+  play: async ({ canvas }) => {
+    const [alert] = canvas.getAllByRole("alert");
+    await expect(alert).toHaveTextContent("Vigie never does it on its own");
+    await expect(canvas.getAllByRole("button", { name: "Roll back" })).toHaveLength(2);
   },
 };

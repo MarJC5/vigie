@@ -179,6 +179,8 @@ export function App() {
   // The preview of an import takes the whole window, as the wizard does.
   const [dataWindow, setDataWindow] = useState(false);
   const [background, setBackground] = useState<BackgroundSettings>({ on: false, autoScan: 0, notify: false });
+  // Plugins and themes roll back on their own unless turned off (ADR-0042).
+  const [autoRollback, setAutoRollback] = useState<boolean | undefined>(undefined);
   const [loginItem, setLoginItem] = useState<LoginItemState>({ supported: false, on: false });
   // The vigie command (ADR-0036), read again each time the settings open.
   const [command, setCommand] = useState<CommandView>();
@@ -207,6 +209,7 @@ export function App() {
     void Security.Lookups().then(setLookups);
     void SiteManager.CanOpenSSH().then(setCanOpenSSH);
     void Preferences.Background().then(setBackground);
+    void Updates.AutoRollback().then(setAutoRollback);
     void LoginItem.State().then(setLoginItem);
     void Scanner.State().then(setScans);
     void Updates.State().then(setUpdates);
@@ -413,6 +416,8 @@ export function App() {
                 onArchiveSize={(mb) => void Data.SetArchiveSize(mb).then((p) => !p && setCopySettings((s) => s && { ...s, archiveSize: mb }))}
                 background={background}
                 onBackground={changeBackground}
+                autoRollback={autoRollback}
+                onAutoRollback={(on) => void Updates.SetAutoRollback(on).then((p) => !p && setAutoRollback(on))}
                 loginItem={loginItem}
                 onLoginItem={(on) => void changeLoginItem(on)}
                 command={command}

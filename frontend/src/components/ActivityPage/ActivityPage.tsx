@@ -93,7 +93,12 @@ function Entry({ entry: e, onOpen }: { entry: ActivityEntry; onOpen: (nodeId: st
   const { t, i18n } = useTranslation();
   const run = e.kind === "run";
   const title = run ? (e.path ? t(`activity.run_${e.by}`, { path: e.path }) : t(`activity.runAll_${e.by}`)) : "";
-  const meta = [run ? t("activity.sites", { count: e.sites }) : "", outcome(e) ? t(`activity.${outcome(e)}`) : ""].filter(Boolean);
+  const meta = [
+    run ? t("activity.sites", { count: e.sites }) : "",
+    // A rollback Vigie ran on its own after a failed check (ADR-0042).
+    e.automatic ? t("activity.onItsOwn") : "",
+    outcome(e) ? t(`activity.${outcome(e)}`) : "",
+  ].filter(Boolean);
   const changes = e.changes ?? [];
   const sites = e.siteChanges ?? [];
   const notices = e.notices ?? [];

@@ -781,7 +781,8 @@
     "copy": "Copie de {{path}}",
     "copyResumed": "Reprise de la copie de {{path}}",
     "copyLine": "{{content}} : {{archives}}, {{size}}, dans {{folder}}",
-    "copyCut": "Coupée : {{message}}"
+    "copyCut": "Coupée : {{message}}",
+    "onItsOwn": "tout seul"
   },
   "tray": {
     "open": "Ouvrir {{app}}",
@@ -936,7 +937,8 @@
       "plugin": "Extensions",
       "theme": "Thèmes",
       "language": "Traductions",
-      "ignored": "Ignorées"
+      "ignored": "Ignorées",
+      "setAside": "Mises de côté"
     },
     "upToDate": "Tous à jour",
     "notOffered": {
@@ -997,7 +999,12 @@
       "progress_one": "{{done}} élément sur {{total}} mis à jour et vérifié",
       "progress_many": "{{done}} éléments sur {{total}} mis à jour et vérifiés",
       "progress_other": "{{done}} éléments sur {{total}} mis à jour et vérifiés",
-      "rollingBack": "Retour en arrière en cours…"
+      "rollingBack": "Retour en arrière en cours…",
+      "rolledBack_one": "{{count}} revenu en arrière",
+      "rolledBack_many": "{{count}} revenus en arrière",
+      "rolledBack_other": "{{count}} revenus en arrière",
+      "rolledBackTitle": "{{item}} {{version}} a cassé le site : revenu à {{backTo}} tout seul",
+      "rolledBackText": "Le site passe à nouveau les vérifications. La mise à jour continue avec les éléments suivants."
     },
     "result": {
       "doneTitle": "{{name}} est à jour",
@@ -1019,7 +1026,12 @@
       "rollbackFailedLead": "Le site n'est pas dans l'état d'avant. La sauvegarde reste sur le serveur :",
       "keep": "Garder tel quel",
       "rollback": "Revenir en arrière",
-      "close": "Fermer"
+      "close": "Fermer",
+      "doneExceptTitle": "{{name}} est à jour, sauf {{items}}",
+      "rolledBackText": "Vigie a remis {{item}} tel qu'il était, le site passe à nouveau les vérifications, puis la mise à jour a continué. La version {{version}} est mise de côté : « Tout mettre à jour » la laisse de côté jusqu'à une version plus récente. La base de données n'est pas touchée.",
+      "rollbackOnItsOwnFailedTitle": "{{item}} est revenu à {{backTo}}, mais le site ne passe toujours pas les vérifications",
+      "rollbackOnItsOwnFailedText": "Vigie s'est arrêté pour ce site : les éléments suivants n'ont pas été lancés.",
+      "rollbackCoreNever": "Vigie ne le fait jamais tout seul : les commandes ou commentaires écrits depuis seraient perdus."
     },
     "state": {
       "done": "Fait",
@@ -1046,7 +1058,8 @@
       "restore-database": "Base de données restaurée",
       "notStarted": "pas lancé",
       "rescan": "Nouveau relevé du site",
-      "rescanDetail": "versions relues sur le serveur, anciennes sauvegardes retirées"
+      "rescanDetail": "versions relues sur le serveur, anciennes sauvegardes retirées",
+      "onItsOwn": "tout seul, après l'échec ci-dessus"
     },
     "duration": {
       "seconds": "{{s}} s",
@@ -1060,7 +1073,8 @@
         "not-started": "Pas lancés",
         "refused": "Refusés",
         "nothing": "Déjà à jour",
-        "cancelled": "Arrêtés"
+        "cancelled": "Arrêtés",
+        "rolledBack": "Revenus en arrière"
       },
       "outcome": {
         "updated": "Mis à jour",
@@ -1080,7 +1094,10 @@
       "stoppedText": "Un élément a cassé ce site : ouvrez-le pour revenir en arrière ou garder la nouvelle version. Les sites suivants du même hébergement n'ont pas été lancés.",
       "open": "Ouvrir {{site}}",
       "notStarted": "Un site précédent du même hébergement a échoué, ou la mise à jour a été arrêtée",
-      "dismiss": "Retour aux sites"
+      "dismiss": "Retour aux sites",
+      "rolledBackTitle": "{{item}} est revenu en arrière tout seul sur {{site}}",
+      "rolledBackText": "La version {{version}} a cassé le site : Vigie a remis la {{backTo}}, puis a continué avec ce site et les suivants.",
+      "rolledBackDetail": "{{item}} {{version}} revenu à {{backTo}} tout seul"
     },
     "history": {
       "label": "Historique des mises à jour",
@@ -1094,11 +1111,16 @@
         "failed": "Échec",
         "cancelled": "Arrêtée",
         "interrupted": "Interrompue",
-        "running": "En cours"
+        "running": "En cours",
+        "rolledBack_one": "Terminée, {{count}} élément revenu en arrière",
+        "rolledBack_many": "Terminée, {{count}} éléments revenus en arrière",
+        "rolledBack_other": "Terminée, {{count}} éléments revenus en arrière"
       },
       "rolledBack": "Revenue en arrière",
       "backupKept": "Sauvegarde gardée sur le serveur :",
-      "show": "Afficher les étapes"
+      "show": "Afficher les étapes",
+      "rollbackOnItsOwn": "Retour de {{item}} à {{version}}, tout seul",
+      "ofItsOwn": "opération à part, ci-dessus"
     },
     "follow": "Suivre la mise à jour",
     "bulkDialog": {
@@ -1119,7 +1141,13 @@
       "onlyIgnored_many": "Rien à installer : ses {{count}} mises à jour sont ignorées",
       "ignoredLeft_one": "{{count}} mise à jour ignorée laissée de côté",
       "ignoredLeft_other": "{{count}} mises à jour ignorées laissées de côté",
-      "ignoredLeft_many": "{{count}} mises à jour ignorées laissées de côté"
+      "ignoredLeft_many": "{{count}} mises à jour ignorées laissées de côté",
+      "setAsideLeft_one": "{{count}} version revenue en arrière laissée de côté",
+      "setAsideLeft_many": "{{count}} versions revenues en arrière laissées de côté",
+      "setAsideLeft_other": "{{count}} versions revenues en arrière laissées de côté",
+      "onlySetAside_one": "Rien à installer : sa seule mise à jour est mise de côté",
+      "onlySetAside_many": "Rien à installer : ses {{count}} mises à jour sont mises de côté",
+      "onlySetAside_other": "Rien à installer : ses {{count}} mises à jour sont mises de côté"
     },
     "updateAll": "Tout mettre à jour",
     "updatingAll": "Mise à jour en cours…",
@@ -1137,7 +1165,8 @@
       "lead": "{{from}} → {{to}}. Elle ne compte plus dans l'état du site, et « Tout mettre à jour » la laisse de côté.",
       "untilNext": "Jusqu'à la version suivante",
       "untilNextHint": "Revient d'elle-même dès qu'une version plus récente que {{version}} est proposée."
-    }
+    },
+    "setAsideSince": "Revenue en arrière toute seule le {{date}}. Laissée de côté jusqu'à une version plus récente."
   },
   "security": {
     "summary": {
@@ -1490,6 +1519,11 @@
       "homebrew": "Vigie {{version}}, installée avec Homebrew : elle se met à jour avec Homebrew, dans le Terminal.",
       "package": "Vigie {{version}}, installée par un paquet : elle se met à jour avec votre gestionnaire de paquets (apt, dnf, pacman).",
       "dev": "Vigie compilée depuis les sources : pas de mise à jour automatique."
+    },
+    "siteUpdates": {
+      "section": "Mises à jour des sites",
+      "rollbackTitle": "Retour en arrière automatique",
+      "rollbackDesc": "Quand une extension ou un thème casse le site après sa mise à jour, Vigie remet aussitôt sa version d'avant, vérifie le site et passe à la suite. Cette version est ensuite laissée de côté par « Tout mettre à jour ». WordPress lui-même attend toujours votre choix, car son retour restaure aussi la base de données."
     }
   },
   "data": {

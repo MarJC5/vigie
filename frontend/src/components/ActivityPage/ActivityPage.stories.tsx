@@ -146,3 +146,24 @@ export const WPCLIInstalls: Story = {
     await expect(page.getByText("en échec")).toBeInTheDocument();
   },
 };
+
+// ADR-0042: the update, then the rollback Vigie ran on its own, each an entry of its own.
+export const RollbackOnItsOwn: Story = {
+  args: {
+    journal: {
+      ...journal,
+      entries: [
+        { kind: "rollback", at: at(31, 14, 12), ended: at(31, 14, 12), by: "", path: "Clients/Shared hosting/boulangerie-exemple.ch", siteId: "boulangerie", sites: 0, outcome: "completed", summary: "", automatic: true, wpCli: null, copy: null, changes: [], siteChanges: [], notices: [] },
+        {
+          kind: "update", at: at(31, 14, 11), ended: at(31, 14, 13), by: "", path: "Clients/Shared hosting/boulangerie-exemple.ch", siteId: "boulangerie", sites: 0, outcome: "completed", summary: "", automatic: false, wpCli: null, copy: null, changes: [], siteChanges: [],
+          notices: [{ kind: "ended", names: [], text: "Update done, 1 item updated, WooCommerce rolled back." }],
+        },
+      ],
+    },
+  },
+  play: async ({ canvas }) => {
+    const [list] = canvas.getAllByRole("list");
+    await expect(list).toHaveTextContent("on its own");
+    await expect(list).toHaveTextContent("Update done, 1 item updated, WooCommerce rolled back.");
+  },
+};

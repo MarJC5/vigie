@@ -7,7 +7,7 @@ import type {
   SitePreviewView,
   UpdatesState,
 } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
-import { plannedItems, selectionOf, selectionOfItems } from "../../lib/updates";
+import { plannedItems, rollbacksOf, selectionOf, selectionOfItems } from "../../lib/updates";
 import { UpdateWindow } from "../UpdateWindow/UpdateWindow";
 
 /** The Go service of the updates (app.Updates). */
@@ -54,7 +54,9 @@ const notStarted: Problem = { code: "update.run.notStarted", detail: "" };
 
 /** The update of one site, from its preview to how it ended, following Vigie's state. */
 export function UpdateFlow({ api, site, keys, names, known, onOpen, state, follow = false, onClose }: UpdateFlowProps) {
-  const running = (state.running ?? []).find((op) => op.siteId === site.id);
+  // The site's update, or rollback; a rollback Vigie runs on its own goes with its update (ADR-0042).
+  const running = (state.running ?? []).find((op) => op.siteId === site.id && !op.automatic);
+  const runningBacks = rollbacksOf(running ?? null, state.running ?? []);
   const busy = (state.sites ?? []).includes(site.id);
 
   const [preview, setPreview] = useState<SitePreviewView | null>(null);
@@ -63,6 +65,7 @@ export function UpdateFlow({ api, site, keys, names, known, onOpen, state, follo
     follow ? { kind: running?.kind === "rollback" ? "rollback" : "update", before: null, completed: state.completed } : null,
   );
   const [ended, setEnded] = useState<OperationView | null>(null);
+  const [endedBacks, setEndedBacks] = useState<OperationView[]>([]);
   const [stopping, setStopping] = useState(false);
   const closed = useRef(false);
   // The site was seen in the run: when it leaves the runs, the run is over.
@@ -110,9 +113,12 @@ export function UpdateFlow({ api, site, keys, names, known, onOpen, state, follo
       if (closed.current) return;
       setFollowing(null);
       setStopping(false);
-      const op = (ops ?? []).find((o) => !before.has(o.id));
-      if (op) setEnded(op);
-      else setProblem(notStarted);
+      const fresh = (ops ?? []).filter((o) => !before.has(o.id));
+      const op = fresh.find((o) => !o.automatic);
+      if (op) {
+        setEnded(op);
+        setEndedBacks(rollbacksOf(op, fresh));
+      } else setProblem(notStarted);
     });
   }, [following, busy, running, state.completed, api, site.id]);
 
@@ -126,6 +132,7 @@ export function UpdateFlow({ api, site, keys, names, known, onOpen, state, follo
     if (refused) return setProblem(refused);
     seen.current = false;
     setEnded(null);
+    setEndedBacks([]);
     setFollowing({ kind, before, completed });
   };
 
@@ -138,6 +145,7 @@ export function UpdateFlow({ api, site, keys, names, known, onOpen, state, follo
       known={known}
       onOpen={onOpen}
       operation={following ? (running ?? null) : ended}
+      rollbacks={following ? runningBacks : endedBacks}
       starting={!!following && !running}
       stopping={stopping}
       problem={problem}

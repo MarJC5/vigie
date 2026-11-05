@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { outdatedSite } from "../fixtures/scans";
-import { bulk, completed, failed, preview, rolledBack, running } from "../fixtures/updates";
+import { autoDone, autoRolledBack, autoRollbackFailed, autoRunning, bulk, bulkAuto, completed, failed, preview, rolledBack, running } from "../fixtures/updates";
 import {
   backupPath,
   bulkCounts,
@@ -16,9 +16,12 @@ import {
   namesOf,
   offeredKeys,
   pendingOf,
+  setAsideOf,
   plannedItems,
   rescanRow,
   restoredStep,
+  rolledBackBy,
+  rolledBackCount,
   rowText,
   runRows,
   seconds,
@@ -182,8 +185,61 @@ describe("an ignored update", () => {
   });
 
   it("is left out of the count of a bulk update", () => {
-    const p = { ...preview, plugins: preview.plugins!.map((it) => (it.slug === "woocommerce" ? { ...it, ignored: true } : it)) };
+    const p = { ...preview, plugins: preview.plugins!.map((it) => (it.slug === "woocommerce" ? { ...it, ignored: true, setAside: false } : it)) };
     expect([pendingOf(preview), pendingOf(p)]).toEqual([4, 3]);
     expect(ignoredOf(p).map((it) => it.slug)).toEqual(["woocommerce"]);
+  });
+});
+
+describe("the rollback on its own (ADR-0042)", () => {
+  const t = (key: string, vars?: Record<string, unknown>) => (vars ? `${key} ${JSON.stringify(vars)}` : key);
+  const planned = plannedItems(preview, selectionOf(["plugin:akismet", "plugin:woocommerce", "languages"]));
+  it("puts the rollback's steps after the check that failed, then the rest of the run", () => {
+    const rows = runRows(autoRunning, planned, [autoRolledBack]);
+    expect(rows.map((r) => [r.state, r.step?.step ?? "item", !!r.auto])).toEqual([
+      ["done", "backup-database", false],
+      ["done", "backup-files", false],
+      ["done", "backup-files", false],
+      ["done", "update", false],
+      ["done", "check", false],
+      ["done", "update", false],
+      ["failed", "check", false],
+      ["done", "restore-files", true],
+      ["done", "check", true],
+      ["running", "update", false],
+    ]);
+    expect(new Set(rows.map((r) => r.key)).size).toBe(rows.length);
+    expect(rowText(t, rows[7]!, new Map(), false)).toEqual({
+      label: 'update.step.restore-files {"item":"woocommerce","version":"9.8.1"}',
+      detail: "update.step.onItsOwn",
+    });
+  });
+  it("lists the items gone back, the versions and why", () => {
+    expect(rolledBackBy(autoDone, [autoRolledBack])).toEqual([
+      {
+        kind: "plugin",
+        slug: "woocommerce",
+        version: "10.2.0",
+        backTo: "9.8.1",
+        reason: expect.stringContaining("wc_get_page_id"),
+      },
+    ]);
+    expect(rolledBackBy(autoDone, [autoRollbackFailed])).toEqual([]);
+  });
+  it("counts the items gone back over the sites of a bulk run", () => {
+    expect(rolledBackCount(bulkAuto)).toBe(1);
+    expect(rolledBackCount(bulk)).toBe(0);
+  });
+  it("sets a version aside in a group of its own, unticked, and out of Update all", () => {
+    const updates = outdatedSite.scan!.updates!.map((u) =>
+      u.slug === "woocommerce" ? { ...u, setAside: { created: "2026-11-04T14:12:24Z", reason: "home 500" } } : u,
+    );
+    const groups = choicesOf(updates);
+    expect(groups.map((g) => g.kind)).toEqual(["core", "plugin", "theme", "language", "setAside"]);
+    expect(groups.at(-1)!.choices.map((c) => c.key)).toEqual(["plugin:woocommerce"]);
+    expect(offeredKeys(groups).has("plugin:woocommerce")).toBe(false);
+    const aside = { ...preview, plugins: preview.plugins!.map((p) => (p.slug === "woocommerce" ? { ...p, setAside: true } : p)) };
+    expect(pendingOf(aside)).toBe(pendingOf(preview) - 1);
+    expect(setAsideOf(aside).map((it) => it.slug)).toEqual(["woocommerce"]);
   });
 });

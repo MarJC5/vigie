@@ -711,7 +711,8 @@
     "copy": "Copy of {{path}}",
     "copyResumed": "Resume of the copy of {{path}}",
     "copyLine": "{{content}}: {{archives}}, {{size}}, in {{folder}}",
-    "copyCut": "Cut off: {{message}}"
+    "copyCut": "Cut off: {{message}}",
+    "onItsOwn": "on its own"
   },
   "tray": {
     "open": "Open {{app}}",
@@ -859,7 +860,8 @@
       "plugin": "Plugins",
       "theme": "Themes",
       "language": "Translations",
-      "ignored": "Ignored"
+      "ignored": "Ignored",
+      "setAside": "Set aside"
     },
     "upToDate": "All up to date",
     "notOffered": {
@@ -915,7 +917,11 @@
       "notStarted": "Vigie could not start this update. Scan the site, then try again.",
       "progress_one": "{{done}} of {{total}} items updated and checked",
       "progress_other": "{{done}} of {{total}} items updated and checked",
-      "rollingBack": "Rolling back…"
+      "rollingBack": "Rolling back…",
+      "rolledBack_one": "{{count}} rolled back",
+      "rolledBack_other": "{{count}} rolled back",
+      "rolledBackTitle": "{{item}} {{version}} broke the site: back to {{backTo}} on its own",
+      "rolledBackText": "The site passes its checks again. The update goes on with the next items."
     },
     "result": {
       "doneTitle": "{{name}} is up to date",
@@ -937,7 +943,12 @@
       "rollbackFailedLead": "The site is not as it was. The backup stays on the server:",
       "keep": "Keep as is",
       "rollback": "Roll back",
-      "close": "Close"
+      "close": "Close",
+      "doneExceptTitle": "{{name}} is up to date, but {{items}}",
+      "rolledBackText": "Vigie put {{item}} back as it was, the site passes its checks again, then the update went on. Version {{version}} is set aside: “Update all” leaves it out until a newer version. The database is not touched.",
+      "rollbackOnItsOwnFailedTitle": "{{item}} is back to {{backTo}}, but the site still fails its checks",
+      "rollbackOnItsOwnFailedText": "Vigie stopped for this site: the next items were not started.",
+      "rollbackCoreNever": "Vigie never does it on its own: orders or comments written since would be lost."
     },
     "state": {
       "done": "Done",
@@ -964,7 +975,8 @@
       "restore-database": "Database restored",
       "notStarted": "not started",
       "rescan": "New scan of the site",
-      "rescanDetail": "versions read again on the server, older backups removed"
+      "rescanDetail": "versions read again on the server, older backups removed",
+      "onItsOwn": "on its own, after the failure above"
     },
     "duration": {
       "seconds": "{{s}} s",
@@ -978,7 +990,8 @@
         "not-started": "Not started",
         "refused": "Refused",
         "nothing": "Up to date",
-        "cancelled": "Stopped"
+        "cancelled": "Stopped",
+        "rolledBack": "Rolled back"
       },
       "outcome": {
         "updated": "Updated",
@@ -998,7 +1011,10 @@
       "stoppedText": "An item broke this site: open it to roll back or keep the new version. The next sites of the same host were not started.",
       "open": "Open {{site}}",
       "notStarted": "An earlier site of the same host failed, or the update was stopped",
-      "dismiss": "Back to the sites"
+      "dismiss": "Back to the sites",
+      "rolledBackTitle": "{{item}} rolled back on its own on {{site}}",
+      "rolledBackText": "Version {{version}} broke the site: Vigie put {{backTo}} back, then went on with this site and the next ones.",
+      "rolledBackDetail": "{{item}} {{version}} back to {{backTo}} on its own"
     },
     "history": {
       "label": "History of updates",
@@ -1011,11 +1027,15 @@
         "failed": "Failed",
         "cancelled": "Stopped",
         "interrupted": "Interrupted",
-        "running": "In progress"
+        "running": "In progress",
+        "rolledBack_one": "Done, {{count}} item rolled back",
+        "rolledBack_other": "Done, {{count}} items rolled back"
       },
       "rolledBack": "Rolled back",
       "backupKept": "Backup kept on the server:",
-      "show": "Show the steps"
+      "show": "Show the steps",
+      "rollbackOnItsOwn": "{{item}} back to {{version}}, on its own",
+      "ofItsOwn": "an operation of its own, above"
     },
     "follow": "Follow the update",
     "bulkDialog": {
@@ -1032,7 +1052,11 @@
       "onlyIgnored_one": "Nothing to install: its only update is ignored",
       "onlyIgnored_other": "Nothing to install: its {{count}} updates are ignored",
       "ignoredLeft_one": "{{count}} ignored update left out",
-      "ignoredLeft_other": "{{count}} ignored updates left out"
+      "ignoredLeft_other": "{{count}} ignored updates left out",
+      "setAsideLeft_one": "{{count}} version rolled back before, left out",
+      "setAsideLeft_other": "{{count}} versions rolled back before, left out",
+      "onlySetAside_one": "Nothing to install: its only update is set aside",
+      "onlySetAside_other": "Nothing to install: its {{count}} updates are set aside"
     },
     "updateAll": "Update all",
     "updatingAll": "Updating…",
@@ -1050,7 +1074,8 @@
       "lead": "{{from}} → {{to}}. It no longer counts in the site's status, and “Update all” leaves it out.",
       "untilNext": "Until the next version",
       "untilNextHint": "Comes back by itself as soon as a version newer than {{version}} is offered."
-    }
+    },
+    "setAsideSince": "Rolled back on its own on {{date}}. Left out until a newer version."
   },
   "security": {
     "summary": {
@@ -1393,6 +1418,11 @@
       "homebrew": "Vigie {{version}}, installed with Homebrew: it updates with Homebrew, in Terminal.",
       "package": "Vigie {{version}}, installed from a package: it updates with your package manager (apt, dnf, pacman).",
       "dev": "Vigie built from the sources: no automatic updates."
+    },
+    "siteUpdates": {
+      "section": "Updates of the sites",
+      "rollbackTitle": "Roll back on its own",
+      "rollbackDesc": "When a plugin or theme breaks the site after its update, Vigie puts its version before back at once, checks the site and goes on. That version is then left out by “Update all”. WordPress itself always waits for your choice, as its rollback restores the database too."
     }
   },
   "data": {

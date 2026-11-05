@@ -58,6 +58,11 @@ tr[data-outcome="updated"] .icon {
   color: var(--vg-status-ok);
 }
 
+/* An item gone back on its own (ADR-0042): the site is up, the item needs a look. */
+tr[data-rolled-back] .icon {
+  color: var(--vg-status-warn);
+}
+
 tr[data-outcome="failed"] .icon {
   color: var(--vg-status-danger);
 }

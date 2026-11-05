@@ -32,6 +32,9 @@ type UpdateItemView struct {
 	// Ignored: the site ignores this update (ADR-0026); "Update all" leaves it out, the site's own
 	// update takes it when chosen.
 	Ignored bool `json:"ignored"`
+	// SetAside: this version went back on its own before (ADR-0042); "Update all" leaves it out,
+	// the site's own update takes it when chosen.
+	SetAside bool `json:"setAside"`
 }
 
 // SitePreviewView is what an update of a site would change.
@@ -234,7 +237,8 @@ func items(p workspace.SitePreview, list []update.Item) []UpdateItemView {
 }
 
 func itemView(p workspace.SitePreview, it update.Item) UpdateItemView {
-	return UpdateItemView{Kind: string(it.Kind), Slug: it.Slug, Language: it.Language, From: it.From, To: it.To, Ignored: p.IsIgnored(it)}
+	return UpdateItemView{Kind: string(it.Kind), Slug: it.Slug, Language: it.Language, From: it.From, To: it.To,
+		Ignored: p.IsIgnored(it), SetAside: p.IsSetAside(it)}
 }
 
 // Update starts updating a site with the items chosen among its last preview, and returns at once.
