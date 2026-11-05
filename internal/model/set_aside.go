@@ -30,3 +30,14 @@ func (s SetAside) Validate() error {
 	}
 	return nil
 }
+
+// Holds tells whether a scan's items still offer the version set aside: a newer version offered,
+// the item updated elsewhere or removed end the set-aside.
+func (s SetAside) Holds(items []ScanItem) bool {
+	for _, it := range items {
+		if it.Kind == s.Kind && it.Slug == s.Slug {
+			return it.UpdateVersion == s.Version
+		}
+	}
+	return false
+}

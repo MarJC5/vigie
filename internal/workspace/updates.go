@@ -58,12 +58,16 @@ type SitePreview struct {
 	// Ignored are the updates offered that the site's ignores cover (ADR-0026): a bulk run leaves
 	// them out; the site's own update takes one chosen on purpose.
 	Ignored []update.Item
+	// SetAside are the updates offered whose version rolled back on its own before (ADR-0042): a
+	// bulk run leaves them out too; the site's own update takes one chosen on purpose.
+	SetAside []update.Item
 }
 
-// Bulk selects what a bulk run updates on the site: everything offered, the ignored updates aside.
+// Bulk selects what a bulk run updates on the site: everything offered, the ignored updates and
+// the versions set aside left out.
 func (p SitePreview) Bulk() update.Selection {
 	sel := update.All(p.Preview)
-	for _, it := range p.Ignored {
+	for _, it := range slices.Concat(p.Ignored, p.SetAside) {
 		switch it.Kind {
 		case model.ItemCore:
 			sel.Core = false
@@ -81,15 +85,35 @@ func (p SitePreview) IsIgnored(it update.Item) bool {
 	return slices.Contains(p.Ignored, it)
 }
 
+// IsSetAside tells whether an update of the preview is a version set aside on the site.
+func (p SitePreview) IsSetAside(it update.Item) bool {
+	return slices.Contains(p.SetAside, it)
+}
+
+// offered are the updates of a preview: WordPress, the plugins, the themes.
+func offered(p update.Preview) []update.Item {
+	var items []update.Item
+	if p.Core != nil {
+		items = append(items, *p.Core)
+	}
+	return append(append(items, p.Plugins...), p.Themes...)
+}
+
+// setAsideIn are the updates of a preview to the very version set aside on the site.
+func setAsideIn(p update.Preview, asides []model.SetAside) []update.Item {
+	var out []update.Item
+	for _, it := range offered(p) {
+		if slices.ContainsFunc(asides, func(s model.SetAside) bool { return s.Kind == it.Kind && s.Slug == it.Slug && s.Version == it.To }) {
+			out = append(out, it)
+		}
+	}
+	return out
+}
+
 // ignoredIn are the updates of a preview that the ignores cover.
 func ignoredIn(p update.Preview, ignores []model.Ignore) []update.Item {
-	var offered []update.Item
-	if p.Core != nil {
-		offered = append(offered, *p.Core)
-	}
-	offered = append(append(offered, p.Plugins...), p.Themes...)
 	var ignored []update.Item
-	for _, it := range offered {
+	for _, it := range offered(p) {
 		item := model.ScanItem{Kind: it.Kind, Slug: it.Slug, Update: model.UpdateAvailable, UpdateVersion: it.To}
 		if slices.ContainsFunc(ignores, func(i model.Ignore) bool { return i.CoversUpdate(item) }) {
 			ignored = append(ignored, it)
@@ -137,11 +161,16 @@ func (w *Workspace) PreviewNodesFollowed(ctx context.Context, nodes []model.Node
 		if err != nil {
 			return nil, err
 		}
+		asides, err := w.db.SetAsides(ctx, site.ID)
+		if err != nil {
+			return nil, err
+		}
 		wg.Go(func() {
 			slots <- struct{}{}
 			defer func() { <-slots }()
 			previews[i].Preview, previews[i].Err = u.Preview(ctx, previews[i].Job)
 			previews[i].Ignored = ignoredIn(previews[i].Preview, ignores)
+			previews[i].SetAside = setAsideIn(previews[i].Preview, asides)
 			if progress != nil {
 				progress(int(read.Add(1)), len(sites))
 			}
@@ -184,7 +213,9 @@ type SiteUpdate struct {
 	Path      string
 	Outcome   SiteOutcome
 	Operation model.Operation // zero when nothing ran
-	Err       error           // why it was refused
+	// Rollbacks are those Vigie ran on its own during the update (ADR-0042), passed or not.
+	Rollbacks []model.Operation
+	Err       error // why it was refused
 }
 
 // UpdateSites updates the sites planned: hosts at once, the sites of a host one after another,
@@ -201,6 +232,11 @@ func (w *Workspace) UpdateSites(ctx context.Context, planned []Planned, follow F
 		}
 		byHost[p.Job.HostKey] = append(byHost[p.Job.HostKey], i)
 	}
+	// The setting is read once per run; unreadable, plugins and themes roll back on their own.
+	auto, err := w.AutoRollback(ctx)
+	if err != nil {
+		auto = true
+	}
 	u := w.updater(follow.OnStep)
 	var mu sync.Mutex // OnSite hears of the hosts one at a time
 	var wg sync.WaitGroup
@@ -210,7 +246,9 @@ func (w *Workspace) UpdateSites(ctx context.Context, planned []Planned, follow F
 				if ctx.Err() != nil {
 					return
 				}
-				results[i] = w.updateSite(ctx, u, planned[i])
+				p := planned[i]
+				p.Job.AutoRollback = auto
+				results[i] = w.updateSite(ctx, u, p)
 				if follow.OnSite != nil {
 					mu.Lock()
 					follow.OnSite(results[i])
@@ -243,6 +281,7 @@ func (w *Workspace) updateSite(ctx context.Context, u Updates, p Planned) SiteUp
 		return r
 	}
 	r.Operation = op
+	r.Rollbacks = w.setAside(context.WithoutCancel(ctx), op)
 	switch op.Outcome {
 	case model.OperationCompleted:
 		r.Outcome = SiteUpdated
@@ -286,6 +325,42 @@ func (w *Workspace) Rollback(ctx context.Context, siteID, operationID model.ID, 
 	return op, nil
 }
 
+// setAside sets aside on the site the versions an update rolled back on its own, and ends the
+// set-aside of an item it updated and checked (the user chose it on purpose); it returns the
+// rollbacks. A failure leaves the set-asides as they were: Update all may try a version again.
+func (w *Workspace) setAside(ctx context.Context, op model.Operation) []model.Operation {
+	for _, st := range op.Steps {
+		if st.Step == model.StepCheck && st.Outcome == model.StepDone && (st.ItemKind == model.ItemPlugin || st.ItemKind == model.ItemTheme) {
+			_ = w.db.DeleteSetAside(ctx, op.SiteID, st.ItemKind, st.Slug)
+		}
+	}
+	ops, err := w.db.Operations(ctx, op.SiteID)
+	if err != nil {
+		return nil
+	}
+	var backs []model.Operation
+	for _, back := range slices.Backward(ops) {
+		if back.Kind != model.OperationRollback || !back.Automatic || back.OfOperation != op.ID {
+			continue
+		}
+		backs = append(backs, back)
+		i := slices.IndexFunc(back.Steps, func(st model.OperationStep) bool { return st.Step == model.StepRestoreFiles })
+		if back.Outcome != model.OperationCompleted || i < 0 {
+			continue
+		}
+		restored := back.Steps[i]
+		reason := ""
+		for _, st := range op.Steps {
+			if st.Step == model.StepCheck && st.Outcome == model.StepFailed && st.ItemKind == restored.ItemKind && st.Slug == restored.Slug {
+				reason = st.Message
+			}
+		}
+		_ = w.db.SaveSetAside(ctx, model.SetAside{SiteID: op.SiteID, Kind: restored.ItemKind, Slug: restored.Slug,
+			Version: restored.VersionBefore, OperationID: op.ID, Reason: reason, Created: w.deps.Now()})
+	}
+	return backs
+}
+
 func empty(sel update.Selection) bool {
 	return !sel.Core && !sel.Languages && len(sel.Plugins) == 0 && len(sel.Themes) == 0
 }
@@ -312,4 +387,40 @@ func (w *Workspace) rescan(ctx context.Context, job update.Job) {
 			return
 		}
 	}
+}
+
+// autoRollbackSetting turns the rollback on its own off with "off" (ADR-0042, point 4).
+const autoRollbackSetting = "updates.autorollback"
+
+// AutoRollback tells whether plugins and themes that break a site roll back on their own; on by
+// default.
+func (w *Workspace) AutoRollback(ctx context.Context) (bool, error) {
+	value, _, err := w.db.Setting(ctx, autoRollbackSetting)
+	return value != "off", err
+}
+
+// SetAutoRollback turns the rollback on its own on or off.
+func (w *Workspace) SetAutoRollback(ctx context.Context, on bool) error {
+	value := "on"
+	if !on {
+		value = "off"
+	}
+	return w.db.SetSetting(ctx, autoRollbackSetting, value)
+}
+
+// endSetAsides ends the set-asides of a site that a completed scan no longer offers the version of:
+// a newer one is offered, the item was updated elsewhere or removed.
+func (w *Workspace) endSetAsides(ctx context.Context, s model.Scan) error {
+	asides, err := w.db.SetAsides(ctx, s.SiteID)
+	if err != nil {
+		return err
+	}
+	for _, a := range asides {
+		if !a.Holds(s.Items) {
+			if err := w.db.DeleteSetAside(ctx, a.SiteID, a.Kind, a.Slug); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

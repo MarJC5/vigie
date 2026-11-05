@@ -300,6 +300,11 @@ func (w *Workspace) prepare(ctx context.Context, r *Scanned, previous model.Scan
 		return err
 	}
 	r.Scan.ApplyIgnores(ignores)
+	if r.Scan.Outcome == model.ScanCompleted {
+		if err := w.endSetAsides(ctx, r.Scan); err != nil {
+			return err
+		}
+	}
 	r.Scan.Recorded, r.Scan.RecordedStatus, r.Scan.RecordedChanges = true, r.Scan.Status(), r.Changes
 	return nil
 }
