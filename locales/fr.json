@@ -1554,7 +1554,8 @@
       "configDesc": "À ajouter aux serveurs MCP de votre client. Le chemin est celui de la commande vigie liée sur cet ordinateur.",
       "noCommandTitle": "La commande vigie n'est pas liée",
       "noCommandText": "Un client lance Vigie par cette commande. Liez-la d'abord dans Général, Ligne de commande.",
-      "openGeneral": "Ouvrir Général"
+      "openGeneral": "Ouvrir Général",
+      "howTo": "Aide : brancher un client"
     }
   },
   "data": {
@@ -1745,7 +1746,8 @@
       "server": "Lu et envoyé",
       "import-export": "Importer, exporter",
       "copies": "Copies",
-      "background": "Arrière-plan"
+      "background": "Arrière-plan",
+      "assistants": "Assistants"
     },
     "quote": "« {{text}} »",
     "start": {

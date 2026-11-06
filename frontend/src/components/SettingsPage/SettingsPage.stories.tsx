@@ -376,7 +376,7 @@ const linkedConfig = '{\n  "mcpServers": {\n    "vigie": {\n      "command": "/u
 
 // The assistants off, the default (ADR-0043): the three levels, what is never allowed, the lines.
 export const AssistantsOff: Story = {
-  args: { tab: "assistants", assistants: { access: "off", config: linkedConfig }, onAssistantAccess: fn(), onCopy: fn() },
+  args: { tab: "assistants", assistants: { access: "off", config: linkedConfig }, onAssistantAccess: fn(), onCopy: fn(), onAssistantsHelp: fn() },
   play: async ({ canvasElement, args }) => {
     const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
     await expect(page.getByRole("tab", { name: "Assistants" })).toHaveAttribute("aria-selected", "true");
@@ -388,6 +388,8 @@ export const AssistantsOff: Story = {
     await expect(args.onAssistantAccess).toHaveBeenCalledWith("read");
     await userEvent.click(page.getByRole("button", { name: "Copy" }));
     await expect(args.onCopy).toHaveBeenCalledWith(linkedConfig);
+    await userEvent.click(page.getByRole("button", { name: "Help: connect a client" }));
+    await expect(args.onAssistantsHelp).toHaveBeenCalled();
   },
 };
 

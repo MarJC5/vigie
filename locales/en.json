@@ -1453,7 +1453,8 @@
       "configDesc": "To add to your client's MCP servers. The path is the one of the vigie command linked on this computer.",
       "noCommandTitle": "The vigie command is not linked",
       "noCommandText": "A client starts Vigie with this command. Link it first in General, Command line.",
-      "openGeneral": "Open General"
+      "openGeneral": "Open General",
+      "howTo": "Help: connect a client"
     }
   },
   "data": {
@@ -1632,7 +1633,8 @@
       "server": "Read and sent",
       "import-export": "Import, export",
       "copies": "Copies",
-      "background": "Background"
+      "background": "Background",
+      "assistants": "Assistants"
     },
     "quote": "“{{text}}”",
     "start": {

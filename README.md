@@ -68,6 +68,8 @@ to protect. Vigie takes another route:
   choose, notifications when a site turns urgent or a long run ends, and a journal of everything.
 - **Command line**: `vigie scan`, `vigie update` and more, with JSON output and exit codes for
   scripts and cron.
+- **Assistants**: Claude or any other MCP client reads your sites, scans them and, if you allow it,
+  updates them, each action waiting for your yes ([docs/assistants.md](docs/assistants.md)).
 - **Add-ons**: separate programs that bring hosts from other tools ([docs/addons.md](docs/addons.md)).
 - English and French, dark and light, following the system.
 
@@ -104,6 +106,7 @@ vigie scan --tag client-dupont --json   # the sites with a tag, as JSON
 vigie update "Clients/Shared hosting"   # preview, then update, after you confirm
 vigie copy "Clients/Shared hosting" --content database   # a copy of each site on this computer
 vigie export -o vigie-export.json       # everything, to move to another computer
+vigie mcp                               # for an MCP client, which starts it (Settings, Assistants)
 ```
 
 Exit status: 0 all good, 1 needs attention or not fully checked, 2 urgent, 3 error. `vigie` alone
@@ -129,6 +132,7 @@ What Vigie reads, asks and sends: [docs/security.md](docs/security.md). To repor
 - [Data: what Vigie keeps, and its export format](docs/data.md)
 - [Add-ons](docs/addons.md)
 - [Copies of your sites](docs/copies.md)
+- [Assistants: Vigie in an MCP client](docs/assistants.md)
 - [Releasing Vigie](docs/releasing.md)
 
 Each page is also in French, in [docs/fr](docs/fr).

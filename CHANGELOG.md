@@ -7,6 +7,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Assistants**: an assistant (Claude or any other MCP client) reads what Vigie knows of your
+  sites, scans them and, if you allow it, updates, copies and ignores, through `vigie mcp`, which
+  the client starts on this computer: nothing listens on the network. Off by default; Settings,
+  Assistants sets the level (off, read, actions) and gives the lines for the client. Every action
+  waits for your yes, asked by Vigie through a client that can ask you, or confirmed by a second
+  call otherwise. The content of `debug.log`, your notes, keys and the administrators' e-mail
+  addresses are never sent. What an assistant started shows in the journal and the history, "by an
+  assistant", with the client's name.
+
 ## [0.2.0] - 2026-11-05
 
 ### Added

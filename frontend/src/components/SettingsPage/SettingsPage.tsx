@@ -88,6 +88,8 @@ export interface SettingsPageProps {
   /** The tab Assistants (ADR-0043): the level and the lines for a client; without it, no tab. */
   assistants?: AssistantsView;
   onAssistantAccess?: (access: AssistantAccess) => void;
+  /** Opens the help topic on the assistants. */
+  onAssistantsHelp?: () => void;
 }
 
 // The intervals of automatic scans, in hours; 0 is never (app.AutoScanHours).
@@ -136,6 +138,7 @@ export function SettingsPage({
   onInstallUpdate,
   assistants,
   onAssistantAccess,
+  onAssistantsHelp,
 }: SettingsPageProps) {
   const { t, i18n } = useTranslation();
   const panel = useId();
@@ -243,7 +246,7 @@ export function SettingsPage({
         )}
         {tab === "lookups" && <Lookups lookups={lookups} onAgree={onAgree} onWithdraw={onWithdraw} onDestination={onDestination} onOpen={onOpen} />}
         {tab === "assistants" && assistants && (
-          <Assistants view={assistants} onAccess={onAssistantAccess} onGeneral={() => onTab("general")} onCopy={onCopy} />
+          <Assistants view={assistants} onAccess={onAssistantAccess} onGeneral={() => onTab("general")} onHelp={onAssistantsHelp} onCopy={onCopy} />
         )}
         {tab === "data" && (
           <>
@@ -397,11 +400,13 @@ function Assistants({
   view,
   onAccess,
   onGeneral,
+  onHelp,
   onCopy,
 }: {
   view: AssistantsView;
   onAccess?: (access: AssistantAccess) => void;
   onGeneral: () => void;
+  onHelp?: () => void;
   onCopy?: (text: string) => Promise<unknown> | void;
 }) {
   const { t } = useTranslation();
@@ -439,7 +444,9 @@ function Assistants({
             title={t("settings.assistants.configTitle")}
             desc={t("settings.assistants.configDesc")}
             below={<CommandLine command={view.config} onCopy={onCopy} />}
-          />
+          >
+            {onHelp && <LinkButton onClick={onHelp}>{t("settings.assistants.howTo")}</LinkButton>}
+          </Row>
         ) : (
           <div className={styles.notice}>
             <Notice

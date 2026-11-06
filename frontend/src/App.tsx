@@ -435,6 +435,10 @@ export function App() {
                 }}
                 onCopy={copyText}
                 assistants={assistants}
+                onAssistantsHelp={() => {
+                  setHelpTab("assistants");
+                  setSection("help");
+                }}
                 onAssistantAccess={(access) => void Assistants.SetAccess(access).then((p) => !p && setAssistants((a) => a && { ...a, access }))}
               />
             )
