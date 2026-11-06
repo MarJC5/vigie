@@ -97,6 +97,8 @@ func Run(ctx context.Context, opts Options, env Env) int {
 		return exitOK
 	case "export", "import":
 		return runData(ctx, env, name, rest)
+	case "mcp":
+		return runMCP(ctx, env, rest)
 	case "tree", "scan", "discover", "update", "copy":
 	default:
 		// Not a command of Vigie: an add-on's, when vigie-<name> is on the PATH.
