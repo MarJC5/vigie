@@ -38,7 +38,10 @@ type Operation struct {
 	OfOperation ID
 	// Automatic tells a rollback Vigie started on its own after a failed check (ADR-0042).
 	Automatic bool
-	Steps     []OperationStep
+	// By is who started it, the window when empty; ByClient the assistant's client (ADR-0043).
+	By       RunBy
+	ByClient string
+	Steps    []OperationStep
 }
 
 // StepKind is one kind of step of an operation.

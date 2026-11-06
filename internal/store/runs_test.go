@@ -38,3 +38,20 @@ func TestARunIsKeptWithItsScans(t *testing.T) {
 		t.Fatalf("Scans() = %+v, %v; want the scan of the run", history, err)
 	}
 }
+
+// A run started by an assistant keeps the client's name; others have none (ADR-0043, point 7).
+func TestARunKeepsTheClientOfAnAssistant(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	at := time.Date(2026, 11, 6, 10, 20, 0, 0, time.UTC)
+	byAssistant := model.Run{ID: model.NewID(), Path: "Clients", By: model.RunByAssistant, ByClient: "Claude",
+		Started: at, Outcome: model.RunRunning, Sites: 3}
+	byCommand := model.Run{ID: model.NewID(), By: model.RunByCLI, Started: at.Add(time.Minute), Outcome: model.RunRunning, Sites: 11}
+	must(t, db.StartRun(ctx, byAssistant))
+	must(t, db.StartRun(ctx, byCommand))
+	runs, err := db.Runs(ctx, at)
+	must(t, err)
+	if len(runs) != 2 || runs[0] != byAssistant || runs[1] != byCommand {
+		t.Errorf("Runs() = %+v\nwant %+v and %+v", runs, byAssistant, byCommand)
+	}
+}

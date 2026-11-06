@@ -26,4 +26,7 @@ type Copy struct {
 	Archives          int   // archives written by this run
 	Bytes             int64 // their size on the computer
 	Message           string
+	// By is who started it, the window when empty; ByClient the assistant's client (ADR-0043).
+	By       RunBy
+	ByClient string
 }

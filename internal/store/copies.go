@@ -15,18 +15,20 @@ func (db *DB) SaveCopy(ctx context.Context, c model.Copy) error {
 	if c.Resumed {
 		resumed = 1
 	}
+	by, client := startedBy(c.By, c.ByClient)
 	_, err := db.sql.ExecContext(ctx, `INSERT INTO copies
-		(id, site_id, site_name, host_name, folder, content, resumed, started_at, finished_at, outcome, archives, bytes, message)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		(id, site_id, site_name, host_name, folder, content, resumed, started_at, finished_at, outcome, archives, bytes, message,
+			started_by, by_client)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		c.ID.String(), c.SiteID.String(), c.SiteName, c.HostName, c.Folder, c.Content, resumed,
-		timeText(c.Started), timeText(c.Finished), string(c.Outcome), c.Archives, c.Bytes, c.Message)
+		timeText(c.Started), timeText(c.Finished), string(c.Outcome), c.Archives, c.Bytes, c.Message, by, client)
 	return err
 }
 
 // Copies returns the copies started since a time, oldest first.
 func (db *DB) Copies(ctx context.Context, since time.Time) ([]model.Copy, error) {
 	rows, err := db.sql.QueryContext(ctx, `SELECT id, site_id, site_name, host_name, folder, content, resumed,
-		started_at, finished_at, outcome, archives, bytes, message
+		started_at, finished_at, outcome, archives, bytes, message, started_by, by_client
 		FROM copies WHERE started_at >= ? ORDER BY started_at, id`, timeText(since))
 	if err != nil {
 		return nil, err
@@ -38,7 +40,7 @@ func (db *DB) Copies(ctx context.Context, since time.Time) ([]model.Copy, error)
 		var id, site, started, finished, outcome string
 		var resumed int
 		if err := rows.Scan(&id, &site, &c.SiteName, &c.HostName, &c.Folder, &c.Content, &resumed,
-			&started, &finished, &outcome, &c.Archives, &c.Bytes, &c.Message); err != nil {
+			&started, &finished, &outcome, &c.Archives, &c.Bytes, &c.Message, &c.By, &c.ByClient); err != nil {
 			return nil, err
 		}
 		if c.ID, err = uuid.Parse(id); err != nil {

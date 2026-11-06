@@ -32,7 +32,7 @@ var t0 = time.Date(2026, 10, 29, 14, 12, 0, 0, time.UTC)
 
 func running(site model.Site, started time.Time, pid int) model.Operation {
 	return model.Operation{ID: model.NewID(), SiteID: site.ID, Kind: model.OperationUpdate, Started: started,
-		BackupDir: "~/.vigie/backups/a/2026-10-29-1412", PID: pid}
+		BackupDir: "~/.vigie/backups/a/2026-10-29-1412", PID: pid, By: model.RunByUser}
 }
 
 func TestOperationIsRecordedStepByStep(t *testing.T) {
@@ -203,5 +203,30 @@ func TestRollbackOnItsOwnStartsWhileItsUpdateRuns(t *testing.T) {
 	must(t, db.StartOperation(ctx, back))
 	if ops, err := db.Operations(ctx, site.ID); err != nil || len(ops) != 2 || ops[1].Outcome != model.OperationRunning {
 		t.Errorf("Operations() = %+v, %v; the update keeps running", ops, err)
+	}
+}
+
+// An operation keeps who started it: an assistant with the client's name, and an operation stored
+// without an origin reads as started from the window (ADR-0043, point 7).
+func TestAnOperationKeepsWhoStartedIt(t *testing.T) {
+	ctx := context.Background()
+	db := migrated(t)
+	a, b := withSites(t, db)
+	byAssistant := running(a, t0, os.Getpid())
+	byAssistant.By, byAssistant.ByClient = model.RunByAssistant, "Claude"
+	unknown := running(b, t0.Add(time.Minute), os.Getpid())
+	unknown.By = ""
+	must(t, db.StartOperation(ctx, byAssistant))
+	must(t, db.StartOperation(ctx, unknown))
+
+	ops, err := db.Operations(ctx, a.ID)
+	must(t, err)
+	if len(ops) != 1 || ops[0].By != model.RunByAssistant || ops[0].ByClient != "Claude" {
+		t.Errorf("Operations(a) = %+v, want started by the assistant Claude", ops)
+	}
+	since, err := db.OperationsSince(ctx, t0)
+	must(t, err)
+	if len(since) != 2 || since[0].ByClient != "Claude" || since[1].By != model.RunByUser || since[1].ByClient != "" {
+		t.Errorf("OperationsSince() = %+v, want Claude's, then the window's", since)
 	}
 }
