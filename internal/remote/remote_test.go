@@ -207,7 +207,26 @@ func TestParseUploadsPHP(t *testing.T) {
 		// Only an index.php is read whole.
 		{"a/other.php", "28", "<?php // Silence is golden.", false},
 		{"a/x.php", "12", "<?php exit_handler(); phpinfo();", false},
-		{"a/index.php", "0", "", false},
+		// A whole index.php without PHP runs nothing: empty, or Matomo's "//hello".
+		{"a/index.php", "0", "", true},
+		{"a/index.php", "7", "//hello", true},
+		{"a/index.php", "86", `<?php  header($_SERVER['SERVER_PROTOCOL'] . ' 403 Forbidden' ); die( '403 Forbidden' ); `, true},
+		{"a/index.php", "43", `<?php header('HTTP/1.1 403 Forbidden'); exit;`, true},
+		{"a/index.php", "16", "<?php phpinfo();", false},
+		{"a/index.php", "16", "<?= phpinfo() ?>", false},
+		{"a/index.php", "24", "//hello <?php phpinfo();", false},
+		{"a/index.php", "40", `<?php header('HTTP/1.1 403'); phpinfo();`, false},
+		// A string between double quotes runs what "{${...}}" holds: not a literal.
+		{"a/index.php", "45", `<?php header("HTTP/1.1 403 {${phpinfo()}}");`, false},
+		{"a/index.php", "30", `<?php exit("{${phpinfo()}}");`, false},
+		{"a/x.php", "29", `<?php die("{${phpinfo()}}");`, false},
+		// Quotes that do not match: PHP reads one string up to the same quote, then what follows.
+		{"a/x.php", "38", `<?php die("a') ; {${phpinfo()}}");`, false},
+		{"a/index.php", "62", `<?php header("HTTP/1.1 403'); exit('"); phpinfo(); //');`, false},
+		// Only a whole index.php may hold no PHP.
+		{"a/x.php", "0", "", false},
+		{"a/x.php", "7", "//hello", false},
+		{"a/index.php", "5000", strings.Repeat("/", 120), false},
 	} {
 		line := root + "/wp-content/uploads/" + tc.file + "\t" + tc.size + "\t" + tc.content + "\n"
 		if files, _ := remote.ParseUploadsPHP(root, []byte(line)); (len(files) == 0) != tc.dropped {

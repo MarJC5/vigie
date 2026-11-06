@@ -280,19 +280,33 @@ const UploadsShown = 50
 // stubBytes is how much of a file is read: more than any file dropped on purpose.
 const stubBytes = 120
 
+// literal is a string that PHP reads as it is written: the same quote at both ends, and inside it
+// no `$`, `\`, `{` nor `}`, with which a string between double quotes runs code ("{${f()}}").
+const literal = `('[^'$\\{}]*'|"[^"$\\{}]*")`
+
+// status and code are the literals of a 403 or 404 status: the status line, or the code after the
+// server's protocol.
+const (
+	status = `('HTTP/1\.[01]\s+40[34][^'$\\{}]*'|"HTTP/1\.[01]\s+40[34][^"$\\{}]*")`
+	code   = `('\s*40[34][^'$\\{}]*'|"\s*40[34][^"$\\{}]*")`
+)
+
 var (
 	// silence is the empty index.php WordPress and plugins put in folders so they cannot be listed:
 	// "<?php // Silence is golden." and its variants, nothing else.
 	silence = regexp.MustCompile(`(?i)^<\?php\s*(//|#|/\*)?\s*silence is golden\.?\s*(\*/)?\s*(\?>)?\s*$`)
-	// forbidden is an index.php that only answers 403 or 404, nothing else.
-	forbidden = regexp.MustCompile(`(?i)^<\?php\s+header\s*\(\s*['"]HTTP/1\.[01]\s+40[34][^'"]*['"]\s*\)\s*;\s*((exit|die)\s*(\(\s*\))?\s*;\s*)?(\?>)?\s*$`)
+	// forbidden is an index.php that only answers 403 or 404, nothing else: the status line written
+	// out, or the server's protocol followed by the code, then perhaps an exit with a literal.
+	forbidden = regexp.MustCompile(`(?i)^<\?php\s+header\s*\(\s*(` + status + `|\$_SERVER\[\s*('SERVER_PROTOCOL'|"SERVER_PROTOCOL")\s*\]\s*\.\s*` + code + `)\s*\)\s*;\s*((exit|die)\s*(\(\s*` + literal + `?\s*\))?\s*;\s*)?(\?>)?\s*$`)
 	// stops is a file whose first statement stops PHP: nothing after it runs, as in Matomo's
-	// config.ini.php ("; <?php exit; ?> DO NOT REMOVE THIS LINE").
-	stops = regexp.MustCompile(`(?i)^;?\s*<\?php\s+(exit|die)\s*(\(\s*(['"][^'"]*['"])?\s*\))?\s*;`)
+	// config.ini.php ("; <?php exit; ?> DO NOT REMOVE THIS LINE"). Its message is a literal: one
+	// that runs code before PHP stops is not dropped.
+	stops = regexp.MustCompile(`(?i)^;?\s*<\?php\s+(exit|die)\s*(\(\s*` + literal + `?\s*\))?\s*;`)
 )
 
 // dropped tells whether a file found in the uploads was put there on purpose and runs nothing: a file
-// whose first statement stops PHP, or a whole index.php that only stops folder listings.
+// whose first statement stops PHP, or a whole index.php that only stops folder listings, is empty or
+// holds no PHP at all (Matomo writes "//hello" in some).
 func dropped(path, size, content string) bool {
 	content = strings.TrimSpace(content)
 	if stops.MatchString(content) {
@@ -301,7 +315,7 @@ func dropped(path, size, content string) bool {
 	// The whole file must have been read, or code could follow the part that looks harmless.
 	n, err := strconv.Atoi(size)
 	whole := err == nil && n <= stubBytes && strings.HasSuffix(path, "/index.php")
-	return whole && (silence.MatchString(content) || forbidden.MatchString(content))
+	return whole && (!strings.Contains(content, "<?") || silence.MatchString(content) || forbidden.MatchString(content))
 }
 
 // ParseUploadsPHP reads UploadsPHP's answer: the files relative to the uploads folder, without

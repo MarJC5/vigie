@@ -18,9 +18,10 @@ site's real folder, a `find` in its uploads, and the end of `debug.log`):
 - **PHP files in the uploads folder**, where WordPress never puts any: their names and sizes, the
   first 120 bytes of an `index.php` and the first line of another file, so that the files plugins
   drop on purpose and that run nothing are told apart: the empty "Silence is golden" `index.php`
-  that stops folder listings, one that only answers 403 or 404, and a file whose first line stops
-  PHP (Matomo keeps its configuration that way). Nothing more of a file is read, and nothing of it
-  is kept.
+  that stops folder listings, an `index.php` that is empty or holds no PHP, one that only answers
+  403 or 404, and a file whose first line stops PHP (Matomo keeps its configuration that way). A
+  message that could run code (a string with `$`, `\`, `{` or `}`) is never taken for one of them.
+  Nothing more of a file is read, and nothing of it is kept.
 - **Administrators** (and super administrators of a network), and which two-factor methods each
   turned on: Two Factor, Solid Security and WP 2FA in the user's meta, Wordfence in its own table
   when Wordfence is active (that read needs the `mysql` client on the server). **Never** a

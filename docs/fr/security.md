@@ -21,9 +21,11 @@ commandes shell (le vrai dossier du site, un `find` dans ses téléversements, e
 - **Fichiers PHP du dossier des téléversements**, où WordPress n'en met jamais : leurs noms et
   tailles, les 120 premiers octets d'un `index.php` et la première ligne d'un autre fichier. Cela
   suffit à reconnaître les fichiers que des extensions déposent exprès et qui n'exécutent rien : le
-  `index.php` vide « Silence is golden » qui empêche de lister le dossier, celui qui ne répond que
-  403 ou 404, et un fichier dont la première ligne arrête PHP (Matomo garde ainsi sa
-  configuration). Rien de plus d'un fichier n'est lu, et rien n'en est gardé.
+  `index.php` vide « Silence is golden » qui empêche de lister le dossier, un `index.php` vide ou
+  sans PHP, celui qui ne répond que 403 ou 404, et un fichier dont la première ligne arrête PHP
+  (Matomo garde ainsi sa configuration). Un message qui pourrait exécuter du code (une chaîne avec
+  `$`, `\`, `{` ou `}`) n'est jamais pris pour l'un d'eux. Rien de plus d'un fichier n'est lu, et
+  rien n'en est gardé.
 - **Administrateurs** (et super-administrateurs d'un réseau), avec les méthodes de double
   authentification que chacun a activées : Two Factor, Solid Security et WP 2FA dans les métadonnées
   de l'utilisateur, Wordfence dans sa propre table quand Wordfence est actif (cette lecture demande

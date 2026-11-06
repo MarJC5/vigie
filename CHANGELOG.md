@@ -18,6 +18,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   addresses are never sent. What an assistant started shows in the journal and the history, "by an
   assistant", with the client's name.
 
+### Fixed
+
+- A PHP file in the uploads whose message runs code before PHP stops (`die("{${...}}")`, or a
+  403 header written that way) is no longer taken for a file dropped on purpose: the scan reports
+  it. An `index.php` that is empty, holds no PHP (as Matomo writes) or answers 403 through the
+  server's protocol no longer raises an urgent finding.
+
 ## [0.2.0] - 2026-11-05
 
 ### Added
