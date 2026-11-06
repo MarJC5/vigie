@@ -507,8 +507,9 @@ func (s *Server) copies(ctx context.Context, _ *sdk.CallToolRequest, in PathIn) 
 
 // errUnknownPath and errNotASite are said to the assistant in the user's language.
 var (
-	errUnknownPath = errors.New("mcp.unknownPath")
-	errNotASite    = errors.New("mcp.notASite")
+	errUnknownPath  = errors.New("mcp.unknownPath")
+	errNotASite     = errors.New("mcp.notASite")
+	errNoSiteTagged = errors.New("mcp.noSiteTagged")
 )
 
 // node finds a folder, host or site by its path.
@@ -541,9 +542,11 @@ func (s *Server) siteAt(ctx context.Context, path string) (model.Site, error) {
 	return site, nil
 }
 
-// said is an error whose text the assistant reads, in the user's language.
-func (s *Server) said(key error, path string) error {
-	return errors.New(s.cfg.Texts.T(s.cfg.Lang, key.Error(), map[string]any{"path": bounded(path)}))
+// said is an error whose text the assistant reads, in the user's language; value is the path or
+// the tag it is about.
+func (s *Server) said(key error, value string) error {
+	v := bounded(value)
+	return errors.New(s.cfg.Texts.T(s.cfg.Lang, key.Error(), map[string]any{"path": v, "tag": v}))
 }
 
 // readTools adds the tools of the level read (ADR-0043, point 4).
@@ -559,6 +562,8 @@ func (s *Server) readTools() {
 		Description: "A site's updates and rollbacks, with their steps and who started them, the newest first."}, s.history)
 	add(s, model.AssistantRead, &sdk.Tool{Name: "copies", Annotations: readOnly,
 		Description: "A site's copies on this computer: when, what they hold, their size, whether complete."}, s.copies)
+	add(s, model.AssistantRead, &sdk.Tool{Name: "scan", Annotations: readOnly,
+		Description: "Scan sites now, as Vigie's Scan does: it only reads on the servers. A scan of many sites takes minutes."}, s.scan)
 }
 
 // add adds a typed tool the level needs; its schemas come from the Go types.

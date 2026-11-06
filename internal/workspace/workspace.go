@@ -164,6 +164,8 @@ type ScanOptions struct {
 	CheckFiles bool
 	// By is who started the scan, recorded with its run; the user when empty.
 	By model.RunBy
+	// ByClient is the assistant's client, when it gave its name (ADR-0043).
+	ByClient string
 }
 
 // Scan scans the site at path, the sites of a host, or every site under a folder ("" for all),
@@ -200,7 +202,7 @@ func (w *Workspace) ScanNodes(ctx context.Context, nodes []model.Node, opts Scan
 		return nil, err
 	}
 	// Each scan of a node is a run, for the Activity page.
-	run := model.Run{ID: model.NewID(), By: opts.By, Started: w.deps.Now().UTC(), Outcome: model.RunRunning, Sites: len(sites)}
+	run := model.Run{ID: model.NewID(), By: opts.By, ByClient: opts.ByClient, Started: w.deps.Now().UTC(), Outcome: model.RunRunning, Sites: len(sites)}
 	if run.By == "" {
 		run.By = model.RunByUser
 	}

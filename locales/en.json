@@ -2032,6 +2032,8 @@
     "off": "The assistants are off in Vigie. The user can turn them on in Vigie: Settings, Assistants.",
     "needsAct": "This tool needs the level Actions in Vigie: Settings, Assistants. Ask the user to choose it, or do without.",
     "unknownPath": "Vigie keeps nothing at {{path}}. The tool sites lists the paths.",
-    "notASite": "{{path}} is not a site. The tool sites lists the paths of the sites."
+    "notASite": "{{path}} is not a site. The tool sites lists the paths of the sites.",
+    "scanRunning": "A scan from this assistant already runs: wait for its answer before starting another.",
+    "noSiteTagged": "No site has the tag {{tag}}."
   }
 }

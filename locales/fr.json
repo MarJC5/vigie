@@ -2169,6 +2169,8 @@
     "off": "Les assistants sont coupés dans Vigie. L'utilisateur peut les activer dans Vigie : Réglages, Assistants.",
     "needsAct": "Cet outil demande le niveau Actions dans Vigie : Réglages, Assistants. Demandez à l'utilisateur de le choisir, ou faites sans.",
     "unknownPath": "Vigie ne garde rien à {{path}}. L'outil sites donne les chemins.",
-    "notASite": "{{path}} n'est pas un site. L'outil sites donne les chemins des sites."
+    "notASite": "{{path}} n'est pas un site. L'outil sites donne les chemins des sites.",
+    "scanRunning": "Un relevé de cet assistant est déjà en cours : attendez sa réponse avant d'en lancer un autre.",
+    "noSiteTagged": "Aucun site ne porte l'étiquette {{tag}}."
   }
 }

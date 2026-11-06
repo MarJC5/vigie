@@ -178,7 +178,7 @@ func TestTheReadTools(t *testing.T) {
 		}
 	}
 	slices.Sort(names)
-	if want := []string{"copies", "history", "journal", "site", "sites"}; !slices.Equal(names, want) {
+	if want := []string{"copies", "history", "journal", "scan", "site", "sites"}; !slices.Equal(names, want) {
 		t.Errorf("tools = %v, want %v", names, want)
 	}
 }
@@ -265,6 +265,7 @@ func TestTheFieldsEachToolSends(t *testing.T) {
 		"journal": {"archives", "at", "automatic", "by", "bytes", "changes", "content", "copy", "ended", "entries", "facts", "failedStep", "finding", "from", "identifier", "ignored", "kind", "level", "message", "name", "note", "outcome", "path", "resumed", "since", "siteChanges", "sites", "subject", "summary", "to", "version", "wpCli"},
 		"site":    {"attention", "autoUpdate", "changes", "changesSince", "checked", "core", "counts", "extensions", "facts", "filesChecked", "finding", "findings", "finished", "from", "home", "identifier", "ignored", "kind", "language", "languages", "level", "multisite", "name", "notChecked", "note", "onWordPressOrg", "outcome", "path", "pending", "phpCli", "phpWeb", "plugins", "problem", "scan", "setAside", "slug", "status", "subject", "subsites", "tags", "themes", "title", "to", "update", "updateVersion", "updates", "urgent", "url", "version", "wordpress", "wpCli"},
 		"sites":   {"facts", "identifier", "ignored", "kind", "level", "multisite", "nodes", "note", "path", "status", "subject", "subsites", "tags", "updates", "version", "wordpress", "worst"},
+		"scan":    {"changes", "facts", "identifier", "ignored", "kind", "level", "note", "outcome", "path", "problem", "sites", "status", "subject", "updates", "version", "wordpress", "worst"},
 	}
 	cs := readClient(t, fixture(t))
 	res, err := cs.ListTools(context.Background(), nil)

@@ -6,6 +6,7 @@ package mcp
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
@@ -43,6 +44,8 @@ type Server struct {
 	siteManager *app.SiteManager
 	activity    *app.Activity
 	copyList    *app.Copies
+	// scanning holds while a scan from this server runs: one at a time.
+	scanning sync.Mutex
 }
 
 // New makes the server with the tools of this version of Vigie.
