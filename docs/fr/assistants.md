@@ -52,6 +52,19 @@ avec le chemin de la commande sur votre ordinateur, et un bouton qui les copie 
 }
 ```
 
+Où un client garde ses serveurs MCP :
+
+| Client | Où |
+| --- | --- |
+| Claude Desktop | Dans ses réglages, **Développeur**, **Modifier la configuration** : `~/Library/Application Support/Claude/claude_desktop_config.json` sous macOS. Quittez-le et rouvrez-le ensuite : il lit le fichier à son démarrage. |
+| Claude Code | La commande ci-dessous, ou `.mcp.json` à la racine d'un projet, sous la même forme. |
+| Cursor | `~/.cursor/mcp.json`, ou `.cursor/mcp.json` dans un projet, sous la même forme. |
+| VS Code | `.vscode/mcp.json` dans un projet : l'entrée va sous `"servers"` au lieu de `"mcpServers"`, avec `"type": "stdio"` à côté de `command` et `args`. |
+
+Quand le fichier liste déjà des serveurs, ajoutez seulement l'entrée `"vigie"` dans son
+`"mcpServers"`, pas un second objet complet. Au niveau **Coupé**, un client se connecte mais ne
+voit aucun outil.
+
 Un client réglé en ligne de commande prend la même commande, par exemple Claude Code :
 
 ```sh

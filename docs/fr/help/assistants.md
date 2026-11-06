@@ -21,7 +21,8 @@ ne sont jamais envoyés.
 
 Liez d'abord la commande `vigie`, dans **Réglages, Général, Ligne de commande**. **Réglages,
 Assistants** donne alors les lignes à ajouter aux serveurs MCP de votre client : copiez-les avec le
-bouton.
+bouton. Chaque client les garde dans un fichier à lui :
+[où, client par client](../assistants.md#brancher-un-client).
 
 ## Votre accord avant chaque action
 

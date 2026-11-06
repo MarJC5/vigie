@@ -20,7 +20,8 @@ never sent.
 ## Connect a client
 
 Link the `vigie` command first, in **Settings, General, Command line**. **Settings, Assistants**
-then gives the lines to add to your client's MCP servers: copy them with the button.
+then gives the lines to add to your client's MCP servers: copy them with the button. Each client
+keeps them in a file of its own: [where, client by client](../assistants.md#connect-a-client).
 
 ## Your yes before each action
 
