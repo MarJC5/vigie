@@ -38,7 +38,7 @@ var at = time.Date(2026, 11, 6, 9, 0, 0, 0, time.UTC)
 
 // fixture stores Clients/Shared hosting with boulangerie-exemple.ch scanned, an update of it started
 // by an assistant, and one copy of it on this computer; the level is read.
-func fixture(t *testing.T) *workspace.Workspace {
+func fixture(t *testing.T, with ...func(*workspace.Deps)) *workspace.Workspace {
 	t.Helper()
 	ctx := context.Background()
 	db, err := store.Open(ctx, filepath.Join(t.TempDir(), "vigie.db"))
@@ -97,7 +97,11 @@ func fixture(t *testing.T) *workspace.Workspace {
 	if err := db.FinishOperation(ctx, op.ID, model.OperationCompleted, at.Add(time.Hour+2*time.Minute), "1 of 1"); err != nil {
 		t.Fatal(err)
 	}
-	ws := workspace.New(db, workspace.Deps{Now: func() time.Time { return at.Add(2 * time.Hour) }})
+	deps := workspace.Deps{Now: func() time.Time { return at.Add(2 * time.Hour) }}
+	for _, w := range with {
+		w(&deps)
+	}
+	ws := workspace.New(db, deps)
 	root := filepath.Join(t.TempDir(), copiesRootName)
 	if err := ws.SetCopyFolder(ctx, root); err != nil {
 		t.Fatal(err)
@@ -262,10 +266,10 @@ func TestTheFieldsEachToolSends(t *testing.T) {
 	want := map[string][]string{
 		"copies":  {"archives", "bytes", "complete", "content", "copies", "leftOut", "note", "planned", "started"},
 		"history": {"automatic", "by", "client", "finished", "itemKind", "kind", "message", "note", "operations", "outcome", "slug", "started", "step", "steps", "summary", "versionAfter", "versionBefore"},
-		"journal": {"archives", "at", "automatic", "by", "bytes", "changes", "content", "copy", "ended", "entries", "facts", "failedStep", "finding", "from", "identifier", "ignored", "kind", "level", "message", "name", "note", "outcome", "path", "resumed", "since", "siteChanges", "sites", "subject", "summary", "to", "version", "wpCli"},
-		"site":    {"attention", "autoUpdate", "changes", "changesSince", "checked", "core", "counts", "extensions", "facts", "filesChecked", "finding", "findings", "finished", "from", "home", "identifier", "ignored", "kind", "language", "languages", "level", "multisite", "name", "notChecked", "note", "onWordPressOrg", "outcome", "path", "pending", "phpCli", "phpWeb", "plugins", "problem", "scan", "setAside", "slug", "status", "subject", "subsites", "tags", "themes", "title", "to", "update", "updateVersion", "updates", "urgent", "url", "version", "wordpress", "wpCli"},
-		"sites":   {"facts", "identifier", "ignored", "kind", "level", "multisite", "nodes", "note", "path", "status", "subject", "subsites", "tags", "updates", "version", "wordpress", "worst"},
-		"scan":    {"changes", "facts", "identifier", "ignored", "kind", "level", "note", "outcome", "path", "problem", "sites", "status", "subject", "updates", "version", "wordpress", "worst"},
+		"journal": {"archives", "at", "automatic", "by", "bytes", "changes", "content", "copy", "ended", "entries", "facts", "failedStep", "finding", "from", "identifier", "ignored", "key", "kind", "level", "message", "name", "note", "outcome", "path", "resumed", "since", "siteChanges", "sites", "subject", "summary", "to", "version", "wpCli"},
+		"site":    {"attention", "autoUpdate", "changes", "changesSince", "checked", "core", "counts", "extensions", "facts", "filesChecked", "finding", "findings", "finished", "from", "home", "identifier", "ignored", "key", "kind", "language", "languages", "level", "multisite", "name", "notChecked", "note", "onWordPressOrg", "outcome", "path", "pending", "phpCli", "phpWeb", "plugins", "problem", "scan", "setAside", "slug", "status", "subject", "subsites", "tags", "themes", "title", "to", "update", "updateVersion", "updates", "urgent", "url", "version", "wordpress", "wpCli"},
+		"sites":   {"facts", "identifier", "ignored", "key", "kind", "level", "multisite", "nodes", "note", "path", "status", "subject", "subsites", "tags", "updates", "version", "wordpress", "worst"},
+		"scan":    {"changes", "facts", "identifier", "ignored", "key", "kind", "level", "note", "outcome", "path", "problem", "sites", "status", "subject", "updates", "version", "wordpress", "worst"},
 	}
 	cs := readClient(t, fixture(t))
 	res, err := cs.ListTools(context.Background(), nil)

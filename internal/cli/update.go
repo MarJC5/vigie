@@ -70,20 +70,14 @@ func updateTarget(ctx context.Context, env Env, ws *workspace.Workspace, on targ
 	}
 
 	// The sites that can be updated; the others keep the reason they cannot.
-	var planned []workspace.Planned
+	planned, not := workspace.PlanBulk(previews)
 	results := map[model.ID]workspace.SiteUpdate{}
-	for _, p := range previews {
-		switch {
-		case p.Err != nil:
-			results[p.Site.ID] = workspace.SiteUpdate{Site: p.Site, Path: p.Path, Outcome: workspace.SiteRefused, Err: p.Err}
-		// Nothing offered, or only updates the site ignores or set aside.
-		case p.Preview.Pending() == len(p.Ignored)+len(p.SetAside):
-			results[p.Site.ID] = workspace.SiteUpdate{Site: p.Site, Path: p.Path, Outcome: workspace.SiteNothing}
-		case !p.Preview.DumpTool:
-			results[p.Site.ID] = workspace.SiteUpdate{Site: p.Site, Path: p.Path, Outcome: workspace.SiteRefused, Err: wpcli.ErrNoDumpTool}
-		default:
-			planned = append(planned, workspace.Planned{SitePreview: p, Selection: p.Bulk()})
-		}
+	for _, r := range not {
+		results[r.Site.ID] = r
+	}
+	// Started from the command line: its operations say so in the journal (ADR-0043).
+	for i := range planned {
+		planned[i].Job.By = model.RunByCLI
 	}
 
 	if !asJSON {

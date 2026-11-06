@@ -14,6 +14,7 @@ import (
 	"github.com/MarJC5/vigie/internal/scan"
 	"github.com/MarJC5/vigie/internal/sshx"
 	"github.com/MarJC5/vigie/internal/update"
+	"github.com/MarJC5/vigie/internal/wpcli"
 )
 
 // Updates previews, runs and rolls back the update of one site (update.Updater).
@@ -216,6 +217,28 @@ type SiteUpdate struct {
 	// Rollbacks are those Vigie ran on its own during the update (ADR-0042), passed or not.
 	Rollbacks []model.Operation
 	Err       error // why it was refused
+}
+
+// PlanBulk plans an update of everything offered on the sites previewed, as Update all and vigie
+// update do: the sites that can be updated, their ignored updates and the versions set aside left
+// out, and for the others why not (refused, or nothing to update), in the previews' order.
+func PlanBulk(previews []SitePreview) ([]Planned, []SiteUpdate) {
+	var planned []Planned
+	var not []SiteUpdate
+	for _, p := range previews {
+		switch {
+		case p.Err != nil:
+			not = append(not, SiteUpdate{Site: p.Site, Path: p.Path, Outcome: SiteRefused, Err: p.Err})
+		// Nothing offered, or only updates the site ignores or set aside.
+		case p.Preview.Pending() == len(p.Ignored)+len(p.SetAside):
+			not = append(not, SiteUpdate{Site: p.Site, Path: p.Path, Outcome: SiteNothing})
+		case !p.Preview.DumpTool:
+			not = append(not, SiteUpdate{Site: p.Site, Path: p.Path, Outcome: SiteRefused, Err: wpcli.ErrNoDumpTool})
+		default:
+			planned = append(planned, Planned{SitePreview: p, Selection: p.Bulk()})
+		}
+	}
+	return planned, not
 }
 
 // UpdateSites updates the sites planned: hosts at once, the sites of a host one after another,

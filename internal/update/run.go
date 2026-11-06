@@ -58,6 +58,7 @@ func (u Updater) Run(ctx context.Context, job Job, preview Preview, sel Selectio
 	op := model.Operation{
 		ID: model.NewID(), SiteID: job.Site.ID, Kind: model.OperationUpdate, Started: u.Now(),
 		Outcome: model.OperationRunning, BackupDir: remote.BackupDir(job.Site.ID, u.Now()), PID: u.PID,
+		By: job.By, ByClient: job.ByClient,
 	}
 	if err := u.Store.StartOperation(ctx, op); err != nil {
 		return op, err

@@ -48,6 +48,7 @@ func copyTarget(ctx context.Context, env Env, ws *workspace.Workspace, on target
 		p.set(env.t("cli.progress.copy", map[string]any{"done": ended, "count": total, "running": len(running)}), items...)
 	}
 	results, err := ws.CopySites(ctx, []model.Node{node}, sitecopy.Content(content), workspace.CopyFollow{
+		By: model.RunByCLI,
 		OnProgress: func(s model.Site, pr sitecopy.Progress) {
 			mu.Lock()
 			defer mu.Unlock()

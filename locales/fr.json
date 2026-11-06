@@ -2171,6 +2171,29 @@
     "unknownPath": "Vigie ne garde rien à {{path}}. L'outil sites donne les chemins.",
     "notASite": "{{path}} n'est pas un site. L'outil sites donne les chemins des sites.",
     "scanRunning": "Un relevé de cet assistant est déjà en cours : attendez sa réponse avant d'en lancer un autre.",
-    "noSiteTagged": "Aucun site ne porte l'étiquette {{tag}}."
+    "noSiteTagged": "Aucun site ne porte l'étiquette {{tag}}.",
+    "acting": "Une action de cet assistant est déjà en cours : attendez sa réponse avant d'en lancer une autre.",
+    "badToken": "Cette confirmation ne vaut pas : inconnue, déjà utilisée, vieille de plus de cinq minutes, ou pour d'autres arguments. Rappelez l'outil sans elle pour un nouvel aperçu.",
+    "askInstead": "Vigie demande lui-même l'accord de l'utilisateur par ce client : appelez l'outil sans confirmation.",
+    "badState": "Cette réponse ne vient pas d'une question posée par Vigie. Rappelez l'outil sans elle.",
+    "reasonNeeded": "Ignorer définitivement demande une raison, dans les mots de l'utilisateur.",
+    "unknownKey": "Le dernier relevé de {{path}} n'a ni constat ni mise à jour avec cette clé. L'outil site donne les clés.",
+    "notIgnored": "Rien n'est ignoré avec cette clé sur {{path}}.",
+    "unknownContent": "Vigie copie database, content ou site, pas {{path}}.",
+    "ask": "Vigie demande votre accord avant d'agir :\n{{what}}",
+    "updateSafety": "Une sauvegarde de la base d'abord, des contrôles après chaque élément, une extension ou un thème qui casse le site remis comme avant.",
+    "nothingToUpdate": "rien à mettre à jour",
+    "notUpdated": "pas mis à jour ({{detail}})",
+    "rolledBack": "remis comme avant : {{outcome}}",
+    "copyWhere": "Copié sur cet ordinateur, dans le dossier des copies de Vigie. Lecture seule sur les serveurs.",
+    "ignoreUntil": "ignorer {{what}} jusqu'à la version après {{version}}",
+    "ignoreForGood": "ignorer {{what}} définitivement ({{reason}})",
+    "stopIgnoring": "compter de nouveau {{what}}",
+    "content": {
+      "database": "la base de données",
+      "content": "la base de données et wp-content",
+      "site": "tout le dossier du site"
+    },
+    "translations": "traductions ({{count}})"
   }
 }

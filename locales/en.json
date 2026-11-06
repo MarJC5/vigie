@@ -2034,6 +2034,29 @@
     "unknownPath": "Vigie keeps nothing at {{path}}. The tool sites lists the paths.",
     "notASite": "{{path}} is not a site. The tool sites lists the paths of the sites.",
     "scanRunning": "A scan from this assistant already runs: wait for its answer before starting another.",
-    "noSiteTagged": "No site has the tag {{tag}}."
+    "noSiteTagged": "No site has the tag {{tag}}.",
+    "acting": "An action from this assistant already runs: wait for its answer before starting another.",
+    "badToken": "This confirmation does not hold: unknown, already used, older than five minutes, or for other arguments. Call the tool again without it for a new preview.",
+    "askInstead": "Vigie asks the user itself through this client: call the tool without a confirmation.",
+    "badState": "This answer does not come from a question Vigie asked. Call the tool again without it.",
+    "reasonNeeded": "Ignoring for good needs a reason, in the user's words.",
+    "unknownKey": "The latest scan of {{path}} has no finding or update with this key. The tool site gives the keys.",
+    "notIgnored": "Nothing with this key is ignored on {{path}}.",
+    "unknownContent": "Vigie copies the database, content or site, not {{path}}.",
+    "ask": "Vigie asks for your yes before acting:\n{{what}}",
+    "updateSafety": "A backup of the database first, checks after each item, a plugin or theme that breaks the site rolled back.",
+    "nothingToUpdate": "nothing to update",
+    "notUpdated": "not updated ({{detail}})",
+    "rolledBack": "rolled back: {{outcome}}",
+    "copyWhere": "Copied to this computer, in Vigie's copies folder. Read only on the servers.",
+    "ignoreUntil": "ignore {{what}} until the version after {{version}}",
+    "ignoreForGood": "ignore {{what}} for good ({{reason}})",
+    "stopIgnoring": "count {{what}} again",
+    "content": {
+      "database": "the database",
+      "content": "the database and wp-content",
+      "site": "the whole site folder"
+    },
+    "translations": "translations ({{count}})"
   }
 }

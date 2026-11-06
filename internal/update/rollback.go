@@ -79,6 +79,7 @@ func (u Updater) rollback(ctx context.Context, job Job, item Item, folder string
 	op := model.Operation{
 		ID: model.NewID(), SiteID: job.Site.ID, Kind: model.OperationRollback, Started: u.Now(),
 		Outcome: model.OperationRunning, BackupDir: of.BackupDir, PID: u.PID, OfOperation: of.ID, Automatic: automatic,
+		By: job.By, ByClient: job.ByClient,
 	}
 	if err := u.Store.StartOperation(ctx, op); err != nil {
 		return op, err

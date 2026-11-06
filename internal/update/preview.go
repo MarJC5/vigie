@@ -30,6 +30,10 @@ type Job struct {
 	// AutoRollback puts back on its own a plugin or theme whose check fails, then goes on with the
 	// next items (ADR-0042); off, the run stops there and the rollback is offered.
 	AutoRollback bool
+	// By is who started the update, the window when empty; ByClient the assistant's client
+	// (ADR-0043). Its operations, a rollback on its own among them, carry them.
+	By       model.RunBy
+	ByClient string
 }
 
 // Updater previews and runs updates.

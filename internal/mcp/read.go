@@ -51,6 +51,7 @@ func factsOf(kind string, in map[string]string) map[string]string {
 
 // FindingOut is a finding as an assistant reads it.
 type FindingOut struct {
+	Key        string            `json:"key" jsonschema:"names the finding for the tools ignore and stop_ignoring"`
 	Kind       string            `json:"kind"`
 	Level      string            `json:"level" jsonschema:"urgent, attention, not-checked or info"`
 	Subject    string            `json:"subject" jsonschema:"core, plugin:<slug>, theme:<slug>, php, site, user:<login>"`
@@ -61,7 +62,7 @@ type FindingOut struct {
 }
 
 func findingOut(f app.FindingView) FindingOut {
-	return FindingOut{Kind: f.Kind, Level: f.Level, Subject: bounded(f.Subject), Identifier: bounded(f.Identifier),
+	return FindingOut{Key: bounded(f.Key), Kind: f.Kind, Level: f.Level, Subject: bounded(f.Subject), Identifier: bounded(f.Identifier),
 		Version: bounded(f.Version), Facts: factsOf(f.Kind, f.Facts), Ignored: f.Ignore != nil}
 }
 
@@ -216,6 +217,7 @@ type ExtensionOut struct {
 
 // UpdateOut is an update to look at.
 type UpdateOut struct {
+	Key           string `json:"key,omitempty" jsonschema:"names the update for the tools ignore and stop_ignoring; none for a translation"`
 	Kind          string `json:"kind" jsonschema:"core, plugin, theme or language"`
 	Slug          string `json:"slug,omitempty"`
 	Title         string `json:"title,omitempty"`
@@ -282,7 +284,7 @@ func (s *Server) site(ctx context.Context, _ *sdk.CallToolRequest, in PathIn) (*
 				AutoUpdate: e.AutoUpdate, OnWordPressOrg: e.OnWordPressOrg, Ignored: e.Ignore != nil})
 		}
 		for _, u := range sc.Updates {
-			scan.Updates = append(scan.Updates, UpdateOut{Kind: u.Kind, Slug: bounded(u.Slug), Title: bounded(u.Title),
+			scan.Updates = append(scan.Updates, UpdateOut{Key: bounded(u.Key), Kind: u.Kind, Slug: bounded(u.Slug), Title: bounded(u.Title),
 				Language: bounded(u.Language), Version: bounded(u.Version), UpdateVersion: bounded(u.UpdateVersion),
 				Update: u.Update, Ignored: u.Ignore != nil, SetAside: u.SetAside != nil})
 		}

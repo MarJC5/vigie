@@ -89,6 +89,9 @@ type CopyRequest struct {
 	Content sitecopy.Content
 	LeftOut []string
 	Limit   int64 // the size of an archive
+	// By is who started the copy, the window when empty; ByClient the assistant's client (ADR-0043).
+	By       model.RunBy
+	ByClient string
 }
 
 // copyServer runs a copy's commands on a site's account, within its host's limit of commands at a
@@ -165,7 +168,7 @@ func (w *Workspace) CopySite(ctx context.Context, siteID model.ID, req CopyReque
 		return model.Copy{}, err
 	}
 	record := model.Copy{ID: model.NewID(), SiteID: site.ID, SiteName: site.Name, HostName: host.Name,
-		Content: string(req.Content), Started: w.deps.Now()}
+		Content: string(req.Content), Started: w.deps.Now(), By: req.By, ByClient: req.ByClient}
 	address := site.URL
 	if address == "" {
 		address = site.Name
@@ -244,6 +247,9 @@ type SiteCopy struct {
 type CopyFollow struct {
 	OnProgress func(site model.Site, p sitecopy.Progress)
 	OnSite     func(SiteCopy)
+	// By and ByClient are who started the copies, the window when empty (ADR-0043).
+	By       model.RunBy
+	ByClient string
 }
 
 // CopySites copies the sites under the nodes given, each once, with the content given and nothing
@@ -281,7 +287,7 @@ func (w *Workspace) CopySites(ctx context.Context, nodes []model.Node, content s
 		}
 		byHost[s.HostID] = append(byHost[s.HostID], i)
 	}
-	req := CopyRequest{Root: root, Content: content, Limit: int64(mb) << 20}
+	req := CopyRequest{Root: root, Content: content, Limit: int64(mb) << 20, By: follow.By, ByClient: follow.ByClient}
 	var wg sync.WaitGroup
 	for _, h := range hosts {
 		wg.Add(1)

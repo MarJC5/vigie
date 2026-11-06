@@ -46,11 +46,15 @@ type Server struct {
 	copyList    *app.Copies
 	// scanning holds while a scan from this server runs: one at a time.
 	scanning sync.Mutex
+	// acting holds while an action from this server previews or runs: one at a time.
+	acting sync.Mutex
+	// confirm holds the previews waiting for the user's yes.
+	confirm *confirmations
 }
 
 // New makes the server with the tools of this version of Vigie.
 func New(cfg Config) *Server {
-	s := &Server{cfg: cfg, levels: map[string]model.AssistantAccess{}}
+	s := &Server{cfg: cfg, levels: map[string]model.AssistantAccess{}, confirm: newConfirmations()}
 	s.server = sdk.NewServer(&sdk.Implementation{Name: "vigie", Title: "Vigie", Version: cfg.Version}, &sdk.ServerOptions{
 		Instructions:              cfg.Texts.T(cfg.Lang, "mcp.instructions", nil),
 		Capabilities:              &sdk.ServerCapabilities{Tools: &sdk.ToolCapabilities{}},
@@ -69,6 +73,7 @@ func New(cfg Config) *Server {
 		s.activity = app.NewActivity(db, s.cfg.Now)
 		s.copyList = app.NewCopies(cfg.Workspace, nil)
 		s.readTools()
+		s.actTools()
 	}
 	return s
 }
