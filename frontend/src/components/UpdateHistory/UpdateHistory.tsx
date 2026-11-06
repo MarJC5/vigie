@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { OperationView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
-import { backupPath, durationText, operationSummary, restoredStep, rollbacksOf, rowText, type RowState, seconds } from "../../lib/updates";
+import { backupPath, durationText, operationBy, operationSummary, restoredStep, rollbacksOf, rowText, type RowState, seconds } from "../../lib/updates";
 import { Button } from "../Button/Button";
 import { Icon, type IconName } from "../Icon/Icon";
 import { type Status, StatusDot } from "../StatusDot/StatusDot";
@@ -68,7 +68,10 @@ export function UpdateHistory({ operations, names, onRollback, busy = false }: U
                 <Icon name={expanded ? "caretDown" : "caretRight"} size="xs" />
               </span>
               <span className={styles.when}>{when.format(new Date(op.started))}</span>
-              <span className={styles.summary}>{operationSummary(t, op, names)}</span>
+              <span className={styles.summary}>
+                {operationSummary(t, op, names)}
+                {operationBy(t, op) && <span className={styles.by}> · {operationBy(t, op)}</span>}
+              </span>
               <span className={styles.outcome}>
                 <StatusDot status={outcome.status} withLabel label={outcome.label} />
               </span>

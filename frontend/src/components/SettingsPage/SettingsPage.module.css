@@ -58,7 +58,8 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--vg-space-6);
+  /* What lies under a row (cards, a command) stays close to its text. */
+  gap: var(--vg-space-3) var(--vg-space-6);
   padding: 14px 0;
   box-shadow: inset 0 -1px 0 var(--vg-border);
 }
@@ -101,6 +102,24 @@
 .below {
   grid-column: 1 / -1;
   min-width: 0;
+}
+
+/* The three levels of the assistants, and the notice of the level act under them. */
+.assistants {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vg-space-3);
+}
+
+.levels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* A notice in place of a row, with the rows' spacing. */
+.notice {
+  padding: var(--vg-space-2) 0;
 }
 
 .installed {

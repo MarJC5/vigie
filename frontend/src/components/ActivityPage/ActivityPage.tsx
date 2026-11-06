@@ -83,6 +83,7 @@ const icons: Record<string, IconName> = {
   user: "refresh",
   schedule: "clock",
   cli: "terminal",
+  assistant: "assistant",
   scan: "refresh",
   update: "update",
   rollback: "rollback",
@@ -95,6 +96,8 @@ function Entry({ entry: e, onOpen }: { entry: ActivityEntry; onOpen: (nodeId: st
   const run = e.kind === "run";
   const title = run ? (e.path ? t(`activity.run_${e.by}`, { path: e.path }) : t(`activity.runAll_${e.by}`)) : "";
   const meta = [
+    // The client of an assistant, when it gave its name (ADR-0043).
+    e.by === "assistant" ? e.byClient : "",
     run ? t("activity.sites", { count: e.sites }) : "",
     // A rollback Vigie ran on its own after a failed check (ADR-0042).
     e.automatic ? t("activity.onItsOwn") : "",
@@ -203,7 +206,9 @@ function ChangeLine({ change: c, onOpen }: { change: Change; onOpen: (nodeId: st
 // An install of WP-CLI (ADR-0039): what was installed and the host's command, or where it stopped.
 // The text of an entry's title: a resumed copy says it.
 function textKey(e: ActivityEntry): string {
-  return e.kind === "copy" && e.copy?.resumed ? "copyResumed" : e.kind;
+  const key = e.kind === "copy" && e.copy?.resumed ? "copyResumed" : e.kind;
+  // An update, a rollback or a copy an assistant started says so (ADR-0043).
+  return e.by === "assistant" && e.kind !== "wpcli" ? `${key}_assistant` : key;
 }
 
 // What a copy wrote, where; and why it was cut (ADR-0041).

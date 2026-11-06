@@ -783,7 +783,13 @@
     "copyResumed": "Reprise de la copie de {{path}}",
     "copyLine": "{{content}} : {{archives}}, {{size}}, dans {{folder}}",
     "copyCut": "Coupée : {{message}}",
-    "onItsOwn": "tout seul"
+    "onItsOwn": "tout seul",
+    "runAll_assistant": "Relevé de tous les sites par un assistant",
+    "run_assistant": "Relevé de {{path}} par un assistant",
+    "update_assistant": "Mise à jour de {{path}} par un assistant",
+    "rollback_assistant": "Retour en arrière de {{path}} par un assistant",
+    "copy_assistant": "Copie de {{path}} par un assistant",
+    "copyResumed_assistant": "Reprise de la copie de {{path}} par un assistant"
   },
   "tray": {
     "open": "Ouvrir {{app}}",
@@ -1121,7 +1127,9 @@
       "backupKept": "Sauvegarde gardée sur le serveur :",
       "show": "Afficher les étapes",
       "rollbackOnItsOwn": "Retour de {{item}} à {{version}}, tout seul",
-      "ofItsOwn": "opération à part, ci-dessus"
+      "ofItsOwn": "opération à part, ci-dessus",
+      "byAssistant": "par un assistant",
+      "byAssistantNamed": "par un assistant, {{client}}"
     },
     "follow": "Suivre la mise à jour",
     "bulkDialog": {
@@ -1468,6 +1476,7 @@
     "tabs": {
       "general": "Général",
       "lookups": "Recherches extérieures",
+      "assistants": "Assistants",
       "data": "Données",
       "about": "À propos"
     },
@@ -1525,6 +1534,27 @@
       "section": "Mises à jour des sites",
       "rollbackTitle": "Retour en arrière automatique",
       "rollbackDesc": "Quand une extension ou un thème casse le site après sa mise à jour, Vigie remet aussitôt sa version d'avant, vérifie le site et passe à la suite. Cette version est ensuite laissée de côté par « Tout mettre à jour ». WordPress lui-même attend toujours votre choix, car son retour restaure aussi la base de données."
+    },
+    "assistants": {
+      "section": "Assistants",
+      "levelTitle": "Ce qu'un assistant peut faire",
+      "levelDesc": "Un assistant (Claude ou tout autre client MCP) lance vigie mcp sur cet ordinateur et lit ce que Vigie sait de vos sites. Il ne reçoit que ce que vous permettez ici, et un changement vaut tout de suite.",
+      "off": "Coupé",
+      "offText": "Vigie ne répond à aucun assistant.",
+      "read": "Lecture",
+      "readText": "L'état des sites, le journal, l'historique et les copies. Un relevé aussi, qui ne fait que lire sur les serveurs.",
+      "act": "Actions",
+      "actText": "En plus : mettre à jour, copier sur cet ordinateur, ignorer. Chaque action attend votre accord.",
+      "keepAskTitle": "Laissez votre client vous demander",
+      "keepAskText": "Vigie attend votre accord avant chaque action. Un client réglé pour tout approuver seul pourrait le donner à votre place : gardez la question avant chaque outil.",
+      "neverTitle": "Jamais permis",
+      "neverDesc": "Supprimer, déplacer, renommer, les connexions et les clés des serveurs, l'export, l'import et les réglages. Le contenu de debug.log et vos notes ne sont jamais envoyés.",
+      "connect": "Brancher un assistant",
+      "configTitle": "Configuration du client",
+      "configDesc": "À ajouter aux serveurs MCP de votre client. Le chemin est celui de la commande vigie liée sur cet ordinateur.",
+      "noCommandTitle": "La commande vigie n'est pas liée",
+      "noCommandText": "Un client lance Vigie par cette commande. Liez-la d'abord dans Général, Ligne de commande.",
+      "openGeneral": "Ouvrir Général"
     }
   },
   "data": {

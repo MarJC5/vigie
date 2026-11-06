@@ -215,3 +215,46 @@ func TestJournalTellsARollbackOnItsOwn(t *testing.T) {
 		t.Errorf("entries = %+v / %+v", first, second)
 	}
 }
+
+// What an assistant started reads as the assistant's in the journal, with its client's name: its
+// scans, its updates and its copies (ADR-0043, point 7); what the window started stays the user's.
+func TestTheJournalTellsWhatAnAssistantStarted(t *testing.T) {
+	ctx := context.Background()
+	db := repository(t)
+	now := time.Date(2026, 11, 6, 10, 24, 0, 0, time.UTC)
+	host := model.Host{ID: model.NewID(), Name: "Shared hosting", Alias: "shared"}
+	site := model.Site{ID: model.NewID(), HostID: host.ID, Name: "boulangerie-exemple.ch", Path: "~/sites/b"}
+	run := model.Run{ID: model.NewID(), Started: now.Add(-4 * time.Minute), Finished: now.Add(-3 * time.Minute), By: model.RunByAssistant,
+		ByClient: "Claude", Sites: 1, Outcome: model.RunCompleted}
+	upd := model.Operation{ID: model.NewID(), SiteID: site.ID, Kind: model.OperationUpdate, Started: now.Add(-2 * time.Minute), PID: 1,
+		By: model.RunByAssistant, ByClient: "Claude"}
+	mine := model.Operation{ID: model.NewID(), SiteID: site.ID, Kind: model.OperationUpdate, Started: now.Add(-90 * time.Second), PID: 1}
+	cp := model.Copy{ID: model.NewID(), SiteID: site.ID, SiteName: site.Name, HostName: host.Name, Folder: "2026-11-06 10.23",
+		Content: "database", Started: now.Add(-time.Minute), Finished: now, Outcome: model.CopyCompleted, By: model.RunByAssistant, ByClient: "Claude"}
+	for _, err := range []error{db.SaveHost(ctx, host), db.SaveSite(ctx, site), db.StartRun(ctx, run), db.StartOperation(ctx, upd),
+		db.StartOperation(ctx, mine), db.SaveCopy(ctx, cp)} {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	journal, err := app.NewActivity(db, func() time.Time { return now }).Journal(ctx, 7, "")
+	if err != nil || len(journal.Entries) != 4 {
+		t.Fatalf("Journal() = %+v, %v", journal, err)
+	}
+	want := map[string][2]string{"copy": {"assistant", "Claude"}, "run": {"assistant", "Claude"}}
+	for _, e := range journal.Entries {
+		got := [2]string{e.By, e.ByClient}
+		switch {
+		case e.Kind == "update" && e.At == upd.Started.Format(time.RFC3339):
+			if got != [2]string{"assistant", "Claude"} {
+				t.Errorf("the assistant's update: %v", got)
+			}
+		case e.Kind == "update":
+			if got != [2]string{"user", ""} {
+				t.Errorf("the user's update: %v", got)
+			}
+		case got != want[e.Kind]:
+			t.Errorf("%s: %v, want %v", e.Kind, got, want[e.Kind])
+		}
+	}
+}

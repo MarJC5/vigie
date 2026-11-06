@@ -415,6 +415,13 @@ export function operationSummary(t: T, op: OperationView, names: Map<string, str
   return t("update.history.update", { count: itemsOf(op) });
 }
 
+/** Who started an operation, when an assistant did (ADR-0043): "by an assistant", with its client's
+ name when it gave one; "" for the window and the command, as before. */
+export function operationBy(t: T, op: OperationView): string {
+  if (op.by !== "assistant") return "";
+  return op.byClient ? t("update.history.byAssistantNamed", { client: op.byClient }) : t("update.history.byAssistant");
+}
+
 /** The folder of an update's backups, named after its time in UTC: "20261029-131203". */
 export function backupRun(at: string): string {
   return new Date(at).toISOString().replace(/[-:]/g, "").replace("T", "-").slice(0, 15);

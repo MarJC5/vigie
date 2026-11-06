@@ -31,15 +31,17 @@ type NoticeView struct {
 // ActivityEntry is a line of the journal: a run with what it changed and what Vigie notified, a
 // scan made before runs were recorded, an update or a rollback, an install of WP-CLI.
 type ActivityEntry struct {
-	Kind    string `json:"kind"`    // "run", "scan", "update", "rollback", "wpcli", "copy"
-	At      string `json:"at"`      // when it started, RFC 3339
-	Ended   string `json:"ended"`   // "" while it runs
-	By      string `json:"by"`      // a run's: "user", "schedule", "cli"
-	Path    string `json:"path"`    // a run's node ("" for everything), else its site's path
-	SiteID  string `json:"siteId"`  // a scan's or an operation's site
-	Sites   int    `json:"sites"`   // a run's
-	Outcome string `json:"outcome"` // as stored: a run's, a scan's or an operation's
-	Summary string `json:"summary"` // an operation's
+	Kind  string `json:"kind"`  // "run", "scan", "update", "rollback", "wpcli", "copy"
+	At    string `json:"at"`    // when it started, RFC 3339
+	Ended string `json:"ended"` // "" while it runs
+	By    string `json:"by"`    // who started it: "user", "schedule", "cli", "assistant"
+	// ByClient is the assistant's client, when it gave its name (ADR-0043); "" otherwise.
+	ByClient string `json:"byClient"`
+	Path     string `json:"path"`    // a run's node ("" for everything), else its site's path
+	SiteID   string `json:"siteId"`  // a scan's or an operation's site
+	Sites    int    `json:"sites"`   // a run's
+	Outcome  string `json:"outcome"` // as stored: a run's, a scan's or an operation's
+	Summary  string `json:"summary"` // an operation's
 	// Automatic: a rollback Vigie ran on its own after a failed check (ADR-0042).
 	Automatic bool     `json:"automatic"`
 	Changes   []Change `json:"changes"`
@@ -219,7 +221,7 @@ func (a *Activity) Journal(ctx context.Context, days int, nodeID string) (Journa
 			continue
 		}
 		e := ActivityEntry{
-			Kind: "run", At: rfc3339(r.Started), Ended: rfc3339(r.Finished), By: string(r.By), Path: r.Path,
+			Kind: "run", At: rfc3339(r.Started), Ended: rfc3339(r.Finished), By: string(r.By), ByClient: r.ByClient, Path: r.Path,
 			Sites: r.Sites, Outcome: string(r.Outcome), Changes: changes[r.ID], SiteChanges: siteChanges[r.ID], Notices: []NoticeView{},
 		}
 		if e.SiteChanges == nil {
@@ -239,6 +241,7 @@ func (a *Activity) Journal(ctx context.Context, days int, nodeID string) (Journa
 		if !op.Started.Before(since) && shown(op.SiteID) {
 			e := siteEntry(tree, string(op.Kind), op.SiteID, op.Started, op.Finished, string(op.Outcome))
 			e.Summary, e.Automatic = op.Summary, op.Automatic
+			e.By, e.ByClient = startedBy(op.By), op.ByClient
 			// The end of an update is told under its last operation (ADR-0035).
 			for _, n := range notices {
 				if n.RunID == op.ID {
@@ -265,6 +268,7 @@ func (a *Activity) Journal(ctx context.Context, days int, nodeID string) (Journa
 		if _, ok := tree.Site(c.SiteID); !ok {
 			e.SiteID, e.Path = "", c.HostName+"/"+c.SiteName
 		}
+		e.By, e.ByClient = startedBy(c.By), c.ByClient
 		e.Copy = &CopyEntryView{Folder: c.Folder, Content: c.Content, Resumed: c.Resumed, Archives: c.Archives, Bytes: c.Bytes, Message: c.Message}
 		// The end of a copy is told under it (ADR-0035).
 		for _, n := range notices {
@@ -288,6 +292,14 @@ func (a *Activity) Journal(ctx context.Context, days int, nodeID string) (Journa
 }
 
 // siteEntry is an entry of one site: a scan without a run, an update, a rollback.
+// startedBy is who started an operation or a copy, the window for an old row.
+func startedBy(by model.RunBy) string {
+	if by == "" {
+		return string(model.RunByUser)
+	}
+	return string(by)
+}
+
 func siteEntry(tree *model.Tree, kind string, site model.ID, started, finished time.Time, outcome string) ActivityEntry {
 	return ActivityEntry{
 		Kind: kind, At: rfc3339(started), Ended: rfc3339(finished), SiteID: site.String(),

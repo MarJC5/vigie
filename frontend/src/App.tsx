@@ -5,6 +5,7 @@ import { I18nextProvider } from "react-i18next";
 import { VigieCopies, VigieDiscovery, VigieMenu, VigieScans, VigieSelfupdate, VigieUpdates, VigieWpcliInstall } from "../bindings/events";
 import {
   Addons,
+  Assistants,
   CommandLink,
   Copies,
   Data,
@@ -20,7 +21,7 @@ import {
   Updates,
   Watch,
 } from "../bindings/github.com/MarJC5/vigie/internal/app";
-import type { BackgroundSettings, CommandView, CopiesState, CopySettings, DatabaseView, Journal, LoginItemState, SelfUpdateView, LookupsView, Node, ScansState, TagView, TreeView, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { AssistantsView, BackgroundSettings, CommandView, CopiesState, CopySettings, DatabaseView, Journal, LoginItemState, SelfUpdateView, LookupsView, Node, ScansState, TagView, TreeView, UpdatesState } from "../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { ActivityPage } from "./components/ActivityPage/ActivityPage";
 import { AddHostWizard, type WizardApi } from "./components/AddHostWizard/AddHostWizard";
 import { type AddonsApi, AddonsFlow } from "./components/AddonsFlow/AddonsFlow";
@@ -186,8 +187,12 @@ export function App() {
   const [command, setCommand] = useState<CommandView>();
   // Vigie's own update (ADR-0038), followed from the Go side.
   const [selfUpdate, setSelfUpdate] = useState<SelfUpdateView>();
+  // The tab Assistants (ADR-0043): the level and the lines for a client, which follow the command.
+  const [assistants, setAssistants] = useState<AssistantsView>();
   useEffect(() => {
-    if (section === "settings") void CommandLink.State().then(setCommand);
+    if (section !== "settings") return;
+    void CommandLink.State().then(setCommand);
+    void Assistants.View().then(setAssistants);
   }, [section]);
   const [nextScan, setNextScan] = useState("");
   const [canOpenSSH, setCanOpenSSH] = useState(false);
@@ -424,8 +429,13 @@ export function App() {
                 selfUpdate={selfUpdate}
                 onCheckUpdate={() => void SelfUpdate.Check()}
                 onInstallUpdate={() => void SelfUpdate.Install()}
-                onCheckCommand={() => void CommandLink.State().then(setCommand)}
+                onCheckCommand={() => {
+                  void CommandLink.State().then(setCommand);
+                  void Assistants.View().then(setAssistants);
+                }}
                 onCopy={copyText}
+                assistants={assistants}
+                onAssistantAccess={(access) => void Assistants.SetAccess(access).then((p) => !p && setAssistants((a) => a && { ...a, access }))}
               />
             )
           }

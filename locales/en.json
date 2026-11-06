@@ -713,7 +713,13 @@
     "copyResumed": "Resume of the copy of {{path}}",
     "copyLine": "{{content}}: {{archives}}, {{size}}, in {{folder}}",
     "copyCut": "Cut off: {{message}}",
-    "onItsOwn": "on its own"
+    "onItsOwn": "on its own",
+    "runAll_assistant": "Scan of every site by an assistant",
+    "run_assistant": "Scan of {{path}} by an assistant",
+    "update_assistant": "Update of {{path}} by an assistant",
+    "rollback_assistant": "Rollback of {{path}} by an assistant",
+    "copy_assistant": "Copy of {{path}} by an assistant",
+    "copyResumed_assistant": "Resume of the copy of {{path}} by an assistant"
   },
   "tray": {
     "open": "Open {{app}}",
@@ -1036,7 +1042,9 @@
       "backupKept": "Backup kept on the server:",
       "show": "Show the steps",
       "rollbackOnItsOwn": "{{item}} back to {{version}}, on its own",
-      "ofItsOwn": "an operation of its own, above"
+      "ofItsOwn": "an operation of its own, above",
+      "byAssistant": "by an assistant",
+      "byAssistantNamed": "by an assistant, {{client}}"
     },
     "follow": "Follow the update",
     "bulkDialog": {
@@ -1367,6 +1375,7 @@
     "tabs": {
       "general": "General",
       "lookups": "Lookups outside",
+      "assistants": "Assistants",
       "data": "Data",
       "about": "About"
     },
@@ -1424,6 +1433,27 @@
       "section": "Updates of the sites",
       "rollbackTitle": "Roll back on its own",
       "rollbackDesc": "When a plugin or theme breaks the site after its update, Vigie puts its version before back at once, checks the site and goes on. That version is then left out by “Update all”. WordPress itself always waits for your choice, as its rollback restores the database too."
+    },
+    "assistants": {
+      "section": "Assistants",
+      "levelTitle": "What an assistant may do",
+      "levelDesc": "An assistant (Claude or any other MCP client) starts vigie mcp on this computer and reads what Vigie knows of your sites. It gets only what you allow here, and a change applies at once.",
+      "off": "Off",
+      "offText": "Vigie answers no assistant.",
+      "read": "Read",
+      "readText": "The sites' status, the journal, the history and the copies. A scan too, which only reads on the servers.",
+      "act": "Actions",
+      "actText": "Also: update, copy to this computer, ignore. Every action waits for your yes.",
+      "keepAskTitle": "Let your client ask you",
+      "keepAskText": "Vigie waits for your yes before each action. A client set to approve everything on its own could give it in your place: keep it asking before each tool.",
+      "neverTitle": "Never allowed",
+      "neverDesc": "Delete, move, rename, the servers' connections and keys, export, import and the settings. The content of debug.log and your notes are never sent.",
+      "connect": "Connect an assistant",
+      "configTitle": "Client configuration",
+      "configDesc": "To add to your client's MCP servers. The path is the one of the vigie command linked on this computer.",
+      "noCommandTitle": "The vigie command is not linked",
+      "noCommandText": "A client starts Vigie with this command. Link it first in General, Command line.",
+      "openGeneral": "Open General"
     }
   },
   "data": {

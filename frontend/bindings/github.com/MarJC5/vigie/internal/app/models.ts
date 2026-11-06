@@ -22,9 +22,14 @@ export interface ActivityEntry {
     "ended": string;
 
     /**
-     * a run's: "user", "schedule", "cli"
+     * who started it: "user", "schedule", "cli", "assistant"
      */
     "by": string;
+
+    /**
+     * ByClient is the assistant's client, when it gave its name (ADR-0043); "" otherwise.
+     */
+    "byClient": string;
 
     /**
      * a run's node ("" for everything), else its site's path
@@ -129,6 +134,23 @@ export interface AddonsView {
     "installed": AddonView[] | null;
     "library": AddonView[] | null;
     "problem": Problem | null;
+}
+
+/**
+ * AssistantsView is the tab Assistants of the settings (ADR-0043): the level, and the lines a
+ * client adds to its MCP servers.
+ */
+export interface AssistantsView {
+    /**
+     * off, read or act
+     */
+    "access": string;
+
+    /**
+     * Config starts the linked vigie command with mcp, as a client's configuration; empty while the
+     * command is not linked, a client having nothing to start then.
+     */
+    "config": string;
 }
 
 /**
@@ -1133,6 +1155,13 @@ export interface OperationView {
      * Automatic: a rollback Vigie ran on its own after a failed check (ADR-0042).
      */
     "automatic": boolean;
+
+    /**
+     * By is who started it ("user", "cli", "assistant"); ByClient the assistant's client, when it
+     * gave its name (ADR-0043).
+     */
+    "by": string;
+    "byClient": string;
 
     /**
      * Rollback is what a rollback would undo, on the latest operation only; nil otherwise.

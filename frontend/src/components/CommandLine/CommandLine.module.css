@@ -13,5 +13,7 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: var(--vg-text-caption);
   line-height: 1.6;
+  /* A command of several lines (a client's configuration) keeps its lines and indents. */
+  white-space: pre-wrap;
   overflow-wrap: anywhere;
 }

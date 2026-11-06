@@ -13,9 +13,9 @@ const at = (day: number, h: number, m = 0) => new Date(2026, 9, day, h, m).toISO
 const journal: Journal = {
   since: at(1, 14),
   entries: [
-    { kind: "run", at: at(31, 10, 12), ended: at(31, 10, 13), by: "user", path: "Clients/Shared hosting", siteId: "", sites: 3, outcome: "completed", summary: "", automatic: false, wpCli: null, copy: null, changes: [], siteChanges: [], notices: [] },
+    { kind: "run", at: at(31, 10, 12), ended: at(31, 10, 13), by: "user", byClient: "", path: "Clients/Shared hosting", siteId: "", sites: 3, outcome: "completed", summary: "", automatic: false, wpCli: null, copy: null, changes: [], siteChanges: [], notices: [] },
     {
-      kind: "run", at: at(31, 3), ended: at(31, 3, 4), by: "schedule", path: "", siteId: "", sites: 4, outcome: "completed", summary: "", automatic: false, wpCli: null, copy: null,
+      kind: "run", at: at(31, 3), ended: at(31, 3, 4), by: "schedule", byClient: "", path: "", siteId: "", sites: 4, outcome: "completed", summary: "", automatic: false, wpCli: null, copy: null,
       changes: [
         { kind: "urgent", nodeId: "boulangerie", name: "boulangerie-exemple.ch" },
         { kind: "recovered", nodeId: "atelier", name: "atelier-exemple.ch" },
@@ -27,8 +27,8 @@ const journal: Journal = {
         { kind: "installed", names: ["boulangerie-exemple.ch"], text: "" },
       ],
     },
-    { kind: "update", at: at(30, 16, 40), ended: at(30, 16, 42), by: "", path: "Clients/Shared hosting/boulangerie-exemple.ch", siteId: "boulangerie", sites: 0, outcome: "completed", summary: "Akismet 5.3 → 5.7.2", automatic: false, wpCli: null, copy: null, changes: [], siteChanges: [], notices: [] },
-    { kind: "run", at: at(28, 9, 5), ended: at(28, 9, 6), by: "cli", path: "Personal/Managed VPS", siteId: "", sites: 1, outcome: "cancelled", summary: "", automatic: false, wpCli: null, copy: null, changes: [], siteChanges: [], notices: [] },
+    { kind: "update", at: at(30, 16, 40), ended: at(30, 16, 42), by: "", byClient: "", path: "Clients/Shared hosting/boulangerie-exemple.ch", siteId: "boulangerie", sites: 0, outcome: "completed", summary: "Akismet 5.3 → 5.7.2", automatic: false, wpCli: null, copy: null, changes: [], siteChanges: [], notices: [] },
+    { kind: "run", at: at(28, 9, 5), ended: at(28, 9, 6), by: "cli", byClient: "", path: "Personal/Managed VPS", siteId: "", sites: 1, outcome: "cancelled", summary: "", automatic: false, wpCli: null, copy: null, changes: [], siteChanges: [], notices: [] },
   ],
 };
 
@@ -97,12 +97,12 @@ export const TheEndOfALongRun: Story = {
       since: at(1, 14),
       entries: [
         {
-          kind: "run", at: at(31, 13, 0), ended: at(31, 13, 2), by: "user", path: "", siteId: "", sites: 12, outcome: "completed", summary: "", automatic: false, wpCli: null, copy: null,
+          kind: "run", at: at(31, 13, 0), ended: at(31, 13, 2), by: "user", byClient: "", path: "", siteId: "", sites: 12, outcome: "completed", summary: "", automatic: false, wpCli: null, copy: null,
           changes: [{ kind: "urgent", nodeId: "boulangerie", name: "boulangerie-exemple.ch" }], siteChanges: [],
           notices: [{ kind: "ended", names: ["boulangerie-exemple.ch"], text: "Relevé terminé, 12 sites relevés, 1 urgent. boulangerie-exemple.ch est devenu urgent." }],
         },
         {
-          kind: "update", at: at(31, 11, 5), ended: at(31, 11, 12), by: "", path: "Clients/Shared hosting/boulangerie-exemple.ch", siteId: "boulangerie", sites: 0,
+          kind: "update", at: at(31, 11, 5), ended: at(31, 11, 12), by: "", byClient: "", path: "Clients/Shared hosting/boulangerie-exemple.ch", siteId: "boulangerie", sites: 0,
           outcome: "completed", summary: "Akismet 5.3 → 5.7.2", automatic: false, wpCli: null, copy: null, changes: [], siteChanges: [],
           notices: [{ kind: "ended", names: [], text: "Mise à jour terminée, 5 sites mis à jour, 1 en échec." }],
         },
@@ -125,11 +125,11 @@ export const WPCLIInstalls: Story = {
       since: at(1, 14),
       entries: [
         {
-          kind: "wpcli", at: at(31, 14, 38), ended: at(31, 14, 38), by: "", path: "Clients/Shared hosting", siteId: "", sites: 0, outcome: "completed", summary: "", automatic: false,
+          kind: "wpcli", at: at(31, 14, 38), ended: at(31, 14, 38), by: "", byClient: "", path: "Clients/Shared hosting", siteId: "", sites: 0, outcome: "completed", summary: "", automatic: false,
           wpCli: { hostId: "shared", version: "2.12.0", command: "~/bin/wp", failedStep: "", message: "" }, copy: null, changes: [], siteChanges: [], notices: [],
         },
         {
-          kind: "wpcli", at: at(31, 14, 31), ended: at(31, 14, 31), by: "", path: "Nouveau VPS", siteId: "", sites: 0, outcome: "failed", summary: "", automatic: false,
+          kind: "wpcli", at: at(31, 14, 31), ended: at(31, 14, 31), by: "", byClient: "", path: "Nouveau VPS", siteId: "", sites: 0, outcome: "failed", summary: "", automatic: false,
           wpCli: { hostId: "", version: "2.12.0", command: "", failedStep: "send", message: "Connection to ssh.example-host.ch closed by remote host." }, copy: null, changes: [], siteChanges: [], notices: [],
         },
       ],
@@ -153,9 +153,9 @@ export const RollbackOnItsOwn: Story = {
     journal: {
       ...journal,
       entries: [
-        { kind: "rollback", at: at(31, 14, 12), ended: at(31, 14, 12), by: "", path: "Clients/Shared hosting/boulangerie-exemple.ch", siteId: "boulangerie", sites: 0, outcome: "completed", summary: "", automatic: true, wpCli: null, copy: null, changes: [], siteChanges: [], notices: [] },
+        { kind: "rollback", at: at(31, 14, 12), ended: at(31, 14, 12), by: "", byClient: "", path: "Clients/Shared hosting/boulangerie-exemple.ch", siteId: "boulangerie", sites: 0, outcome: "completed", summary: "", automatic: true, wpCli: null, copy: null, changes: [], siteChanges: [], notices: [] },
         {
-          kind: "update", at: at(31, 14, 11), ended: at(31, 14, 13), by: "", path: "Clients/Shared hosting/boulangerie-exemple.ch", siteId: "boulangerie", sites: 0, outcome: "completed", summary: "", automatic: false, wpCli: null, copy: null, changes: [], siteChanges: [],
+          kind: "update", at: at(31, 14, 11), ended: at(31, 14, 13), by: "", byClient: "", path: "Clients/Shared hosting/boulangerie-exemple.ch", siteId: "boulangerie", sites: 0, outcome: "completed", summary: "", automatic: false, wpCli: null, copy: null, changes: [], siteChanges: [],
           notices: [{ kind: "ended", names: [], text: "Update done, 1 item updated, WooCommerce rolled back." }],
         },
       ],
@@ -165,5 +165,30 @@ export const RollbackOnItsOwn: Story = {
     const [list] = canvas.getAllByRole("list");
     await expect(list).toHaveTextContent("on its own");
     await expect(list).toHaveTextContent("Update done, 1 item updated, WooCommerce rolled back.");
+  },
+};
+
+// What an assistant started (ADR-0043): its scans with its icon, its update, its client's name.
+export const ByAnAssistant: Story = {
+  args: {
+    journal: {
+      ...journal,
+      entries: [
+        {
+          kind: "update", at: at(31, 10, 24), ended: at(31, 10, 26), by: "assistant", byClient: "Claude", path: "Clients/Shared hosting/boulangerie-exemple.ch", siteId: "boulangerie", sites: 0, outcome: "completed", summary: "WooCommerce 9.8.1 → 9.8.5", automatic: false, wpCli: null, copy: null, changes: [], siteChanges: [], notices: [],
+        },
+        { kind: "run", at: at(31, 10, 21), ended: at(31, 10, 22), by: "assistant", byClient: "Claude", path: "Clients/Shared hosting/boulangerie-exemple.ch", siteId: "", sites: 1, outcome: "completed", summary: "", automatic: false, wpCli: null, copy: null, changes: [], siteChanges: [], notices: [] },
+        { kind: "run", at: at(31, 10, 20), ended: at(31, 10, 21), by: "assistant", byClient: "", path: "", siteId: "", sites: 11, outcome: "completed", summary: "", automatic: false, wpCli: null, copy: null, changes: [], siteChanges: [], notices: [] },
+        { kind: "run", at: at(31, 9, 58), ended: at(31, 9, 59), by: "user", byClient: "", path: "Clients/Shared hosting", siteId: "", sites: 3, outcome: "completed", summary: "", automatic: false, wpCli: null, copy: null, changes: [], siteChanges: [], notices: [] },
+      ],
+    },
+  },
+  globals: { lang: "fr" },
+  play: async ({ canvas }) => {
+    const [list] = canvas.getAllByRole("list");
+    await expect(list).toHaveTextContent("Mise à jour de Clients/Shared hosting/boulangerie-exemple.ch par un assistant");
+    await expect(list).toHaveTextContent("Claude · 1 site");
+    await expect(list).toHaveTextContent("Relevé de tous les sites par un assistant");
+    await expect(list).toHaveTextContent("Vous avez relevé Clients/Shared hosting");
   },
 };

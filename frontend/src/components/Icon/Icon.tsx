@@ -35,6 +35,7 @@ import {
   PlusIcon,
   PuzzlePieceIcon,
   QuestionIcon,
+  RobotIcon,
   ShieldCheckIcon,
   SidebarSimpleIcon,
   TagIcon,
@@ -51,6 +52,7 @@ import { VigieIcon } from "./VigieIcon";
 const icons = {
   activity: ClockCounterClockwiseIcon,
   archive: ArchiveIcon,
+  assistant: RobotIcon,
   bell: BellIcon,
   caretDown: CaretDownIcon,
   caretUp: CaretUpIcon,

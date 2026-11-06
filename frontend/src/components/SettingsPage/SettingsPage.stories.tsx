@@ -371,3 +371,58 @@ export const RollbackOnItsOwn: Story = {
     await expect(args.onAutoRollback).toHaveBeenCalledWith(false);
   },
 };
+
+const linkedConfig = '{\n  "mcpServers": {\n    "vigie": {\n      "command": "/usr/local/bin/vigie",\n      "args": ["mcp"]\n    }\n  }\n}';
+
+// The assistants off, the default (ADR-0043): the three levels, what is never allowed, the lines.
+export const AssistantsOff: Story = {
+  args: { tab: "assistants", assistants: { access: "off", config: linkedConfig }, onAssistantAccess: fn(), onCopy: fn() },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByRole("tab", { name: "Assistants" })).toHaveAttribute("aria-selected", "true");
+    const levels = within(page.getByRole("group", { name: "What an assistant may do" }));
+    await expect(levels.getByRole("button", { name: /^Off/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.queryByText("Let your client ask you")).toBeNull();
+    await expect(page.getByText(/The content of debug\.log and your notes are never sent\./)).toBeInTheDocument();
+    await userEvent.click(levels.getByRole("button", { name: /^Read/ }));
+    await expect(args.onAssistantAccess).toHaveBeenCalledWith("read");
+    await userEvent.click(page.getByRole("button", { name: "Copy" }));
+    await expect(args.onCopy).toHaveBeenCalledWith(linkedConfig);
+  },
+};
+
+// Read: the sites, the journal and a scan.
+export const AssistantsRead: Story = {
+  args: { tab: "assistants", assistants: { access: "read", config: linkedConfig }, onAssistantAccess: fn() },
+  globals: { lang: "fr" },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=light]")!);
+    const levels = within(page.getByRole("group", { name: "Ce qu'un assistant peut faire" }));
+    await expect(levels.getByRole("button", { name: /^Lecture/ })).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(levels.getByRole("button", { name: /^Actions/ }));
+    await expect(args.onAssistantAccess).toHaveBeenCalledWith("act");
+  },
+};
+
+// Actions: the notice that the client must keep asking.
+export const AssistantsAct: Story = {
+  args: { tab: "assistants", assistants: { access: "act", config: linkedConfig }, onAssistantAccess: fn() },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByRole("button", { name: /^Actions/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByText("Let your client ask you")).toBeInTheDocument();
+    await expect(page.getByText(/"command": "\/usr\/local\/bin\/vigie"/)).toBeInTheDocument();
+  },
+};
+
+// The command not linked: no lines, the way to General.
+export const AssistantsNoCommand: Story = {
+  args: { tab: "assistants", assistants: { access: "act", config: "" }, onAssistantAccess: fn() },
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.querySelector<HTMLElement>("[data-theme=dark]")!);
+    await expect(page.getByText("The vigie command is not linked")).toBeInTheDocument();
+    await expect(page.queryByRole("button", { name: "Copy" })).toBeNull();
+    await userEvent.click(page.getByRole("button", { name: "Open General" }));
+    await expect(args.onTab).toHaveBeenCalledWith("general");
+  },
+};

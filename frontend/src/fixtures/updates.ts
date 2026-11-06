@@ -64,6 +64,8 @@ const operation = (o: Partial<OperationView>): OperationView => ({
   steps: [],
   ofOperation: "",
   automatic: false,
+  by: "user",
+  byClient: "",
   rollback: null,
   ...o,
 });

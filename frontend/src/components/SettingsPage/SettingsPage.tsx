@@ -1,13 +1,15 @@
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { BackgroundSettings, CommandView, CopySettings, DatabaseView, LoginItemState, LookupsView, SelfUpdateView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
+import type { AssistantsView, BackgroundSettings, CommandView, CopySettings, DatabaseView, LoginItemState, LookupsView, SelfUpdateView } from "../../../bindings/github.com/MarJC5/vigie/internal/app/models";
 import { sizeText } from "../../lib/data";
 import { clock, day, keyOf } from "../../lib/findings";
 import { Button } from "../Button/Button";
+import { ChoiceCard } from "../ChoiceCard/ChoiceCard";
 import { CommandLine } from "../CommandLine/CommandLine";
 import { Icon } from "../Icon/Icon";
 import { LinkButton } from "../LinkButton/LinkButton";
+import { Notice } from "../Notice/Notice";
 import { SelectField } from "../SelectField/SelectField";
 import { Switch } from "../Switch/Switch";
 import { TabBar } from "../TabBar/TabBar";
@@ -16,7 +18,10 @@ import { Markdown } from "../Markdown/Markdown";
 import { Progress } from "../Progress/Progress";
 import styles from "./SettingsPage.module.css";
 
-export type SettingsTab = "general" | "lookups" | "data" | "about";
+export type SettingsTab = "general" | "lookups" | "assistants" | "data" | "about";
+
+/** What an assistant may do through vigie mcp (ADR-0043). */
+export type AssistantAccess = "off" | "read" | "act";
 
 /** The theme of the window: the system's, or one chosen. */
 export type Theme = "system" | "light" | "dark";
@@ -80,6 +85,9 @@ export interface SettingsPageProps {
   selfUpdate?: SelfUpdateView;
   onCheckUpdate?: () => void;
   onInstallUpdate?: () => void;
+  /** The tab Assistants (ADR-0043): the level and the lines for a client; without it, no tab. */
+  assistants?: AssistantsView;
+  onAssistantAccess?: (access: AssistantAccess) => void;
 }
 
 // The intervals of automatic scans, in hours; 0 is never (app.AutoScanHours).
@@ -126,11 +134,13 @@ export function SettingsPage({
   selfUpdate,
   onCheckUpdate,
   onInstallUpdate,
+  assistants,
+  onAssistantAccess,
 }: SettingsPageProps) {
   const { t, i18n } = useTranslation();
   const panel = useId();
   const size = (bytes: number) => sizeText(bytes, i18n.language);
-  const tabs: SettingsTab[] = ["general", "lookups", "data", "about"];
+  const tabs: SettingsTab[] = assistants ? ["general", "lookups", "assistants", "data", "about"] : ["general", "lookups", "data", "about"];
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -232,6 +242,9 @@ export function SettingsPage({
           </Section>
         )}
         {tab === "lookups" && <Lookups lookups={lookups} onAgree={onAgree} onWithdraw={onWithdraw} onDestination={onDestination} onOpen={onOpen} />}
+        {tab === "assistants" && assistants && (
+          <Assistants view={assistants} onAccess={onAssistantAccess} onGeneral={() => onTab("general")} onCopy={onCopy} />
+        )}
         {tab === "data" && (
           <>
             <Section title={t("data.backup")}>
@@ -372,6 +385,72 @@ function Lookups({
             {wpvulnerability.name}
           </ExternalLink>
         </Row>
+      </Section>
+    </>
+  );
+}
+
+const accessLevels: AssistantAccess[] = ["off", "read", "act"];
+
+/** The tab Assistants: what an assistant may do, what it never may, and how a client starts Vigie. */
+function Assistants({
+  view,
+  onAccess,
+  onGeneral,
+  onCopy,
+}: {
+  view: AssistantsView;
+  onAccess?: (access: AssistantAccess) => void;
+  onGeneral: () => void;
+  onCopy?: (text: string) => Promise<unknown> | void;
+}) {
+  const { t } = useTranslation();
+  const title = t("settings.assistants.levelTitle");
+  return (
+    <>
+      <Section title={t("settings.assistants.section")}>
+        <Row
+          title={title}
+          desc={t("settings.assistants.levelDesc")}
+          below={
+            <div className={styles.assistants}>
+              <div role="group" aria-label={title} className={styles.levels}>
+                {accessLevels.map((level) => (
+                  <ChoiceCard
+                    key={level}
+                    title={t(`settings.assistants.${level}`)}
+                    text={t(`settings.assistants.${level}Text`)}
+                    selected={view.access === level}
+                    onSelect={() => onAccess?.(level)}
+                  />
+                ))}
+              </div>
+              {view.access === "act" && (
+                <Notice tone="warn" role="note" title={t("settings.assistants.keepAskTitle")} text={t("settings.assistants.keepAskText")} />
+              )}
+            </div>
+          }
+        />
+        <Row title={t("settings.assistants.neverTitle")} desc={t("settings.assistants.neverDesc")} />
+      </Section>
+      <Section title={t("settings.assistants.connect")}>
+        {view.config ? (
+          <Row
+            title={t("settings.assistants.configTitle")}
+            desc={t("settings.assistants.configDesc")}
+            below={<CommandLine command={view.config} onCopy={onCopy} />}
+          />
+        ) : (
+          <div className={styles.notice}>
+            <Notice
+              tone="warn"
+              role="note"
+              title={t("settings.assistants.noCommandTitle")}
+              text={t("settings.assistants.noCommandText")}
+              action={{ label: t("settings.assistants.openGeneral"), onClick: onGeneral }}
+            />
+          </div>
+        )}
       </Section>
     </>
   );

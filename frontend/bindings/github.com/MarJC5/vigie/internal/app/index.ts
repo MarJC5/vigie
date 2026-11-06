@@ -3,6 +3,7 @@
 
 import * as Activity from "./activity.js";
 import * as Addons from "./addons.js";
+import * as Assistants from "./assistants.js";
 import * as CommandLink from "./commandlink.js";
 import * as Copies from "./copies.js";
 import * as Data from "./data.js";
@@ -19,6 +20,7 @@ import * as Watch from "./watch.js";
 export {
     Activity,
     Addons,
+    Assistants,
     CommandLink,
     Copies,
     Data,
@@ -39,6 +41,7 @@ export type {
     AddResult,
     AddonView,
     AddonsView,
+    AssistantsView,
     AttemptView,
     BackgroundSettings,
     BackupView,

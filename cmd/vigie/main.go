@@ -183,6 +183,7 @@ func openWindow(opts cli.Options) error {
 
 	// The keeper, once made: a second launch brings its window forward.
 	var keep *keeper
+	commandLink := app.NewCommandLink(runtime.GOOS, home)
 	wails = application.New(application.Options{
 		Name: "Vigie",
 		SingleInstance: singleInstance(func() {
@@ -195,7 +196,8 @@ func openWindow(opts cli.Options) error {
 			application.NewService(watch),
 			application.NewService(app.NewActivity(db, time.Now)),
 			application.NewService(login),
-			application.NewService(app.NewCommandLink(runtime.GOOS, home)),
+			application.NewService(commandLink),
+			application.NewService(app.NewAssistants(ws, commandLink.State)),
 			application.NewService(preferences),
 			application.NewService(app.NewHostWizard(ws, emit)),
 			application.NewService(app.NewEditor(ws)),

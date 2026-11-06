@@ -88,6 +88,10 @@ type OperationView struct {
 	OfOperation string `json:"ofOperation"`
 	// Automatic: a rollback Vigie ran on its own after a failed check (ADR-0042).
 	Automatic bool `json:"automatic"`
+	// By is who started it ("user", "cli", "assistant"); ByClient the assistant's client, when it
+	// gave its name (ADR-0043).
+	By       string `json:"by"`
+	ByClient string `json:"byClient"`
 	// Rollback is what a rollback would undo, on the latest operation only; nil otherwise.
 	Rollback *UpdateItemView `json:"rollback"`
 }
@@ -640,7 +644,7 @@ func operationView(op model.Operation) OperationView {
 	v := OperationView{
 		ID: op.ID.String(), SiteID: op.SiteID.String(), Kind: string(op.Kind), Started: timeText(op.Started),
 		Finished: timeText(op.Finished), Outcome: string(op.Outcome), Summary: op.Summary, BackupDir: op.BackupDir,
-		Steps: make([]StepView, len(op.Steps)), Automatic: op.Automatic,
+		Steps: make([]StepView, len(op.Steps)), Automatic: op.Automatic, By: startedBy(op.By), ByClient: op.ByClient,
 	}
 	if op.OfOperation != model.NoID {
 		v.OfOperation = op.OfOperation.String()

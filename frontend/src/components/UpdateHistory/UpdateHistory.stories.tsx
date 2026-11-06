@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent } from "storybook/test";
 
 import { outdatedSite } from "../../fixtures/scans";
-import { historyAuto, historyRolledBack, historyToRollBack } from "../../fixtures/updates";
+import { completed, historyAuto, historyRolledBack, historyToRollBack } from "../../fixtures/updates";
 import { namesOf } from "../../lib/updates";
 import { UpdateHistory } from "./UpdateHistory";
 
@@ -66,5 +66,14 @@ export const RolledBackOnItsOwn: Story = {
     const [list] = canvas.getAllByRole("list", { name: "History of updates" });
     await expect(list).toHaveTextContent("an operation of its own, above");
     await expect(canvas.queryAllByRole("button", { name: "Roll back" })).toHaveLength(0);
+  },
+};
+
+// An update an assistant started (ADR-0043): said beside what it did, with its client's name.
+export const ByAnAssistant: Story = {
+  args: { operations: [{ ...completed, by: "assistant", byClient: "Claude" }] },
+  play: async ({ canvas }) => {
+    const [list] = canvas.getAllByRole("list", { name: "History of updates" });
+    await expect(list).toHaveTextContent("by an assistant, Claude");
   },
 };
