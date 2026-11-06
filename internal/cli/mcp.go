@@ -23,7 +23,7 @@ func runMCP(ctx context.Context, env Env, args []string) int {
 		return env.fail(err.Error())
 	}
 	defer ws.Close()
-	server := mcp.New(mcp.Config{Access: ws.AssistantAccess, Texts: env.Texts, Lang: env.Lang, Version: buildinfo.Version()})
+	server := mcp.New(mcp.Config{Workspace: ws, Texts: env.Texts, Lang: env.Lang, Version: buildinfo.Version()})
 	err = server.Run(ctx, &sdk.IOTransport{Reader: io.NopCloser(env.In), Writer: nopWriteCloser{env.Out}})
 	if err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, context.Canceled) {
 		return env.fail(err.Error())

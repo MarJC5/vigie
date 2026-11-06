@@ -6,11 +6,14 @@ package mcp
 
 import (
 	"context"
+	"time"
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
+	"github.com/MarJC5/vigie/internal/app"
 	"github.com/MarJC5/vigie/internal/i18n"
 	"github.com/MarJC5/vigie/internal/model"
+	"github.com/MarJC5/vigie/internal/workspace"
 )
 
 // The revisions answered: the current one, and the one before for the clients that have not moved
@@ -19,8 +22,12 @@ var revisions = []string{"2026-07-28", "2025-11-25"}
 
 // Config is what the server needs from outside.
 type Config struct {
-	// Access reads what an assistant may do; called at every call.
+	// Workspace is the user's data; without it the server has no tool (the tests of the levels).
+	Workspace *workspace.Workspace
+	// Access reads what an assistant may do, at every call; the workspace's setting when nil.
 	Access func(context.Context) (model.AssistantAccess, error)
+	// Now is the time the journal counts its days from; the clock when nil.
+	Now func() time.Time
 	// Texts and Lang say the server's refusals in the user's language.
 	Texts   *i18n.Catalogs
 	Lang    string
@@ -32,6 +39,10 @@ type Server struct {
 	server *sdk.Server
 	cfg    Config
 	levels map[string]model.AssistantAccess
+
+	siteManager *app.SiteManager
+	activity    *app.Activity
+	copyList    *app.Copies
 }
 
 // New makes the server with the tools of this version of Vigie.
@@ -43,6 +54,19 @@ func New(cfg Config) *Server {
 		SupportedProtocolVersions: revisions,
 	})
 	s.server.AddReceivingMiddleware(s.gate)
+	if cfg.Workspace != nil {
+		if s.cfg.Access == nil {
+			s.cfg.Access = cfg.Workspace.AssistantAccess
+		}
+		if s.cfg.Now == nil {
+			s.cfg.Now = time.Now
+		}
+		db := cfg.Workspace.DB()
+		s.siteManager = app.NewSiteManager(db)
+		s.activity = app.NewActivity(db, s.cfg.Now)
+		s.copyList = app.NewCopies(cfg.Workspace, nil)
+		s.readTools()
+	}
 	return s
 }
 
