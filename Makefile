@@ -31,8 +31,13 @@ vuln:
 
 go-check: fmt-check vet test vuln
 
+# The bench builds vigie for vigie mcp (ADR-0043), which embeds frontend/dist: without a built
+# interface (the CI job has no Node), a page in its place for the bench's build, removed after.
 test-integration:
-	go test -tags integration -count=1 -timeout 20m ./internal/integration
+	@placeholder=; if [ ! -e frontend/dist/index.html ]; then mkdir -p frontend/dist && \
+		printf '<!doctype html><title>Vigie</title>\n' > frontend/dist/index.html && placeholder=1; fi; \
+	go test -tags integration -count=1 -timeout 20m ./internal/integration; status=$$?; \
+	if [ -n "$$placeholder" ]; then rm -rf frontend/dist; fi; exit $$status
 
 record:
 	go test -tags integration -count=1 -timeout 20m -run TestRecord ./internal/integration -record

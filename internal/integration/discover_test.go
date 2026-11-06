@@ -32,6 +32,7 @@ func TestDiscoverOverSSH(t *testing.T) {
 		"~/sites/outdated":             discover.StateNew,
 		"~/sites/offline":              discover.StateNew,
 		"~/sites/broken":               discover.StateCannotLoad,
+		"~/sites/assistant":            discover.StateNew,
 		"~/sites/plugin-theme":         discover.StateNew,
 		"~/sites/updates":              discover.StateNew,
 		"~/sites/security":             discover.StateNew,

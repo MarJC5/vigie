@@ -102,6 +102,13 @@ wp language plugin install akismet fr_FR --path="$SITES/updates" --quiet
 find "$SITES/updates/wp-content/languages" -name '*.po' \
 	-exec sed -i 's/^"PO-Revision-Date: .*\\n"$/"PO-Revision-Date: 2001-01-01 00:00:00+0000\\n"/' {} +
 
+# The site an assistant updates through vigie mcp (ADR-0043), served as http://assistant.example.test:
+# an older Akismet, on a site of its own so that the other tests find theirs as they left them.
+new_site "$SITES/assistant" fixture_assistant
+wp db create --path="$SITES/assistant" --quiet
+wp core install --path="$SITES/assistant" --url=http://assistant.example.test --title=Assistant $ADMIN
+wp plugin install akismet --version=5.3 --force --activate --path="$SITES/assistant" --quiet
+
 # In the web root of the default site: a volume of the image, so made here rather than at build.
 PACKAGES=/var/www/html/fixture-packages
 mkdir -p "$PACKAGES"
