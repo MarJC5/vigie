@@ -34,6 +34,8 @@ publique va dans `internal/buildinfo/update.go` (`UpdateKey`). Une clé n'est ja
 
 Le travail se fait sur `develop`. `main` ne bouge qu'à la publication d'une version : elle montre
 toujours la dernière version publiée, et son README la version que les gens installent.
+Une règle du dépôt n'accepte un commit sur `main` qu'une fois les deux jobs de CI réussis sur lui :
+un commit fait avec `[skip ci]` ne peut pas atteindre `main`.
 
 1. Sur `develop`, dans `CHANGELOG.md`, déplacer ce qui est sous `Unreleased` dans une nouvelle
    section `## [x.y.z] - AAAA-MM-JJ` : son texte devient les notes de la version, dans la fenêtre

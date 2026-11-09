@@ -32,6 +32,8 @@ release signed with another key is refused by every installed Vigie. The public 
 
 Work happens on `develop`. `main` moves only when a release is made, so that it always shows the
 latest release, and its README the version people install.
+A rule of the repository accepts a commit on `main` only once both CI jobs have passed on it: a
+commit made with `[skip ci]` cannot reach `main`.
 
 1. On `develop`, in `CHANGELOG.md`, move what is under `Unreleased` to a new section
    `## [x.y.z] - YYYY-MM-DD`: its text becomes the release's notes, in the window too. Commit and
