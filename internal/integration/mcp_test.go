@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -161,11 +162,15 @@ func TestAnAssistantThroughVigieMCP(t *testing.T) {
 	}
 }
 
-// buildVigie builds the vigie command once for the test.
+// buildVigie builds the vigie command for the test, as the server build. On Linux, without cgo too:
+// with it, Wails asks for GTK and WebKit, which the bench's machine has not and vigie mcp never uses.
 func buildVigie(t *testing.T) string {
 	t.Helper()
 	out := filepath.Join(t.TempDir(), "vigie")
-	build := exec.Command("go", "build", "-o", out, "./cmd/vigie")
+	build := exec.Command("go", "build", "-tags", "server", "-o", out, "./cmd/vigie")
+	if runtime.GOOS == "linux" {
+		build.Env = append(os.Environ(), "CGO_ENABLED=0")
+	}
 	build.Dir = filepath.Join("..", "..")
 	if b, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("go build: %v\n%s", err, b)
@@ -188,7 +193,9 @@ func benchProxy(t *testing.T) string {
 	}
 	var dialer net.Dialer
 	proxy := &httputil.ReverseProxy{
-		Rewrite: func(r *httputil.ProxyRequest) { r.Out.URL.Scheme, r.Out.URL.Host, r.Out.Host = "http", r.In.Host, r.In.Host },
+		Rewrite: func(r *httputil.ProxyRequest) {
+			r.Out.URL.Scheme, r.Out.URL.Host, r.Out.Host = "http", r.In.Host, r.In.Host
+		},
 		Transport: &http.Transport{DialContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
 			return dialer.DialContext(ctx, network, net.JoinHostPort(host, port.Port()))
 		}},
