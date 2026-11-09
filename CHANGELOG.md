@@ -7,6 +7,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-09
+
 ### Added
 
 - **Assistants**: an assistant (Claude or any other MCP client) reads what Vigie knows of your
@@ -130,7 +132,8 @@ The first release.
 - The window loads only what Vigie embeds: a strict Content Security Policy refuses any script,
   style, font, image or connection from elsewhere.
 
-[Unreleased]: https://github.com/MarJC5/vigie/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/MarJC5/vigie/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/MarJC5/vigie/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/MarJC5/vigie/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/MarJC5/vigie/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/MarJC5/vigie/releases/tag/v0.1.0
