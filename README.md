@@ -119,7 +119,9 @@ Vigie keeps your data on your computer: no account, no hosted service, no teleme
 scan asks a few outside services what the server cannot tell (known vulnerabilities, closed
 plugins, domain expiry), and GitHub whether a new version of Vigie is out, from your computer and
 only after you agreed: each one is listed with exactly what it receives, and each one can be
-turned off in the settings. Your sites' addresses are never sent to a third party.
+turned off in the settings. Those services never receive your sites' addresses. If you turn on an
+assistant (off by default), what it reads, your sites' addresses included, goes to the client you
+chose and usually on to the provider of its model ([docs/assistants.md](docs/assistants.md)).
 
 What Vigie reads, asks and sends: [docs/security.md](docs/security.md). To report a vulnerability:
 [SECURITY.md](SECURITY.md).

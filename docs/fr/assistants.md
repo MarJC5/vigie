@@ -35,6 +35,11 @@ Jamais envoyés : le contenu de `debug.log` (seulement ce que Vigie en a conclu
 dossiers, hôtes et sites, les adresses e-mail des administrateurs, les clés SSH et les clés des
 serveurs, les chemins à l'intérieur de vos copies.
 
+**Ce qui quitte votre ordinateur** : ce qu'un assistant reçoit (noms, chemins et adresses de vos sites,
+versions, constats, journal) va au client, et en général au fournisseur de son modèle, selon les
+conditions de ce fournisseur. Vigie ne peut ni voir ni limiter la suite. Les sites que vous gardez
+pour des clients sont concernés aussi : choisissez le niveau en conséquence.
+
 ## Brancher un client
 
 Le client lance la commande `vigie`, qui doit d'abord être liée (**Réglages, Général, Ligne de

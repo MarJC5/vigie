@@ -109,6 +109,10 @@ ses vérifications sont alors « Non vérifié », jamais « À jour ».
 (elles sont comparées sur votre ordinateur), vos accès SSH, rien de ce qui est lu dans vos bases de
 données.
 
+**Avec un assistant**, coupé par défaut, cette liste ne couvre plus tout : ce qu'il lit, adresses de vos
+sites comprises, va au client que vous avez choisi et en général au fournisseur de son modèle
+([docs/assistants.md](assistants.md)).
+
 Chaque requête dit ce qu'elle est : `User-Agent: Vigie/<version> (+https://github.com/MarJC5/vigie)`.
 Quand un service ne répond pas, la dernière réponse gardée sert, avec sa date. Sans réponse
 gardée, la vérification est « Non vérifié ».

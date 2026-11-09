@@ -15,7 +15,8 @@ In **Settings, Assistants**:
 
 Deleting, moving, the connections and keys of the servers, export, import and the settings are
 never allowed. The content of `debug.log`, your notes and the administrators' e-mail addresses are
-never sent.
+never sent. What it does read, your sites' addresses included, usually goes on to the provider of its
+model.
 
 ## Connect a client
 

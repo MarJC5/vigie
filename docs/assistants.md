@@ -33,6 +33,11 @@ Never sent: the content of `debug.log` (only what Vigie concluded from it), the 
 folders, hosts and sites, the e-mail addresses of the administrators, the SSH keys and the servers'
 keys, the paths inside your copies.
 
+**What leaves your computer**: what an assistant does get (your sites' names, paths and addresses,
+versions, findings, the journal) goes to the client, and usually on to the provider of its model,
+under that provider's terms. Vigie cannot see or limit what happens next. Sites you keep for clients
+are concerned too: choose the level with that in mind.
+
 ## Connect a client
 
 The client starts the `vigie` command, which must be linked first (**Settings, General, Command

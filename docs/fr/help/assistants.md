@@ -15,7 +15,8 @@ Dans **Réglages, Assistants** :
 
 Supprimer, déplacer, les connexions et les clés des serveurs, l'export, l'import et les réglages ne
 sont jamais permis. Le contenu de `debug.log`, vos notes et les adresses e-mail des administrateurs
-ne sont jamais envoyés.
+ne sont jamais envoyés. Ce qu'il lit, adresses de vos sites comprises, va en général au fournisseur
+de son modèle.
 
 ## Brancher un client
 

@@ -96,6 +96,10 @@ checked", never "up to date".
 **Never sent**: your sites' addresses to a third party, the versions of your plugins and themes
 (they are compared on your computer), your SSH details, anything read from your databases.
 
+**With an assistant**, off by default, this list no longer covers everything: what it reads, your
+sites' addresses included, goes to the client you chose and usually on to the provider of its model
+([docs/assistants.md](assistants.md)).
+
 Every request says what it is: `User-Agent: Vigie/<version> (+https://github.com/MarJC5/vigie)`.
 When a service cannot be reached, the last answer kept is used and its date is shown; without one,
 the check is "not checked".

@@ -7,6 +7,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- The README and the docs promised that your sites' addresses never go to a third party: true of
+  Vigie's own lookups, but what an assistant reads, addresses included, usually goes on to the
+  provider of its model. The README, the docs, the help and Settings, Assistants now say so.
+
 ## [0.3.0] - 2026-11-09
 
 ### Added

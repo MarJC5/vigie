@@ -1437,7 +1437,7 @@
     "assistants": {
       "section": "Assistants",
       "levelTitle": "What an assistant may do",
-      "levelDesc": "An assistant (Claude or any other MCP client) starts vigie mcp on this computer and reads what Vigie knows of your sites. It gets only what you allow here, and a change applies at once.",
+      "levelDesc": "An assistant (Claude or any other MCP client) starts vigie mcp on this computer and reads what Vigie knows of your sites. It gets only what you allow here, and a change applies at once. What it reads, your sites' addresses included, usually goes on to the provider of its model.",
       "off": "Off",
       "offText": "Vigie answers no assistant.",
       "read": "Read",

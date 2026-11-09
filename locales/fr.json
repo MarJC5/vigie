@@ -1538,7 +1538,7 @@
     "assistants": {
       "section": "Assistants",
       "levelTitle": "Ce qu'un assistant peut faire",
-      "levelDesc": "Un assistant (Claude ou tout autre client MCP) lance vigie mcp sur cet ordinateur et lit ce que Vigie sait de vos sites. Il ne reçoit que ce que vous permettez ici, et un changement vaut tout de suite.",
+      "levelDesc": "Un assistant (Claude ou tout autre client MCP) lance vigie mcp sur cet ordinateur et lit ce que Vigie sait de vos sites. Il ne reçoit que ce que vous permettez ici, et un changement vaut tout de suite. Ce qu'il lit, adresses de vos sites comprises, va en général au fournisseur de son modèle.",
       "off": "Coupé",
       "offText": "Vigie ne répond à aucun assistant.",
       "read": "Lecture",
