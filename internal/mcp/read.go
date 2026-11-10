@@ -529,19 +529,25 @@ func (s *Server) node(ctx context.Context, path string) (model.Node, error) {
 
 // siteAt finds a site by its path.
 func (s *Server) siteAt(ctx context.Context, path string) (model.Site, error) {
+	site, _, err := s.siteWithPath(ctx, path)
+	return site, err
+}
+
+// siteWithPath finds a site by its path, and gives its path as the tree writes it.
+func (s *Server) siteWithPath(ctx context.Context, path string) (model.Site, string, error) {
 	tree, err := s.cfg.Workspace.DB().LoadTree(ctx)
 	if err != nil {
-		return model.Site{}, err
+		return model.Site{}, "", err
 	}
 	n, err := tree.Resolve(path)
 	if err != nil {
-		return model.Site{}, s.said(errUnknownPath, path)
+		return model.Site{}, "", s.said(errUnknownPath, path)
 	}
 	site, ok := tree.Site(n.ID)
 	if n.Kind != model.KindSite || !ok {
-		return model.Site{}, s.said(errNotASite, path)
+		return model.Site{}, "", s.said(errNotASite, path)
 	}
-	return site, nil
+	return site, tree.PathOf(n), nil
 }
 
 // said is an error whose text the assistant reads, in the user's language; value is the path or

@@ -1,7 +1,7 @@
 // Package mcp is Vigie's local MCP server, started by an assistant's client as vigie mcp, over stdio
 // (ADR-0043). It calls the workspace as the command does. What an assistant may do is the level set
 // in Settings, read at every call: off lists no tool, read lists the read tools, act adds the
-// actions, each confirmed.
+// actions, each confirmed. The tool errors needs, on top of the level read, a setting of its own.
 package mcp
 
 import (
@@ -27,6 +27,9 @@ type Config struct {
 	Workspace *workspace.Workspace
 	// Access reads what an assistant may do, at every call; the workspace's setting when nil.
 	Access func(context.Context) (model.AssistantAccess, error)
+	// Errors reads whether an assistant may read a site's errors, at every call; the workspace's
+	// setting when nil.
+	Errors func(context.Context) (bool, error)
 	// Now is the time the journal counts its days from; the clock when nil.
 	Now func() time.Time
 	// Texts and Lang say the server's refusals in the user's language.
@@ -65,6 +68,9 @@ func New(cfg Config) *Server {
 		if s.cfg.Access == nil {
 			s.cfg.Access = cfg.Workspace.AssistantAccess
 		}
+		if s.cfg.Errors == nil {
+			s.cfg.Errors = cfg.Workspace.AssistantErrors
+		}
 		if s.cfg.Now == nil {
 			s.cfg.Now = time.Now
 		}
@@ -73,6 +79,7 @@ func New(cfg Config) *Server {
 		s.activity = app.NewActivity(db, s.cfg.Now)
 		s.copyList = app.NewCopies(cfg.Workspace, nil)
 		s.readTools()
+		s.errorsTools()
 		s.actTools()
 	}
 	return s
@@ -90,8 +97,9 @@ func (s *Server) add(level model.AssistantAccess, tool *sdk.Tool, handler sdk.To
 }
 
 // gate reads the level at every call: the tools listed are those it allows, and a call to another
-// is refused with where to change it. The list is never cached by the client (no time to live), as
-// the level may change between two calls.
+// is refused with where to change it. The tool errors also needs its setting, read at every call as
+// well. The list is never cached by the client (no time to live), as both may change between two
+// calls.
 func (s *Server) gate(next sdk.MethodHandler) sdk.MethodHandler {
 	return func(ctx context.Context, method string, req sdk.Request) (sdk.Result, error) {
 		switch method {
@@ -100,11 +108,15 @@ func (s *Server) gate(next sdk.MethodHandler) sdk.MethodHandler {
 			if err != nil {
 				return nil, err
 			}
+			errorsOn, err := s.errorsAllowed(ctx)
+			if err != nil {
+				return nil, err
+			}
 			res, err := next(ctx, method, req)
 			if list, ok := res.(*sdk.ListToolsResult); ok && err == nil {
 				allowed := make([]*sdk.Tool, 0, len(list.Tools))
 				for _, tool := range list.Tools {
-					if access.Allows(s.levels[tool.Name]) {
+					if access.Allows(s.levels[tool.Name]) && (tool.Name != errorsTool || errorsOn) {
 						allowed = append(allowed, tool)
 					}
 				}
@@ -125,6 +137,15 @@ func (s *Server) gate(next sdk.MethodHandler) sdk.MethodHandler {
 			}
 			if level, known := s.levels[call.Params.Name]; known && !access.Allows(level) {
 				return s.refusal("mcp.needsAct"), nil
+			}
+			if call.Params.Name == errorsTool {
+				on, err := s.errorsAllowed(ctx)
+				if err != nil {
+					return nil, err
+				}
+				if !on {
+					return s.refusal("mcp.errorsOff"), nil
+				}
 			}
 		}
 		return next(ctx, method, req)
