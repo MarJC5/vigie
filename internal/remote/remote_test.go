@@ -58,7 +58,8 @@ func TestRemoteCommands(t *testing.T) {
 		{"debug.log of a scan", func() (string, error) { return remote.DebugLog("/home/u/sites/a/wp-content/debug.log") },
 			`f='/home/u/sites/a/wp-content/debug.log'; [ -f "$f" ] || exit 0; wc -c < "$f"; tail -c 1048576 "$f" | LC_ALL=C grep -a -E 'PHP (Fatal|Parse) error' | tail -n 50`},
 		{"a site's errors", func() (string, error) { return remote.ErrorLines("/home/u/sites/a/wp-content/debug.log") },
-			`f='/home/u/sites/a/wp-content/debug.log'; [ -f "$f" ] || exit 0; s=$(wc -c < "$f" | tr -d ' '); echo "$s"; ` +
+			`f='/home/u/sites/a/wp-content/debug.log'; [ -f "$f" ] || exit 0; [ -r "$f" ] || { echo "cannot read $f" >&2; exit 1; }; ` +
+				`s=$(wc -c < "$f" | tr -d ' '); echo "$s"; ` +
 				`if [ "$s" -gt 1048576 ]; then tail -c 1048576 "$f" | tail -n +2; else cat "$f"; fi | ` +
 				`LC_ALL=C grep -a -E '^\[[^]]+\] PHP (Fatal error|Parse error|Recoverable fatal error|Warning):|^  thrown in .* on line [0-9]+$' | ` +
 				`cut -b 1-2000 | tail -n 501`},

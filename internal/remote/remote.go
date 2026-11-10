@@ -267,7 +267,7 @@ const (
 )
 
 // ErrorLines reads, in one command that only reads, what a site's errors are made of: nothing when
-// there is no such file; else its size, then the lines of its last ErrorLinesTail bytes that start
+// there is no such file, an error when it cannot be read; else its size, then the lines of its last ErrorLinesTail bytes that start
 // with a date and a fatal error, a parse error, a recoverable fatal error or a warning, and the line
 // "thrown in" that gives an uncaught exception its place. Nothing else crosses: not the stack traces
 // (the functions' arguments), the notices and deprecations, or the database errors (their query).
@@ -283,7 +283,8 @@ func ErrorLines(file string) (string, error) {
 		return "", err
 	}
 	tail := strconv.Itoa(ErrorLinesTail)
-	return "f=" + q + `; [ -f "$f" ] || exit 0; s=$(wc -c < "$f" | tr -d ' '); echo "$s"; ` +
+	return "f=" + q + `; [ -f "$f" ] || exit 0; [ -r "$f" ] || { echo "cannot read $f" >&2; exit 1; }; ` +
+		`s=$(wc -c < "$f" | tr -d ' '); echo "$s"; ` +
 		`if [ "$s" -gt ` + tail + ` ]; then tail -c ` + tail + ` "$f" | tail -n +2; else cat "$f"; fi | ` +
 		grepText + ` -E '^\[[^]]+\] PHP (Fatal error|Parse error|Recoverable fatal error|Warning):|^  thrown in .* on line [0-9]+$' | ` +
 		`cut -b 1-` + strconv.Itoa(errorLineBytes) + ` | tail -n ` + strconv.Itoa(ErrorLinesKept+1), nil
