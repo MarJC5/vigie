@@ -53,7 +53,7 @@ func TestRemoteCommands(t *testing.T) {
 			`tar -xzf '` + dir + `/core.tar.gz' '-C' '/home/u/sites/a'`},
 		{"size", func() (string, error) { return remote.FileSize("/home/u/sites/a/wp-content/debug.log") }, `wc -c < '/home/u/sites/a/wp-content/debug.log'`},
 		{"fatal errors", func() (string, error) { return remote.FatalsSince("/home/u/sites/a/wp-content/debug.log", 1200) },
-			`tail -c +1201 '/home/u/sites/a/wp-content/debug.log' | grep -m 3 'PHP Fatal error'`},
+			`tail -c +1201 '/home/u/sites/a/wp-content/debug.log' | LC_ALL=C grep -a -m 3 'PHP Fatal error'`},
 		{"debug.log of a scan", func() (string, error) { return remote.DebugLog("/home/u/sites/a/wp-content/debug.log") },
 			`f='/home/u/sites/a/wp-content/debug.log'; [ -f "$f" ] || exit 0; wc -c < "$f"; tail -c 1048576 "$f" | LC_ALL=C grep -a -E 'PHP (Fatal|Parse) error' | tail -n 50`},
 		{"backups", func() (string, error) { return remote.ListBackups(site) }, `ls -1 '.vigie/backups/01a18704-356b-77be-ab41-b92a0d67a6bc'`},

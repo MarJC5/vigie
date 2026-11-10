@@ -179,7 +179,7 @@ func FatalsSince(file string, offset int64) (string, error) {
 		return "", fmt.Errorf("offset %d: %w", offset, ErrBadPath)
 	}
 	q, err := quoted(file)
-	return "tail -c +" + strconv.FormatInt(offset+1, 10) + " " + q + " | grep -m 3 'PHP Fatal error'", err
+	return "tail -c +" + strconv.FormatInt(offset+1, 10) + " " + q + " | " + grepText + " -m 3 'PHP Fatal error'", err
 }
 
 // DebugLog reads, in one go, a scan's view of a site's debug.log (ADR-0028): nothing when there is no
