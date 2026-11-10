@@ -99,7 +99,7 @@ func Run(ctx context.Context, opts Options, env Env) int {
 		return runData(ctx, env, name, rest)
 	case "mcp":
 		return runMCP(ctx, env, rest)
-	case "tree", "scan", "discover", "update", "copy":
+	case "tree", "scan", "discover", "update", "copy", "errors":
 	default:
 		// Not a command of Vigie: an add-on's, when vigie-<name> is on the PATH.
 		if code, ok := runAddOn(env, name, rest); ok {
@@ -165,6 +165,8 @@ func Run(ctx context.Context, opts Options, env Env) int {
 		return updateTarget(ctx, env, ws, on, asJSON, yes)
 	case "copy":
 		return copyTarget(ctx, env, ws, on, content, asJSON)
+	case "errors":
+		return siteErrors(ctx, env, ws, path, asJSON)
 	}
 	return discoverHost(ctx, env, ws, path, asJSON)
 }

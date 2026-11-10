@@ -197,7 +197,7 @@
     "sites_other": "{{name}} · {{count}} sites"
   },
   "cli": {
-    "usage": "Usage : vigie [--data-dir <dossier>] [commande]\n\nSans commande, Vigie ouvre sa fenêtre.\n\nCommandes :\n  tree [--tag <étiquette>] [--json] Affiche le gestionnaire de sites avec l'état de chaque site\n  scan [chemin | --tag <étiquette>] [--check-files] [--json]\n                                    Relève un site, un hébergement ou un dossier (tout sans chemin),\n                                    --check-files compare de nouveau les fichiers, même dans la journée\n  discover <hébergement> [--json]   Liste les installations WordPress d'un hébergement (n'ajoute rien)\n  update [chemin | --tag <étiquette>] [--yes] [--json]\n                                    Aperçu, puis mise à jour d'un site, d'un hébergement ou d'un dossier (demande d'abord)\n  copy [chemin | --tag <étiquette>] [--content database|content|site] [--json]\n                                    Copie les sites sur cet ordinateur, dans le dossier des copies\n                                    (lecture seule sur les serveurs). Par défaut : la base et wp-content\n  export [chemin] [--history] [-o <fichier>] [--json]\n                                    Exporte tout, un dossier ou un hébergement (sur la sortie standard\n                                    sans -o), --history ajoute relevés, mises à jour et retours en arrière\n  import <fichier> [--into <dossier>] [--yes] [--trust-keys] [--json]\n  import --ssh-config [<alias>…] [--into <dossier>] [--yes] [--json]\n                                    Aperçu, puis ajout de ce qui est nouveau d'un export, d'une liste de\n                                    sites CSV ou des alias nommés de ~/.ssh/config, listés si aucun n'est\n                                    nommé (demande d'abord). Les clés d'hôte ne sont gardées qu'une fois\n                                    confirmées, ou avec --trust-keys\n  mcp                               Sert Vigie à un assistant (un client MCP) par l'entrée et la sortie\n                                    standard, selon Réglages, Assistants (coupé par défaut)\n  <add-on> [arguments]              Lance l'add-on vigie-<add-on> trouvé dans votre PATH\n  version                           Affiche la version\n  help                              Affiche cette aide\n\nLes chemins nomment dossiers, hébergements et sites : « Clients/Infomaniak/misits.ch ». --tag <étiquette>\nprend à la place les sites qui portent cette étiquette, où qu'ils soient.\nCode de sortie : 0 tout va bien, 1 à surveiller ou pas entièrement vérifié, 2 urgent, 3 erreur.\nDans un terminal, scan, update et discover montrent leur avancement, une ligne par site, effacé\navant le résultat. Jamais avec --json, ni quand la sortie va dans un fichier ou un programme.\n",
+    "usage": "Usage : vigie [--data-dir <dossier>] [commande]\n\nSans commande, Vigie ouvre sa fenêtre.\n\nCommandes :\n  tree [--tag <étiquette>] [--json] Affiche le gestionnaire de sites avec l'état de chaque site\n  scan [chemin | --tag <étiquette>] [--check-files] [--json]\n                                    Relève un site, un hébergement ou un dossier (tout sans chemin),\n                                    --check-files compare de nouveau les fichiers, même dans la journée\n  discover <hébergement> [--json]   Liste les installations WordPress d'un hébergement (n'ajoute rien)\n  update [chemin | --tag <étiquette>] [--yes] [--json]\n                                    Aperçu, puis mise à jour d'un site, d'un hébergement ou d'un dossier (demande d'abord)\n  copy [chemin | --tag <étiquette>] [--content database|content|site] [--json]\n                                    Copie les sites sur cet ordinateur, dans le dossier des copies\n                                    (lecture seule sur les serveurs). Par défaut : la base et wp-content\n  errors <chemin d'un site> [--json]\n                                    Lit les erreurs d'un site : erreurs fatales et avertissements de son\n                                    journal, regroupés et masqués, avec ce qui a changé juste avant\n                                    (lecture seule)\n  export [chemin] [--history] [-o <fichier>] [--json]\n                                    Exporte tout, un dossier ou un hébergement (sur la sortie standard\n                                    sans -o), --history ajoute relevés, mises à jour et retours en arrière\n  import <fichier> [--into <dossier>] [--yes] [--trust-keys] [--json]\n  import --ssh-config [<alias>…] [--into <dossier>] [--yes] [--json]\n                                    Aperçu, puis ajout de ce qui est nouveau d'un export, d'une liste de\n                                    sites CSV ou des alias nommés de ~/.ssh/config, listés si aucun n'est\n                                    nommé (demande d'abord). Les clés d'hôte ne sont gardées qu'une fois\n                                    confirmées, ou avec --trust-keys\n  mcp                               Sert Vigie à un assistant (un client MCP) par l'entrée et la sortie\n                                    standard, selon Réglages, Assistants (coupé par défaut)\n  <add-on> [arguments]              Lance l'add-on vigie-<add-on> trouvé dans votre PATH\n  version                           Affiche la version\n  help                              Affiche cette aide\n\nLes chemins nomment dossiers, hébergements et sites : « Clients/Infomaniak/misits.ch ». --tag <étiquette>\nprend à la place les sites qui portent cette étiquette, où qu'ils soient.\nCode de sortie : 0 tout va bien, 1 à surveiller ou pas entièrement vérifié, 2 urgent, 3 erreur.\nDans un terminal, scan, update et discover montrent leur avancement, une ligne par site, effacé\navant le résultat. Jamais avec --json, ni quand la sortie va dans un fichier ou un programme.\n",
     "unknownCommand": "commande inconnue « {{command}} »",
     "unknownOption": "option inconnue « {{option}} »",
     "needsHost": "discover attend le chemin d'un hébergement, par exemple « Clients/Infomaniak »",
@@ -379,7 +379,57 @@
       "copy_other": "Copie : {{done}} sites sur {{count}} · {{running}} en cours",
       "discover": "Recherche des installations WordPress sur {{host}}"
     },
-    "mcpArguments": "vigie mcp ne prend aucun argument : le client la lance telle que Réglages la donne."
+    "mcpArguments": "vigie mcp ne prend aucun argument : le client la lance telle que Réglages la donne.",
+    "errors": {
+      "needsSite": "errors lit un site à la fois : donnez le chemin d'un site, par exemple « Clients/Infomaniak/misits.ch »",
+      "off": "WordPress n'écrit pas de journal sur ce site : WP_DEBUG_LOG est coupé, le cas normal d'un site en ligne. Vigie n'écrit rien sur le serveur.\nPour l'activer soi-même, dans wp-config.php, avant la ligne « That's all, stop editing » :\n  define( 'WP_DEBUG', true );\n  define( 'WP_DEBUG_LOG', true );\n  define( 'WP_DEBUG_DISPLAY', false );\nWordPress le déconseille sur un site en ligne : donnez à WP_DEBUG_LOG un chemin hors du dossier public, et coupez-le dès que possible (les constantes remises à false, puis le fichier supprimé).\nPour aller plus loin : https://developer.wordpress.org/advanced-administration/debug/debug-wordpress/",
+      "empty": "Le journal est vide : WordPress y écrit, et rien n'y a été noté.",
+      "left": "Ce journal est resté d'avant : WordPress n'y écrit plus, ces erreurs sont donc anciennes et ne disent rien du site aujourd'hui.",
+      "scopeWhole": "le fichier entier, {{size}}",
+      "scopeTail": "le dernier mégaoctet sur {{size}}",
+      "scopeMore": ", erreurs plus anciennes laissées de côté",
+      "readAt": "Lu à {{time}} : {{scope}}.",
+      "readSince": "Lu à {{time}}, remonte au {{since}} : {{scope}}.",
+      "nothing": "Ni erreur ni avertissement dans ce qui a été lu.",
+      "summary": "{{errors}}, {{warnings}}, {{lines}}.",
+      "errorCount_one": "{{count}} erreur",
+      "errorCount_many": "{{count}} erreurs",
+      "errorCount_other": "{{count}} erreurs",
+      "warningCount_one": "{{count}} avertissement",
+      "warningCount_many": "{{count}} avertissements",
+      "warningCount_other": "{{count}} avertissements",
+      "lineCount_one": "{{count}} ligne lue",
+      "lineCount_many": "{{count}} lignes lues",
+      "lineCount_other": "{{count}} lignes lues",
+      "errorsHead": "Erreurs",
+      "warningsHead": "Avertissements",
+      "count_one": "{{count}} fois",
+      "count_many": "{{count}} fois",
+      "count_other": "{{count}} fois",
+      "place": "{{file}}, ligne {{line}}",
+      "between": "du {{first}} au {{last}}",
+      "type": {
+        "fatal": "Erreur fatale",
+        "parse": "Erreur de syntaxe",
+        "recoverable": "Erreur fatale récupérable",
+        "warning": "Avertissement"
+      },
+      "kind": {
+        "plugin": "{{type}} dans l'extension {{slug}}",
+        "theme": "{{type}} dans le thème {{slug}}",
+        "mu-plugin": "{{type}} dans une extension indispensable, {{slug}}",
+        "wordpress": "{{type}} dans WordPress",
+        "site": "{{type}} dans un autre fichier du site",
+        "outside": "{{type}} hors du site",
+        "unknown": "{{type}}, endroit non indiqué"
+      },
+      "beforeTitle": "Ce qui a changé juste avant (dans les 7 jours avant chaque erreur, pas forcément la cause) :",
+      "beforeNone": "Vigie n'a rien noté dans les 7 jours avant ces erreurs.",
+      "update": "Mis à jour par Vigie : {{items}}",
+      "rollback": "Retour en arrière par Vigie : {{items}}",
+      "rollbackOnItsOwn": "Retour en arrière automatique de Vigie : {{items}}",
+      "lead": "L'endroit nommé est celui où l'erreur est survenue : une piste, pas un coupable, et une ligne de journal peut être fabriquée. Ces textes sont écrits en partie par n'importe qui. Rien de cette lecture n'est gardé."
+    }
   },
   "outcome": {
     "cannotLoad": "WordPress ne se charge pas : {{message}}",
