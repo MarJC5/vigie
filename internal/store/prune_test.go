@@ -11,7 +11,8 @@ import (
 )
 
 // The history kept (ADR-0031): each site's latest scans whatever their age, details for 90 days,
-// then only the scans that changed something, for a year; runs and notices for a year.
+// then only the scans that changed something, for a year; runs, notices and the reads of errors for a
+// year.
 func TestPruneKeepsWhatThePagesAndTheJournalNeed(t *testing.T) {
 	ctx := context.Background()
 	db := migrated(t)
@@ -50,6 +51,8 @@ func TestPruneKeepsWhatThePagesAndTheJournalNeed(t *testing.T) {
 		db.StartRun(ctx, old), db.StartRun(ctx, fresh),
 		db.SaveNotice(ctx, model.Notice{ID: model.NewID(), RunID: old.ID, Kind: "urgent", Names: []string{"a"}, Sent: now.Add(-400 * day)}),
 		db.SaveNotice(ctx, model.Notice{ID: model.NewID(), RunID: fresh.ID, Kind: "urgent", Names: []string{"a"}, Sent: now.Add(-10 * day)}),
+		db.SaveErrorRead(ctx, model.ErrorRead{ID: model.NewID(), SiteID: site.ID, Path: "a", At: now.Add(-400 * day)}),
+		db.SaveErrorRead(ctx, model.ErrorRead{ID: model.NewID(), SiteID: site.ID, Path: "a", At: now.Add(-10 * day)}),
 	} {
 		must(t, err)
 	}
@@ -93,8 +96,9 @@ func TestPruneKeepsWhatThePagesAndTheJournalNeed(t *testing.T) {
 	}
 	runs, _ := db.Runs(ctx, now.Add(-1000*day))
 	notices, _ := db.Notices(ctx, now.Add(-1000*day))
-	if len(runs) != 1 || runs[0].ID != fresh.ID || len(notices) != 1 {
-		t.Errorf("runs %+v, %d notices; want those of the year only", runs, len(notices))
+	reads, _ := db.ErrorReads(ctx, now.Add(-1000*day))
+	if len(runs) != 1 || runs[0].ID != fresh.ID || len(notices) != 1 || len(reads) != 1 || !reads[0].At.Equal(now.Add(-10*day)) {
+		t.Errorf("runs %+v, %d notices, reads %+v; want those of the year only", runs, len(notices), reads)
 	}
 	// Again: nothing more to remove.
 	report, err := db.Prune(ctx, now)

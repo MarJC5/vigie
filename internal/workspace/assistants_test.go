@@ -34,3 +34,35 @@ func TestAssistantsAreOffUntilTurnedOn(t *testing.T) {
 		t.Errorf("AssistantAccess() with an unknown stored value = %q, %v; want off", got, err)
 	}
 }
+
+// An assistant reads a site's errors only once the user turns it on. The setting stands apart from
+// the level, which leaves it as it was set when the assistants are turned off; a stored value it does
+// not know reads as off.
+func TestAssistantsReadErrorsOnlyOnceTurnedOn(t *testing.T) {
+	ctx := context.Background()
+	ws, db, _ := emptyVigie(t)
+	if on, err := ws.AssistantErrors(ctx); err != nil || on {
+		t.Fatalf("AssistantErrors() = %v, %v; want off by default", on, err)
+	}
+	if err := ws.SetAssistantErrors(ctx, true); err != nil {
+		t.Fatal(err)
+	}
+	if err := ws.SetAssistantAccess(ctx, model.AssistantOff); err != nil {
+		t.Fatal(err)
+	}
+	if on, err := ws.AssistantErrors(ctx); err != nil || !on {
+		t.Errorf("AssistantErrors() with the assistants off = %v, %v; want on, kept", on, err)
+	}
+	if err := ws.SetAssistantErrors(ctx, false); err != nil {
+		t.Fatal(err)
+	}
+	if on, err := ws.AssistantErrors(ctx); err != nil || on {
+		t.Errorf("AssistantErrors() = %v, %v; want off", on, err)
+	}
+	if err := db.SetSetting(ctx, "mcp.errors", "yes"); err != nil {
+		t.Fatal(err)
+	}
+	if on, err := ws.AssistantErrors(ctx); err != nil || on {
+		t.Errorf("AssistantErrors() with an unknown stored value = %v, %v; want off", on, err)
+	}
+}

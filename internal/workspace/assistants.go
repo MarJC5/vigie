@@ -30,3 +30,23 @@ func (w *Workspace) SetAssistantAccess(ctx context.Context, access model.Assista
 	}
 	return w.db.SetSetting(ctx, assistantAccessSetting, string(access))
 }
+
+// assistantErrorsSetting lets an assistant read a site's errors with "on", on top of the level read.
+const assistantErrorsSetting = "mcp.errors"
+
+// AssistantErrors tells whether an assistant may read a site's errors: off by default, and off for a
+// stored value this Vigie does not know. It stands apart from the level, which leaves it as set.
+// vigie mcp reads it at every call, as the level.
+func (w *Workspace) AssistantErrors(ctx context.Context) (bool, error) {
+	value, _, err := w.db.Setting(ctx, assistantErrorsSetting)
+	return value == "on", err
+}
+
+// SetAssistantErrors lets an assistant read a site's errors, or stops it.
+func (w *Workspace) SetAssistantErrors(ctx context.Context, on bool) error {
+	value := "off"
+	if on {
+		value = "on"
+	}
+	return w.db.SetSetting(ctx, assistantErrorsSetting, value)
+}

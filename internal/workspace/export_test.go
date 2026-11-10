@@ -129,6 +129,38 @@ func TestExportAHostAlone(t *testing.T) {
 	}
 }
 
+// An export leaves out the assistants' reads of errors and the setting that allows them: they are
+// this computer's journal and choice, not the sites'.
+func TestAnExportLeavesOutTheReadsOfErrors(t *testing.T) {
+	ctx := context.Background()
+	ws, _ := exportBench(t)
+	if err := ws.SetAssistantErrors(ctx, true); err != nil {
+		t.Fatal(err)
+	}
+	tree, err := ws.DB().LoadTree(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	site := mustResolve(t, tree, "Clients/Shared hosting/atelier-exemple.ch")
+	read := model.ErrorRead{ID: model.NewID(), SiteID: site.ID, Path: "Clients/Shared hosting/atelier-exemple.ch", Client: "Assistant de test", At: time.Now()}
+	if err := ws.DB().SaveErrorRead(ctx, read); err != nil {
+		t.Fatal(err)
+	}
+	f, err := ws.Export(ctx, "", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var buf bytes.Buffer
+	if err := export.Write(&buf, f); err != nil {
+		t.Fatal(err)
+	}
+	for _, absent := range []string{read.ID.String(), read.Client, "mcp.errors", "error_reads"} {
+		if bytes.Contains(buf.Bytes(), []byte(absent)) {
+			t.Errorf("the export holds %q", absent)
+		}
+	}
+}
+
 // An export is readable by its owner only, also over a file that was readable by others.
 func TestAnExportFileIsTheOwnersOnly(t *testing.T) {
 	ws, _ := exportBench(t)

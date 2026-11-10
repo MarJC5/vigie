@@ -1,6 +1,9 @@
 package model
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 // ErrInvalidAssistantAccess refuses a level of the assistants Vigie does not know.
 var ErrInvalidAssistantAccess = errors.New("the assistants are off, read or act")
@@ -30,4 +33,14 @@ func (a AssistantAccess) Allows(level AssistantAccess) bool {
 		return a == AssistantAct
 	}
 	return false
+}
+
+// ErrorRead is an assistant's read of a site's errors, as the journal keeps it: which site, which
+// client, when. Nothing read from the log.
+type ErrorRead struct {
+	ID     ID
+	SiteID ID
+	Path   string // the site, by its path when it was read
+	Client string // the assistant's client, when it gave its name; "" otherwise
+	At     time.Time
 }

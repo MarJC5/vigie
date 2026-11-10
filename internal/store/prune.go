@@ -10,25 +10,26 @@ import (
 const (
 	// DetailsKept is how long a scan keeps its items, findings and subsites.
 	DetailsKept = 90 * 24 * time.Hour
-	// ChangesKept is how long a scan that changed something is kept, without its details; runs and
-	// notices too.
+	// ChangesKept is how long a scan that changed something is kept, without its details; runs,
+	// notices and the reads of errors too.
 	ChangesKept = 365 * 24 * time.Hour
 )
 
 // PruneReport tells what a pruning removed.
 type PruneReport struct {
-	Scans   int // scans removed
-	Details int // scans left without their details
-	Runs    int
-	Notices int
+	Scans      int // scans removed
+	Details    int // scans left without their details
+	Runs       int
+	Notices    int
+	ErrorReads int
 }
 
 // Prune keeps the history in check (ADR-0031): each site's latest scan, latest complete scan and the
 // complete scan before it, whatever their age, with their details; the details of other scans for
 // DetailsKept; after that, only the scans that changed something (their noted status, outcome,
-// failure or changes differ from the scan before them, ADR-0030), until ChangesKept; runs and
-// notices until ChangesKept. A scan not noted yet is never removed. Site by site, each in a
-// transaction of its own: a failure leaves the rest for the next time.
+// failure or changes differ from the scan before them, ADR-0030), until ChangesKept; runs, notices
+// and the reads of errors until ChangesKept. A scan not noted yet is never removed. Site by site,
+// each in a transaction of its own: a failure leaves the rest for the next time.
 func (db *DB) Prune(ctx context.Context, now time.Time) (PruneReport, error) {
 	details, changes := timeText(now.Add(-DetailsKept)), timeText(now.Add(-ChangesKept))
 	var report PruneReport
@@ -62,6 +63,7 @@ func (db *DB) Prune(ctx context.Context, now time.Time) (PruneReport, error) {
 	}{
 		{"DELETE FROM runs WHERE started_at < ?", &report.Runs},
 		{"DELETE FROM notices WHERE sent_at < ?", &report.Notices},
+		{"DELETE FROM error_reads WHERE read_at < ?", &report.ErrorReads},
 	} {
 		res, err := db.sql.ExecContext(ctx, step.query, changes)
 		if err != nil {
