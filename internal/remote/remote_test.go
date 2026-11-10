@@ -13,6 +13,7 @@ import (
 	"time"
 	"uuid"
 
+	"github.com/MarJC5/vigie/internal/errorlog"
 	"github.com/MarJC5/vigie/internal/remote"
 	"github.com/MarJC5/vigie/internal/sshx"
 )
@@ -56,6 +57,11 @@ func TestRemoteCommands(t *testing.T) {
 			`tail -c +1201 '/home/u/sites/a/wp-content/debug.log' | LC_ALL=C grep -a -m 3 'PHP Fatal error'`},
 		{"debug.log of a scan", func() (string, error) { return remote.DebugLog("/home/u/sites/a/wp-content/debug.log") },
 			`f='/home/u/sites/a/wp-content/debug.log'; [ -f "$f" ] || exit 0; wc -c < "$f"; tail -c 1048576 "$f" | LC_ALL=C grep -a -E 'PHP (Fatal|Parse) error' | tail -n 50`},
+		{"a site's errors", func() (string, error) { return remote.ErrorLines("/home/u/sites/a/wp-content/debug.log") },
+			`f='/home/u/sites/a/wp-content/debug.log'; [ -f "$f" ] || exit 0; s=$(wc -c < "$f" | tr -d ' '); echo "$s"; ` +
+				`if [ "$s" -gt 1048576 ]; then tail -c 1048576 "$f" | tail -n +2; else cat "$f"; fi | ` +
+				`LC_ALL=C grep -a -E '^\[[^]]+\] PHP (Fatal error|Parse error|Recoverable fatal error|Warning):|^  thrown in .* on line [0-9]+$' | ` +
+				`cut -b 1-2000 | tail -n 501`},
 		{"backups", func() (string, error) { return remote.ListBackups(site) }, `ls -1 '.vigie/backups/01a18704-356b-77be-ab41-b92a0d67a6bc'`},
 		{"remove a backup", func() (string, error) { return remote.RemoveBackup(dir) }, `rm -rf '` + dir + `'`},
 		{"backups of sites leaving", func() (string, error) { return remote.RemoveSiteBackups(site, site) },
@@ -90,11 +96,12 @@ func TestRemoteCommandsRefuseBadPaths(t *testing.T) {
 		"the root itself": func() (string, error) {
 			return remote.Restore(".vigie/backups/"+site.String()+"/20261029-131203/x.tar.gz", "/")
 		},
-		"debug log not absolute": func() (string, error) { return remote.FileSize("wp-content/debug.log") },
-		"a negative offset":      func() (string, error) { return remote.FatalsSince("/a/debug.log", -1) },
-		"a scan's log relative":  func() (string, error) { return remote.DebugLog("debug.log") },
-		"a dump out of a backup": func() (string, error) { return remote.Uncompress("/tmp/x.sql.gz") },
-		"home as a root":         func() (string, error) { return remote.RealRoot("~") },
+		"debug log not absolute":   func() (string, error) { return remote.FileSize("wp-content/debug.log") },
+		"a negative offset":        func() (string, error) { return remote.FatalsSince("/a/debug.log", -1) },
+		"a scan's log relative":    func() (string, error) { return remote.DebugLog("debug.log") },
+		"errors of a relative log": func() (string, error) { return remote.ErrorLines("wp-content/debug.log") },
+		"a dump out of a backup":   func() (string, error) { return remote.Uncompress("/tmp/x.sql.gz") },
+		"home as a root":           func() (string, error) { return remote.RealRoot("~") },
 	} {
 		if _, err := got(); !errors.Is(err, remote.ErrBadPath) {
 			t.Errorf("%s: %v, want remote.ErrBadPath", name, err)
@@ -262,5 +269,71 @@ func TestParseDebugLog(t *testing.T) {
 	}
 	if _, err := remote.ParseDebugLog([]byte("lots\n"), now); err == nil {
 		t.Error("ParseDebugLog() of a size that is not a number: no error")
+	}
+}
+
+func TestParseErrorLines(t *testing.T) {
+	fatal := "[31-Oct-2026 02:14:07 UTC] PHP Fatal error:  Uncaught Error: x() in /a/b.php:3"
+	thrown := "  thrown in /a/b.php on line 3"
+	got, err := remote.ParseErrorLines([]byte("4012345\n" + fatal + "\r\n" + thrown + "\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := remote.ErrorLinesRead{Exists: true, Size: 4012345, Lines: []string{fatal, thrown}}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("ParseErrorLines() = %+v\nwant %+v", got, want)
+	}
+	if got.Whole() {
+		t.Error("a file of 4 MB read whole")
+	}
+
+	// No file: nothing answered. An empty one: its size only.
+	if got, err := remote.ParseErrorLines(nil); err != nil || got.Exists {
+		t.Errorf("ParseErrorLines() of no file = %+v, %v", got, err)
+	}
+	if got, err := remote.ParseErrorLines([]byte("0\n")); err != nil || !got.Exists || got.Size != 0 || len(got.Lines) != 0 || !got.Whole() {
+		t.Errorf("ParseErrorLines() of an empty file = %+v, %v", got, err)
+	}
+	if _, err := remote.ParseErrorLines([]byte("lots\n")); err == nil {
+		t.Error("ParseErrorLines() of a size that is not a number: no error")
+	}
+
+	// One line more than kept: the oldest is left out, and the answer says older ones were.
+	lines := make([]string, remote.ErrorLinesKept+1)
+	for i := range lines {
+		lines[i] = fmt.Sprintf("[31-Oct-2026 02:14:07 UTC] PHP Warning:  w%d in /a.php on line %d", i, i)
+	}
+	got, err = remote.ParseErrorLines([]byte("812\n" + strings.Join(lines, "\n") + "\n"))
+	if err != nil || !got.More || len(got.Lines) != remote.ErrorLinesKept || got.Lines[0] != lines[1] {
+		t.Errorf("ParseErrorLines() of too many lines: more %v, %d lines, first %q, %v", got.More, len(got.Lines), got.Lines[0], err)
+	}
+}
+
+// ErrorLines's answer on a log of 1.1 MB written by PHP 8.4 under Apache (the bench's image), the
+// same from GNU and BusyBox: the notices before it and the line cut by the tail left out, the "thrown
+// in" lines kept, bytes that are not UTF-8 kept.
+func TestParseRecordedErrorLines(t *testing.T) {
+	out, err := os.ReadFile("testdata/error-lines.out")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := remote.ParseErrorLines(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !got.Exists || got.Size != 1110504 || got.Whole() || got.More || len(got.Lines) != 16 {
+		t.Fatalf("ParseErrorLines() = exists %v, size %d, whole %v, more %v, %d lines", got.Exists, got.Size, got.Whole(), got.More, len(got.Lines))
+	}
+	s := errorlog.Read(got.Lines, "/var/www/html")
+	if s.Lines != 13 || len(s.Groups) != 13 {
+		t.Errorf("%d lines, %d groups, want 13 and 13", s.Lines, len(s.Groups))
+	}
+	for _, g := range s.Groups {
+		if strings.HasPrefix(g.Message, "Uncaught RuntimeException: Mailbox full") && (g.File != "gen.php" || g.Line != 13) {
+			t.Errorf("the exception's place from \"thrown in\": %s:%d", g.File, g.Line)
+		}
+		if strings.Contains(g.Message, "Notice") || strings.Contains(g.Message, "marie@") {
+			t.Errorf("crossed: %q", g.Message)
+		}
 	}
 }

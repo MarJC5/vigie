@@ -257,6 +257,75 @@ func ParseDebugLog(out []byte, now time.Time) (DebugLogRead, error) {
 	return read, nil
 }
 
+const (
+	// ErrorLinesTail is how much of the end of a log a read of a site's errors searches.
+	ErrorLinesTail = 1 << 20
+	// ErrorLinesKept is how many lines a read of a site's errors transfers at most, the newest.
+	ErrorLinesKept = 500
+	// errorLineBytes is where the server cuts each line: a line longer than that loses its end.
+	errorLineBytes = 2000
+)
+
+// ErrorLines reads, in one command that only reads, what a site's errors are made of: nothing when
+// there is no such file; else its size, then the lines of its last ErrorLinesTail bytes that start
+// with a date and a fatal error, a parse error, a recoverable fatal error or a warning, and the line
+// "thrown in" that gives an uncaught exception its place. Nothing else crosses: not the stack traces
+// (the functions' arguments), the notices and deprecations, or the database errors (their query).
+// Each line is cut on the server, and one line more than kept is sent to tell that older ones were
+// left out. When the file is longer than what is searched, the first line, cut in the middle, is
+// dropped.
+func ErrorLines(file string) (string, error) {
+	if err := folder(file); err != nil {
+		return "", err
+	}
+	q, err := quoted(file)
+	if err != nil {
+		return "", err
+	}
+	tail := strconv.Itoa(ErrorLinesTail)
+	return "f=" + q + `; [ -f "$f" ] || exit 0; s=$(wc -c < "$f" | tr -d ' '); echo "$s"; ` +
+		`if [ "$s" -gt ` + tail + ` ]; then tail -c ` + tail + ` "$f" | tail -n +2; else cat "$f"; fi | ` +
+		grepText + ` -E '^\[[^]]+\] PHP (Fatal error|Parse error|Recoverable fatal error|Warning):|^  thrown in .* on line [0-9]+$' | ` +
+		`cut -b 1-` + strconv.Itoa(errorLineBytes) + ` | tail -n ` + strconv.Itoa(ErrorLinesKept+1), nil
+}
+
+// ErrorLinesRead is what ErrorLines answered.
+type ErrorLinesRead struct {
+	Exists bool
+	Size   int64
+	More   bool     // older lines than those sent were left out
+	Lines  []string // the newest last, as the server sent them
+}
+
+// Whole tells whether the whole file was searched.
+func (r ErrorLinesRead) Whole() bool { return r.Size <= ErrorLinesTail }
+
+// ParseErrorLines reads ErrorLines's answer.
+func ParseErrorLines(out []byte) (ErrorLinesRead, error) {
+	text := strings.TrimRight(string(out), "\n")
+	if strings.TrimSpace(text) == "" {
+		return ErrorLinesRead{}, nil
+	}
+	first, rest, _ := strings.Cut(text, "\n")
+	size, err := strconv.ParseInt(strings.TrimSpace(first), 10, 64)
+	if err != nil || size < 0 {
+		return ErrorLinesRead{}, fmt.Errorf("size %q: %w", first, wpcli.ErrUnexpectedOutput)
+	}
+	read := ErrorLinesRead{Exists: true, Size: size}
+	if rest == "" {
+		return read, nil
+	}
+	read.Lines = strings.Split(rest, "\n")
+	for i, line := range read.Lines {
+		read.Lines[i] = strings.TrimRight(line, "\r")
+	}
+	if len(read.Lines) > ErrorLinesKept {
+		read.More = true
+		read.Lines = read.Lines[len(read.Lines)-ErrorLinesKept:]
+	}
+	return read, nil
+}
+
 // UploadsPHP lists the PHP files under a site's uploads folder, where WordPress never puts any: one
 // line per file, at most uploadsShown and one more to tell there are more. Each comes with its size
 // and the start of its content after tabs (the first stubBytes of an index.php, the first line of
