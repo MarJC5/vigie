@@ -1,8 +1,8 @@
 {
   "args": [
-    "f='/home/vigie/sites/security/wp-content/debug.log'; [ -f \"$f\" ] || exit 0; wc -c \u003c \"$f\"; tail -c 1048576 \"$f\" | grep -E 'PHP (Fatal|Parse) error' | tail -n 50"
+    "f='/home/vigie/sites/security/wp-content/debug.log'; [ -f \"$f\" ] || exit 0; wc -c \u003c \"$f\"; tail -c 1048576 \"$f\" | LC_ALL=C grep -a -E 'PHP (Fatal|Parse) error' | tail -n 50"
   ],
   "exit": 0,
-  "stdout": "326\n[01-Jan-2026 08:00:00 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function fixture_old() in /home/vigie/sites/security/wp-content/fixture-old.php:3\n[01-Nov-2026 15:15:46 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function fixture_missing() in /home/vigie/sites/security/wp-content/fixture-new.php:9\n",
+  "stdout": "326\n[01-Jan-2026 08:00:00 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function fixture_old() in /home/vigie/sites/security/wp-content/fixture-old.php:3\n[10-Nov-2026 07:25:45 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function fixture_missing() in /home/vigie/sites/security/wp-content/fixture-new.php:9\n",
   "stderr": ""
 }

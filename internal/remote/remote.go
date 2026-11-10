@@ -193,9 +193,13 @@ func DebugLog(file string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return "f=" + q + `; [ -f "$f" ] || exit 0; wc -c < "$f"; tail -c ` + strconv.Itoa(debugTail) + ` "$f" | grep -E 'PHP (Fatal|Parse) error' | tail -n ` +
+	return "f=" + q + `; [ -f "$f" ] || exit 0; wc -c < "$f"; tail -c ` + strconv.Itoa(debugTail) + ` "$f" | ` + grepText + ` -E 'PHP (Fatal|Parse) error' | tail -n ` +
 		strconv.Itoa(debugLines), nil
 }
+
+// grepText is grep for a log: in the C locale and reading every byte as text, so that no line is
+// left out for its bytes (GNU grep drops, in a UTF-8 locale, a line that is not UTF-8).
+const grepText = "LC_ALL=C grep -a"
 
 const (
 	debugTail  = 1 << 20 // the bytes of the end of debug.log searched

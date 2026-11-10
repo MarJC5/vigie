@@ -55,7 +55,7 @@ func TestRemoteCommands(t *testing.T) {
 		{"fatal errors", func() (string, error) { return remote.FatalsSince("/home/u/sites/a/wp-content/debug.log", 1200) },
 			`tail -c +1201 '/home/u/sites/a/wp-content/debug.log' | grep -m 3 'PHP Fatal error'`},
 		{"debug.log of a scan", func() (string, error) { return remote.DebugLog("/home/u/sites/a/wp-content/debug.log") },
-			`f='/home/u/sites/a/wp-content/debug.log'; [ -f "$f" ] || exit 0; wc -c < "$f"; tail -c 1048576 "$f" | grep -E 'PHP (Fatal|Parse) error' | tail -n 50`},
+			`f='/home/u/sites/a/wp-content/debug.log'; [ -f "$f" ] || exit 0; wc -c < "$f"; tail -c 1048576 "$f" | LC_ALL=C grep -a -E 'PHP (Fatal|Parse) error' | tail -n 50`},
 		{"backups", func() (string, error) { return remote.ListBackups(site) }, `ls -1 '.vigie/backups/01a18704-356b-77be-ab41-b92a0d67a6bc'`},
 		{"remove a backup", func() (string, error) { return remote.RemoveBackup(dir) }, `rm -rf '` + dir + `'`},
 		{"backups of sites leaving", func() (string, error) { return remote.RemoveSiteBackups(site, site) },
